@@ -1,0 +1,107 @@
+{
+  "jobs": [
+    {
+      "id": 1778385972186,
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.001,
+      "reason": "game subscription",
+      "intervalMs": 60000,
+      "intervalLabel": "1 minute(s)",
+      "createdAt": "2026-05-10T04:06:12.186Z",
+      "lastRun": "2026-05-10T04:07:31.268Z",
+      "nextRun": "2026-05-10T04:08:31.268Z",
+      "totalRuns": 1,
+      "totalSpent": 0,
+      "active": false
+    },
+    {
+      "id": 1778389695738,
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.001,
+      "reason": "recurring payment",
+      "intervalMs": 60000,
+      "intervalLabel": "1 minute(s)",
+      "conditions": {
+        "minBalance": 10,
+        "executeAt": null,
+        "executeOnDay": null,
+        "executeOnDate": null,
+        "maxDailySpend": null,
+        "executeOnce": false
+      },
+      "createdAt": "2026-05-10T05:08:15.739Z",
+      "lastRun": "2026-05-10T05:10:22.863Z",
+      "nextRun": "2026-05-10T05:11:22.863Z",
+      "totalRuns": 1,
+      "totalSpent": 0,
+      "active": false
+    },
+    {
+      "id": 1778389930738,
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.001,
+      "reason": "payment",
+      "intervalMs": 86400000,
+      "intervalLabel": "1 day(s)",
+      "conditions": {
+        "minBalance": null,
+        "executeAt": "06:15",
+        "executeOnDay": null,
+        "executeOnDate": null,
+        "maxDailySpend": null,
+        "executeOnce": true
+      },
+      "createdAt": "2026-05-10T05:12:10.738Z",
+      "lastRun": null,
+      "nextRun": "2026-05-11T05:12:10.738Z",
+      "totalRuns": 0,
+      "totalSpent": 0,
+      "active": false
+    },
+    {
+      "id": 1778532448585,
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.002,
+      "reason": "payment",
+      "intervalMs": 86400000,
+      "intervalLabel": "1 day(s)",
+      "conditions": {
+        "minBalance": null,
+        "executeAt": null,
+        "executeOnDay": null,
+        "executeOnDate": null,
+        "maxDailySpend": null,
+        "executeOnce": true
+      },
+      "createdAt": "2026-05-11T20:47:28.585Z",
+      "lastRun": null,
+      "nextRun": "2026-05-12T20:47:28.585Z",
+      "totalRuns": 0,
+      "totalSpent": 0,
+      "active": false
+    },
+    {
+      "id": 1778532966841,
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.001,
+      "reason": "user request",
+      "intervalMs": 60000,
+      "intervalLabel": "1 minute(s)",
+      "conditions": {
+        "minBalance": null,
+        "executeAt": null,
+        "executeOnDay": null,
+        "executeOnDate": null,
+        "maxDailySpend": null,
+        "executeOnce": true,
+        "executed": true
+      },
+      "createdAt": "2026-05-11T20:56:06.841Z",
+      "lastRun": "2026-05-11T20:57:13.691Z",
+      "nextRun": "2026-05-11T20:58:13.692Z",
+      "totalRuns": 1,
+      "totalSpent": 0.001,
+      "active": false
+    }
+  ]
+}

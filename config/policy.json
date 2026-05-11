@@ -1,0 +1,19 @@
+{
+  "agentName": "AgentPay",
+  "version": "1.0.0",
+  "dailyCapSTT": 20,
+  "perTxCapSTT": 2,
+  "allowedRecipients": [
+    "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA"
+  ],
+  "activeHours": {
+    "start": 0,
+    "end": 23
+  },
+  "circuitBreaker": {
+    "maxTxPerHour": 10,
+    "maxConsecutiveFailures": 5,
+    "pauseDurationMinutes": 60
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "spends": [
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.001,
+      "reason": "Quest #001 completion reward",
+      "txHash": "0x2b4a2fd9247d416d9c89d4044347d025655d6bfd64e5c2c9343f7ec88aaa25ed",
+      "agentId": "15",
+      "timestamp": 1778381110497,
+      "date": "Sun May 10 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 5,
+      "reason": "Suspicious large transfer",
+      "blockedReason": "Amount 5 STT exceeds per-tx cap of 2 STT",
+      "agentId": "15",
+      "failed": true,
+      "timestamp": 1778381112513,
+      "date": "Sun May 10 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 3,
+      "reason": "Over daily cap test",
+      "blockedReason": "Amount 3 STT exceeds per-tx cap of 2 STT",
+      "agentId": "15",
+      "failed": true,
+      "timestamp": 1778381114530,
+      "date": "Sun May 10 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.001,
+      "reason": "Social tip reward",
+      "txHash": "0x294156eaff100c586140c208a18989674d909511d44e3449d1dbe57f8e34f766",
+      "agentId": "15",
+      "timestamp": 1778381118632,
+      "date": "Sun May 10 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.001,
+      "reason": "quest reward",
+      "txHash": "0x4b98b5feed7f8b3d0e4421b9f41814ce8ebb58243d533b761b58bad1469fbd9d",
+      "agentId": "16",
+      "timestamp": 1778384074067,
+      "date": "Sun May 10 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 5,
+      "reason": "helping me",
+      "blockedReason": "Amount 5 STT exceeds per-tx cap of 2 STT",
+      "agentId": "16",
+      "failed": true,
+      "timestamp": 1778384319921,
+      "date": "Sun May 10 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 5,
+      "reason": "helping me",
+      "blockedReason": "Amount 5 STT exceeds per-tx cap of 2 STT",
+      "agentId": "17",
+      "failed": true,
+      "timestamp": 1778384491453,
+      "date": "Sun May 10 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.001,
+      "reason": "quest reward",
+      "txHash": "0x4102246c31b4bd4bdc3963357b4782407a74fa74c9b0f0d13ed791c1f06d0f48",
+      "agentId": "18",
+      "timestamp": 1778384923514,
+      "date": "Sun May 10 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.001,
+      "reason": "game subscription",
+      "blockedReason": "Recipient 0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA is not whitelisted",
+      "agentId": "22",
+      "failed": true,
+      "timestamp": 1778386051259,
+      "date": "Sun May 10 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.001,
+      "reason": "test API payment",
+      "txHash": "0x5795bd2c511a0d661bb9cee0476902fa32b37158437f7c76621a6f77ebb94ac5",
+      "agentId": "24",
+      "timestamp": 1778401737207,
+      "date": "Sun May 10 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.001,
+      "reason": "pay 0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA 0.001 STT",
+      "txHash": "0xcce827499aa990b24c80e091a61cdd9461c3553f0c430731ecc0e468dad7ba2b",
+      "agentId": "29",
+      "timestamp": 1778532326823,
+      "date": "Mon May 11 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.001,
+      "reason": "user request",
+      "txHash": "0xc0ed6c219e6fd59ac0123262a0762ab9e1e1881c48d04feadbc492c362a27d00",
+      "agentId": "30",
+      "timestamp": 1778533033648,
+      "date": "Mon May 11 2026"
+    }
+  ],
+  "sessions": []
+}

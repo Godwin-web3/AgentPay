@@ -1,0 +1,10 @@
+name = "agentpay-worker"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "AGENTPAY_KV"
+id = "ff2d3eece1d846a48bcd013ba566ef48"
+
+[vars]
+SOMNIA_RPC_URL = "https://dream-rpc.somnia.network"

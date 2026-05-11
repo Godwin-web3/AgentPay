@@ -1,0 +1,210 @@
+require('dotenv').config();
+const readline = require('readline');
+const { parseIntent, resetConversation } = require('./brain');
+const { pay, status, history } = require('./agent');
+const { applyUpdate } = require('./policyManager');
+const scheduler = require('./scheduler');
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+let ownerAddress = null;
+
+function ask(question) {
+  return new Promise(function(resolve) {
+    rl.question(question, function(answer) {
+      resolve(answer.trim().toLowerCase());
+    });
+  });
+}
+
+function listSchedules() {
+  const jobs = scheduler.getActiveJobs();
+  console.log('\n📅 Active Scheduled Payments');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  if (jobs.length === 0) {
+    console.log('   No active schedules');
+    return;
+  }
+  jobs.forEach(function(job) {
+    console.log('   ID:       ' + job.id);
+    console.log('   To:       ' + job.to.slice(0, 10) + '...');
+    console.log('   Amount:   ' + job.amount + ' STT');
+    console.log('   Reason:   ' + job.reason);
+    console.log('   Interval: every ' + job.intervalLabel);
+    if (job.conditions) {
+      if (job.conditions.minBalance) console.log('   Min bal:  ' + job.conditions.minBalance + ' STT');
+      if (job.conditions.executeAt) console.log('   At:       ' + job.conditions.executeAt);
+      if (job.conditions.executeOnDay) console.log('   On day:   ' + job.conditions.executeOnDay);
+      if (job.conditions.executeOnDate) console.log('   On date:  ' + job.conditions.executeOnDate);
+      if (job.conditions.executeOnce) console.log('   Type:     one-time');
+    }
+    console.log('   Runs:     ' + job.totalRuns + ' | Spent: ' + job.totalSpent + ' STT');
+    console.log('   Next:     ' + new Date(job.nextRun).toLocaleTimeString());
+    console.log('   ─────────────────────────────────────');
+  });
+}
+
+function prompt() {
+  rl.question('\n💬 You: ', async function(input) {
+    input = input.trim();
+
+    if (!input) {
+      prompt();
+      return;
+    }
+
+    if (input.toLowerCase() === 'exit') {
+      console.log('\n👋 AgentPay shutting down. Goodbye.');
+      scheduler.stopAllJobs();
+      rl.close();
+      process.exit(0);
+    }
+
+    console.log('\n🧠 AgentPay is thinking...');
+
+    try {
+      const intent = await parseIntent(input);
+      console.log('\n🤖 AgentPay: ' + intent.message);
+
+      if (intent.action === 'pay') {
+        if (!intent.to) { console.log('   ⚠️  Please provide a recipient address.'); prompt(); return; }
+        if (!intent.amount || intent.amount <= 0) { console.log('   ⚠️  Please provide a valid amount.'); prompt(); return; }
+
+        console.log('\n⚠️  Confirm Payment:');
+        console.log('   To:     ' + intent.to);
+        console.log('   Amount: ' + intent.amount + ' STT');
+        console.log('   Reason: ' + (intent.reason || 'not specified'));
+
+        const confirm = await ask('\n   Proceed? (yes/no): ');
+        if (confirm !== 'yes' && confirm !== 'y') { console.log('\n🚫 Payment cancelled.'); resetConversation(); prompt(); return; }
+
+        const result = await pay(intent.to, intent.amount, intent.reason || input);
+        if (result.success) {
+          console.log('\n✅ Payment complete!');
+          console.log('   🔗 https://explorer.somnia.network/tx/' + result.txHash);
+        } else {
+          console.log('\n❌ Payment blocked: ' + result.reason);
+        }
+        resetConversation();
+
+      } else if (intent.action === 'schedule') {
+        if (!intent.to) { console.log('   ⚠️  Please provide a recipient address.'); prompt(); return; }
+        if (!intent.amount || intent.amount <= 0) { console.log('   ⚠️  Please provide a valid amount.'); prompt(); return; }
+
+        const intervalMs = scheduler.parseInterval(intent.interval || '1 day');
+        const label = scheduler.intervalLabel(intervalMs);
+
+        console.log('\n⚠️  Confirm Scheduled Payment:');
+        console.log('   To:       ' + intent.to);
+        console.log('   Amount:   ' + intent.amount + ' STT');
+        console.log('   Reason:   ' + (intent.reason || 'not specified'));
+        console.log('   Interval: every ' + label);
+
+        if (intent.conditions) {
+          console.log('   Conditions:');
+          if (intent.conditions.minBalance) console.log('     • Only if balance above ' + intent.conditions.minBalance + ' STT');
+          if (intent.conditions.executeAt) console.log('     • Execute at ' + intent.conditions.executeAt);
+          if (intent.conditions.executeOnDay) console.log('     • Execute on ' + intent.conditions.executeOnDay);
+          if (intent.conditions.executeOnDate) console.log('     • Execute on ' + intent.conditions.executeOnDate);
+          if (intent.conditions.maxDailySpend) console.log('     • Only if spent less than ' + intent.conditions.maxDailySpend + ' STT today');
+          if (intent.conditions.executeOnce) console.log('     • One-time payment');
+        }
+
+        const confirm = await ask('\n   Start this schedule? (yes/no): ');
+        if (confirm !== 'yes' && confirm !== 'y') { console.log('\n🚫 Schedule cancelled.'); resetConversation(); prompt(); return; }
+
+        const job = scheduler.addJob({
+          to: intent.to,
+          amount: intent.amount,
+          reason: intent.reason || 'scheduled payment',
+          intervalMs,
+          intervalLabel: label,
+          conditions: intent.conditions || null
+        });
+
+        scheduler.startJob(job, pay, ownerAddress);
+        console.log('\n✅ Schedule created! Job ID: ' + job.id);
+        resetConversation();
+
+      } else if (intent.action === 'cancel_schedule') {
+        if (!intent.jobId) { console.log('   ⚠️  Please provide a job ID. Type "show schedules" to see them.'); prompt(); return; }
+        const cancelled = scheduler.cancelJob(intent.jobId);
+        if (cancelled) {
+          scheduler.stopJob(intent.jobId);
+          console.log('\n✅ Job ' + intent.jobId + ' cancelled.');
+        } else {
+          console.log('\n❌ Job ' + intent.jobId + ' not found.');
+        }
+        resetConversation();
+
+      } else if (intent.action === 'list_schedules') {
+        listSchedules();
+
+      } else if (intent.action === 'update_policy') {
+        if (!intent.policyUpdate || !intent.policyUpdate.field) { console.log('   ⚠️  Could not understand the policy change.'); prompt(); return; }
+
+        console.log('\n⚠️  Confirm Policy Update:');
+        console.log('   Change: ' + JSON.stringify(intent.policyUpdate));
+
+        const confirm = await ask('\n   Apply this change? (yes/no): ');
+        if (confirm !== 'yes' && confirm !== 'y') {
+          console.log('\n🚫 Policy update cancelled.');
+          resetConversation();
+          prompt();
+          return;
+        }
+
+        const msg = applyUpdate(intent);
+        console.log('\n✅ ' + msg);
+        resetConversation();
+
+      } else if (intent.action === 'status') {
+        status();
+        resetConversation();
+
+      } else if (intent.action === 'history') {
+        history();
+        resetConversation();
+
+      } else if (intent.action === 'help') {
+        console.log('\n📚 Available Commands:');
+        console.log('   • "pay 0.1 STT to 0x..."');
+        console.log('   • "schedule 0.5 STT to 0x... every 1 day"');
+        console.log('   • "show status / show limits"');
+        console.log('   • "show history"');
+        console.log('   • "show schedules"');
+        console.log('   • "cancel schedule [ID]"');
+        console.log('   • "set daily limit to 5"');
+        resetConversation();
+
+      } else {
+        // Fallback for unknown or conversational intents
+      }
+
+    } catch (err) {
+      console.log('\n⚠️  Error: ' + err.message);
+    }
+    prompt();
+  });
+}
+
+async function startLoop(address) {
+  ownerAddress = address;
+  
+  // Load existing schedules
+  const jobs = scheduler.getActiveJobs();
+  if (jobs.length > 0) {
+    console.log('\n🔄 Resuming ' + jobs.length + ' scheduled jobs...');
+    jobs.forEach(function(job) {
+      scheduler.startJob(job, pay, ownerAddress);
+    });
+  }
+
+  prompt();
+}
+
+module.exports = { startLoop };
+
