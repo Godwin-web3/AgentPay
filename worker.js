@@ -465,8 +465,6 @@ async function handleHealth(env) {
 }
 
 async function handleChat(request, env) {
-  const auth = await authenticate(request, env);
-  if (!auth) return json({ error: 'Invalid or missing x-api-key' }, 401);
 
   const body = await request.json();
   const { message, conversationHistory = [] } = body;
