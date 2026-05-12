@@ -50,7 +50,7 @@ export default function Terminal({ apiKey: initialApiKey }: { apiKey: string }) 
     setLoading(true)
 
     try {
-      const data = await api.chat(apiKey, input, historyRef.current.slice(-10))
+      const data = await api.chat(input, historyRef.current.slice(-10))
       const intent = data.intent || {}
       const agentMsg: Message = {
         role: 'agent',
