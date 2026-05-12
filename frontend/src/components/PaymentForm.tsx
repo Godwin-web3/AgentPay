@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { api } from '../services/api';
-import { Send, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { Send, Loader2, CheckCircle2, XCircle, Zap } from 'lucide-react';
 
 const PaymentForm: React.FC = () => {
   const [to, setTo] = useState('');
