@@ -1,85 +1,91 @@
-const API_URL = import.meta.env.VITE_API_URL;
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+async function req(path: string, options: RequestInit = {}) {
+  const res = await fetch(`${BASE}${path}`, options);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json();
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface Policy {
-  perTxCap: number;
-  dailyCap: number;
+  perTxCap:        number;
+  dailyCap:        number;
   dailySpendSoFar: number;
-  dailyRemaining: number;
-  whitelist: string[];
-  activeHours: { start: number; end: number };
-  circuitBreaker: { active: boolean };
+  dailyRemaining:  number;
+  whitelist:       string[];
+  activeHours:     { start: number; end: number };
+  circuitBreaker:  { active: boolean };
 }
 
 export interface Agent {
-  agentId: string;
-  name: string;
+  agentId:     string;
+  name:        string;
   description: string;
   reputation: {
-    total: number;
+    total:    number;
     approved: number;
     rejected: number;
-    score: number;
+    score:    number;
   };
 }
 
 export interface HistoryLog {
-  id: number;
   requestId: string;
-  agentId: string;
-  to: string;
-  amount: number;
-  reason: string;
-  status: string;
-  txHash?: string;
-  error?: string;
+  to:        string;
+  amount:    number;
+  reason:    string;
+  status:    string;
+  txHash?:   string;
+  error?:    string;
   timestamp: string;
 }
 
+export interface ChatResponse {
+  message: string;
+  action:  string;
+  intent:  object;
+}
+
+export interface PayResponse {
+  requestId: string;
+  status:    string;
+  txHash?:   string;
+  explorer?: string;
+  reason?:   string;
+  timestamp: string;
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+
 export const api = {
-  fetchPolicy: async (): Promise<Policy> => {
-    const res = await fetch(`${API_URL}/policy`);
-    return res.json();
-  },
 
-  fetchAgents: async (): Promise<Agent[]> => {
-    const res = await fetch(`${API_URL}/agents`);
-    const data = await res.json();
-    return data.agents;
-  },
+  health: () => req('/health'),
 
-  fetchHistory: async (): Promise<HistoryLog[]> => {
-    // Note: History requires auth (x-api-key)
-    // For this dashboard, we might want to expose a public history or handle keys
-    const res = await fetch(`${API_URL}/history`, {
-        headers: { 'x-api-key': 'ak_test_agentpay_2024' } // Default test key
-    });
-    const data = await res.json();
-    return data.logs;
-  },
+  policy: (): Promise<Policy> => req('/policy'),
 
-  submitPayment: async (payment: { to: string; amount: number; reason: string; requestId: string; apiKey: string }) => {
-    const res = await fetch(`${API_URL}/pay`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-api-key': payment.apiKey
-      },
-      body: JSON.stringify({
-        to: payment.to,
-        amount: payment.amount,
-        reason: payment.reason,
-        requestId: payment.requestId
-      })
-    });
-    return res.json();
-  },
+  updatePolicy: (data: object) => req('/policy', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(data),
+  }),
 
-  registerAgent: async (name: string, description: string) => {
-    const res = await fetch(`${API_URL}/agents/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description })
-    });
-    return res.json();
-  }
+  agents: (): Promise<{ agents: Agent[]; total: number }> => req('/agents'),
+
+  history: (): Promise<{ logs: HistoryLog[]; total: number }> => req('/history'),
+
+  chat: (message: string, conversationHistory: object[] = []): Promise<ChatResponse> => req('/chat', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ message, conversationHistory }),
+  }),
+
+  pay: (to: string, amount: number, reason: string, requestId: string): Promise<PayResponse> => req('/pay', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ to, amount, reason, requestId }),
+  }),
+
+  status: (requestId: string) => req(`/status/${requestId}`),
+
 };
