@@ -164,29 +164,6 @@ function handleAgents(req, res) {
   return send(res, 200, { agents, total: agents.length });
 }
 
-// POST /agents/register
-async function handleRegister(req, res) {
-  const body = await parseBody(req);
-  const { name, description } = body;
-
-  if (!name) return send(res, 400, { error: 'Missing required field: name' });
-
-  const agentId = 'agent_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-  const apiKey  = 'ak_' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-
-  agentRegistry.set(agentId, {
-    apiKey,
-    name,
-    description: description || '',
-    reputation:  { total: 0, approved: 0, rejected: 0, score: 100 }
-  });
-
-  return send(res, 201, {
-    agentId,
-    apiKey,
-    message: 'Agent registered. Save your apiKey — it will not be shown again.'
-  });
-}
 
 // GET /history
 function handleHistory(req, res) {
@@ -222,7 +199,6 @@ const server = http.createServer(async (req, res) => {
   if (method === 'GET'  && url.startsWith('/status/'))   return handleStatus(req, res, url.replace('/status/', ''));
   if (method === 'GET'  && url === '/policy')            return handlePolicy(req, res);
   if (method === 'GET'  && url === '/agents')            return handleAgents(req, res);
-  if (method === 'POST' && url === '/agents/register')   return await handleRegister(req, res);
   if (method === 'GET'  && url === '/history')           return handleHistory(req, res);
   if (method === 'GET'  && url === '/health')            return handleHealth(req, res);
 
@@ -237,7 +213,6 @@ function startServer() {
       console.log('   GET  /status/:id        — check request');
       console.log('   GET  /policy            — spending rules');
       console.log('   GET  /agents            — agent directory');
-      console.log('   POST /agents/register   — register agent');
       console.log('   GET  /history           — recent activity');
       console.log('   GET  /health            — health check');
       resolve();
