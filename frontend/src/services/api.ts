@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const BASE = import.meta.env.VITE_API_URL || 'https://agentpay-worker.mbagodwin419.workers.dev';
 
 async function req(path: string, options: RequestInit = {}) {
   const res = await fetch(`${BASE}${path}`, options);
@@ -31,14 +31,14 @@ export interface Agent {
 }
 
 export interface HistoryLog {
-  requestId: string;
-  to:        string;
-  amount:    number;
-  reason:    string;
-  status:    string;
-  txHash?:   string;
-  error?:    string;
-  timestamp: string;
+  requestId:  string;
+  to:         string;
+  amount:     number;
+  reason:     string;
+  status:     string;
+  txHash?:    string;
+  error?:     string;
+  timestamp:  string;
 }
 
 export interface ChatResponse {
@@ -48,12 +48,12 @@ export interface ChatResponse {
 }
 
 export interface PayResponse {
-  requestId: string;
-  status:    string;
-  txHash?:   string;
-  explorer?: string;
-  reason?:   string;
-  timestamp: string;
+  requestId:  string;
+  status:     string;
+  txHash?:    string;
+  explorer?:  string;
+  reason?:    string;
+  timestamp:  string;
 }
 
 // ── API ───────────────────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ export const api = {
 
   health: () => req('/health'),
 
-  policy: (): Promise<Policy> => req('/policy'),
+  fetchPolicy: (): Promise<Policy> => req('/policy'),
 
   updatePolicy: (data: object) => req('/policy', {
     method:  'POST',
@@ -70,9 +70,11 @@ export const api = {
     body:    JSON.stringify(data),
   }),
 
-  agents: (): Promise<{ agents: Agent[]; total: number }> => req('/agents'),
+  fetchAgents: (): Promise<Agent[]> =>
+    req('/agents').then(r => r.agents),
 
-  history: (): Promise<{ logs: HistoryLog[]; total: number }> => req('/history'),
+  fetchHistory: (): Promise<HistoryLog[]> =>
+    req('/history').then(r => r.logs),
 
   chat: (message: string, conversationHistory: object[] = []): Promise<ChatResponse> => req('/chat', {
     method:  'POST',
@@ -80,10 +82,15 @@ export const api = {
     body:    JSON.stringify({ message, conversationHistory }),
   }),
 
-  pay: (to: string, amount: number, reason: string, requestId: string): Promise<PayResponse> => req('/pay', {
+  submitPayment: (payment: {
+    to:        string;
+    amount:    number;
+    reason:    string;
+    requestId: string;
+  }): Promise<PayResponse> => req('/pay', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ to, amount, reason, requestId }),
+    body:    JSON.stringify(payment),
   }),
 
   status: (requestId: string) => req(`/status/${requestId}`),
