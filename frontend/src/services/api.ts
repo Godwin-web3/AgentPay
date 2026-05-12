@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL || 'https://agentpay-worker.mbagodwin419.workers.dev'
+const BASE = import.meta.env.VITE_API_URL || '/api'
 
 async function req(path: string, options: RequestInit = {}) {
   const res = await fetch(`${BASE}${path}`, options)
