@@ -1,29 +1,22 @@
-// src/server.js
 const http = require('http');
 const { pay } = require('./agent');
-const { readPolicy } = require('./policyManager');
+const { readPolicy, applyUpdate } = require('./policyManager');
 const { getTodaySpend, getHistory } = require('../utils/store');
+const { parseIntent } = require('./brain');
 
 const PORT = process.env.PORT || 3000;
 
-// ── In-memory stores ──────────────────────────────────────────────────────────
-const agentRegistry = new Map();
-const requestStore  = new Map();
-
-// ── Default test agent ────────────────────────────────────────────────────────
-agentRegistry.set('agent_test_001', {
-  apiKey:      'ak_test_agentpay_2024',
-  name:        'TestAgent',
-  description: 'Default test agent',
-  reputation:  { total: 0, approved: 0, rejected: 0, score: 100 }
-});
+// ── In-memory store ───────────────────────────────────────────────────────────
+const requestStore = new Map();
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function send(res, status, data) {
   const body = JSON.stringify(data, null, 2);
   res.writeHead(status, {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*'
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'x-api-key, Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
   });
   res.end(body);
 }
@@ -39,29 +32,88 @@ function parseBody(req) {
   });
 }
 
-function authenticate(headers) {
-  const apiKey = headers['x-api-key'];
-  if (!apiKey) return null;
-  for (const [agentId, agent] of agentRegistry.entries()) {
-    if (agent.apiKey === apiKey) return { agentId, agent };
-  }
-  return null;
-}
-
-function updateScore(agent) {
-  if (agent.reputation.total === 0) return;
-  agent.reputation.score = Math.round(
-    (agent.reputation.approved / agent.reputation.total) * 100
-  );
-}
-
 // ── Route handlers ────────────────────────────────────────────────────────────
+
+// GET /health
+function handleHealth(req, res) {
+  return send(res, 200, {
+    status:  'ok',
+    agent:   'AgentPay',
+    version: '2.0',
+    time:    new Date().toISOString()
+  });
+}
+
+// GET /policy
+function handleGetPolicy(req, res) {
+  const policy     = readPolicy();
+  const todaySpend = getTodaySpend();
+  return send(res, 200, {
+    perTxCap:        policy.perTxCapSTT,
+    dailyCap:        policy.dailyCapSTT,
+    dailySpendSoFar: parseFloat(todaySpend.toFixed(4)),
+    dailyRemaining:  parseFloat((policy.dailyCapSTT - todaySpend).toFixed(4)),
+    whitelist:       policy.allowedRecipients,
+    activeHours:     policy.activeHours,
+    circuitBreaker:  policy.circuitBreaker
+  });
+}
+
+// POST /policy
+async function handleUpdatePolicy(req, res) {
+  const body = await parseBody(req);
+  if (!body || Object.keys(body).length === 0) {
+    return send(res, 400, { error: 'Missing policy update data' });
+  }
+  try {
+    const result = applyUpdate({ policyUpdate: body });
+    return send(res, 200, { success: true, message: result });
+  } catch (err) {
+    return send(res, 500, { error: 'Policy update failed: ' + err.message });
+  }
+}
+
+// GET /agents
+function handleAgents(req, res) {
+  return send(res, 200, {
+    agents: [{
+      agentId:     'agentpay_001',
+      name:        'AgentPay',
+      description: 'Autonomous payment agent on Somnia blockchain',
+      wallet:      process.env.WALLET_ADDRESS || '',
+      reputation:  { total: 0, approved: 0, rejected: 0, score: 100 }
+    }],
+    total: 1
+  });
+}
+
+// GET /history
+function handleHistory(req, res) {
+  const logs = getHistory(20);
+  return send(res, 200, { logs, total: logs.length });
+}
+
+// POST /chat
+async function handleChat(req, res) {
+  const body = await parseBody(req);
+  const { message, conversationHistory } = body;
+
+  if (!message) return send(res, 400, { error: 'Missing message' });
+
+  try {
+    const intent = await parseIntent(message);
+    return send(res, 200, {
+      message: intent.message,
+      action:  intent.action,
+      intent
+    });
+  } catch (err) {
+    return send(res, 500, { error: 'Brain error: ' + err.message });
+  }
+}
 
 // POST /pay
 async function handlePay(req, res) {
-  const auth = authenticate(req.headers);
-  if (!auth) return send(res, 401, { error: 'Invalid or missing x-api-key' });
-
   const body = await parseBody(req);
   const { to, amount, reason, requestId } = body;
 
@@ -75,10 +127,8 @@ async function handlePay(req, res) {
     return send(res, 200, { requestId, status: existing.status, message: 'Already processed' });
   }
 
-  // Store as pending
   const record = {
     status:    'pending',
-    agentId:   auth.agentId,
     to,
     amount:    parseFloat(amount),
     reason:    reason || 'No reason provided',
@@ -87,22 +137,16 @@ async function handlePay(req, res) {
     timestamp: new Date().toISOString()
   };
   requestStore.set(requestId, record);
-  auth.agent.reputation.total++;
 
-  // Execute via existing pay() — policy check + transfer + logging all handled
   const result = await pay(to, parseFloat(amount), reason || 'API payment');
 
   if (result.success) {
     record.status = 'executed';
     record.txHash = result.txHash;
-    auth.agent.reputation.approved++;
-    updateScore(auth.agent);
-
     return send(res, 200, {
       requestId,
       status:    'executed',
       txHash:    result.txHash,
-      agentId:   auth.agentId,
       to,
       amount:    parseFloat(amount),
       explorer:  'https://explorer.somnia.network/tx/' + result.txHash,
@@ -111,14 +155,10 @@ async function handlePay(req, res) {
   } else {
     record.status = 'rejected';
     record.error  = result.reason;
-    auth.agent.reputation.rejected++;
-    updateScore(auth.agent);
-
     return send(res, 200, {
       requestId,
       status:    'rejected',
       reason:    result.reason,
-      agentId:   auth.agentId,
       timestamp: record.timestamp
     });
   }
@@ -127,80 +167,26 @@ async function handlePay(req, res) {
 // GET /status/:requestId
 function handleStatus(req, res, requestId) {
   if (!requestId) return send(res, 400, { error: 'Missing requestId' });
-
   const record = requestStore.get(requestId);
   if (!record) return send(res, 404, { error: 'Request not found' });
-
   return send(res, 200, { requestId, ...record });
-}
-
-// GET /policy
-function handlePolicy(req, res) {
-  const policy     = readPolicy();
-  const todaySpend = getTodaySpend();
-
-  return send(res, 200, {
-    perTxCap:        policy.perTxCapSTT,
-    dailyCap:        policy.dailyCapSTT,
-    dailySpendSoFar: parseFloat(todaySpend.toFixed(4)),
-    dailyRemaining:  parseFloat((policy.dailyCapSTT - todaySpend).toFixed(4)),
-    whitelist:       policy.allowedRecipients,
-    activeHours:     policy.activeHours,
-    circuitBreaker:  policy.circuitBreaker
-  });
-}
-
-// GET /agents
-function handleAgents(req, res) {
-  const agents = [];
-  for (const [agentId, data] of agentRegistry.entries()) {
-    agents.push({
-      agentId,
-      name:        data.name,
-      description: data.description,
-      reputation:  data.reputation
-    });
-  }
-  return send(res, 200, { agents, total: agents.length });
-}
-
-
-// GET /history
-function handleHistory(req, res) {
-  const auth = authenticate(req.headers);
-  if (!auth) return send(res, 401, { error: 'Invalid or missing x-api-key' });
-
-  const logs = getHistory(20);
-  return send(res, 200, { logs, total: logs.length });
-}
-
-// GET /health
-function handleHealth(req, res) {
-  return send(res, 200, {
-    status:  'ok',
-    agent:   'AgentPay',
-    version: '2.0',
-    time:    new Date().toISOString()
-  });
 }
 
 // ── Main router ───────────────────────────────────────────────────────────────
 const server = http.createServer(async (req, res) => {
-  const url    = req.url;
+  const url    = req.url.split('?')[0];
   const method = req.method;
 
-  // CORS preflight
-  if (method === 'OPTIONS') {
-    res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'x-api-key, Content-Type' });
-    return res.end();
-  }
+  if (method === 'OPTIONS') return send(res, 204, {});
 
-  if (method === 'POST' && url === '/pay')               return await handlePay(req, res);
-  if (method === 'GET'  && url.startsWith('/status/'))   return handleStatus(req, res, url.replace('/status/', ''));
-  if (method === 'GET'  && url === '/policy')            return handlePolicy(req, res);
-  if (method === 'GET'  && url === '/agents')            return handleAgents(req, res);
-  if (method === 'GET'  && url === '/history')           return handleHistory(req, res);
-  if (method === 'GET'  && url === '/health')            return handleHealth(req, res);
+  if (method === 'GET'  && url === '/health')          return handleHealth(req, res);
+  if (method === 'GET'  && url === '/policy')          return handleGetPolicy(req, res);
+  if (method === 'POST' && url === '/policy')          return await handleUpdatePolicy(req, res);
+  if (method === 'GET'  && url === '/agents')          return handleAgents(req, res);
+  if (method === 'GET'  && url === '/history')         return handleHistory(req, res);
+  if (method === 'POST' && url === '/chat')            return await handleChat(req, res);
+  if (method === 'POST' && url === '/pay')             return await handlePay(req, res);
+  if (method === 'GET'  && url.startsWith('/status/')) return handleStatus(req, res, url.replace('/status/', ''));
 
   return send(res, 404, { error: 'Not found' });
 });
@@ -209,12 +195,14 @@ function startServer() {
   return new Promise((resolve) => {
     server.listen(PORT, () => {
       console.log('🌐 AgentPay API running on http://localhost:' + PORT);
-      console.log('   POST /pay               — submit payment');
-      console.log('   GET  /status/:id        — check request');
+      console.log('   GET  /health            — health check');
       console.log('   GET  /policy            — spending rules');
+      console.log('   POST /policy            — update policy');
       console.log('   GET  /agents            — agent directory');
       console.log('   GET  /history           — recent activity');
-      console.log('   GET  /health            — health check');
+      console.log('   POST /chat              — chat with AI brain');
+      console.log('   POST /pay               — submit payment');
+      console.log('   GET  /status/:id        — check request');
       resolve();
     });
   });
