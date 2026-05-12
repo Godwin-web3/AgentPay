@@ -60,7 +60,7 @@ export default function Terminal({ apiKey: initialApiKey }: { apiKey: string }) 
       }
       historyRef.current = [...historyRef.current, { role: 'assistant', content: agentMsg.content }]
       setMessages(prev => [...prev, agentMsg])
-    } catch {
+    } catch (err) { console.error("CHAT ERROR:", String(err));
       setMessages(prev => [...prev, {
         role: 'agent',
         content: 'Error. Please check your API key and try again.',
