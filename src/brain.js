@@ -44,7 +44,11 @@ Guidelines:
 
 let conversationHistory = [];
 
-async function parseIntent(userInput) {
+async function parseIntent(userInput, vaultBalance) {
+  const balanceLine = vaultBalance !== undefined
+    ? 'The user current vault balance is: ' + vaultBalance + ' STT.'
+    : 'Vault balance is unknown.';
+
   try {
     conversationHistory.push({
       role: 'user',
@@ -58,7 +62,8 @@ async function parseIntent(userInput) {
     const response = await groq.chat.completions.create({
       model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: SYSTEM_PROMPT + '
+' + balanceLine },
         ...conversationHistory
       ],
       temperature: 0.1,
