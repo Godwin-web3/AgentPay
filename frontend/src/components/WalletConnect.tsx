@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 
 const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
 const SOMNIA_CHAIN_ID = '0xc488' // 50312 in hex
@@ -146,7 +147,7 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
         </div>
       )}
 
-      {showWalletList && (
+      {showWalletList && createPortal(
         <div className="modal-overlay">
           <div className="modal-content">
             <h3 style={{ marginTop: 0, fontFamily: 'var(--font-head)' }}>Select Wallet</h3>
@@ -180,9 +181,9 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
-      {showModal && (
+      {showModal && createPortal(
         <div className="modal-overlay">
           <div className="modal-content">
             <h3 style={{ marginTop: 0, color: 'var(--blue)', fontFamily: 'var(--font-head)' }}>Deposit STT</h3>
@@ -211,7 +212,7 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   )
 }
