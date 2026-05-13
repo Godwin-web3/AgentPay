@@ -25,7 +25,7 @@ export default function Policy({ userAddress }: { userAddress: string }) {
   async function fetchPolicy() {
     setLoading(true)
     try {
-      const data = await getPolicy()
+      const data = await getPolicy(userAddress)
       setPolicy(data)
       setDailyCap(data.dailyCap.toString())
       setPerTxCap(data.perTxCap.toString())
@@ -52,7 +52,7 @@ export default function Policy({ userAddress }: { userAddress: string }) {
           end: parseInt(hourEnd)
         },
         whitelist: whitelist
-      })
+      }, userAddress)
       setSuccess('Policy updated successfully')
       setIsEditing(false)
       fetchPolicy()
@@ -72,6 +72,50 @@ export default function Policy({ userAddress }: { userAddress: string }) {
 
   function removeAddress(addr: string) {
     setWhitelist(whitelist.filter(a => a !== addr))
+  }
+
+  const [syncing, setSyncing] = useState(false)
+
+  async function syncToChain() {
+    if (!policy || !userAddress) return
+    setSyncing(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      // setPolicy(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, address[] whitelist)
+      // selector: 0x30edc0f5
+      const selector = '30edc0f5'
+      const perTxCapHex = BigInt(Math.floor(policy.perTxCap * 1e18)).toString(16).padStart(64, '0')
+      const dailyCapHex = BigInt(Math.floor(policy.dailyCap * 1e18)).toString(16).padStart(64, '0')
+      const maxTxPerHourHex = BigInt(policy.circuitBreaker.maxTxPerHour).toString(16).padStart(64, '0')
+      
+      // Encoding array is complex without a library, so we'll use a simplified approach 
+      // or just direct the user to the contract if it's too risky.
+      // Actually, let's try to encode the basics.
+      
+      const offset = (32 * 4).toString(16).padStart(64, '0') // 4 static params before array
+      const length = policy.whitelist.length.toString(16).padStart(64, '0')
+      let arrayData = ''
+      for (const addr of policy.whitelist) {
+        arrayData += addr.replace('0x', '').toLowerCase().padStart(64, '0')
+      }
+
+      const data = '0x' + selector + perTxCapHex + dailyCapHex + maxTxPerHourHex + offset + length + arrayData
+
+      const txHash = await window.ethereum.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: userAddress,
+          to: '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D',
+          data
+        }]
+      })
+      setSuccess('Policy sync transaction sent: ' + txHash)
+    } catch (err: any) {
+      setError('Sync failed: ' + err.message)
+    } finally {
+      setSyncing(false)
+    }
   }
 
   if (loading) return (
@@ -105,9 +149,14 @@ export default function Policy({ userAddress }: { userAddress: string }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ margin: 0 }}>Policy Settings</h2>
         {!isEditing ? (
-          <button className="send-btn" onClick={() => setIsEditing(true)} style={{ width: 'auto', padding: '0 20px' }}>
-            Edit Policy
-          </button>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="send-btn" onClick={syncToChain} disabled={syncing} style={{ width: 'auto', padding: '0 20px', background: 'var(--cyan)', color: 'black' }}>
+              {syncing ? 'Syncing...' : 'Sync to Blockchain'}
+            </button>
+            <button className="send-btn" onClick={() => setIsEditing(true)} style={{ width: 'auto', padding: '0 20px' }}>
+              Edit Policy
+            </button>
+          </div>
         ) : (
           <div style={{ display: 'flex', gap: 10 }}>
             <button className="send-btn" onClick={() => setIsEditing(false)} style={{ width: 'auto', padding: '0 20px', background: 'var(--muted)' }}>

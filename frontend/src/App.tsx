@@ -98,7 +98,7 @@ export default function App() {
 
       <div className="main">
         <AgentHeader onAddressChange={setUserAddress} />
-        {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} />}
+        {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} />}
         {view === 'policy'   && <Policy userAddress={userAddress} />}
         {view === 'history'  && <History userAddress={userAddress} />}
       </div>

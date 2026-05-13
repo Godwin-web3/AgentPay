@@ -5,6 +5,7 @@ import type { ChatMessage } from '../types'
 interface Props {
   messages: ChatMessage[]
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
+  userAddress: string
 }
 
 function formatTime(ts: number) {
@@ -32,7 +33,7 @@ function TxBadge({ result }: { result?: any }) {
   return null
 }
 
-export default function Terminal({ messages, setMessages }: Props) {
+export default function Terminal({ messages, setMessages, userAddress }: Props) {
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [txResults, setTxResults] = React.useState<Record<number, any>>({})
@@ -54,7 +55,7 @@ export default function Terminal({ messages, setMessages }: Props) {
     setLoading(true)
 
     try {
-      const res = await sendChat(text, history)
+      const res = await sendChat(text, history, userAddress)
       const intent = res.intent
 
       const assistantMsg: ChatMessage = {
@@ -68,7 +69,7 @@ export default function Terminal({ messages, setMessages }: Props) {
         if (intent.action === 'pay' && intent.to && intent.amount) {
           const msgIndex = next.length - 1
           const requestId = generateRequestId()
-          executePay(intent.to, intent.amount, intent.reason || 'Chat payment', requestId)
+          executePay(intent.to, intent.amount, intent.reason || 'Chat payment', requestId, userAddress)
             .then(payRes => setTxResults(r => ({ ...r, [msgIndex]: payRes })))
             .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
         }
@@ -78,7 +79,7 @@ export default function Terminal({ messages, setMessages }: Props) {
           const msgIndex = next.length - 1
           
           const applyPolicyUpdate = async () => {
-            const current = await getPolicy()
+            const current = await getPolicy(userAddress)
             const update: any = {}
             
             if (up.field === 'dailyCap') update.dailyCap = up.value
@@ -92,7 +93,7 @@ export default function Terminal({ messages, setMessages }: Props) {
               update.whitelist = current.whitelist.filter(a => a.toLowerCase() !== up.address?.toLowerCase())
             }
 
-            return await updatePolicy(update)
+            return await updatePolicy(update, userAddress)
           }
 
           applyPolicyUpdate()

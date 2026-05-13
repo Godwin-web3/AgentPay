@@ -220,7 +220,7 @@ async function getWalletAddress(env) {
   return '0x' + bytesToHex(hashBytes.slice(-20));
 }
 
-async function signAndSendTransaction(env, to, amountSTT) {
+async function signAndSendTransaction(env, user, to, amountSTT) {
   const privateKeyHex  = env.PRIVATE_KEY.replace('0x', '');
   const privateKeyBytes = hexToBytes(privateKeyHex);
   const cryptoKey = await crypto.subtle.importKey(
@@ -232,6 +232,7 @@ async function signAndSendTransaction(env, to, amountSTT) {
   const rpcUrl  = env.SOMNIA_RPC_URL || 'https://dream-rpc.somnia.network';
   const chainId = 50312n;
   const address = await getWalletAddress(env);
+  const vaultAddress = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D';
 
   const nonceRes = await fetch(rpcUrl, {
     method: 'POST',
@@ -249,10 +250,19 @@ async function signAndSendTransaction(env, to, amountSTT) {
   const gasPriceData = await gasPriceRes.json();
   const gasPrice     = BigInt(gasPriceData.result);
 
-  const value   = BigInt(Math.round(parseFloat(amountSTT) * 1e18));
-  const toBytes = hexToBytes(to.replace('0x', ''));
+  // Encode execute(user, to, amount)
+  // Selector: 0xeafaddfd
+  const selector = 'eafaddfd';
+  const userPad = user.replace('0x', '').toLowerCase().padStart(64, '0');
+  const toPad = to.replace('0x', '').toLowerCase().padStart(64, '0');
+  const amountWei = BigInt(Math.round(parseFloat(amountSTT) * 1e18));
+  const amountPad = amountWei.toString(16).padStart(64, '0');
+  const calldataHex = selector + userPad + toPad + amountPad;
+  const calldataBytes = hexToBytes(calldataHex);
 
-  const txData  = [nonce, gasPrice, 21000n, toBytes, value, new Uint8Array(0), chainId, 0n, 0n];
+  const vaultBytes = hexToBytes(vaultAddress.replace('0x', ''));
+
+  const txData  = [nonce, gasPrice, 300000n, vaultBytes, 0n, calldataBytes, chainId, 0n, 0n];
   const encoded = encodeRLP(txData);
 
   const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
@@ -263,7 +273,7 @@ async function signAndSendTransaction(env, to, amountSTT) {
   const s = sigBytes.slice(32, 64);
   const v = chainId * 2n + 35n;
 
-  const signedTx = encodeRLP([nonce, gasPrice, 21000n, toBytes, value, new Uint8Array(0), v, r, s]);
+  const signedTx = encodeRLP([nonce, gasPrice, 300000n, vaultBytes, 0n, calldataBytes, v, r, s]);
   const rawTx    = '0x' + bytesToHex(signedTx);
 
   const sendRes  = await fetch(rpcUrl, {
@@ -286,8 +296,7 @@ async function handleHealth(env) {
 }
 
 // GET /policy
-async function handleGetPolicy(request, env) {
-  const address = await getWalletAddress(env);
+async function handleGetPolicy(request, env, address) {
   const policy   = (await readKV(env, 'policy:'   + address)) || DEFAULT_POLICY;
   const spendlog = (await readKV(env, 'spendlog:' + address)) || [];
   const todaySpend = getTodaySpend(spendlog);
@@ -303,8 +312,7 @@ async function handleGetPolicy(request, env) {
 }
 
 // POST /policy
-async function handlePostPolicy(request, env) {
-  const address = await getWalletAddress(env);
+async function handlePostPolicy(request, env, address) {
   const body    = await request.json();
   const policy  = (await readKV(env, 'policy:' + address)) || { ...DEFAULT_POLICY };
 
@@ -335,17 +343,15 @@ async function handleAgents(env) {
 }
 
 // GET /history
-async function handleHistory(env) {
-  const address  = await getWalletAddress(env);
+async function handleHistory(env, address) {
   const spendlog = (await readKV(env, 'spendlog:' + address)) || [];
   const logs     = spendlog.slice(-20).reverse();
   return json({ logs, total: logs.length });
 }
 
 // GET /status/:requestId
-async function handleStatus(request, env, requestId) {
+async function handleStatus(request, env, requestId, address) {
   if (!requestId) return json({ error: 'Missing requestId' }, 400);
-  const address  = await getWalletAddress(env);
   const spendlog = (await readKV(env, 'spendlog:' + address)) || [];
   const record   = spendlog.find(s => s.requestId === requestId);
   if (!record) return json({ error: 'Request not found' }, 404);
@@ -387,7 +393,7 @@ async function handleChat(request, env) {
 }
 
 // POST /pay
-async function handlePay(request, env) {
+async function handlePay(request, env, address) {
   const body = await request.json();
   const { to, amount, reason, requestId } = body;
 
@@ -395,7 +401,6 @@ async function handlePay(request, env) {
     return json({ error: 'Missing required fields: to, amount, requestId' }, 400);
   }
 
-  const address  = await getWalletAddress(env);
   const spendlog = (await readKV(env, 'spendlog:' + address)) || [];
   const duplicate = spendlog.find(s => s.requestId === requestId);
   if (duplicate) return json({ requestId, status: duplicate.status, message: 'Already processed' });
@@ -415,7 +420,7 @@ async function handlePay(request, env) {
   }
 
   try {
-    const txHash = await signAndSendTransaction(env, to, amount);
+    const txHash = await signAndSendTransaction(env, address, to, amount);
     await appendToSpendlog(env, address, {
       requestId, to, amount: parseFloat(amount),
       reason:    reason || 'API payment',
@@ -449,25 +454,27 @@ export default {
     const path   = url.pathname;
     const method = request.method;
 
+    const userAddress = request.headers.get('x-user-address') || (await getWalletAddress(env));
+
     if (method === 'OPTIONS') {
       return new Response(null, {
         status: 204,
         headers: {
           'Access-Control-Allow-Origin':  '*',
-          'Access-Control-Allow-Headers': 'x-api-key, Content-Type',
+          'Access-Control-Allow-Headers': 'x-api-key, Content-Type, x-user-address',
           'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
         }
       });
     }
 
     if (method === 'GET'  && path === '/health')           return handleHealth(env);
-    if (method === 'GET'  && path === '/policy')           return handleGetPolicy(request, env);
-    if (method === 'POST' && path === '/policy')           return handlePostPolicy(request, env);
+    if (method === 'GET'  && path === '/policy')           return handleGetPolicy(request, env, userAddress);
+    if (method === 'POST' && path === '/policy')           return handlePostPolicy(request, env, userAddress);
     if (method === 'GET'  && path === '/agents')           return handleAgents(env);
-    if (method === 'GET'  && path === '/history')          return handleHistory(env);
-    if (method === 'GET'  && path.startsWith('/status/'))  return handleStatus(request, env, path.replace('/status/', ''));
+    if (method === 'GET'  && path === '/history')          return handleHistory(env, userAddress);
+    if (method === 'GET'  && path.startsWith('/status/'))  return handleStatus(request, env, path.replace('/status/', ''), userAddress);
     if (method === 'POST' && path === '/chat')             return handleChat(request, env);
-    if (method === 'POST' && path === '/pay')              return handlePay(request, env);
+    if (method === 'POST' && path === '/pay')              return handlePay(request, env, userAddress);
 
     return json({ error: 'Not found' }, 404);
   }

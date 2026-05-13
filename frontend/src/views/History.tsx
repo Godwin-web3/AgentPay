@@ -30,11 +30,11 @@ export default function History({ userAddress }: { userAddress: string }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getHistory()
+    getHistory(userAddress)
       .then(res => setLogs(res.logs))
       .catch(() => setLogs([]))
       .finally(() => setLoading(false))
-  }, [])
+  }, [userAddress])
 
   if (loading) return (
     <div className="history-view">
