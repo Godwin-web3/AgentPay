@@ -14,7 +14,7 @@ interface EIP6963ProviderDetail {
   provider: any
 }
 
-export default function WalletConnect({ onAddressChange, onBalanceChange, onProviderChange }: { onAddressChange: (addr: string) => void, onBalanceChange?: (vault: string, wallet: string) => void, onProviderChange?: (provider: any) => void }) {
+export default function WalletConnect({ onAddressChange, onProviderChange, onBalanceChange }: { onAddressChange: (addr: string) => void, onProviderChange?: (provider: any) => void, onBalanceChange?: (vault: string, wallet: string) => void }) {
   const [address, setAddress] = useState('')
   const [balance, setBalance] = useState('0')
   const [showModal, setShowModal] = useState(false)
@@ -98,7 +98,9 @@ export default function WalletConnect({ onAddressChange, onBalanceChange, onProv
         params: [{ to: VAULT_ADDRESS, data }, 'latest']
       })
       const wei = BigInt(res === '0x' ? '0' : res)
-      setBalance((Number(wei) / 1e18).toFixed(4))
+      const vaultBal = (Number(wei) / 1e18).toFixed(4)
+      setBalance(vaultBal)
+      if (onBalanceChange) onBalanceChange(vaultBal, "0")
     } catch (err) {
       console.error('Fetch error:', err)
     }

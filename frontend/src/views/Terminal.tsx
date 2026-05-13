@@ -60,9 +60,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
         .then(r => r.json())
         .then(data => {
           const bal = (Number(BigInt(data.result === "0x" ? "0x0" : data.result)) / 1e18).toFixed(4)
-          setMessages(prev => [...prev, { role: "assistant", content: "Vault balance: " + bal + " STT
-Worker: online
-Policy: active", timestamp: Date.now() }])
+          setMessages(prev => [...prev, { role: "assistant", content: "Vault balance: " + bal + " STT\nWorker: online\nPolicy: active", timestamp: Date.now() }])
         })
         .catch(() => setMessages(prev => [...prev, { role: "assistant", content: "Failed to fetch status.", timestamp: Date.now() }]))
       return

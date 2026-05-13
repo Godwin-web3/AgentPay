@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import History from './History'
-import type { HistoryLog } from '../types'
 
 interface Props {
   userAddress: string
