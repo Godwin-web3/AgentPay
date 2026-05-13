@@ -1,4 +1,4 @@
-import type { ChatResponse, PolicyData, HealthData, HistoryLog, PayResponse } from './types'
+import type { ChatResponse, PolicyData, HealthData, PayResponse } from './types'
 
 const WORKER_URL = 'https://agentpay-worker.mbagodwin419.workers.dev'
 
