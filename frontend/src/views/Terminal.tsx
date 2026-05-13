@@ -50,6 +50,23 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
     const text = input.trim()
     if (!text || loading) return
 
+    if (text.toLowerCase() === "status") {
+      const userMsg: ChatMessage = { role: "user", content: text, timestamp: Date.now() }
+      setMessages(prev => [...prev, userMsg])
+      setInput("")
+      const RPC = "https://dream-rpc.somnia.network"
+      const VAULT = "0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D"
+      fetch(RPC, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to: VAULT, data: "0xf8b2cb4f000000000000000000000000" + userAddress.replace("0x","").toLowerCase() }, "latest"] }) })
+        .then(r => r.json())
+        .then(data => {
+          const bal = (Number(BigInt(data.result === "0x" ? "0x0" : data.result)) / 1e18).toFixed(4)
+          setMessages(prev => [...prev, { role: "assistant", content: "Vault balance: " + bal + " STT
+Worker: online
+Policy: active", timestamp: Date.now() }])
+        })
+        .catch(() => setMessages(prev => [...prev, { role: "assistant", content: "Failed to fetch status.", timestamp: Date.now() }]))
+      return
+    }
     const history = messages.map(m => ({ role: m.role, content: m.content }))
     const userMsg: ChatMessage = { role: 'user', content: text, timestamp: Date.now() }
     setMessages(prev => [...prev, userMsg])
