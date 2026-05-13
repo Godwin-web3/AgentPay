@@ -78,8 +78,16 @@ export async function getHealth(): Promise<HealthData> {
   return request<HealthData>('/health')
 }
 
-export async function getHistory(userAddress: string): Promise<{ logs: HistoryLog[]; total: number }> {
-  return request<{ logs: HistoryLog[]; total: number }>('/history', {}, userAddress)
+export async function getHistory(userAddress: string): Promise<{ items: any[]; next_page_params: any }> {
+  const CONTRACT = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
+  const url = `https://shannon-explorer.somnia.network/api/v2/addresses/${userAddress}/transactions?filter=to%20%7C%20from`
+  const res = await fetch(url)
+  const data = await res.json()
+  const items = (data.items || []).filter((tx: any) => {
+    const to = tx.to?.hash?.toLowerCase() ?? ''
+    return to === CONTRACT.toLowerCase()
+  })
+  return { items, next_page_params: data.next_page_params }
 }
 
 export async function getStatus(requestId: string, userAddress: string): Promise<PayResponse> {
