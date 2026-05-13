@@ -30,7 +30,7 @@ export default function App() {
   return (
     <div className="app">
       {/* Desktop Sidebar */}
-      <div className="sidebar">
+      <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>AGENTPAY</h1>
           <span>SOMNIA NETWORK</span>
@@ -48,21 +48,21 @@ export default function App() {
             </div>
           ))}
         </nav>
-      </div>
+      </aside>
 
       {/* Main Content Area */}
-      <div className="main">
+      <main className="main">
         <AgentHeader onAddressChange={setUserAddress} />
         
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div className="view-content">
           {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} />}
           {view === 'policy'   && <Policy userAddress={userAddress} />}
           {view === 'history'  && <History userAddress={userAddress} />}
         </div>
-      </div>
+      </main>
 
       {/* Mobile Bottom Navigation */}
-      <div className="mobile-nav">
+      <nav className="mobile-nav">
         {navItems.map(item => (
           <div
             key={item.id}
@@ -73,7 +73,7 @@ export default function App() {
             <span>{item.label}</span>
           </div>
         ))}
-      </div>
+      </nav>
     </div>
   )
 }

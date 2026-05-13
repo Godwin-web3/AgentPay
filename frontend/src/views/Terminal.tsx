@@ -17,7 +17,7 @@ function TxBadge({ result }: { result?: any }) {
   if (result.status === 'executed') {
     return (
       <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
-        ✅ View TX: {result.txHash?.slice(0, 8)}...
+        ✅ View Transaction: {result.txHash?.slice(0, 8)}...
       </a>
     )
   }
@@ -37,11 +37,13 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [txResults, setTxResults] = React.useState<Record<number, any>>({})
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
   }, [messages, loading])
 
   async function handleSend() {
@@ -60,7 +62,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
 
       const assistantMsg: ChatMessage = {
         role: 'assistant',
-        content: intent.message || 'I processed your request.',
+        content: intent.message || 'Processing complete.',
         timestamp: Date.now()
       }
 
@@ -103,7 +105,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
     } catch (err: any) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'System error: ' + err.message,
+        content: 'Connection error: ' + err.message,
         timestamp: Date.now()
       }])
     } finally {
@@ -121,16 +123,26 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
 
   return (
     <div className="terminal">
-      <div className="messages">
+      <div className="messages" ref={scrollRef}>
         {messages.map((msg, i) => (
           <div key={i} className={`message ${msg.role}`}>
             <div className="message-bubble">
               {msg.content}
               {msg.role === 'assistant' && txResults[i] && (
-                <TxBadge result={txResults[i]} />
+                <div style={{ marginTop: 10 }}>
+                  <TxBadge result={txResults[i]} />
+                </div>
               )}
             </div>
-            <div className="message-meta">{formatTime(msg.timestamp)}</div>
+            <div style={{ 
+              fontSize: 10, 
+              color: 'var(--muted)', 
+              marginTop: 4, 
+              textAlign: msg.role === 'user' ? 'right' : 'left',
+              fontFamily: 'var(--font-mono)'
+            }}>
+              {formatTime(msg.timestamp)}
+            </div>
           </div>
         ))}
 
@@ -141,15 +153,13 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
             </div>
           </div>
         )}
-
-        <div ref={bottomRef} />
       </div>
 
       <div className="input-area">
         <textarea
           ref={inputRef}
           className="chat-input"
-          placeholder="Message AgentPay..."
+          placeholder="Type a message..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
