@@ -92,7 +92,7 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
   async function fetchOnChainData(userAddr: string, provider: any) {
     if (!provider) return
     try {
-      const data = '0x5ff0135c' + userAddr.replace('0x', '').padStart(64, '0')
+      const data = '0xf8b2cb4f' + userAddr.replace('0x', '').padStart(64, '0')
       const res = await provider.request({
         method: 'eth_call',
         params: [{ to: VAULT_ADDRESS, data }, 'latest']
