@@ -75,14 +75,13 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
           })
         }
       }
-      fetchOnChainData(addr, provider)
-
       provider.on('accountsChanged', (accounts: string[]) => {
         const nextAddr = accounts[0] || ''
         setAddress(nextAddr)
         onAddressChange(nextAddr)
         if (nextAddr) fetchOnChainData(nextAddr, provider)
       })
+      fetchOnChainData(addr, provider)
 
     } catch (err) {
       console.error('Connection failed', err)
