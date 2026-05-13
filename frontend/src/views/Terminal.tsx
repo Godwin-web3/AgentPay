@@ -17,18 +17,18 @@ function TxBadge({ result }: { result?: any }) {
   if (result.status === 'executed') {
     return (
       <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
-        ✅ {result.txHash?.slice(0, 10)}... — View on Explorer
+        ✅ View TX: {result.txHash?.slice(0, 8)}...
       </a>
     )
   }
   if (result.status === 'rejected') {
-    return <div className="tx-badge rejected">🚫 Blocked — {result.reason}</div>
+    return <div className="tx-badge rejected">🚫 Blocked: {result.reason}</div>
   }
   if (result.status === 'policy_updated') {
-    return <div className="tx-badge success">2705 Policy updated successfully</div>
+    return <div className="tx-badge success">🛡️ Policy Synchronized</div>
   }
   if (result.status === 'failed') {
-    return <div className="tx-badge failed">⚠️ Failed — {result.reason}</div>
+    return <div className="tx-badge failed">⚠️ Error: {result.reason}</div>
   }
   return null
 }
@@ -60,14 +60,15 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
 
       const assistantMsg: ChatMessage = {
         role: 'assistant',
-        content: intent.message || 'Done.',
+        content: intent.message || 'I processed your request.',
         timestamp: Date.now()
       }
 
       setMessages(prev => {
         const next = [...prev, assistantMsg]
+        const msgIndex = next.length - 1
+
         if (intent.action === 'pay' && intent.to && intent.amount) {
-          const msgIndex = next.length - 1
           const requestId = generateRequestId()
           executePay(intent.to, intent.amount, intent.reason || 'Chat payment', requestId, userAddress)
             .then(payRes => setTxResults(r => ({ ...r, [msgIndex]: payRes })))
@@ -76,12 +77,10 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
 
         if (intent.action === 'update_policy' && intent.policyUpdate) {
           const up = intent.policyUpdate
-          const msgIndex = next.length - 1
           
           const applyPolicyUpdate = async () => {
             const current = await getPolicy(userAddress)
             const update: any = {}
-            
             if (up.field === 'dailyCap') update.dailyCap = up.value
             if (up.field === 'perTxCap') update.perTxCap = up.value
             if (up.field === 'maxTxPerHour') update.circuitBreaker = { ...current.circuitBreaker, maxTxPerHour: up.value }
@@ -92,33 +91,19 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
             if (up.field === 'removeWhitelist' && up.address) {
               update.whitelist = current.whitelist.filter(a => a.toLowerCase() !== up.address?.toLowerCase())
             }
-
             return await updatePolicy(update, userAddress)
           }
 
           applyPolicyUpdate()
-            .then(() => {
-              setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } }))
-              setMessages(current => {
-                const updated = [...current]
-                updated.push({
-                  role: 'assistant',
-                  content: '✅ Policy update applied successfully.',
-                  timestamp: Date.now()
-                })
-                return updated
-              })
-            })
-            .catch(err => {
-              setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } }))
-            })
+            .then(() => setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } })))
+            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
         }
         return next
       })
     } catch (err: any) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Connection error — ' + err.message,
+        content: 'System error: ' + err.message,
         timestamp: Date.now()
       }])
     } finally {
@@ -132,12 +117,6 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
       e.preventDefault()
       handleSend()
     }
-  }
-
-  function handleInput(e: React.ChangeEvent<HTMLTextAreaElement>) {
-    setInput(e.target.value)
-    e.target.style.height = 'auto'
-    e.target.style.height = e.target.scrollHeight + 'px'
   }
 
   return (
@@ -170,14 +149,14 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
         <textarea
           ref={inputRef}
           className="chat-input"
-          placeholder="Send 0.5 STT to 0x... or ask anything"
+          placeholder="Message AgentPay..."
           value={input}
-          onChange={handleInput}
+          onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={1}
           disabled={loading}
         />
-        <button className="send-btn" onClick={handleSend} disabled={loading}>
+        <button className="send-btn" onClick={handleSend} disabled={loading || !input.trim()}>
           ➤
         </button>
       </div>

@@ -21,12 +21,10 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
   const [depositAmount, setDepositAmount] = useState('')
   const [loading, setLoading] = useState(false)
   
-  // EIP-6963 Wallets
   const [providers, setProviders] = useState<EIP6963ProviderDetail[]>([])
   const [activeProvider, setActiveProvider] = useState<any>(null)
 
   useEffect(() => {
-    // 1. EIP-6963: Listen for providers
     const onAnnouncement = (event: any) => {
       setProviders(prev => {
         if (prev.find(p => p.info.uuid === event.detail.info.uuid)) return prev
@@ -36,9 +34,7 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
     window.addEventListener('eip6963:announceProvider', onAnnouncement)
     window.dispatchEvent(new Event('eip6963:requestProvider'))
 
-    // 2. Legacy/Simple injection check
     if (window.ethereum && providers.length === 0) {
-      // Create a fallback detail for standard window.ethereum
       const fallback: EIP6963ProviderDetail = {
         info: { uuid: 'default', name: 'Browser Wallet', icon: '', rdns: 'default' },
         provider: window.ethereum
@@ -59,7 +55,6 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
       onAddressChange(addr)
       setShowWalletList(false)
 
-      // Network check/switch
       try {
         await provider.request({
           method: 'wallet_switchEthereumChain',
@@ -81,7 +76,6 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
       }
       fetchOnChainData(addr, provider)
 
-      // Listen for account changes
       provider.on('accountsChanged', (accounts: string[]) => {
         const nextAddr = accounts[0] || ''
         setAddress(nextAddr)
@@ -137,34 +131,25 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
     <div className="wallet-connect">
       {!address ? (
         <button className="send-btn" onClick={() => setShowWalletList(true)} style={{ width: 'auto', padding: '0 20px', fontSize: 13 }}>
-          Connect Wallet
+          Connect
         </button>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div className="card" style={{ padding: '6px 12px', margin: 0, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: 9, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Vault</span>
-            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 13, fontWeight: 'bold' }}>{balance} STT</span>
+          <div className="card" style={{ padding: '6px 12px', margin: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: 9, color: 'var(--muted)', textTransform: 'uppercase' }}>Vault</span>
+            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 12, fontWeight: 'bold' }}>{balance} STT</span>
           </div>
           
-          <button className="send-btn" onClick={() => setShowModal(true)} style={{ width: 'auto', padding: '0 15px', background: 'var(--blue)', fontSize: 13 }}>
-            Deposit
+          <button className="send-btn" onClick={() => setShowModal(true)} style={{ width: 'auto', padding: '0 12px', background: 'var(--blue)', fontSize: 12 }}>
+            Fund
           </button>
-
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text)', background: 'var(--border)', padding: '8px 12px', borderRadius: 4, opacity: 0.8 }}>
-            {address.slice(0, 6)}...{address.slice(-4)}
-          </div>
         </div>
       )}
 
-      {/* Wallet Selection Modal */}
       {showWalletList && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100,
-          backdropFilter: 'blur(10px)'
-        }}>
-          <div className="card" style={{ width: 340, padding: 30, border: '1px solid var(--cyan)' }}>
-            <h3 style={{ marginTop: 0 }}>Select Wallet</h3>
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 style={{ marginTop: 0, fontFamily: 'var(--font-head)' }}>Select Wallet</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }}>
               {providers.length === 0 && <div style={{ color: 'var(--muted)', fontSize: 13 }}>No wallets detected</div>}
               {providers.map(p => (
@@ -191,24 +176,19 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
                 onClick={() => setShowWalletList(false)}
                 style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 12, marginTop: 10 }}
               >
-                Close
+                Cancel
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Deposit Modal */}
       {showModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-          background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-          backdropFilter: 'blur(4px)'
-        }}>
-          <div className="card" style={{ width: 340, padding: 30, border: '1px solid var(--blue)' }}>
-            <h3 style={{ marginTop: 0, color: 'var(--blue)' }}>Fund Agent Vault</h3>
-            <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>
-              Securely deposit STT for the agent to use on your behalf.
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3 style={{ marginTop: 0, color: 'var(--blue)', fontFamily: 'var(--font-head)' }}>Deposit STT</h3>
+            <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5, marginTop: 10 }}>
+              Send funds to your personal on-chain vault.
             </p>
             
             <div style={{ position: 'relative', marginTop: 25 }}>
@@ -218,17 +198,16 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
                 value={depositAmount}
                 onChange={(e) => setDepositAmount(e.target.value)}
                 style={{ 
-                  width: '100%', padding: '15px 45px 15px 15px', background: 'var(--bg)', border: '1px solid var(--border)', 
+                  width: '100%', padding: '15px 15px', background: 'var(--bg)', border: '1px solid var(--border)', 
                   color: 'var(--text)', borderRadius: 6, fontSize: 18, fontFamily: 'var(--font-mono)', boxSizing: 'border-box'
                 }}
               />
-              <span style={{ position: 'absolute', right: 15, top: 15, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>STT</span>
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 25 }}>
               <button className="send-btn" onClick={() => setShowModal(false)} style={{ background: 'var(--muted)', flex: 1 }}>Cancel</button>
               <button className="send-btn" onClick={handleDeposit} disabled={loading} style={{ flex: 2 }}>
-                {loading ? 'Confirming...' : 'Deposit STT'}
+                {loading ? '...' : 'Confirm'}
               </button>
             </div>
           </div>
