@@ -17,7 +17,7 @@ const navItems = [
 export default function App() {
   const [view, setView] = useState<View>('landing')
   const [userAddress, setUserAddress] = useState('')
-  const [messages, setMessages] = useState<ChatMessage[]>([{
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [{
     role: 'assistant',
     content: 'AgentPay online. I can send payments, manage schedules, and enforce your policy. What do you need?',
     timestamp: Date.now()

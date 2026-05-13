@@ -130,7 +130,7 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
   return (
     <div className="wallet-connect">
       {!address ? (
-        <button className="send-btn" onClick={() => setShowWalletList(true)} style={{ width: 'auto', padding: '0 20px', fontSize: 13 }}>
+        <button className="send-btn" onClick={() => setShowWalletList(true)}>
           Connect
         </button>
       ) : (
@@ -140,7 +140,7 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
             <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 12, fontWeight: 'bold' }}>{balance} STT</span>
           </div>
           
-          <button className="send-btn" onClick={() => setShowModal(true)} style={{ width: 'auto', padding: '0 12px', background: 'var(--blue)', fontSize: 12 }}>
+          <button className="send-btn" onClick={() => setShowModal(true)} style={{ background: 'var(--blue)' }}>
             Fund
           </button>
         </div>
@@ -163,7 +163,6 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
                     alignItems: 'center', 
                     gap: 15, 
                     justifyContent: 'flex-start',
-                    padding: '12px 15px',
                     width: '100%'
                   }}
                 >
@@ -174,7 +173,7 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
               <button 
                 className="send-btn" 
                 onClick={() => setShowWalletList(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 12, marginTop: 10 }}
+                style={{ background: 'transparent', border: '1px solid var(--border)' }}
               >
                 Cancel
               </button>

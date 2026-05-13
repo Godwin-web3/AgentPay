@@ -19,7 +19,7 @@ function TerminalPreview() {
   }, [])
 
   return (
-    <div style={{
+    <div className="terminal-preview" style={{
       background: '#05071E',
       border: '1px solid #1a2456',
       borderRadius: 12,
@@ -27,7 +27,8 @@ function TerminalPreview() {
       fontFamily: 'var(--font-mono)',
       fontSize: 13,
       boxShadow: '0 0 60px #4D9FFF18, 0 0 120px #4D9FFF08',
-      position: 'relative'
+      position: 'relative',
+      width: '100%'
     }}>
       {/* Terminal top bar */}
       <div style={{
@@ -63,7 +64,8 @@ function TerminalPreview() {
               {line.role === 'Success' ? '✓' : line.role + ':'}
             </span>
             <span style={{
-              color: line.role === 'Success' ? '#00E5CC' : '#E8EEFF'
+              color: line.role === 'Success' ? '#00E5CC' : '#E8EEFF',
+              wordBreak: 'break-all'
             }}>
               {line.text}
             </span>
@@ -78,12 +80,21 @@ function TerminalPreview() {
 }
 
 export default function Landing({ onLaunch }: { onLaunch: () => void }) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   return (
     <div style={{
       minHeight: '100vh',
       background: 'var(--bg)',
       overflowY: 'auto',
-      position: 'relative'
+      position: 'relative',
+      width: '100%'
     }}>
 
       {/* Background effects */}
@@ -96,22 +107,13 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
         background: 'radial-gradient(ellipse, #4D9FFF08 0%, transparent 70%)',
         pointerEvents: 'none'
       }} />
-      <div style={{
-        position: 'fixed',
-        bottom: '-20%',
-        left: '-10%',
-        width: '50%',
-        height: '70%',
-        background: 'radial-gradient(ellipse, #FF6B3506 0%, transparent 70%)',
-        pointerEvents: 'none'
-      }} />
-
+      
       {/* Nav */}
       <nav style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '20px 40px',
+        padding: isMobile ? '15px 20px' : '20px 40px',
         borderBottom: '1px solid var(--border)',
         background: '#04061Acc',
         backdropFilter: 'blur(12px)',
@@ -121,7 +123,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
       }}>
         <div style={{
           fontFamily: 'var(--font-head)',
-          fontSize: 20,
+          fontSize: isMobile ? 16 : 20,
           fontWeight: 900,
           letterSpacing: 2,
           background: 'linear-gradient(135deg, #4D9FFF, #00E5CC)',
@@ -132,72 +134,56 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
           AGENTPAY
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          <span style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 11,
-            letterSpacing: 2,
-            color: 'var(--muted)',
-            textTransform: 'uppercase',
-            cursor: 'pointer'
-          }}
-            onClick={onLaunch}
-          >
-            Terminal
-          </span>
-          <span style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 11,
-            letterSpacing: 2,
-            color: 'var(--muted)',
-            textTransform: 'uppercase'
-          }}>
-            Docs
-          </span>
-          <div style={{
-            padding: '6px 14px',
-            border: '1px solid #1a2456',
-            borderRadius: 6,
-            fontFamily: 'var(--font-mono)',
-            fontSize: 11,
-            color: 'var(--muted)',
-            letterSpacing: 1
-          }}>
-            Somnia Testnet
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 15 : 32 }}>
+          {!isMobile && (
+            <>
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: 2,
+                color: 'var(--muted)', textTransform: 'uppercase', cursor: 'pointer'
+              }} onClick={onLaunch}>
+                Terminal
+              </span>
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: 2,
+                color: 'var(--muted)', textTransform: 'uppercase'
+              }}>
+                Docs
+              </span>
+            </>
+          )}
           <button
             onClick={onLaunch}
             style={{
-              padding: '8px 18px',
+              padding: isMobile ? '8px 12px' : '8px 18px',
               background: 'linear-gradient(135deg, #4D9FFF, #00E5CC)',
               border: 'none',
               borderRadius: 6,
               fontFamily: 'var(--font-mono)',
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 700,
-              letterSpacing: 2,
+              letterSpacing: isMobile ? 1 : 2,
               color: '#04061A',
               cursor: 'pointer',
               textTransform: 'uppercase'
             }}
           >
-            Launch App
+            {isMobile ? 'Launch' : 'Launch App'}
           </button>
         </div>
       </nav>
 
       {/* Hero */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 60,
-        padding: '80px 40px',
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? 40 : 60,
+        padding: isMobile ? '40px 20px' : '80px 40px',
         maxWidth: 1200,
         margin: '0 auto',
         alignItems: 'center'
       }}>
         {/* Left */}
-        <div>
+        <div style={{ width: '100%', textAlign: isMobile ? 'center' : 'left' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -207,10 +193,10 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
             borderRadius: 20,
             background: '#4D9FFF0A',
             fontFamily: 'var(--font-mono)',
-            fontSize: 11,
+            fontSize: 10,
             color: 'var(--blue)',
             letterSpacing: 1,
-            marginBottom: 28
+            marginBottom: 20
           }}>
             <span style={{
               width: 6, height: 6, borderRadius: '50%',
@@ -223,7 +209,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
 
           <h1 style={{
             fontFamily: 'var(--font-head)',
-            fontSize: 52,
+            fontSize: isMobile ? 36 : 52,
             fontWeight: 900,
             lineHeight: 1.1,
             letterSpacing: 1,
@@ -248,18 +234,20 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
             color: 'var(--muted)',
             lineHeight: 1.7,
             marginBottom: 40,
-            maxWidth: 440
+            maxWidth: isMobile ? 'none' : 440,
+            marginLeft: isMobile ? 'auto' : 0,
+            marginRight: isMobile ? 'auto' : 0
           }}>
             Enable autonomous, policy-driven STT transfers on Somnia
             using natural language. Give your agents the financial
             sovereignty they need with programmable guardrails.
           </p>
 
-          <div style={{ display: 'flex', gap: 14 }}>
+          <div style={{ display: 'flex', gap: 14, justifyContent: isMobile ? 'center' : 'flex-start' }}>
             <button
               onClick={onLaunch}
               style={{
-                padding: '14px 28px',
+                padding: '14px 24px',
                 background: 'linear-gradient(135deg, #4D9FFF, #00E5CC)',
                 border: 'none',
                 borderRadius: 8,
@@ -275,32 +263,20 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
             >
               LAUNCH APP ➤
             </button>
-            <button style={{
-              padding: '14px 28px',
-              background: 'transparent',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              fontFamily: 'var(--font-mono)',
-              fontSize: 12,
-              letterSpacing: 2,
-              color: 'var(--muted)',
-              cursor: 'pointer',
-              textTransform: 'uppercase'
-            }}>
-              REGISTER AGENT
-            </button>
           </div>
         </div>
 
         {/* Right — Terminal preview */}
-        <TerminalPreview />
+        <div style={{ width: '100%', maxWidth: 500 }}>
+          <TerminalPreview />
+        </div>
       </div>
 
       {/* Stats bar */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        margin: '0 40px',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+        margin: isMobile ? '0 20px' : '0 40px',
         border: '1px solid var(--border)',
         borderRadius: 12,
         overflow: 'hidden',
@@ -312,8 +288,10 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
           { label: 'STT VOLUME', value: '—' },
         ].map((stat, i) => (
           <div key={i} style={{
-            padding: '28px 32px',
-            borderRight: i < 2 ? '1px solid var(--border)' : 'none'
+            padding: '20px 24px',
+            borderRight: !isMobile && i < 2 ? '1px solid var(--border)' : 'none',
+            borderBottom: isMobile && i < 2 ? '1px solid var(--border)' : 'none',
+            textAlign: isMobile ? 'center' : 'left'
           }}>
             <div style={{
               fontFamily: 'var(--font-mono)',
@@ -321,13 +299,13 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
               letterSpacing: 2,
               color: 'var(--muted)',
               textTransform: 'uppercase',
-              marginBottom: 12
+              marginBottom: 8
             }}>
               {stat.label}
             </div>
             <div style={{
               fontFamily: 'var(--font-head)',
-              fontSize: 36,
+              fontSize: 28,
               fontWeight: 900,
               color: 'var(--blue)'
             }}>
@@ -338,11 +316,11 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
       </div>
 
       {/* Features */}
-      <div style={{ padding: '80px 40px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 52 }}>
+      <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <h2 style={{
             fontFamily: 'var(--font-head)',
-            fontSize: 32,
+            fontSize: isMobile ? 24 : 32,
             fontWeight: 900,
             color: 'var(--text)',
             marginBottom: 12
@@ -358,7 +336,11 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', 
+          gap: 20 
+        }}>
           {[
             {
               icon: '⚡',
@@ -383,19 +365,8 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
               background: 'var(--bg-card)',
               border: '1px solid var(--border)',
               borderRadius: 12,
-              padding: '28px 24px',
-              transition: 'border-color 0.2s, box-shadow 0.2s',
-              cursor: 'default'
-            }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLDivElement).style.borderColor = f.color + '44'
-                ;(e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 30px ${f.color}11`
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)'
-                ;(e.currentTarget as HTMLDivElement).style.boxShadow = 'none'
-              }}
-            >
+              padding: '24px',
+            }}>
               <div style={{ fontSize: 28, marginBottom: 16 }}>{f.icon}</div>
               <h3 style={{
                 fontFamily: 'var(--font-head)',
@@ -422,10 +393,13 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
       {/* Footer */}
       <div style={{
         borderTop: '1px solid var(--border)',
-        padding: '24px 40px',
+        padding: '24px 20px',
         display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        gap: 16,
+        textAlign: 'center'
       }}>
         <span style={{
           fontFamily: 'var(--font-head)',
@@ -439,7 +413,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
         </span>
         <span style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: 11,
+          fontSize: 9,
           color: 'var(--muted)',
           letterSpacing: 1
         }}>

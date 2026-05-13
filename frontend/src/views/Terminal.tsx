@@ -161,12 +161,17 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
           className="chat-input"
           placeholder="Type a message..."
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            setInput(e.target.value)
+            e.target.style.height = 'auto'
+            e.target.style.height = e.target.scrollHeight + 'px'
+          }}
           onKeyDown={handleKeyDown}
           rows={1}
           disabled={loading}
+          style={{ maxHeight: '120px' }}
         />
-        <button className="send-btn" onClick={handleSend} disabled={loading || !input.trim()}>
+        <button className="send-btn icon-btn" onClick={handleSend} disabled={loading || !input.trim()}>
           ➤
         </button>
       </div>

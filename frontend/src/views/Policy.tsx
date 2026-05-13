@@ -150,19 +150,19 @@ export default function Policy({ userAddress }: { userAddress: string }) {
         <h2 style={{ margin: 0 }}>Policy Settings</h2>
         {!isEditing ? (
           <div style={{ display: 'flex', gap: 10 }}>
-            <button className="send-btn" onClick={syncToChain} disabled={syncing} style={{ width: 'auto', padding: '0 20px', background: 'var(--cyan)', color: 'black' }}>
+            <button className="send-btn" onClick={syncToChain} disabled={syncing} style={{ background: 'var(--cyan)', color: 'black' }}>
               {syncing ? 'Syncing...' : 'Sync to Blockchain'}
             </button>
-            <button className="send-btn" onClick={() => setIsEditing(true)} style={{ width: 'auto', padding: '0 20px' }}>
+            <button className="send-btn" onClick={() => setIsEditing(true)}>
               Edit Policy
             </button>
           </div>
         ) : (
           <div style={{ display: 'flex', gap: 10 }}>
-            <button className="send-btn" onClick={() => setIsEditing(false)} style={{ width: 'auto', padding: '0 20px', background: 'var(--muted)' }}>
+            <button className="send-btn" onClick={() => setIsEditing(false)} style={{ background: 'var(--muted)' }}>
               Cancel
             </button>
-            <button className="send-btn" onClick={handleSave} disabled={saving} style={{ width: 'auto', padding: '0 20px' }}>
+            <button className="send-btn" onClick={handleSave} disabled={saving}>
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
