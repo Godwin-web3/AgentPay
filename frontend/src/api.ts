@@ -1,6 +1,6 @@
 import type { ChatResponse, PolicyData, HealthData, HistoryLog, PayResponse } from './types'
 
-const WORKER_URL = 'https://agentpay.mbagodwin419.workers.dev'
+const WORKER_URL = 'https://agentpay-worker.mbagodwin419.workers.dev'
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(WORKER_URL + path, {
