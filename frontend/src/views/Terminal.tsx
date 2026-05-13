@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId } from '../api'
+import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy } from '../api'
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -22,6 +22,9 @@ function TxBadge({ result }: { result?: any }) {
   }
   if (result.status === 'rejected') {
     return <div className="tx-badge rejected">🚫 Blocked — {result.reason}</div>
+  }
+  if (result.status === 'policy_updated') {
+    return <div className="tx-badge success">2705 Policy updated successfully</div>
   }
   if (result.status === 'failed') {
     return <div className="tx-badge failed">⚠️ Failed — {result.reason}</div>
@@ -68,6 +71,46 @@ export default function Terminal({ messages, setMessages }: Props) {
           executePay(intent.to, intent.amount, intent.reason || 'Chat payment', requestId)
             .then(payRes => setTxResults(r => ({ ...r, [msgIndex]: payRes })))
             .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+        }
+
+        if (intent.action === 'update_policy' && intent.policyUpdate) {
+          const up = intent.policyUpdate
+          const msgIndex = next.length - 1
+          
+          const applyPolicyUpdate = async () => {
+            const current = await getPolicy()
+            const update: any = {}
+            
+            if (up.field === 'dailyCap') update.dailyCap = up.value
+            if (up.field === 'perTxCap') update.perTxCap = up.value
+            if (up.field === 'maxTxPerHour') update.circuitBreaker = { ...current.circuitBreaker, maxTxPerHour: up.value }
+            if (up.field === 'activeHours') update.activeHours = { start: up.start, end: up.end }
+            if (up.field === 'addWhitelist' && up.address) {
+              update.whitelist = [...new Set([...current.whitelist, up.address])]
+            }
+            if (up.field === 'removeWhitelist' && up.address) {
+              update.whitelist = current.whitelist.filter(a => a.toLowerCase() !== up.address?.toLowerCase())
+            }
+
+            return await updatePolicy(update)
+          }
+
+          applyPolicyUpdate()
+            .then(() => {
+              setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } }))
+              setMessages(current => {
+                const updated = [...current]
+                updated.push({
+                  role: 'assistant',
+                  content: '✅ Policy update applied successfully.',
+                  timestamp: Date.now()
+                })
+                return updated
+              })
+            })
+            .catch(err => {
+              setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } }))
+            })
         }
         return next
       })

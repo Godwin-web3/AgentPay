@@ -41,6 +41,19 @@ export async function getPolicy(): Promise<PolicyData> {
   return request<PolicyData>('/policy')
 }
 
+export async function updatePolicy(data: Partial<PolicyData>): Promise<{ message: string; policy: PolicyData }> {
+  // Map frontend fields to what the worker expects if necessary
+  const payload: any = { ...data }
+  if (data.dailyCap !== undefined) payload.dailyCapSTT = data.dailyCap
+  if (data.perTxCap !== undefined) payload.perTxCapSTT = data.perTxCap
+  if (data.whitelist !== undefined) payload.allowedRecipients = data.whitelist
+
+  return request<{ message: string; policy: PolicyData }>('/policy', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
 export async function getHealth(): Promise<HealthData> {
   return request<HealthData>('/health')
 }
