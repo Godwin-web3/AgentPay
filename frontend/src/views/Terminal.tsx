@@ -1,6 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { sendChat, executePay, generateRequestId } from '../api'
 import type { ChatMessage } from '../types'
+
+interface Props {
+  messages: ChatMessage[]
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
+}
 
 function formatTime(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -24,17 +29,10 @@ function TxBadge({ result }: { result?: any }) {
   return null
 }
 
-export default function Terminal() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      content: 'AgentPay online. I can send payments, manage schedules, and enforce your policy. What do you need?',
-      timestamp: Date.now()
-    }
-  ])
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [txResults, setTxResults] = useState<Record<number, any>>({})
+export default function Terminal({ messages, setMessages }: Props) {
+  const [input, setInput] = React.useState('')
+  const [loading, setLoading] = React.useState(false)
+  const [txResults, setTxResults] = React.useState<Record<number, any>>({})
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -64,7 +62,6 @@ export default function Terminal() {
 
       setMessages(prev => {
         const next = [...prev, assistantMsg]
-
         if (intent.action === 'pay' && intent.to && intent.amount) {
           const msgIndex = next.length - 1
           const requestId = generateRequestId()
@@ -72,7 +69,6 @@ export default function Terminal() {
             .then(payRes => setTxResults(r => ({ ...r, [msgIndex]: payRes })))
             .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
         }
-
         return next
       })
     } catch (err: any) {

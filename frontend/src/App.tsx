@@ -4,6 +4,7 @@ import Terminal from './views/Terminal'
 import Policy from './views/Policy'
 import History from './views/History'
 import Landing from './views/Landing'
+import type { ChatMessage } from './types'
 
 type View = 'landing' | 'terminal' | 'policy' | 'history'
 
@@ -16,6 +17,11 @@ const navItems = [
 export default function App() {
   const [view, setView] = useState<View>('landing')
   const [collapsed, setCollapsed] = useState(false)
+  const [messages, setMessages] = useState<ChatMessage[]>([{
+    role: 'assistant',
+    content: 'AgentPay online. I can send payments, manage schedules, and enforce your policy. What do you need?',
+    timestamp: Date.now()
+  }])
 
   if (view === 'landing') {
     return <Landing onLaunch={() => setView('terminal')} />
@@ -84,20 +90,17 @@ export default function App() {
             transition: 'transform 0.25s ease',
             display: 'inline-block',
             transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)'
-          }}>
-            ◀
-          </span>
+          }}>◀</span>
           {!collapsed && <span>COLLAPSE</span>}
         </div>
       </div>
 
       <div className="main">
         <AgentHeader />
-        {view === 'terminal' && <Terminal />}
+        {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} />}
         {view === 'policy'   && <Policy />}
         {view === 'history'  && <History />}
       </div>
     </div>
   )
-}	
-
+}
