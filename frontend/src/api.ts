@@ -26,9 +26,21 @@ export async function sendChat(
   conversationHistory: { role: 'user' | 'assistant'; content: string }[],
   userAddress: string
 ): Promise<ChatResponse> {
+  let vaultBalance: string | undefined
+  try {
+    const RPC = 'https://dream-rpc.somnia.network'
+    const VAULT = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
+    const res = await fetch(RPC, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: VAULT, data: '0xf8b2cb4f000000000000000000000000' + userAddress.replace('0x','').toLowerCase() }, 'latest'] })
+    })
+    const data = await res.json()
+    vaultBalance = (Number(BigInt(data.result === '0x' ? '0x0' : data.result)) / 1e18).toFixed(4)
+  } catch {}
   return request<ChatResponse>('/chat', {
     method: 'POST',
-    body: JSON.stringify({ message, conversationHistory })
+    body: JSON.stringify({ message, conversationHistory, vaultBalance })
   }, userAddress)
 }
 
