@@ -4,19 +4,23 @@ import Terminal from './views/Terminal'
 import Policy from './views/Policy'
 import History from './views/History'
 import Landing from './views/Landing'
+import Profile from './views/Profile'
 import type { ChatMessage } from './types'
 
-type View = 'landing' | 'terminal' | 'policy' | 'history'
+type View = 'landing' | 'terminal' | 'policy' | 'profile'
 
 const navItems = [
   { id: 'terminal', icon: '⚡', label: 'Terminal' },
   { id: 'policy',   icon: '🛡️', label: 'Policy'   },
-  { id: 'history',  icon: '📋', label: 'History'  },
+  { id: 'profile',  icon: '👤', label: 'Profile'  },
 ] as const
 
 export default function App() {
   const [view, setView] = useState<View>('landing')
   const [userAddress, setUserAddress] = useState('')
+  const [vaultBalance, setVaultBalance] = useState('0')
+  const [activeProvider, setActiveProvider] = useState<any>(null)
+  const [walletBalance, setWalletBalance] = useState('0')
   const [messages, setMessages] = useState<ChatMessage[]>(() => [{
     role: 'assistant',
     content: 'AgentPay online. I can send payments, manage schedules, and enforce your policy. What do you need?',
@@ -52,12 +56,12 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="main">
-        <AgentHeader onAddressChange={setUserAddress} />
+        <AgentHeader onAddressChange={setUserAddress} onBalanceChange={(v, w) => { setVaultBalance(v); setWalletBalance(w) }} onProviderChange={setActiveProvider} />
         
         <div className="view-content">
           {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} />}
           {view === 'policy'   && <Policy userAddress={userAddress} />}
-          {view === 'history'  && <History userAddress={userAddress} />}
+          {view === 'profile'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} activeProvider={activeProvider} />}
         </div>
       </main>
 

@@ -14,7 +14,7 @@ interface EIP6963ProviderDetail {
   provider: any
 }
 
-export default function WalletConnect({ onAddressChange }: { onAddressChange: (addr: string) => void }) {
+export default function WalletConnect({ onAddressChange, onBalanceChange, onProviderChange }: { onAddressChange: (addr: string) => void, onBalanceChange?: (vault: string, wallet: string) => void, onProviderChange?: (provider: any) => void }) {
   const [address, setAddress] = useState('')
   const [balance, setBalance] = useState('0')
   const [showModal, setShowModal] = useState(false)
@@ -53,6 +53,7 @@ export default function WalletConnect({ onAddressChange }: { onAddressChange: (a
       const addr = accounts[0]
       setAddress(addr)
       setActiveProvider(provider)
+      if (onProviderChange) onProviderChange(provider)
       onAddressChange(addr)
       setShowWalletList(false)
 

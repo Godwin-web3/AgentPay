@@ -5,9 +5,11 @@ import WalletConnect from './WalletConnect'
 
 interface Props {
   onAddressChange: (addr: string) => void
+  onBalanceChange?: (vault: string, wallet: string) => void
+  onProviderChange?: (provider: any) => void
 }
 
-export default function AgentHeader({ onAddressChange }: Props) {
+export default function AgentHeader({ onAddressChange, onBalanceChange, onProviderChange }: Props) {
   const [health, setHealth] = useState<HealthData | null>(null)
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function AgentHeader({ onAddressChange }: Props) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-        <WalletConnect onAddressChange={onAddressChange} />
+        <WalletConnect onAddressChange={onAddressChange} onBalanceChange={onBalanceChange} onProviderChange={onProviderChange} />
         
         <div className={`status-pill ${health?.status === 'ok' ? 'online' : 'offline'}`}>
           <div className="status-dot" />
