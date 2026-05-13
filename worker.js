@@ -206,19 +206,22 @@ function encodeRLP(input) {
 }
 
 async function getWalletAddress(env) {
-  const privateKeyHex = env.PRIVATE_KEY.replace('0x', '');
-  const bytes = hexToBytes(privateKeyHex);
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw', bytes,
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    true, ['sign']
-  );
-  const exported    = await crypto.subtle.exportKey('spki', cryptoKey);
-  const pubKeyBytes = new Uint8Array(exported).slice(-64);
-  const hashBuffer  = await crypto.subtle.digest('SHA-256', pubKeyBytes);
-  const hashBytes   = new Uint8Array(hashBuffer);
-  return '0x' + bytesToHex(hashBytes.slice(-20));
+  return env.WALLET_ADDRESS || "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA";
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 async function signAndSendTransaction(env, user, to, amountSTT) {
   const privateKeyHex  = env.PRIVATE_KEY.replace('0x', '');
