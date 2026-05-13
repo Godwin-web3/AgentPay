@@ -15,6 +15,9 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, acti
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showDeposit, setShowDeposit] = useState(false)
+  const [depositAmount, setDepositAmount] = useState('')
+  const [depositLoading, setDepositLoading] = useState(false)
 
   function shortAddr(addr: string) {
     return addr.slice(0, 6) + '...' + addr.slice(-4)
@@ -42,6 +45,24 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, acti
       console.error('Withdraw failed', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleDeposit() {
+    if (!depositAmount || isNaN(Number(depositAmount)) || !activeProvider) return
+    setDepositLoading(true)
+    try {
+      const value = '0x' + BigInt(Math.floor(Number(depositAmount) * 1e18)).toString(16)
+      await activeProvider.request({
+        method: 'eth_sendTransaction',
+        params: [{ from: userAddress, to: VAULT_ADDRESS, data: '0xd0e30db0', value }]
+      })
+      setShowDeposit(false)
+      setDepositAmount('')
+    } catch (err) {
+      console.error('Deposit failed', err)
+    } finally {
+      setDepositLoading(false)
     }
   }
 
@@ -78,13 +99,14 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, acti
         </div>
       </div>
 
-      <button
-        className="send-btn"
-        style={{ width: '100%', marginBottom: 10 }}
-        onClick={() => setShowWithdraw(true)}
-      >
-        Withdraw from Vault
-      </button>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+        <button className="send-btn" style={{ flex: 1 }} onClick={() => { setShowDeposit(true); setShowWithdraw(false) }}>
+          Deposit to Vault
+        </button>
+        <button className="send-btn" style={{ flex: 1, background: 'transparent', border: '1px solid var(--cyan)', color: 'var(--cyan)' }} onClick={() => { setShowWithdraw(true); setShowDeposit(false) }}>
+          Withdraw from Vault
+        </button>
+      </div>
 
       {showWithdraw && (
         <div className="card" style={{ marginBottom: 16 }}>
@@ -101,6 +123,27 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, acti
               {loading ? 'Confirming...' : 'Confirm'}
             </button>
             <button onClick={() => setShowWithdraw(false)} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--muted)', cursor: 'pointer' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showDeposit && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>Amount to deposit (max {walletBalance} STT)</div>
+          <input
+            type="number"
+            placeholder="0.00"
+            value={depositAmount}
+            onChange={e => setDepositAmount(e.target.value)}
+            style={{ width: '100%', padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontFamily: 'var(--font-mono)', marginBottom: 8, boxSizing: 'border-box' }}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="send-btn" onClick={handleDeposit} disabled={depositLoading} style={{ flex: 1 }}>
+              {depositLoading ? 'Confirming...' : 'Confirm'}
+            </button>
+            <button onClick={() => setShowDeposit(false)} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--muted)', cursor: 'pointer' }}>
               Cancel
             </button>
           </div>

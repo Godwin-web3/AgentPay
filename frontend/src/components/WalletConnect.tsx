@@ -100,7 +100,9 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
       const wei = BigInt(res === '0x' ? '0' : res)
       const vaultBal = (Number(wei) / 1e18).toFixed(4)
       setBalance(vaultBal)
-      if (onBalanceChange) onBalanceChange(vaultBal, "0")
+      const walletRes = await provider.request({ method: "eth_getBalance", params: [userAddr, "latest"] })
+      const walletBal = (Number(BigInt(walletRes)) / 1e18).toFixed(4)
+      if (onBalanceChange) onBalanceChange(vaultBal, walletBal)
     } catch (err) {
       console.error('Fetch error:', err)
     }
