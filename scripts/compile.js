@@ -2,33 +2,54 @@ const fs = require('fs');
 const path = require('path');
 const solc = require('solc');
 
-const contractPath = path.join(__dirname, '../contracts/AgentPayEscrow.sol');
-const source = fs.readFileSync(contractPath, 'utf8');
+async function compile() {
+  const contractPath = path.join(__dirname, '../contracts/AgentVault.sol');
+  const source = fs.readFileSync(contractPath, 'utf8');
 
-const input = {
-  language: 'Solidity',
-  sources: {
-    'AgentPayEscrow.sol': { content: source }
-  },
-  settings: {
-    outputSelection: {
-      '*': { '*': ['abi', 'evm.bytecode'] }
+  const input = {
+    language: 'Solidity',
+    sources: {
+      'AgentVault.sol': {
+        content: source,
+      },
+    },
+    settings: {
+      outputSelection: {
+        '*': {
+          '*': ['abi', 'evm.bytecode'],
+        },
+      },
+    },
+  };
+
+  console.log('🔨 Compiling AgentVault.sol...');
+  const output = JSON.parse(solc.compile(JSON.stringify(input)));
+
+  if (output.errors) {
+    output.errors.forEach((err) => {
+      console.error(err.formattedMessage);
+    });
+    if (output.errors.some(err => err.severity === 'error')) {
+      process.exit(1);
     }
   }
-};
 
-const output = JSON.parse(solc.compile(JSON.stringify(input)));
+  const contract = output.contracts['AgentVault.sol']['AgentVault'];
 
-if (output.errors) {
-  output.errors.forEach(e => console.error(e.formattedMessage));
+  const artifactDir = path.join(__dirname, '../artifacts');
+  if (!fs.existsSync(artifactDir)) {
+    fs.mkdirSync(artifactDir);
+  }
+
+  fs.writeFileSync(
+    path.join(artifactDir, 'AgentVault.json'),
+    JSON.stringify({
+      abi: contract.abi,
+      bytecode: contract.evm.bytecode.object,
+    }, null, 2)
+  );
+
+  console.log('✅ Compiled successfully! Artifact saved to artifacts/AgentVault.json');
 }
 
-const contract = output.contracts['AgentPayEscrow.sol']['AgentPayEscrow'];
-
-fs.mkdirSync(path.join(__dirname, '../artifacts'), { recursive: true });
-fs.writeFileSync(
-  path.join(__dirname, '../artifacts/AgentPayEscrow.json'),
-  JSON.stringify({ abi: contract.abi, bytecode: contract.evm.bytecode.object }, null, 2)
-);
-
-console.log('✅ Compiled. ABI + bytecode saved to artifacts/AgentPayEscrow.json');
+compile().catch(console.error);

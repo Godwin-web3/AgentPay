@@ -1,36 +1,57 @@
+require('dotenv').config();
 const { ethers } = require('ethers');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
 
 async function main() {
-  const artifact = JSON.parse(
-    fs.readFileSync(path.join(__dirname, '../artifacts/AgentPayEscrow.json'), 'utf8')
-  );
-
   const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-  console.log('🚀 Deploying AgentPayEscrow...');
-  console.log('   Deployer: ' + wallet.address);
+  const artifactPath = path.join(__dirname, '../artifacts/AgentVault.json');
+  if (!fs.existsSync(artifactPath)) {
+    console.error('❌ Artifact not found. Please run "node scripts/compile.js" first.');
+    process.exit(1);
+  }
+
+  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
+  
+  const agentAddress = process.env.AGENT_ADDRESS || wallet.address;
+  console.log('🚀 Deploying AgentVault...');
+  console.log('👛 Deployer: ' + wallet.address);
+  console.log('🤖 Agent:    ' + agentAddress);
 
   const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
-  const contract = await factory.deploy();
+  
+  // AgentVault constructor takes the agent address
+  const contract = await factory.deploy(agentAddress);
+  
+  console.log('⏳ Waiting for deployment...');
   await contract.waitForDeployment();
 
   const address = await contract.getAddress();
+  const txHash = contract.deploymentTransaction().hash;
 
-  console.log('✅ AgentPayEscrow deployed');
-  console.log('   Address: ' + address);
-  console.log('   TX: https://explorer.somnia.network/tx/' + contract.deploymentTransaction().hash);
+  console.log('✅ AgentVault deployed to: ' + address);
+  console.log('🔗 Explorer: https://shannon-explorer.somnia.network/tx/' + txHash);
 
-  // Save address for later use
+  const deployment = {
+    address: address,
+    deployer: wallet.address,
+    agent: agentAddress,
+    network: 'Somnia Shannon Testnet',
+    timestamp: new Date().toISOString(),
+    txHash: txHash
+  };
+
   fs.writeFileSync(
-    path.join(__dirname, '../artifacts/deployment.json'),
-    JSON.stringify({ address, deployer: wallet.address, timestamp: new Date().toISOString() }, null, 2)
+    path.join(__dirname, '../artifacts/AgentVault-deployment.json'),
+    JSON.stringify(deployment, null, 2)
   );
 
-  console.log('📄 Address saved to artifacts/deployment.json');
+  console.log('📝 Deployment info saved to artifacts/AgentVault-deployment.json');
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

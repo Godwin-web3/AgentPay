@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react'
 import { getHealth } from '../api'
 import type { HealthData } from '../types'
+import WalletConnect from './WalletConnect'
 
-export default function AgentHeader() {
+interface Props {
+  onAddressChange: (addr: string) => void
+}
+
+export default function AgentHeader({ onAddressChange }: Props) {
   const [health, setHealth] = useState<HealthData | null>(null)
 
   useEffect(() => {
     getHealth().then(setHealth).catch(() => setHealth(null))
   }, [])
-
-  const shortAddress = health?.address
-    ? health.address.slice(0, 6) + '...' + health.address.slice(-4)
-    : '0x...'
 
   return (
     <div className="agent-header">
@@ -19,12 +20,19 @@ export default function AgentHeader() {
         <div className="agent-avatar">⚡</div>
         <div>
           <div className="agent-name">AGENTPAY</div>
-          <div className="agent-address">{shortAddress}</div>
+          <div className="agent-address" style={{ fontSize: 10, opacity: 0.6 }}>
+            AGENT: {health?.address ? health.address.slice(0, 8) + '...' : '0x...'}
+          </div>
         </div>
       </div>
-      <div className={`status-pill ${health?.status === 'ok' ? 'online' : 'offline'}`}>
-        <div className="status-dot" />
-        {health?.status === 'ok' ? 'ONLINE' : 'OFFLINE'}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <WalletConnect onAddressChange={onAddressChange} />
+        
+        <div className={`status-pill ${health?.status === 'ok' ? 'online' : 'offline'}`}>
+          <div className="status-dot" />
+          {health?.status === 'ok' ? 'ONLINE' : 'OFFLINE'}
+        </div>
       </div>
     </div>
   )
