@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getPolicy, updatePolicy } from '../api'
 import type { PolicyData } from '../types'
 
-export default function Policy() {
+export default function Policy({ userAddress }: { userAddress: string }) {
   const [policy, setPolicy] = useState<PolicyData | null>(null)
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
@@ -97,6 +97,11 @@ export default function Policy() {
 
   return (
     <div className="policy-view">
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4, fontFamily: 'var(--font-mono)' }}>VAULT OWNER</div>
+        <div style={{ fontSize: 12, color: 'var(--blue)', fontFamily: 'var(--font-mono)' }}>{userAddress || 'Not Connected'}</div>
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
         <h2 style={{ margin: 0 }}>Policy Settings</h2>
         {!isEditing ? (

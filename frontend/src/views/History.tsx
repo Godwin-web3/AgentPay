@@ -25,7 +25,7 @@ function statusClass(log: HistoryLog) {
   return 'failed'
 }
 
-export default function History() {
+export default function History({ userAddress }: { userAddress: string }) {
   const [logs, setLogs] = useState<HistoryLog[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -56,6 +56,11 @@ export default function History() {
 
   return (
     <div className="history-view">
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4, fontFamily: 'var(--font-mono)' }}>VIEWING HISTORY FOR</div>
+        <div style={{ fontSize: 12, color: 'var(--blue)', fontFamily: 'var(--font-mono)' }}>{userAddress || 'Not Connected'}</div>
+      </div>
+
       <div className="section-title" style={{ marginBottom: 16 }}>
         Transaction Log — {logs.length} records
       </div>
