@@ -3,10 +3,10 @@ const fs = require('fs');
 const path = require('path');
 
 const artifact = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../artifacts/AgentPayEscrow.json'), 'utf8')
+  fs.readFileSync(path.join(__dirname, '../artifacts/AgentVault.json'), 'utf8')
 );
 const deployment = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../artifacts/deployment.json'), 'utf8')
+  fs.readFileSync(path.join(__dirname, '../artifacts/AgentVault-deployment.json'), 'utf8')
 );
 
 let escrow = null;
@@ -34,9 +34,10 @@ async function setPolicy(wallet, perTxCapSTT, dailyCapSTT, maxTxPerHour, whiteli
 async function directSend(wallet, toAddress, amountSTT) {
   const contract = getEscrow(wallet);
   const amountWei = ethers.parseEther(amountSTT.toString());
-  const tx = await contract.send(toAddress, { value: amountWei });
+  const address = await wallet.getAddress();
+  const tx = await contract.execute(address, toAddress, amountWei);
   const receipt = await tx.wait();
-  console.log('💸 Direct send onchain');
+  console.log('💸 Payment executed via vault');
   console.log('   TX: https://explorer.somnia.network/tx/' + receipt.hash);
   return receipt;
 }

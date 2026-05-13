@@ -15,12 +15,14 @@ function txLabel(tx: any) {
   const raw = tx.raw_input ?? ''
   if (raw.startsWith('0xd0e30db0')) return 'Deposit'
   if (raw.startsWith('0x2e1a7d4d')) return 'Withdraw'
+  if (raw.startsWith('0xeafaddfd')) return 'Execute'
   return 'Contract Call'
 }
 
 function labelColor(label: string) {
   if (label === 'Deposit') return 'var(--green, #4ade80)'
   if (label === 'Withdraw') return 'var(--yellow, #facc15)'
+  if (label === 'Execute') return 'var(--cyan, #22d3ee)'
   return 'var(--muted)'
 }
 
