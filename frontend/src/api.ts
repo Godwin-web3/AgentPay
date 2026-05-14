@@ -110,3 +110,29 @@ export async function getStatus(requestId: string, userAddress: string): Promise
 export function generateRequestId(): string {
   return 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9)
 }
+
+const ERC20_BALANCEOF = '0x70a08231';
+const TOKENS = {
+  WSTT:  '0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7',
+  PING:  '0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493',
+  PONG:  '0x9beaA0016c22B646Ac311Ab171270B0ECf23098F',
+  SUSD:  '0x65296738D4E5edB1515e40287B6FDf8320E6eE04',
+};
+const RPC = 'https://dream-rpc.somnia.network';
+
+export async function getTokenBalances(userAddress: string): Promise<Record<string, string>> {
+  const padded = userAddress.replace('0x','').toLowerCase().padStart(64, '0');
+  const calls = Object.entries(TOKENS).map(([symbol, addr]) =>
+    fetch(RPC, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: addr, data: ERC20_BALANCEOF + padded }, 'latest'] })
+    }).then(r => r.json()).then(d => ({ symbol, raw: d.result }))
+  );
+  const results = await Promise.all(calls);
+  const balances: Record<string, string> = {};
+  for (const { symbol, raw } of results) {
+    balances[symbol] = (Number(BigInt((!raw || raw === "0x") ? "0x0" : raw)) / 1e18).toFixed(4);
+  }
+  return balances;
+}

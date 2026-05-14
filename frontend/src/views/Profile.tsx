@@ -6,12 +6,13 @@ interface Props {
   vaultBalance: string
   walletBalance: string
   activeProvider: any
+  tokenBalances?: Record<string, string>
   onSwap?: (amount: string, token: string) => void
 }
 
 const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
 
-export default function Profile({ userAddress, vaultBalance, walletBalance, activeProvider, onSwap }: Props) {
+export default function Profile({ userAddress, vaultBalance, walletBalance, tokenBalances = {}, activeProvider, onSwap }: Props) {
   const [showWithdraw, setShowWithdraw] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [loading, setLoading] = useState(false)
@@ -90,16 +91,19 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, acti
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-        <div className="card">
-          <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Wallet Balance</div>
-          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 18, fontWeight: 'bold' }}>{walletBalance}</div>
-          <div style={{ fontSize: 10, color: 'var(--muted)' }}>STT</div>
-        </div>
-        <div className="card">
-          <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Vault Balance</div>
-          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 18, fontWeight: 'bold' }}>{vaultBalance}</div>
-          <div style={{ fontSize: 10, color: 'var(--muted)' }}>STT</div>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8 }}>Wallet Balances</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {[['STT', walletBalance], ['WSTT', tokenBalances.WSTT || '0.0000'], ['PING', tokenBalances.PING || '0.0000'], ['PONG', tokenBalances.PONG || '0.0000'], ['SUSD', tokenBalances.SUSD || '0.0000']].map(([sym, bal]) => (
+            <div className="card" key={sym} style={{ padding: '10px 12px' }}>
+              <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>{sym}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 15, fontWeight: 'bold' }}>{bal}</div>
+            </div>
+          ))}
+          <div className="card" style={{ padding: '10px 12px' }}>
+            <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>VAULT (STT)</div>
+            <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 15, fontWeight: 'bold' }}>{vaultBalance}</div>
+          </div>
         </div>
       </div>
 

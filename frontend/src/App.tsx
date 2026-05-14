@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AgentHeader from './components/AgentHeader'
 import Terminal from './views/Terminal'
 import Policy from './views/Policy'
 import Landing from './views/Landing'
 import Profile from './views/Profile'
 import type { ChatMessage } from './types'
+import { getTokenBalances } from './api'
 
 type View = 'landing' | 'terminal' | 'policy' | 'profile'
 
@@ -20,11 +21,16 @@ export default function App() {
   const [vaultBalance, setVaultBalance] = useState('0')
   const [activeProvider, setActiveProvider] = useState<any>(null)
   const [walletBalance, setWalletBalance] = useState('0')
+  const [tokenBalances, setTokenBalances] = useState<Record<string,string>>({})
   const [messages, setMessages] = useState<ChatMessage[]>(() => [{
     role: 'assistant',
     content: 'AgentPay online. I can send payments, manage schedules, and enforce your policy. What do you need?',
     timestamp: Date.now()
   }])
+
+  useEffect(() => {
+    getTokenBalances(userAddress).then(setTokenBalances).catch(console.error)
+  }, [userAddress])
 
   const handleSwapIntent = (amount: string, token: string) => {
     const userMsg: ChatMessage = {
@@ -70,7 +76,7 @@ export default function App() {
         <div className="view-content">
           {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} />}
           {view === 'policy'   && <Policy userAddress={userAddress} />}
-          {view === 'profile'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} activeProvider={activeProvider} onSwap={handleSwapIntent} />}
+          {view === 'profile'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onSwap={handleSwapIntent} />}
         </div>
       </main>
 
