@@ -67,7 +67,7 @@ Guidelines:
 - If they want to pay, extract details and use action: "pay".
 - If the user asks for history, recent transactions, or activity, use action: "history". Do NOT say you lack access to transaction data.
 - If the user says anything like "my balance", "show balance", "what is my balance", "token balance", "how much do I have", use action: "balance". This is NOT status.
-- Always keep the "message" field warm and human.
+- The "message" field must NEVER be empty. Always write a helpful, conversational response in plain English. If you have nothing else to say, acknowledge the user.
 - Never make up addresses or amounts.
 - If the user has no wallet connected (no address in context) and they ask to pay, swap, check balance, or do anything on-chain, respond with action: "chat" and tell them to connect their wallet first using the Connect button.
 - Always respond with valid JSON only, no extra text`;
@@ -199,7 +199,7 @@ async function handleChat(request, env) {
   
   const history = conversationHistory.slice(-10);
   const walletContext = userAddress ? `
-The user wallet is already connected. Address: ${userAddress}. Never tell them to connect a wallet.` : "";
+The user wallet is already connected. Address: ${userAddress}. Never tell them to connect a wallet.` : `The user has NOT connected a wallet. If they ask to pay, swap, check balance, or do anything on-chain, tell them to connect their wallet first using the Connect button.`;
   const balanceContext = vaultBalance ? `
 Vault balance: ${vaultBalance} STT.` : "";
   const fullContext = walletContext + balanceContext;

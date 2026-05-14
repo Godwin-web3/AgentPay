@@ -85,7 +85,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
 
       const assistantMsg: ChatMessage = {
         role: 'assistant',
-        content: intent.message || '',
+        content: intent.message?.trim() || 'Agent is thinking...',
         timestamp: Date.now(),
         intent: intent
       }
