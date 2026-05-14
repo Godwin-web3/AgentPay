@@ -7,21 +7,21 @@
 }
 
 :root {
-  --bg:         #04061A;
-  --bg-card:    #080D2A;
-  --bg-hover:   #0D1535;
-  --border:     #1a2456;
-  --border-hot: #4D9FFF44;
-  --blue:       #4D9FFF;
+  --bg:         #0A0A0A;
+  --bg-card:    #141414;
+  --bg-hover:   #1a1a1a;
+  --border:     #262626;
+  --border-hot: #4fdbc844;
+  --blue:       #4fdbc8;
   --coral:      #FF6B35;
-  --cyan:       #00E5CC;
-  --text:       #E8EEFF;
-  --muted:      #4A5480;
+  --cyan:       #4fdbc8;
+  --text:       #E0E0E0;
+  --muted:      #555555;
   --danger:     #FF3B5C;
-  --success:    #00E5CC;
+  --success:    #4fdbc8;
   --warning:    #FF6B35;
   --font-mono:  'JetBrains Mono', monospace;
-  --font-head:  'Orbitron', monospace;
+  --font-head:  'JetBrains Mono', monospace;
   --font-body:  'Inter', sans-serif;
   
   --header-height: 70px;
@@ -180,7 +180,7 @@ body::after {
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  box-shadow: 0 0 15px rgba(77, 159, 255, 0.3);
+  box-shadow: none;
 }
 
 .agent-name {
@@ -196,7 +196,7 @@ body::after {
   align-items: center;
   gap: 6px;
   padding: 4px 12px;
-  border-radius: 20px;
+  border-radius: 4px;
   font-family: var(--font-mono);
   font-size: 11px;
   text-transform: uppercase;
@@ -255,9 +255,9 @@ body::after {
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.6;
-  border-radius: 16px;
+  border-radius: 4px;
   position: relative;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
 }
 
 @media (max-width: 768px) {
@@ -311,7 +311,7 @@ body::after {
   padding: 12px 16px;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 4px;
   margin-top: 10px;
   flex-shrink: 0;
 }
@@ -331,7 +331,7 @@ body::after {
 .send-btn {
   background: linear-gradient(135deg, var(--blue), var(--cyan));
   border: none;
-  border-radius: 8px;
+  border-radius: 3px;
   color: var(--bg);
   font-family: var(--font-mono);
   font-weight: bold;
@@ -354,7 +354,7 @@ body::after {
 
 .send-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(77, 159, 255, 0.4);
+  box-shadow: none;
 }
 
 .send-btn:active {
@@ -372,7 +372,7 @@ body::after {
   display: inline-flex;
   align-items: center;
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: 3px;
   font-size: 11px;
   font-family: var(--font-mono);
   text-decoration: none;
@@ -454,7 +454,7 @@ body::after {
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 4px;
   padding: 24px;
   margin-bottom: 16px;
 }
@@ -513,7 +513,7 @@ body::after {
 /* Alerts */
 .alert {
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: 3px;
   font-size: 13px;
   font-family: var(--font-mono);
 }
@@ -559,7 +559,7 @@ body::after {
   padding: 16px;
   background: rgba(255,255,255,0.02);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 4px;
   margin-bottom: 12px;
   gap: 16px;
 }
@@ -627,9 +627,9 @@ body::after {
   max-width: 400px;
   background: var(--bg-card);
   border: 1px solid var(--blue);
-  border-radius: 16px;
+  border-radius: 4px;
   padding: 30px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  box-shadow: none;
   max-height: 90vh;
   overflow-y: auto;
 }
