@@ -11,6 +11,26 @@ const VAULT_ABI = [
   "function balances(address) external view returns (uint256)"
 ];
 
+const TOKENS = {
+  WSTT: "0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7",
+  PING: "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
+  PONG: "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
+  SUSD: "0x65296738D4E5edB1515e40287B6FDf8320E6eE04",
+};
+const ERC20_ABI = [
+  "function balanceOf(address) external view returns (uint256)",
+  "function allowance(address,address) external view returns (uint256)",
+  "function approve(address,uint256) external returns (bool)"
+];
+const V3_ROUTER = "0x6AAC14f090A35EeA150705f72D90E4CDC4a49b2C";
+const V2_ROUTER = "0xc81501B65A040bF5f1794D0Ca2b953aebb2b1996";
+const V3_ROUTER_ABI = [
+  "function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) params) external payable returns (uint256 amountOut)"
+];
+const V2_ROUTER_ABI = [
+  "function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline) external returns (uint256[] memory amounts)"
+];
+
 const GROQ_SYSTEM_PROMPT = `You are AgentPay, a friendly and knowledgeable autonomous payment agent on the Somnia blockchain.
 Your goal is to help users manage their funds securely while also being a helpful companion.
 You must respond ONLY with a valid JSON object.`;
@@ -46,6 +66,34 @@ async function handleHealth(env) {
     vault: VAULT_ADDRESS,
     time: new Date().toISOString() 
   });
+}
+
+async function handleBalance(request, env, address) {
+  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
+  const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, provider);
+  try {
+    const [sttRaw, vaultRaw, wsttRaw, pingRaw, pongRaw, susdRaw] = await Promise.all([
+      provider.getBalance(address),
+      vault.balances(address),
+      new ethers.Contract(TOKENS.WSTT, ERC20_ABI, provider).balanceOf(address),
+      new ethers.Contract(TOKENS.PING, ERC20_ABI, provider).balanceOf(address),
+      new ethers.Contract(TOKENS.PONG, ERC20_ABI, provider).balanceOf(address),
+      new ethers.Contract(TOKENS.SUSD, ERC20_ABI, provider).balanceOf(address),
+    ]);
+    return json({
+      address,
+      balances: {
+        STT:  parseFloat(ethers.formatEther(sttRaw)).toFixed(4),
+        WSTT: parseFloat(ethers.formatEther(wsttRaw)).toFixed(4),
+        PING: parseFloat(ethers.formatEther(pingRaw)).toFixed(4),
+        PONG: parseFloat(ethers.formatEther(pongRaw)).toFixed(4),
+        SUSD: parseFloat(ethers.formatEther(susdRaw)).toFixed(4),
+      },
+      vault: parseFloat(ethers.formatEther(vaultRaw)).toFixed(4),
+    });
+  } catch (err) {
+    return json({ error: 'Failed to fetch balances: ' + err.message }, 500);
+  }
 }
 
 async function handleGetPolicy(request, env, address) {
@@ -183,38 +231,69 @@ async function handlePay(request, env, address) {
 async function handleSwap(request, env, address) {
   const body = await request.json();
   const { fromToken, toToken, amount, execute } = body;
+  if (!fromToken || !toToken || !amount) return json({ error: 'Missing fields' }, 400);
 
   const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
   const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
-  
-  const ROUTER_ABI = [
-    "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)",
-    "function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)"
-  ];
-  const SOMNIA_ROUTER = "0x6aac14f090a35eea150705f72d90e4cdc4a49b2c";
-  const WSTT = "0xF22eF0085f6511f70b01a68F360dCc56261F768a";
-
-  const router = new ethers.Contract(SOMNIA_ROUTER, ROUTER_ABI, wallet);
   const amountWei = ethers.parseEther(amount.toString());
+  const deadline = Math.floor(Date.now() / 1000) + 600;
+
+  const resolve = (sym) => {
+    if (sym === 'STT') return TOKENS.WSTT;
+    return TOKENS[sym.toUpperCase()] || sym;
+  };
+
+  const addrIn  = resolve(fromToken);
+  const addrOut = resolve(toToken);
+  const isNativeIn = fromToken === 'STT';
+  const isV2 = (
+    (addrIn === TOKENS.WSTT && addrOut === TOKENS.SUSD) ||
+    (addrIn === TOKENS.SUSD && addrOut === TOKENS.WSTT)
+  );
 
   if (!execute) {
-    try {
-      const path = fromToken === 'STT' ? [WSTT, toToken] : [fromToken, WSTT];
-      const amounts = await router.getAmountsOut(amountWei, path);
-      return json({ expectedOut: ethers.formatEther(amounts[1]), gasFee: "0.0003" });
-    } catch (err) {
-      return json({ error: err.message }, 400);
+    return json({ expectedOut: 'estimated on execution', gasFee: '0.0018' });
+  }
+
+  try {
+    let tx;
+    if (isV2) {
+      if (!isNativeIn) {
+        const token = new ethers.Contract(addrIn, ERC20_ABI, wallet);
+        const allowance = await token.allowance(wallet.address, V2_ROUTER);
+        if (allowance < amountWei) {
+          const appTx = await token.approve(V2_ROUTER, ethers.MaxUint256);
+          await appTx.wait();
+        }
+      }
+      const router = new ethers.Contract(V2_ROUTER, V2_ROUTER_ABI, wallet);
+      tx = await router.swapExactTokensForTokens(
+        amountWei, 0, [addrIn, addrOut], address, deadline,
+        { gasLimit: 2000000 }
+      );
+    } else {
+      if (!isNativeIn) {
+        const token = new ethers.Contract(addrIn, ERC20_ABI, wallet);
+        const allowance = await token.allowance(wallet.address, V3_ROUTER);
+        if (allowance < amountWei) {
+          const appTx = await token.approve(V3_ROUTER, ethers.MaxUint256);
+          await appTx.wait();
+        }
+      }
+      const router = new ethers.Contract(V3_ROUTER, V3_ROUTER_ABI, wallet);
+      tx = await router.exactInputSingle({
+        tokenIn: addrIn, tokenOut: addrOut, fee: 500,
+        recipient: address, amountIn: amountWei,
+        amountOutMinimum: 0n, sqrtPriceLimitX96: 0n
+      }, { gasLimit: 1400000, value: isNativeIn ? amountWei : 0n });
     }
-  } else {
-    try {
-      const deadline = Math.floor(Date.now() / 1000) + 600;
-      const tx = await router.swapExactETHForTokens(0, [WSTT, toToken], address, deadline, { value: amountWei, gasLimit: 500000 });
-      return json({ txHash: tx.hash, status: 'pending' });
-    } catch (err) {
-      return json({ error: err.message }, 400);
-    }
+    const receipt = await tx.wait();
+    return json({ txHash: receipt.hash, status: 'success', explorer: 'https://explorer.somnia.network/tx/' + receipt.hash });
+  } catch (err) {
+    return json({ error: err.shortMessage || err.message, status: 'failed' }, 400);
   }
 }
+
 
 // ── Main router ───────────────────────────────────────────────────────────────
 
@@ -244,6 +323,7 @@ export default {
     if (method === 'POST' && path === '/policy')  return handlePostPolicy(request, env, userAddress);
     if (method === 'POST' && path === '/chat')    return handleChat(request, env);
     if (method === 'POST' && path === '/pay')     return handlePay(request, env, userAddress);
+    if (method === 'GET'  && path === '/balance') return handleBalance(request, env, userAddress);
     if (method === 'POST' && path === '/swap')    return handleSwap(request, env, userAddress);
 
     return json({ error: 'Not found' }, 404);
