@@ -69,6 +69,7 @@ Guidelines:
 - If the user says anything like "my balance", "show balance", "what is my balance", "token balance", "how much do I have", use action: "balance". This is NOT status.
 - Always keep the "message" field warm and human.
 - Never make up addresses or amounts.
+- If the user has no wallet connected (no address in context) and they ask to pay, swap, check balance, or do anything on-chain, respond with action: "chat" and tell them to connect their wallet first using the Connect button.
 - Always respond with valid JSON only, no extra text`;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -192,11 +193,16 @@ async function handlePostPolicy(request, env, address) {
 }
 
 async function handleChat(request, env) {
+  const userAddress = request.headers.get("x-user-address");
   const body = await request.json();
   const { message, conversationHistory = [], vaultBalance } = body;
   
   const history = conversationHistory.slice(-10);
-  const balanceContext = vaultBalance ? `\nThe user's current vault balance is ${vaultBalance} STT.` : "";
+  const walletContext = userAddress ? `
+The user wallet is already connected. Address: ${userAddress}. Never tell them to connect a wallet.` : "";
+  const balanceContext = vaultBalance ? `
+Vault balance: ${vaultBalance} STT.` : "";
+  const fullContext = walletContext + balanceContext;
 
   const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -209,7 +215,7 @@ async function handleChat(request, env) {
       temperature: 0.1,
       max_tokens: 400,
       messages: [
-        { role: 'system', content: GROQ_SYSTEM_PROMPT + balanceContext },
+        { role: 'system', content: GROQ_SYSTEM_PROMPT + fullContext },
         ...history,
         { role: 'user', content: message }
       ]
