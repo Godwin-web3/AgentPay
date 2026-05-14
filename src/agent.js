@@ -10,9 +10,10 @@ let kit = null;
 let engine = null;
 let agentId = null;
 let wallet = null;
+let provider = null;
 
 async function init() {
-  const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
+  provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
   wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   kit = new SomniaAgentKit({
@@ -36,7 +37,19 @@ async function init() {
   console.log('🛡️  AgentPay — Agentic Payment Layer');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('👛 Wallet:  ' + address);
-  console.log('💰 Balance: ' + parseFloat(ethers.formatEther(balance)).toFixed(4) + ' STT');
+  const ERC20_ABI = ['function balanceOf(address) external view returns (uint256)'];
+  const [wsttBal, pingBal, pongBal, susdBal] = await Promise.all([
+    new ethers.Contract(TOKENS.WSTT, ERC20_ABI, provider).balanceOf(address),
+    new ethers.Contract(TOKENS.PING, ERC20_ABI, provider).balanceOf(address),
+    new ethers.Contract(TOKENS.PONG, ERC20_ABI, provider).balanceOf(address),
+    new ethers.Contract(TOKENS.SUSD, ERC20_ABI, provider).balanceOf(address),
+  ]);
+  console.log('💰 Balances:');
+  console.log('   STT:  ' + parseFloat(ethers.formatEther(balance)).toFixed(4));
+  console.log('   WSTT: ' + parseFloat(ethers.formatEther(wsttBal)).toFixed(4));
+  console.log('   PING: ' + parseFloat(ethers.formatEther(pingBal)).toFixed(4));
+  console.log('   PONG: ' + parseFloat(ethers.formatEther(pongBal)).toFixed(4));
+  console.log('   SUSD: ' + parseFloat(ethers.formatEther(susdBal)).toFixed(4));
 
   return { kit, engine, wallet, address };
 }
@@ -208,4 +221,22 @@ function status() {
   console.log('   Paused:        ' + (summary.isPaused ? '🔴 YES' : '🟢 NO'));
 }
 
-module.exports = { init, registerAgent, pay, setupEscrowPolicy, history, status, prepareSwap, confirmSwap };
+async function showBalances() {
+  const address = await wallet.getAddress();
+  const ERC20_ABI = ['function balanceOf(address) external view returns (uint256)'];
+  const [stt, wstt, ping, pong, susd] = await Promise.all([
+    provider.getBalance(address),
+    new ethers.Contract(TOKENS.WSTT, ERC20_ABI, provider).balanceOf(address),
+    new ethers.Contract(TOKENS.PING, ERC20_ABI, provider).balanceOf(address),
+    new ethers.Contract(TOKENS.PONG, ERC20_ABI, provider).balanceOf(address),
+    new ethers.Contract(TOKENS.SUSD, ERC20_ABI, provider).balanceOf(address),
+  ]);
+  console.log('\n== Balances ==');
+  console.log('   STT:  ' + parseFloat(ethers.formatEther(stt)).toFixed(4));
+  console.log('   WSTT: ' + parseFloat(ethers.formatEther(wstt)).toFixed(4));
+  console.log('   PING: ' + parseFloat(ethers.formatEther(ping)).toFixed(4));
+  console.log('   PONG: ' + parseFloat(ethers.formatEther(pong)).toFixed(4));
+  console.log('   SUSD: ' + parseFloat(ethers.formatEther(susd)).toFixed(4));
+}
+
+module.exports = { init, registerAgent, pay, setupEscrowPolicy, history, status, prepareSwap, confirmSwap, showBalances };

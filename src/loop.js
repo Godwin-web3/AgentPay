@@ -1,7 +1,7 @@
 require('dotenv').config();
 const readline = require('readline');
 const { parseIntent, resetConversation } = require('./brain');
-const { pay, status, history, prepareSwap, confirmSwap } = require('./agent');
+const { pay, status, history, prepareSwap, confirmSwap, showBalances } = require('./agent');
 const { applyUpdate } = require('./policyManager');
 const scheduler = require('./scheduler');
 const { TOKENS } = require('./dex');
@@ -76,7 +76,7 @@ function prompt() {
 
     try {
       const intent = await parseIntent(input);
-      const _skipMsg = ['history','status','list_schedules','help','cancel_schedule'].includes(intent.action);
+      const _skipMsg = ['history','status','list_schedules','help','cancel_schedule','balance'].includes(intent.action);
         if (!_skipMsg) console.log('\n🤖 AgentPay: ' + intent.message);
 
       if (intent.action === 'propose_swap') {
@@ -220,6 +220,9 @@ function prompt() {
         status();
         resetConversation();
 
+      } else if (intent.action === 'balance') {
+        await showBalances();
+        resetConversation();
       } else if (intent.action === 'history') {
         history();
         resetConversation();
