@@ -2,8 +2,9 @@ require('dotenv').config();
 const { SomniaAgentKit, SOMNIA_NETWORKS } = require('somnia-agent-kit');
 const { ethers } = require('ethers');
 const PolicyEngine = require('./policyEngine');
-const { appendSpend, appendFailure, getHistory } = require('../utils/store');
+const { appendSpend, appendFailure, appendSwap, getHistory } = require('../utils/store');
 const { directSend, setPolicy } = require('./escrow');
+const { estimateSwap, executeSwap, TOKENS } = require('./dex');
 
 let kit = null;
 let engine = null;
@@ -40,11 +41,46 @@ async function init() {
   return { kit, engine, wallet, address };
 }
 
+async function prepareSwap(fromToken, toToken, amount) {
+  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🔄 Swap Estimation');
+  console.log('   From:   ' + fromToken);
+  console.log('   To:     ' + toToken);
+  console.log('   Amount: ' + amount);
+
+  const estimation = await estimateSwap(wallet, fromToken, toToken, amount);
+  if (estimation.success) {
+    console.log('\n📊 Estimation Results');
+    console.log('   Expected: ' + estimation.expectedOut);
+    console.log('   Gas Fee:  ' + estimation.estGasCost + ' STT');
+  } else {
+    console.log('\n❌ Estimation failed: ' + (estimation.error ? estimation.error.slice(0, 100) : 'Unknown error'));
+  }
+  return estimation;
+}
+
+async function confirmSwap(fromToken, toToken, amount) {
+  console.log('\n🚀 Executing Swap...');
+  const result = await executeSwap(wallet, fromToken, toToken, amount);
+  
+  if (result.success) {
+    console.log('\n✅ Swap successful!');
+    console.log('   TX: ' + result.txHash);
+    console.log('   🔗 https://explorer.somnia.network/tx/' + result.txHash);
+    const _rev = {}; Object.entries(TOKENS).forEach(([s,a]) => { _rev[a.toLowerCase()] = s; }); appendSwap({ fromToken: _rev[fromToken.toLowerCase()] || fromToken, toToken: _rev[toToken.toLowerCase()] || toToken, amount, txHash: result.txHash });
+  } else {
+    console.log('\n❌ Swap failed: ' + (result.error ? result.error.slice(0, 100) : 'Unknown error'));
+  }
+  return result;
+}
+
 async function registerAgent() {
-  console.log('\n📝 Registering AgentPay on Somnia...');
+  const agentName = process.env.AGENT_NAME || ('AgentPay-' + (await wallet.getAddress()).slice(0, 8));
+  let _agentNameRef = agentName;
+  console.log('\n📝 Registering ' + agentName + ' on Somnia...');
   try {
     const tx = await kit.contracts.registry.registerAgent(
-      'AgentPay',
+      agentName,
       'Policy-enforced agentic payment layer for Somnia users',
       'ipfs://agentpay-v1',
       ['payments', 'policy', 'guard', 'defi']
@@ -67,8 +103,8 @@ async function registerAgent() {
 
     return agentId;
   } catch (err) {
-    if (err.message.includes('already')) {
-      console.log('ℹ️  AgentPay already registered');
+    if (err.message.includes('already') || err.message.includes('0x03')) {
+      console.log('ℹ️  ' + _agentNameRef + ' already registered');
     } else {
       console.log('⚠️  Registration error: ' + err.message.slice(0, 80));
     }
@@ -140,10 +176,15 @@ function history() {
   }
   logs.forEach(function(entry) {
     const time = new Date(entry.timestamp).toLocaleTimeString();
-    const status = entry.failed ? '❌' : '✅';
-    console.log(status + ' [' + time + '] ' + entry.amount + ' STT → ' + entry.to.slice(0, 10) + '... (' + entry.reason + ')');
-    if (entry.failed) console.log('   Blocked: ' + entry.blockedReason.slice(0, 60));
-    if (entry.txHash) console.log('   TX: ' + entry.txHash.slice(0, 20) + '...');
+    if (entry.type === 'swap') {
+      console.log('🔄 [' + time + '] ' + entry.amount + ' ' + entry.fromToken + ' → ' + entry.toToken);
+      if (entry.txHash) console.log('   TX: ' + entry.txHash.slice(0, 20) + '...');
+    } else {
+      const status = entry.failed ? '❌' : '✅';
+      console.log(status + ' [' + time + '] ' + entry.amount + ' STT → ' + (entry.to ? entry.to.slice(0, 10) : '?') + '... (' + (entry.reason || '') + ')');
+      if (entry.failed) console.log('   Blocked: ' + (entry.blockedReason ? entry.blockedReason.slice(0, 60) : ''));
+      if (entry.txHash) console.log('   TX: ' + entry.txHash.slice(0, 20) + '...');
+    }
   });
 }
 
@@ -167,4 +208,4 @@ function status() {
   console.log('   Paused:        ' + (summary.isPaused ? '🔴 YES' : '🟢 NO'));
 }
 
-module.exports = { init, registerAgent, pay, setupEscrowPolicy, history, status };
+module.exports = { init, registerAgent, pay, setupEscrowPolicy, history, status, prepareSwap, confirmSwap };

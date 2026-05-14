@@ -87,8 +87,23 @@ function getHistory(limit) {
   return store.spends.slice(-limit).reverse();
 }
 
+function appendSwap({ fromToken, toToken, amount, txHash }) {
+  const store = readStore();
+  store.spends.push({
+    type: 'swap',
+    fromToken,
+    toToken,
+    amount,
+    txHash,
+    timestamp: Date.now(),
+    date: new Date().toDateString()
+  });
+  writeStore(store);
+}
+
 module.exports = {
   appendSpend,
+  appendSwap,
   appendFailure,
   getTodaySpend,
   getLastHourTxCount,

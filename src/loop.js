@@ -1,9 +1,17 @@
 require('dotenv').config();
 const readline = require('readline');
 const { parseIntent, resetConversation } = require('./brain');
-const { pay, status, history } = require('./agent');
+const { pay, status, history, prepareSwap, confirmSwap } = require('./agent');
 const { applyUpdate } = require('./policyManager');
 const scheduler = require('./scheduler');
+const { TOKENS } = require('./dex');
+
+function resolveSymbol(sym) {
+  if (!sym) return sym;
+  const upper = sym.toUpperCase();
+  if (TOKENS[upper]) return TOKENS[upper];
+  return sym;
+}
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -11,6 +19,7 @@ const rl = readline.createInterface({
 });
 
 let ownerAddress = null;
+let pendingSwap = null;
 
 function ask(question) {
   return new Promise(function(resolve) {
@@ -67,9 +76,47 @@ function prompt() {
 
     try {
       const intent = await parseIntent(input);
-      console.log('\n🤖 AgentPay: ' + intent.message);
+      const _skipMsg = ['history','status','list_schedules','help','cancel_schedule'].includes(intent.action);
+        if (!_skipMsg) console.log('\n🤖 AgentPay: ' + intent.message);
 
-      if (intent.action === 'pay') {
+      if (intent.action === 'propose_swap') {
+        if (!intent.fromToken || !intent.toToken || !intent.amount) {
+          console.log('   ⚠️  Missing swap details.');
+          prompt(); return;
+        }
+        
+        // Extract symbols directly from user input as fallback
+        const inputUpper = input.toUpperCase();
+        const knownSymbols = ['PING', 'PONG', 'SUSD', 'STT'];
+        const foundSymbols = knownSymbols.filter(s => inputUpper.includes(s));
+        const fromRaw = foundSymbols[0] || intent.fromToken;
+        const toRaw = foundSymbols[1] || intent.toToken;
+        const fromAddr = resolveSymbol(fromRaw);
+        const toAddr = resolveSymbol(toRaw);
+        const estimation = await prepareSwap(fromAddr, toAddr, intent.amount);
+        if (estimation.success) {
+          pendingSwap = {
+            fromToken: fromAddr,
+            toToken: toAddr,
+            amount: intent.amount
+          };
+          console.log('\n💬 Say "Confirm" or "Yes" to execute this swap.');
+        }
+        // resetConversation(); — keep context for confirmation
+
+      } else if (intent.action === 'execute_swap') {
+        if (!pendingSwap) {
+          console.log('   ⚠️  No pending swap to execute.');
+          prompt(); return;
+        }
+
+        const result = await confirmSwap(resolveSymbol(pendingSwap.fromToken), resolveSymbol(pendingSwap.toToken), pendingSwap.amount);
+        if (result.success) {
+          pendingSwap = null;
+        }
+        resetConversation();
+
+      } else if (intent.action === 'pay') {
         if (!intent.to) { console.log('   ⚠️  Please provide a recipient address.'); prompt(); return; }
         if (!intent.amount || intent.amount <= 0) { console.log('   ⚠️  Please provide a valid amount.'); prompt(); return; }
 
