@@ -9,7 +9,7 @@ interface Props {
   onBack: () => void
 }
 
-const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
+
 
 export default function Vault({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onBack }: Props) {
   const [showDeposit, setShowDeposit] = useState(false)

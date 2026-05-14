@@ -43,15 +43,6 @@ export default function App() {
     getTokenBalances(userAddress).then(setTokenBalances).catch(console.error)
   }, [userAddress])
 
-  const handleSwapIntent = (amount: string, token: string) => {
-    const userMsg: ChatMessage = {
-      role: 'user',
-      content: `Swap ${amount} STT for ${token}`,
-      timestamp: Date.now()
-    }
-    setMessages(prev => [...prev, userMsg])
-    setView('terminal')
-  }
 
   if (view === 'landing') {
     return <Landing onLaunch={() => setView('terminal')} />
@@ -86,7 +77,7 @@ export default function App() {
         
         <div className="view-content">
           {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} />}
-          {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onSwap={handleSwapIntent} onNavigate={(v) => setView(v as View)} />}
+          {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} />}
           {view === 'policy'   && <Policy userAddress={userAddress} />}
         </div>
       </main>

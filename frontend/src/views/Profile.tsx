@@ -9,8 +9,6 @@ interface Props {
   walletBalance: string
   tokenBalances: Record<string, string>
   activeProvider: any
-  onSwap?: (amount: string, token: string) => void
-  onNavigate?: (view: string) => void
 }
 
 type SubView = null | 'vault' | 'policy' | 'history' | 'agent'
@@ -21,13 +19,14 @@ const ChevronRight = () => (
   </svg>
 )
 
-export default function Profile({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onSwap, onNavigate }: Props) {
+export default function Profile({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider }: Props) {
   const [subView, setSubView] = useState<SubView>(null)
 
   function shortAddr(addr: string) {
     return addr.slice(0, 6) + '...' + addr.slice(-4)
   }
 
+  if (!userAddress) {
     return (
       <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
         Connect your wallet to view your account.
@@ -43,7 +42,7 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
     return (
       <div style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>← Back</button>
+          <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Back</button>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>POLICY</span>
         </div>
         <Policy userAddress={userAddress} />
@@ -55,7 +54,7 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
     return (
       <div style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>← Back</button>
+          <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Back</button>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>HISTORY</span>
         </div>
         <History userAddress={userAddress} />
@@ -67,7 +66,7 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
     return (
       <div style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>← Back</button>
+          <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Back</button>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>AGENT</span>
         </div>
         <div className="card" style={{ marginBottom: 12 }}>
@@ -80,7 +79,7 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
         </div>
         <div className="card">
           <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>NETWORK</div>
-          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 13 }}>Somnia Testnet — Chain ID 50312</div>
+          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 13 }}>Somnia Testnet | Chain ID 50312</div>
         </div>
       </div>
     )
@@ -90,7 +89,7 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
     { id: 'vault',   label: 'Vault',   desc: vaultBalance + ' STT in vault' },
     { id: 'policy',  label: 'Policy',  desc: 'Spending rules and caps' },
     { id: 'history', label: 'History', desc: 'Transaction log' },
-    { id: 'agent',   label: 'Agent',   desc: 'Agent ID 14 — Somnia Testnet' },
+    { id: 'agent',   label: 'Agent',   desc: 'Agent ID 14 | Somnia Testnet' },
   ]
 
   return (
@@ -99,7 +98,6 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
         <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>CONNECTED</div>
         <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 14 }}>{shortAddr(userAddress)}</div>
       </div>
-
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {menuItems.map(item => (
           <button
