@@ -57,6 +57,19 @@ export async function executePay(
   }, userAddress)
 }
 
+export async function executeSwap(
+  fromToken: string,
+  toToken: string,
+  amount: number,
+  execute: boolean,
+  userAddress: string
+): Promise<any> {
+  return request<any>('/swap', {
+    method: 'POST',
+    body: JSON.stringify({ fromToken, toToken, amount, execute })
+  }, userAddress)
+}
+
 export async function getPolicy(userAddress: string): Promise<PolicyData> {
   return request<PolicyData>('/policy', {}, userAddress)
 }

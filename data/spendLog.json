@@ -112,6 +112,60 @@
       "agentId": "30",
       "timestamp": 1778533033648,
       "date": "Mon May 11 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
+      "toToken": "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
+      "amount": 100,
+      "txHash": "0xdeef11a6c5231a917be9903da4004e75d73964ec61dbb8bc26a63b5914748c1f",
+      "timestamp": 1778743922850,
+      "date": "Thu May 14 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "PING",
+      "toToken": "PONG",
+      "amount": 1,
+      "txHash": "0xfca20c21dcfefcf053f9f99712fae130cd67b00b75e45af377046df163c75a1c",
+      "timestamp": 1778745799797,
+      "date": "Thu May 14 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "SUSD",
+      "toToken": "WSTT",
+      "amount": 10,
+      "txHash": "0xfa7794aca034ddc3e9f9b23cb0ee19a89f7aedbf04cc43c9a5cc6f008f2d87db",
+      "timestamp": 1778758457206,
+      "date": "Thu May 14 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "SUSD",
+      "toToken": "WSTT",
+      "amount": 10,
+      "txHash": "0xfa3d0c8167935f4692ef210848ed0bd348fbdf788971d503f61ab79717c1553b",
+      "timestamp": 1778759168707,
+      "date": "Thu May 14 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "WSTT",
+      "toToken": "SUSD",
+      "amount": 0.01,
+      "txHash": "0xb80628a7c8125014712b86f275c3ef1d660658afdea8238258b7ddd9f8c9d3cc",
+      "timestamp": 1778759206442,
+      "date": "Thu May 14 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "PING",
+      "toToken": "PONG",
+      "amount": 1,
+      "txHash": "0x3082dca335c1ae70f6c87b45a755bcaa4ad4be965160a5bddc5f429580ae5000",
+      "timestamp": 1778759239828,
+      "date": "Thu May 14 2026"
     }
   ],
   "sessions": []

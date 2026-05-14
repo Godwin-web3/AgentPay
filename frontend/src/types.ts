@@ -11,17 +11,21 @@ export interface ChatMessage {
   txHash?: string
   status?: 'executed' | 'rejected' | 'failed'
   explorer?: string
+  intent?: Intent // Add intent to store metadata for UI rendering
 }
 
 export interface Intent {
-  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'help' | 'unknown'
+  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'propose_swap' | 'execute_swap' | 'help' | 'unknown'
   to?: string
   amount?: number
+  fromToken?: string
+  toToken?: string
   reason?: string
   message: string
   interval?: string
   jobId?: number
-  conditions?: {
+  // ... rest of Intent properties
+
     minBalance?: number
     executeAt?: string
     executeOnDay?: string

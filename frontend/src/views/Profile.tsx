@@ -6,11 +6,12 @@ interface Props {
   vaultBalance: string
   walletBalance: string
   activeProvider: any
+  onSwap?: (amount: string, token: string) => void
 }
 
 const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
 
-export default function Profile({ userAddress, vaultBalance, walletBalance, activeProvider }: Props) {
+export default function Profile({ userAddress, vaultBalance, walletBalance, activeProvider, onSwap }: Props) {
   const [showWithdraw, setShowWithdraw] = useState(false)
   const [withdrawAmount, setWithdrawAmount] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,6 +19,9 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, acti
   const [showDeposit, setShowDeposit] = useState(false)
   const [depositAmount, setDepositAmount] = useState('')
   const [depositLoading, setDepositLoading] = useState(false)
+  const [showSwap, setShowSwap] = useState(false)
+  const [swapAmount, setSwapAmount] = useState('')
+  const [swapToken, setSwapToken] = useState('PING')
 
   function shortAddr(addr: string) {
     return addr.slice(0, 6) + '...' + addr.slice(-4)
@@ -100,13 +104,53 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, acti
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-        <button className="send-btn" style={{ flex: 1 }} onClick={() => { setShowDeposit(true); setShowWithdraw(false) }}>
+        <button className="send-btn" style={{ flex: 1 }} onClick={() => { setShowDeposit(true); setShowWithdraw(false); setShowSwap(false) }}>
           Deposit to Vault
         </button>
-        <button className="send-btn" style={{ flex: 1, background: 'transparent', border: '1px solid var(--cyan)', color: 'var(--cyan)' }} onClick={() => { setShowWithdraw(true); setShowDeposit(false) }}>
+        <button className="send-btn" style={{ flex: 1, background: 'transparent', border: '1px solid var(--cyan)', color: 'var(--cyan)' }} onClick={() => { setShowWithdraw(true); setShowDeposit(false); setShowSwap(false) }}>
           Withdraw from Vault
         </button>
       </div>
+
+      <button 
+        className="send-btn" 
+        style={{ width: '100%', marginBottom: 16, background: 'var(--cyan)', color: '#000' }}
+        onClick={() => { setShowSwap(true); setShowDeposit(false); setShowWithdraw(false) }}
+      >
+        🔄 Quick Swap STT
+      </button>
+
+      {showSwap && (
+        <div className="card" style={{ marginBottom: 16, border: '1px solid var(--cyan)' }}>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>Swap STT for other assets</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <input
+              type="number"
+              placeholder="0.00"
+              value={swapAmount}
+              onChange={e => setSwapAmount(e.target.value)}
+              style={{ flex: 2, padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontFamily: 'var(--font-mono)', boxSizing: 'border-box' }}
+            />
+            <select 
+              value={swapToken}
+              onChange={e => setSwapToken(e.target.value)}
+              style={{ flex: 1, padding: '8px', background: '#111', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--cyan)' }}
+            >
+              <option value="PING">PING</option>
+              <option value="PONG">PONG</option>
+              <option value="USDC">USDC</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="send-btn" onClick={() => onSwap?.(swapAmount, swapToken)} style={{ flex: 1 }}>
+              Propose Swap
+            </button>
+            <button onClick={() => setShowSwap(false)} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--muted)', cursor: 'pointer' }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {showWithdraw && (
         <div className="card" style={{ marginBottom: 16 }}>

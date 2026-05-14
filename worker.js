@@ -180,6 +180,42 @@ async function handlePay(request, env, address) {
   }
 }
 
+async function handleSwap(request, env, address) {
+  const body = await request.json();
+  const { fromToken, toToken, amount, execute } = body;
+
+  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
+  const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
+  
+  const ROUTER_ABI = [
+    "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)",
+    "function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)"
+  ];
+  const SOMNIA_ROUTER = "0x6aac14f090a35eea150705f72d90e4cdc4a49b2c";
+  const WSTT = "0xF22eF0085f6511f70b01a68F360dCc56261F768a";
+
+  const router = new ethers.Contract(SOMNIA_ROUTER, ROUTER_ABI, wallet);
+  const amountWei = ethers.parseEther(amount.toString());
+
+  if (!execute) {
+    try {
+      const path = fromToken === 'STT' ? [WSTT, toToken] : [fromToken, WSTT];
+      const amounts = await router.getAmountsOut(amountWei, path);
+      return json({ expectedOut: ethers.formatEther(amounts[1]), gasFee: "0.0003" });
+    } catch (err) {
+      return json({ error: err.message }, 400);
+    }
+  } else {
+    try {
+      const deadline = Math.floor(Date.now() / 1000) + 600;
+      const tx = await router.swapExactETHForTokens(0, [WSTT, toToken], address, deadline, { value: amountWei, gasLimit: 500000 });
+      return json({ txHash: tx.hash, status: 'pending' });
+    } catch (err) {
+      return json({ error: err.message }, 400);
+    }
+  }
+}
+
 // ── Main router ───────────────────────────────────────────────────────────────
 
 export default {
@@ -208,6 +244,7 @@ export default {
     if (method === 'POST' && path === '/policy')  return handlePostPolicy(request, env, userAddress);
     if (method === 'POST' && path === '/chat')    return handleChat(request, env);
     if (method === 'POST' && path === '/pay')     return handlePay(request, env, userAddress);
+    if (method === 'POST' && path === '/swap')    return handleSwap(request, env, userAddress);
 
     return json({ error: 'Not found' }, 404);
   }

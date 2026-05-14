@@ -1,5 +1,5 @@
-import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy } from '../api'
+import React, { useRef, useEffect, useState } from 'react'
+import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, executeSwap } from '../api'
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -30,6 +30,13 @@ function TxBadge({ result }: { result?: any }) {
   if (result.status === 'failed') {
     return <div className="tx-badge failed">⚠️ Error: {result.reason}</div>
   }
+  if (result.status === 'swapped') {
+    return (
+      <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
+        🔄 Swap Complete: View TX
+      </a>
+    )
+  }
   return null
 }
 
@@ -37,6 +44,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [txResults, setTxResults] = React.useState<Record<number, any>>({})
+  const [pendingSwap, setPendingSwap] = useState<any>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -46,8 +54,8 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
     }
   }, [messages, loading])
 
-  async function handleSend() {
-    const text = input.trim()
+  async function handleSend(overrideText?: string) {
+    const text = overrideText || input.trim()
     if (!text || loading) return
 
     if (text.toLowerCase() === "status") {
@@ -78,12 +86,31 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
       const assistantMsg: ChatMessage = {
         role: 'assistant',
         content: intent.message || 'Processing complete.',
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        intent: intent
       }
 
       setMessages(prev => {
         const next = [...prev, assistantMsg]
         const msgIndex = next.length - 1
+
+        if (intent.action === 'propose_swap') {
+          executeSwap(intent.fromToken!, intent.toToken!, intent.amount!, false, userAddress)
+            .then(swapRes => {
+              setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposed', ...swapRes } }))
+              setPendingSwap({ ...intent, msgIndex })
+            })
+            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+        }
+
+        if (intent.action === 'execute_swap' && pendingSwap) {
+          executeSwap(pendingSwap.fromToken, pendingSwap.toToken, pendingSwap.amount, true, userAddress)
+            .then(swapRes => {
+              setTxResults(r => ({ ...r, [msgIndex]: { status: 'swapped', explorer: 'https://shannon-explorer.somnia.network/tx/' + swapRes.txHash } }))
+              setPendingSwap(null)
+            })
+            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+        }
 
         if (intent.action === 'pay' && intent.to && intent.amount) {
           const requestId = generateRequestId()
@@ -146,6 +173,24 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
               {msg.role === 'assistant' && txResults[i] && (
                 <div style={{ marginTop: 10 }}>
                   <TxBadge result={txResults[i]} />
+                  {txResults[i].status === 'proposed' && (
+                    <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                      <button 
+                        className="send-btn" 
+                        style={{ fontSize: 12, padding: '4px 12px' }}
+                        onClick={() => handleSend('Yes, confirm swap')}
+                      >
+                        Confirm Swap
+                      </button>
+                      <button 
+                        className="send-btn" 
+                        style={{ fontSize: 12, padding: '4px 12px', background: 'transparent', border: '1px solid var(--border)' }}
+                        onClick={() => { setPendingSwap(null); setTxResults(r => ({ ...r, [i]: { status: 'failed', reason: 'User cancelled' } })) }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

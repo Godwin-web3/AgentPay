@@ -26,6 +26,16 @@ export default function App() {
     timestamp: Date.now()
   }])
 
+  const handleSwapIntent = (amount: string, token: string) => {
+    const userMsg: ChatMessage = {
+      role: 'user',
+      content: `Swap ${amount} STT for ${token}`,
+      timestamp: Date.now()
+    }
+    setMessages(prev => [...prev, userMsg])
+    setView('terminal')
+  }
+
   if (view === 'landing') {
     return <Landing onLaunch={() => setView('terminal')} />
   }
@@ -60,7 +70,7 @@ export default function App() {
         <div className="view-content">
           {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} />}
           {view === 'policy'   && <Policy userAddress={userAddress} />}
-          {view === 'profile'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} activeProvider={activeProvider} />}
+          {view === 'profile'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} activeProvider={activeProvider} onSwap={handleSwapIntent} />}
         </div>
       </main>
 

@@ -19,6 +19,11 @@ const ERC20_ABI = [
 
 // Somnia Shannon Testnet Config
 const SOMNIA_ROUTER = getAddress("0x6AAC14f090A35EeA150705f72D90E4CDC4a49b2C");
+const SOMNIA_V2_ROUTER = "0xc81501B65A040bF5f1794D0Ca2b953aebb2b1996";
+const V2_ROUTER_ABI = [
+  "function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline) external returns (uint256[] memory amounts)",
+  "function addLiquidity(address tokenA, address tokenB, uint256 amountADesired, uint256 amountBDesired, uint256 amountAMin, uint256 amountBMin, address to, uint256 deadline) external returns (uint256 amountA, uint256 amountB, uint256 liquidity)"
+];
 const FEE_TIER = 500; // 0.05%
 
 const TOKENS = {
@@ -56,7 +61,7 @@ async function estimateSwap(wallet, tokenIn, tokenOut, amount) {
       amountInWei: amountInWei.toString()
     };
   } catch (err) {
-    return { success: false, error: err.message };
+    return { success: false, error: err.message + ' | ' + (err.data || '') + ' | ' + (err.reason || '') };
   }
 }
 
@@ -80,6 +85,31 @@ async function executeSwap(wallet, tokenIn, tokenOut, amount) {
         await appTx.wait();
         console.log('✅ Approved');
       }
+    }
+
+    // Use V2 router for WSTT/SUSD pair
+    const isV2Pair = (
+      (addrIn === TOKENS.WSTT && addrOut === TOKENS.SUSD) ||
+      (addrIn === TOKENS.SUSD && addrOut === TOKENS.WSTT)
+    );
+
+    if (isV2Pair) {
+      if (!isNativeIn) {
+        const tokenContract = new ethers.Contract(addrIn, ERC20_ABI, wallet);
+        const allowance = await tokenContract.allowance(wallet.address, SOMNIA_V2_ROUTER);
+        if (allowance < amountInWei) {
+          console.log('🔓 Approving token for V2 router...');
+          const appTx = await tokenContract.approve(SOMNIA_V2_ROUTER, ethers.MaxUint256);
+          await appTx.wait();
+        }
+      }
+      const v2router = new ethers.Contract(SOMNIA_V2_ROUTER, V2_ROUTER_ABI, wallet);
+      const tx = await v2router.swapExactTokensForTokens(
+        amountInWei, 0, [addrIn, addrOut], wallet.address, deadline,
+        { gasLimit: 2000000 }
+      );
+      const receipt = await tx.wait();
+      return { success: true, txHash: receipt.hash };
     }
 
     const params = {

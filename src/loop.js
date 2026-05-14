@@ -87,8 +87,16 @@ function prompt() {
         
         // Extract symbols directly from user input as fallback
         const inputUpper = input.toUpperCase();
-        const knownSymbols = ['PING', 'PONG', 'SUSD', 'STT'];
-        const foundSymbols = knownSymbols.filter(s => inputUpper.includes(s));
+        const knownSymbols = ['PING', 'PONG', 'SUSD', 'WSTT', 'STT'];
+        const foundSymbols = knownSymbols
+          .filter(s => {
+            const idx = inputUpper.indexOf(s);
+            if (idx === -1) return false;
+            // STT must not be part of WSTT
+            if (s === 'STT' && inputUpper.includes('WSTT')) return false;
+            return true;
+          })
+          .sort((a, b) => inputUpper.indexOf(a) - inputUpper.indexOf(b));
         const fromRaw = foundSymbols[0] || intent.fromToken;
         const toRaw = foundSymbols[1] || intent.toToken;
         const fromAddr = resolveSymbol(fromRaw);
