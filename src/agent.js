@@ -88,6 +88,20 @@ async function confirmSwap(fromToken, toToken, amount) {
 }
 
 async function registerAgent() {
+  try {
+    const address = await wallet.getAddress();
+    const existing = await kit.contracts.registry.getOwnerAgents(address);
+    if (existing && existing.length > 0) {
+      agentId = existing[0];
+      console.log('\n✅ Agent already registered');
+      console.log('   Agent ID: ' + agentId.toString());
+      return agentId;
+    }
+  } catch (err) {
+    console.log('⚠️  Could not check existing agents: ' + err.message.slice(0, 80));
+  }
+  // No existing agent — register fresh
+
   const agentName = process.env.AGENT_NAME || ('AgentPay-' + (await wallet.getAddress()).slice(0, 8));
   let _agentNameRef = agentName;
   console.log('\n📝 Registering ' + agentName + ' on Somnia...');

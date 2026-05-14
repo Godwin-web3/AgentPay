@@ -166,6 +166,15 @@
       "txHash": "0x3082dca335c1ae70f6c87b45a755bcaa4ad4be965160a5bddc5f429580ae5000",
       "timestamp": 1778759239828,
       "date": "Thu May 14 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "SUSD",
+      "toToken": "WSTT",
+      "amount": 50,
+      "txHash": "0x39a0c439bd300cfae6a34231652a8e27793573dee94a905c5f983a1b43e84e13",
+      "timestamp": 1778764398228,
+      "date": "Thu May 14 2026"
     }
   ],
   "sessions": []
