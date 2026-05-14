@@ -1,206 +1,119 @@
 import { useState } from 'react'
 import History from './History'
+import Vault from './Vault'
+import Policy from './Policy'
 
 interface Props {
   userAddress: string
   vaultBalance: string
   walletBalance: string
+  tokenBalances: Record<string, string>
   activeProvider: any
-  tokenBalances?: Record<string, string>
   onSwap?: (amount: string, token: string) => void
+  onNavigate?: (view: string) => void
 }
 
-const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
+type SubView = null | 'vault' | 'policy' | 'history' | 'agent'
 
-export default function Profile({ userAddress, vaultBalance, walletBalance, tokenBalances = {}, activeProvider, onSwap }: Props) {
-  const [showWithdraw, setShowWithdraw] = useState(false)
-  const [withdrawAmount, setWithdrawAmount] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [showDeposit, setShowDeposit] = useState(false)
-  const [depositAmount, setDepositAmount] = useState('')
-  const [depositLoading, setDepositLoading] = useState(false)
-  const [showSwap, setShowSwap] = useState(false)
-  const [swapAmount, setSwapAmount] = useState('')
-  const [swapToken, setSwapToken] = useState('PING')
+const ChevronRight = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6"/>
+  </svg>
+)
+
+export default function Profile({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onSwap, onNavigate }: Props) {
+  const [subView, setSubView] = useState<SubView>(null)
 
   function shortAddr(addr: string) {
     return addr.slice(0, 6) + '...' + addr.slice(-4)
   }
 
-  function copyAddress() {
-    navigator.clipboard.writeText(userAddress)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  async function handleWithdraw() {
-    if (!withdrawAmount || isNaN(Number(withdrawAmount)) || !activeProvider) return
-    setLoading(true)
-    try {
-      const amount = '0x' + BigInt(Math.floor(Number(withdrawAmount) * 1e18)).toString(16)
-      const data = '0x2e1a7d4d' + amount.replace('0x', '').padStart(64, '0')
-      await activeProvider.request({
-        method: 'eth_sendTransaction',
-        params: [{ from: userAddress, to: VAULT_ADDRESS, data }]
-      })
-      setShowWithdraw(false)
-      setWithdrawAmount('')
-    } catch (err) {
-      console.error('Withdraw failed', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleDeposit() {
-    if (!depositAmount || isNaN(Number(depositAmount)) || !activeProvider) return
-    setDepositLoading(true)
-    try {
-      const value = '0x' + BigInt(Math.floor(Number(depositAmount) * 1e18)).toString(16)
-      await activeProvider.request({
-        method: 'eth_sendTransaction',
-        params: [{ from: userAddress, to: VAULT_ADDRESS, data: '0xd0e30db0', value }]
-      })
-      setShowDeposit(false)
-      setDepositAmount('')
-    } catch (err) {
-      console.error('Deposit failed', err)
-    } finally {
-      setDepositLoading(false)
-    }
-  }
-
-  if (!userAddress) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)' }}>
-        Connect your wallet to view your profile.
+      <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>
+        Connect your wallet to view your account.
       </div>
     )
   }
 
+  if (subView === 'vault') {
+    return <Vault userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onBack={() => setSubView(null)} />
+  }
+
+  if (subView === 'policy') {
+    return (
+      <div style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+          <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>← Back</button>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>POLICY</span>
+        </div>
+        <Policy userAddress={userAddress} />
+      </div>
+    )
+  }
+
+  if (subView === 'history') {
+    return (
+      <div style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+          <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>← Back</button>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>HISTORY</span>
+        </div>
+        <History userAddress={userAddress} />
+      </div>
+    )
+  }
+
+  if (subView === 'agent') {
+    return (
+      <div style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+          <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>← Back</button>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>AGENT</span>
+        </div>
+        <div className="card" style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>AGENT ID</div>
+          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 18, fontWeight: 'bold' }}>14</div>
+        </div>
+        <div className="card" style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>WALLET</div>
+          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all' }}>{userAddress}</div>
+        </div>
+        <div className="card">
+          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>NETWORK</div>
+          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 13 }}>Somnia Testnet — Chain ID 50312</div>
+        </div>
+      </div>
+    )
+  }
+
+  const menuItems = [
+    { id: 'vault',   label: 'Vault',   desc: vaultBalance + ' STT in vault' },
+    { id: 'policy',  label: 'Policy',  desc: 'Spending rules and caps' },
+    { id: 'history', label: 'History', desc: 'Transaction log' },
+    { id: 'agent',   label: 'Agent',   desc: 'Agent ID 14 — Somnia Testnet' },
+  ]
+
   return (
     <div style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
-      <div className="card" style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Wallet</div>
-        <div
-          style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', cursor: 'pointer', fontSize: 14 }}
-          onClick={copyAddress}
-        >
-          {shortAddr(userAddress)} {copied ? '✅' : '📋'}
-        </div>
+      <div className="card" style={{ marginBottom: 24, padding: '12px 16px' }}>
+        <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>CONNECTED</div>
+        <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 14 }}>{shortAddr(userAddress)}</div>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8 }}>Wallet Balances</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {[['STT', walletBalance], ['WSTT', tokenBalances.WSTT || '0.0000'], ['PING', tokenBalances.PING || '0.0000'], ['PONG', tokenBalances.PONG || '0.0000'], ['SUSD', tokenBalances.SUSD || '0.0000']].map(([sym, bal]) => (
-            <div className="card" key={sym} style={{ padding: '10px 12px' }}>
-              <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>{sym}</div>
-              <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 15, fontWeight: 'bold' }}>{bal}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {menuItems.map(item => (
+          <button
+            key={item.id}
+            onClick={() => setSubView(item.id as SubView)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+          >
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, marginBottom: 2 }}>{item.label}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--muted)', fontSize: 11 }}>{item.desc}</div>
             </div>
-          ))}
-          <div className="card" style={{ padding: '10px 12px' }}>
-            <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>VAULT (STT)</div>
-            <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 15, fontWeight: 'bold' }}>{vaultBalance}</div>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-        <button className="send-btn" style={{ flex: 1 }} onClick={() => { setShowDeposit(true); setShowWithdraw(false); setShowSwap(false) }}>
-          Deposit to Vault
-        </button>
-        <button className="send-btn" style={{ flex: 1, background: 'transparent', border: '1px solid var(--cyan)', color: 'var(--cyan)' }} onClick={() => { setShowWithdraw(true); setShowDeposit(false); setShowSwap(false) }}>
-          Withdraw from Vault
-        </button>
-      </div>
-
-      <button 
-        className="send-btn" 
-        style={{ width: '100%', marginBottom: 16, background: 'var(--cyan)', color: '#000' }}
-        onClick={() => { setShowSwap(true); setShowDeposit(false); setShowWithdraw(false) }}
-      >
-        🔄 Quick Swap STT
-      </button>
-
-      {showSwap && (
-        <div className="card" style={{ marginBottom: 16, border: '1px solid var(--cyan)' }}>
-          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>Swap STT for other assets</div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <input
-              type="number"
-              placeholder="0.00"
-              value={swapAmount}
-              onChange={e => setSwapAmount(e.target.value)}
-              style={{ flex: 2, padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontFamily: 'var(--font-mono)', boxSizing: 'border-box' }}
-            />
-            <select 
-              value={swapToken}
-              onChange={e => setSwapToken(e.target.value)}
-              style={{ flex: 1, padding: '8px', background: '#111', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--cyan)' }}
-            >
-              <option value="PING">PING</option>
-              <option value="PONG">PONG</option>
-              <option value="USDC">USDC</option>
-            </select>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="send-btn" onClick={() => onSwap?.(swapAmount, swapToken)} style={{ flex: 1 }}>
-              Propose Swap
-            </button>
-            <button onClick={() => setShowSwap(false)} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--muted)', cursor: 'pointer' }}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {showWithdraw && (
-        <div className="card" style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>Amount to withdraw (max {vaultBalance} STT)</div>
-          <input
-            type="number"
-            placeholder="0.00"
-            value={withdrawAmount}
-            onChange={e => setWithdrawAmount(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontFamily: 'var(--font-mono)', marginBottom: 8, boxSizing: 'border-box' }}
-          />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="send-btn" onClick={handleWithdraw} disabled={loading} style={{ flex: 1 }}>
-              {loading ? 'Confirming...' : 'Confirm'}
-            </button>
-            <button onClick={() => setShowWithdraw(false)} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--muted)', cursor: 'pointer' }}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {showDeposit && (
-        <div className="card" style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>Amount to deposit (max {walletBalance} STT)</div>
-          <input
-            type="number"
-            placeholder="0.00"
-            value={depositAmount}
-            onChange={e => setDepositAmount(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontFamily: 'var(--font-mono)', marginBottom: 8, boxSizing: 'border-box' }}
-          />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="send-btn" onClick={handleDeposit} disabled={depositLoading} style={{ flex: 1 }}>
-              {depositLoading ? 'Confirming...' : 'Confirm'}
-            </button>
-            <button onClick={() => setShowDeposit(false)} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--muted)', cursor: 'pointer' }}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div style={{ marginTop: 8 }}>
-        <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 12 }}>Transaction History</div>
-        <History userAddress={userAddress} />
+            <span style={{ color: 'var(--muted)' }}><ChevronRight /></span>
+          </button>
+        ))}
       </div>
     </div>
   )
