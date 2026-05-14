@@ -231,7 +231,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
           disabled={loading}
           style={{ maxHeight: '120px' }}
         />
-        <button className="send-btn icon-btn" onClick={handleSend} disabled={loading || !input.trim()}>
+        <button className="send-btn icon-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>
           ➤
         </button>
       </div>

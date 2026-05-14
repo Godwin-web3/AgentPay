@@ -24,8 +24,7 @@ export interface Intent {
   message: string
   interval?: string
   jobId?: number
-  // ... rest of Intent properties
-
+  conditions?: {
     minBalance?: number
     executeAt?: string
     executeOnDay?: string
