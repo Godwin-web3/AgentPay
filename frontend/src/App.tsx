@@ -73,7 +73,7 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="main">
-        <AgentHeader onAddressChange={setUserAddress} onBalanceChange={(v, w) => { setVaultBalance(v); setWalletBalance(w) }} onProviderChange={setActiveProvider} />
+        <AgentHeader onAddressChange={setUserAddress} onBalanceChange={(v, w) => { setVaultBalance(v); setWalletBalance(w) }} onProviderChange={setActiveProvider} currentView={view} onNavigate={(v) => setView(v as View)} />
         
         <div className="view-content">
           {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} />}
