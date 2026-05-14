@@ -317,9 +317,22 @@ export default {
     }
 
     if (method === 'GET'  && path === '/health')  return handleHealth(env);
-    if (!userAddress && path !== '/chat') return json({ error: 'Missing x-user-address header' }, 401);
+    if (!userAddress) return json({ error: 'Missing x-user-address header' }, 401);
 
     if (method === 'GET'  && path === '/policy')  return handleGetPolicy(request, env, userAddress);
+    if (method === 'POST' && path === '/policy')  return handlePostPolicy(request, env, userAddress);
+    if (method === 'POST' && path === '/chat')    return handleChat(request, env, userAddress);
+    if (method === 'POST' && path === '/pay')     return handlePay(request, env, userAddress);
+    if (method === 'GET'  && path === '/balance') return handleBalance(request, env, userAddress);
+    if (method === 'POST' && path === '/swap')    return handleSwap(request, env, userAddress);
+
+    return json({ error: 'Not found' }, 404);
+  }
+};
+ror: 'Not found' }, 404);
+  }
+};
+GetPolicy(request, env, userAddress);
     if (method === 'POST' && path === '/policy')  return handlePostPolicy(request, env, userAddress);
     if (method === 'POST' && path === '/chat')    return handleChat(request, env);
     if (method === 'POST' && path === '/pay')     return handlePay(request, env, userAddress);
