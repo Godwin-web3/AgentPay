@@ -17,23 +17,23 @@ function TxBadge({ result }: { result?: any }) {
   if (result.status === 'executed') {
     return (
       <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
-        ✅ View Transaction: {result.txHash?.slice(0, 8)}...
+        [OK] View Transaction: {result.txHash?.slice(0, 8)}...
       </a>
     )
   }
   if (result.status === 'rejected') {
-    return <div className="tx-badge rejected">🚫 Blocked: {result.reason}</div>
+    return <div className="tx-badge rejected">[BLOCKED] {result.reason}</div>
   }
   if (result.status === 'policy_updated') {
-    return <div className="tx-badge success">🛡️ Policy Synchronized</div>
+    return <div className="tx-badge success">[POLICY] Synchronized</div>
   }
   if (result.status === 'failed') {
-    return <div className="tx-badge failed">⚠️ Error: {result.reason}</div>
+    return <div className="tx-badge failed">[ERROR] {result.reason}</div>
   }
   if (result.status === 'swapped') {
     return (
       <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
-        🔄 Swap Complete: View TX
+        [SWAP] Complete: View TX
       </a>
     )
   }
@@ -213,6 +213,32 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
             </div>
           </div>
         )}
+      </div>
+
+      <div className="quick-actions">
+        {[
+          { label: 'SEND', prompt: 'Send STT to ' },
+          { label: 'SWAP', prompt: 'Swap STT to ' },
+          { label: 'SCHEDULE', prompt: 'Schedule a payment of ' },
+          { label: 'BALANCE', prompt: 'What is my vault balance?' },
+          { label: 'POLICY', prompt: 'Show my current policy' },
+        ].map(({ label, prompt }) => (
+          <button
+            key={label}
+            className="quick-action-btn"
+            onClick={() => {
+              if (prompt.endsWith('?') || !prompt.endsWith(' ')) {
+                handleSend(prompt)
+              } else {
+                setInput(prompt)
+                inputRef.current?.focus()
+              }
+            }}
+            disabled={loading}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="input-area">
