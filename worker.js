@@ -211,63 +211,94 @@ async function handleGetPolicy(request, env, address) {
 }
 
 async function handleChat(request, env) {
-  const userAddress = request.headers.get("x-user-address");
-  if (!userAddress) return json({ error: 'Missing address' }, 401);
+const userAddress = request.headers.get("x-user-address");
+if (!userAddress) return json({ error: 'Missing address' }, 401);
 
-  const body = await request.json();
-  const { message, vaultBalance } = body;
-  if (!message) return json({ error: 'Missing message' }, 400);
+const body = await request.json();
+const { message, vaultBalance } = body;
+if (!message) return json({ error: 'Missing message' }, 400);
 
-  const kvKey = `chat_history_${userAddress.toLowerCase()}`;
-  let history = [];
-  try {
-    const stored = await env.AGENTPAY_KV.get(kvKey);
-    if (stored) history = JSON.parse(stored);
-  } catch (e) {}
+const kvKey = `chat_history_${userAddress.toLowerCase()}`;
+let history = [];
+try {
+const stored = await env.AGENTPAY_KV.get(kvKey);
+if (stored) history = JSON.parse(stored);
+} catch (e) {}
 
-  const walletContext = `\nThe user wallet is connected. Address: ${userAddress}.`;
-  const balanceContext = vaultBalance ? `\nVault balance: ${vaultBalance} STT.` : "";
-  const dateContext = `\nToday's date is: ${new Date().toISOString().split('T')[0]}`;
-  const fullContext = GROQ_SYSTEM_PROMPT + walletContext + balanceContext + dateContext;
+const walletContext = `
+The user wallet is connected. Address: ${userAddress}.`;
+const balanceContext = vaultBalance ? `
+Vault balance: ${vaultBalance} STT.` : "";
+const dateContext = `
+Today's date is: ${new Date().toISOString().split('T')[0]}`;
+const fullContext = GROQ_SYSTEM_PROMPT + walletContext + balanceContext + dateContext;
 
-  const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + env.GROQ_API_KEY
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.1,
-      max_tokens: 400,
-      messages: [
-        { role: 'system', content: fullContext },
-        ...history.slice(-15).map(m => ({ role: m.role, content: m.content })),
-        { role: 'user', content: message }
-      ]
-    })
-  });
+const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Authorization': 'Bearer ' + env.GROQ_API_KEY
+},
+body: JSON.stringify({
+model: 'llama-3.3-70b-versatile',
+temperature: 0.1,
+max_tokens: 400,
+messages: [
+{ role: 'system', content: fullContext },
+...history.slice(-15).map(m => ({ role: m.role, content: m.content })),
+{ role: 'user', content: message }
+]
+})
+});
 
-  const groqData = await groqRes.json();
-  const raw = groqData.choices?.[0]?.message?.content?.trim() || '{}';
-  const cleaned = raw.replace(/```json|```/g, '').trim();
+const groqData = await groqRes.json();
+const raw = groqData.choices?.[0]?.message?.content?.trim() || '{}';
+const cleaned = raw.replace(/```json|```/g, '').trim();
 
-  try {
-    const intent = JSON.parse(cleaned);
-    const assistantMsg = intent.message || '';
-    
-    history.push({ role: 'user', content: message, timestamp: Date.now() });
-    history.push({ role: 'assistant', content: assistantMsg, timestamp: Date.now(), intent });
-    
-    if (history.length > 50) history = history.slice(-50);
-    await env.AGENTPAY_KV.put(kvKey, JSON.stringify(history));
+try {
+const intent = JSON.parse(cleaned);
+const assistantMsg = intent.message || 'Got it!';
 
-    return json({ intent, message: assistantMsg });
-  } catch {
-    return json({ intent: { action: 'chat', message: raw }, message: raw });
-  }
+// ── Enrich with real on-chain data ─────────────────────────────────────
+let enrichedData = null;
+
+if (intent.action === 'balance') {
+const balanceRes = await handleBalance({ headers: new Headers() }, env, userAddress);
+const balanceJson = await balanceRes.json();
+enrichedData = balanceJson;
+intent.message = assistantMsg; // keep LLM's friendly text
 }
+else if (intent.action === 'policy') {
+const policyRes = await handleGetPolicy({ headers: new Headers() }, env, userAddress);
+const policyJson = await policyRes.json();
+enrichedData = policyJson;
+}
+// Add more actions later (swap proposal, schedules, etc.)
 
+// Save to history (clean version - no full intent object to avoid Groq errors)
+history.push({ role: 'user', content: message, timestamp: Date.now() });
+history.push({ 
+role: 'assistant', 
+content: assistantMsg, 
+timestamp: Date.now(),
+intent: { action: intent.action } // minimal for history
+});
+
+if (history.length > 50) history = history.slice(-50);
+await env.AGENTPAY_KV.put(kvKey, JSON.stringify(history));
+
+// Return enriched response
+return json({ 
+intent, 
+message: assistantMsg,
+data: enrichedData 
+});
+
+} catch (e) {
+console.error("Chat parse error:", e);
+return json({ intent: { action: 'chat', message: raw }, message: raw });
+}
+}
 async function handleGetChat(request, env, address) {
   const kvKey = `chat_history_${address.toLowerCase()}`;
   const stored = await env.AGENTPAY_KV.get(kvKey);
