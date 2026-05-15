@@ -249,6 +249,7 @@ async function handleChat(request, env) {
   });
 
   const groqData = await groqRes.json();
+  console.error('GROQ_DEBUG:', JSON.stringify(groqData));
   const raw = groqData.choices?.[0]?.message?.content?.trim() || '{}';
   const cleaned = raw.replace(/```json|```/g, '').trim();
 
