@@ -47,7 +47,7 @@ function PolicyCard({ data }: { data: any }) {
       <div className="policy-grid">
         <div><strong>Per Tx:</strong> {data.perTxCap} STT</div>
         <div><strong>Daily Cap:</strong> {data.dailyCap} STT</div>
-        <div><strong>Spent:</strong> {data.dailySpendSoFar} STT</div>
+        <div><strong>Spent Today:</strong> {data.dailySpendSoFar} STT</div>
         <div><strong>Remaining:</strong> <span className="highlight">{data.dailyRemaining} STT</span></div>
         <div><strong>Status:</strong> <span className={data.active ? 'active' : 'inactive'}>{data.active ? 'ACTIVE' : 'PAUSED'}</span></div>
       </div>
@@ -58,8 +58,6 @@ function PolicyCard({ data }: { data: any }) {
 export default function Terminal({ messages, setMessages, userAddress }: Props) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [txResults, setTxResults] = useState<Record<number, any>>({});
-  const [pendingSwap, setPendingSwap] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -72,7 +70,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
         })
         .finally(() => setLoading(false));
     }
-  }, [userAddress]);
+  }, [userAddress, setMessages]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
@@ -98,13 +96,14 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
       return;
     }
 
-    const userMsg = { role: 'user' as const, content: text, timestamp: Date.now() };
+    const userMsg: ChatMessage = { role: 'user', content: text, timestamp: Date.now() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
     try {
       const res = await sendChat(text, userAddress);
+
       const assistantMsg: ChatMessage = {
         role: 'assistant',
         content: res.message || 'Got it!',
@@ -115,19 +114,13 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
 
       setMessages(prev => [...prev, assistantMsg]);
 
-      // Keep your original action handlers
-      const msgIndex = messages.length;
-      const intent = res.intent;
-
-      if (intent.action === 'propose_swap' && intent.fromToken && intent.toToken && intent.amount) {
-        // TODO: call your swap logic
-      }
-      if (intent.action === 'pay') {
-        // TODO: call your pay logic
-      }
-
     } catch (err) {
       console.error(err);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Sorry, something went wrong.',
+        timestamp: Date.now()
+      }]);
     } finally {
       setLoading(false);
     }
@@ -144,13 +137,16 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
               {msg.data && msg.intent?.action === 'balance' && <BalanceCard data={msg.data} />}
               {msg.data && msg.intent?.action === 'policy' && <PolicyCard data={msg.data} />}
 
-              <TxBadge result={txResults[i]} />
             </div>
             <small className="timestamp">{new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small>
           </div>
         ))}
 
-        {loading && <div className="message assistant"><div className="message-bubble typing">thinking...</div></div>}
+        {loading && (
+          <div className="message assistant">
+            <div className="message-bubble typing">AgentPay is thinking...</div>
+          </div>
+        )}
       </div>
 
       <div className="chat-input-area">
@@ -158,8 +154,13 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
           ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-          placeholder="Ask AgentPay... (balance, policy, send, swap...)"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          placeholder="Ask AgentPay... (e.g. What's my balance?, Show my policy, Send 10 STT to ...)"
           rows={1}
         />
         <button onClick={handleSend} disabled={loading || !input.trim()}>Send</button>
@@ -168,14 +169,19 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
   );
 }
 
-// Helper functions (adjust URL if needed)
+// API Helpers
 async function getChatHistory(address: string) {
-  const r = await fetch('https://agentpay-worker.mbagodwin419.workers.dev/chat', { headers: {'x-user-address': address} });
+  const r = await fetch('https://agentpay-worker.mbagodwin419.workers.dev/chat', {
+    headers: { 'x-user-address': address }
+  });
   return r.json();
 }
 
 async function clearChatHistory(address: string) {
-  await fetch('https://agentpay-worker.mbagodwin419.workers.dev/chat', { method: 'DELETE', headers: {'x-user-address': address} });
+  await fetch('https://agentpay-worker.mbagodwin419.workers.dev/chat', {
+    method: 'DELETE',
+    headers: { 'x-user-address': address }
+  });
 }
 
 async function sendChat(message: string, address: string) {
