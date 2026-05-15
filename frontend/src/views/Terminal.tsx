@@ -7,20 +7,6 @@ interface Props {
   userAddress: string;
 }
 
-function TxBadge({ result }: { result?: any }) {
-  if (!result) return null;
-  if (result.status === 'executed' || result.status === 'success') {
-    return (
-      <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
-        [OK] View Transaction ↗
-      </a>
-    );
-  }
-  if (result.status === 'rejected') return <div className="tx-badge rejected">[BLOCKED] {result.reason}</div>;
-  if (result.status === 'failed') return <div className="tx-badge failed">[ERROR] {result.reason}</div>;
-  return null;
-}
-
 function BalanceCard({ data }: { data: any }) {
   if (!data?.balances) return null;
   return (
