@@ -1,4 +1,4 @@
-// AgentPay Cloudflare Worker v6.2 — Fully Decentralized History & Condition Engine
+// AgentPay Cloudflare Worker v6.3 — Fully Decentralized History & Condition Engine
 import { ethers } from 'ethers';
 
 const VAULT_ADDRESS = '0x4471917E96271F688282ae283d62De0B5Be8084C';
