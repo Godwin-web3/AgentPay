@@ -28,7 +28,21 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
     <>
       <div className="agent-header">
         <div className="agent-info">
-          <div className="agent-avatar">⚡</div>
+          <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="44" stroke="#4fdbc8" strokeWidth="4" strokeLinecap="round" strokeDasharray="60 20 60 20 60 20 60 20" />
+            <circle cx="50" cy="6" r="5" fill="#4fdbc8" />
+            <circle cx="50" cy="94" r="5" fill="#4fdbc8" />
+            <circle cx="6" cy="50" r="5" fill="#4fdbc8" />
+            <circle cx="94" cy="50" r="5" fill="#4fdbc8" />
+            <circle cx="50" cy="16" r="2.5" fill="#4fdbc8" />
+            <circle cx="50" cy="84" r="2.5" fill="#4fdbc8" />
+            <circle cx="16" cy="50" r="2.5" fill="#4fdbc8" />
+            <circle cx="84" cy="50" r="2.5" fill="#4fdbc8" />
+            <rect x="22" y="36" width="56" height="28" rx="4" fill="#4fdbc8" />
+            <rect x="22" y="41" width="56" height="7" fill="#3ab8a8" />
+            <rect x="28" y="53" width="12" height="7" rx="2" fill="#3ab8a8" />
+            <rect x="60" y="55" width="13" height="5" rx="2.5" fill="#3ab8a8" />
+          </svg>
           <div className="agent-name">AGENTPAY</div>
         </div>
         <button className="hamburger-btn" onClick={() => setDrawerOpen(true)}>
