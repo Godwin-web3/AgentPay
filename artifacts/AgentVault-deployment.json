@@ -1,8 +1,8 @@
 {
-  "address": "0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D",
+  "address": "0x4471917E96271F688282ae283d62De0B5Be8084C",
   "deployer": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
   "agent": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
   "network": "Somnia Shannon Testnet",
-  "timestamp": "2026-05-13T04:36:04.371Z",
-  "txHash": "0x6f3db472a180b2399b3aecfc05034a446b224c106d8283a0ca23368e5c245a00"
+  "timestamp": "2026-05-15T07:04:29.425Z",
+  "txHash": "0x1fa83f47ed44f4964b7ae093d4427240b68bc20815a954452097710ca6503a72"
 }

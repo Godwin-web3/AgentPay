@@ -1,16 +1,16 @@
 // AgentPay Cloudflare Worker v6.1 — Fully Decentralized History & Condition Engine
 import { ethers } from 'ethers';
 
-const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D';
+const VAULT_ADDRESS = '0x4471917E96271F688282ae283d62De0B5Be8084C';
 
 const VAULT_ABI = [
   "function getPolicy(address user) external view returns (tuple(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, bool active) policy, address[] memory whitelist)",
   "function getSpendMetrics(address user) external view returns (uint256 todaySpent, uint256 currentHourTx)",
-  "function execute(address user, address to, uint256 amount, string reason, bytes32 requestId) external",
+  "function execute(address user, address token, address to, uint256 amount, string reason, bytes32 requestId) external",
   "function setPolicy(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, address[] calldata whitelist) external",
-  "function balances(address) external view returns (uint256)",
-  "function getSchedules(address user) external view returns (tuple(address to, uint256 amount, uint256 interval, uint256 nextRun, bool active, string reason, uint256 minBalance)[])",
-  "function createSchedule(address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external",
+  "function balances(address,address) external view returns (uint256)",
+  "function getSchedules(address user) external view returns (tuple(address token, address to, uint256 amount, uint256 interval, uint256 nextRun, bool active, string reason, uint256 minBalance)[])",
+  "function createSchedule(address token, address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external",
   "function cancelSchedule(uint256 index) external"
 ];
 
@@ -97,15 +97,17 @@ async function getWalletAddress(env) {
   return wallet.address;
 }
 
-async function executePayment(env, userAddress, to, amount, requestId, reason) {
+async function executePayment(env, userAddress, to, amount, requestId, reason, tokenSymbol = 'STT') {
   const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
   const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
   const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, wallet);
 
+  // Map symbol to address
+  const tokenAddress = tokenSymbol === 'STT' ? ethers.ZeroAddress : (TOKENS[tokenSymbol.toUpperCase()] || tokenSymbol);
+
   try {
     const amountWei = ethers.parseEther(amount.toString());
     
-    // Convert requestId to bytes32. If it's a string, we pad it.
     let reqIdBytes32 = ethers.ZeroHash;
     try {
         if (requestId) {
@@ -117,16 +119,15 @@ async function executePayment(env, userAddress, to, amount, requestId, reason) {
         }
     } catch(e) {}
 
-    const tx = await vault.execute(userAddress, to, amountWei, reason || '', reqIdBytes32, { gasLimit: 500000 });
+    const tx = await vault.execute(userAddress, tokenAddress, to, amountWei, reason || '', reqIdBytes32, { gasLimit: 800000 });
     
     const record = {
-      requestId, to, amount: parseFloat(amount),
+      requestId, to, amount: parseFloat(amount), token: tokenSymbol,
       reason: reason || 'Agent payment',
       txHash: tx.hash, status: 'executed',
       timestamp: new Date().toISOString()
     };
     
-    // Save to status KV for polling (History is now on-chain)
     await env.AGENTPAY_KV.put(`status_${requestId}`, JSON.stringify(record), { expirationTtl: 86400 });
 
     return { success: true, requestId, status: 'pending', txHash: tx.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash };
@@ -281,10 +282,10 @@ async function handleClearChat(request, env, address) {
 
 async function handlePay(request, env, address) {
   const body = await request.json();
-  const { to, amount, requestId, reason } = body;
+  const { to, amount, requestId, reason, fromToken } = body;
   if (!to || !amount) return json({ error: 'Missing to or amount' }, 400);
 
-  const result = await executePayment(env, address, to, amount, requestId, reason);
+  const result = await executePayment(env, address, to, amount, requestId, reason, fromToken || 'STT');
   return json(result, result.success ? 200 : 400);
 }
 
