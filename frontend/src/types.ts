@@ -11,7 +11,8 @@ export interface ChatMessage {
   txHash?: string
   status?: 'executed' | 'rejected' | 'failed'
   explorer?: string
-  intent?: Intent // Add intent to store metadata for UI rendering
+  intent?: Intent
+  data?: any  // Rich data from brain (balance, policy, etc.)
 }
 
 export interface Intent {
