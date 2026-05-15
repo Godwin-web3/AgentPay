@@ -82,12 +82,12 @@ function handleHistory(req, res) {
 // POST /chat
 async function handleChat(req, res) {
   const body = await parseBody(req);
-  const { message, conversationHistory } = body;
+  const { message, conversationHistory, vaultBalance } = body;
 
   if (!message) return send(res, 400, { error: 'Missing message' });
 
   try {
-    const intent = await parseIntent(message);
+    const intent = await parseIntent(message, vaultBalance);
     return send(res, 200, {
       message: intent.message,
       action:  intent.action,
