@@ -195,14 +195,3 @@ function startServer() {
 }
 
 module.exports = { startServer };
-tory');
-      console.log('   GET  /history           — recent activity');
-      console.log('   POST /chat              — chat with AI brain');
-      console.log('   POST /pay               — submit payment');
-      console.log('   GET  /status/:id        — check request');
-      resolve();
-    });
-  });
-}
-
-module.exports = { startServer };
