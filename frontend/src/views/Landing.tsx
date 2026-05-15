@@ -201,10 +201,10 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
         <div style={{ flex: 1 }}>
           <h1 style={{
             fontFamily: 'var(--font-head)',
-            fontSize: isMobile ? 42 : 58,
-            fontWeight: 900,
-            lineHeight: 1.05,
-            letterSpacing: 1,
+            fontSize: isMobile ? 38 : 48,
+            fontWeight: 800,
+            lineHeight: 1.08,
+            letterSpacing: -0.5,
             color: '#fff',
             margin: 0,
             marginBottom: 32,
@@ -228,7 +228,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
               '— Autonomous execution',
               '— On-chain, on Somnia',
             ].map((item, i) => (
-              <div key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#888', letterSpacing: 1 }}>
+              <div key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#aaa', letterSpacing: 0.5 }}>
                 {item}
               </div>
             ))}

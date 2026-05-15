@@ -9,87 +9,216 @@ interface Props {
   onBack: () => void
 }
 
-
-
 export default function Vault({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onBack }: Props) {
-  const [showDeposit, setShowDeposit] = useState(false)
-  const [showWithdraw, setShowWithdraw] = useState(false)
-  const [depositAmount, setDepositAmount] = useState('')
-  const [withdrawAmount, setWithdrawAmount] = useState('')
-  const [depositLoading, setDepositLoading] = useState(false)
-  const [withdrawLoading, setWithdrawLoading] = useState(false)
+  const [mode, setMode] = useState<null | 'deposit' | 'withdraw'>(null)
+  const [amount, setAmount] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [txStatus, setTxStatus] = useState<string | null>(null)
 
   async function handleDeposit() {
-    setDepositLoading(true)
+    setLoading(true)
+    setTxStatus(null)
     try {
-      const value = '0x' + BigInt(Math.floor(Number(depositAmount) * 1e18)).toString(16)
+      const value = '0x' + BigInt(Math.floor(Number(amount) * 1e18)).toString(16)
       await activeProvider.request({ method: 'eth_sendTransaction', params: [{ from: userAddress, to: '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D', data: '0xd0e30db0', value }] })
-      setShowDeposit(false)
-      setDepositAmount('')
-    } catch (err) { console.error(err) } finally { setDepositLoading(false) }
+      setTxStatus('[OK] Deposit confirmed')
+      setMode(null)
+      setAmount('')
+    } catch (err: any) {
+      setTxStatus('[ERROR] ' + (err?.message || 'Transaction failed'))
+    } finally { setLoading(false) }
   }
 
   async function handleWithdraw() {
-    setWithdrawLoading(true)
+    setLoading(true)
+    setTxStatus(null)
     try {
-      const amount = '0x' + BigInt(Math.floor(Number(withdrawAmount) * 1e18)).toString(16)
-      const data = '0x2e1a7d4d' + amount.replace('0x', '').padStart(64, '0')
+      const amt = '0x' + BigInt(Math.floor(Number(amount) * 1e18)).toString(16)
+      const data = '0x2e1a7d4d' + amt.replace('0x', '').padStart(64, '0')
       await activeProvider.request({ method: 'eth_sendTransaction', params: [{ from: userAddress, to: '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D', data }] })
-      setShowWithdraw(false)
-      setWithdrawAmount('')
-    } catch (err) { console.error(err) } finally { setWithdrawLoading(false) }
+      setTxStatus('[OK] Withdrawal confirmed')
+      setMode(null)
+      setAmount('')
+    } catch (err: any) {
+      setTxStatus('[ERROR] ' + (err?.message || 'Transaction failed'))
+    } finally { setLoading(false) }
   }
 
+  const tokens = [
+    { symbol: 'STT', balance: walletBalance, label: 'Somnia Token' },
+    { symbol: 'WSTT', balance: tokenBalances.WSTT || '0.0000', label: 'Wrapped STT' },
+    { symbol: 'PING', balance: tokenBalances.PING || '0.0000', label: 'Ping Token' },
+    { symbol: 'PONG', balance: tokenBalances.PONG || '0.0000', label: 'Pong Token' },
+    { symbol: 'SUSD', balance: tokenBalances.SUSD || '0.0000', label: 'Somnia USD' },
+  ]
+
   return (
-    <div style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>← Back</button>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>VAULT</span>
+    <div style={{ maxWidth: 480, margin: '0 auto', padding: 16 }}>
+
+      {/* Back */}
+      <button onClick={onBack} style={{
+        background: 'none', border: 'none', color: 'var(--muted)',
+        cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 11,
+        letterSpacing: 2, marginBottom: 24, padding: 0,
+      }}>
+        ← BACK
+      </button>
+
+      {/* Total vault balance */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 3, color: 'var(--muted)', marginBottom: 8 }}>
+          VAULT BALANCE
+        </div>
+        <div style={{ fontFamily: 'var(--font-head)', fontSize: 40, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
+          {vaultBalance} <span style={{ fontSize: 18, color: 'var(--muted)', fontWeight: 400 }}>STT</span>
+        </div>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Wallet Balances</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {[['STT', walletBalance], ['WSTT', tokenBalances.WSTT || '0.0000'], ['PING', tokenBalances.PING || '0.0000'], ['PONG', tokenBalances.PONG || '0.0000'], ['SUSD', tokenBalances.SUSD || '0.0000']].map(([sym, bal]) => (
-            <div className="card" key={sym} style={{ padding: '10px 12px' }}>
-              <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>{sym}</div>
-              <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 15, fontWeight: 'bold' }}>{bal}</div>
+      {/* Action buttons */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 28 }}>
+        <button
+          onClick={() => { setMode('deposit'); setAmount(''); setTxStatus(null) }}
+          style={{
+            padding: '12px 8px',
+            background: mode === 'deposit' ? 'var(--cyan)' : 'var(--cyan)',
+            border: '1px solid var(--cyan)',
+            color: '#0A0A0A',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: 1.5,
+            cursor: 'pointer',
+            fontWeight: 700,
+          }}
+        >
+          DEPOSIT
+        </button>
+        <button
+          onClick={() => { setMode('withdraw'); setAmount(''); setTxStatus(null) }}
+          style={{
+            padding: '12px 8px',
+            background: 'transparent',
+            border: '1px solid var(--border)',
+            color: 'var(--muted)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: 1.5,
+            cursor: 'pointer',
+          }}
+        >
+          WITHDRAW
+        </button>
+        <button
+          style={{
+            padding: '12px 8px',
+            background: 'transparent',
+            border: '1px solid var(--border)',
+            color: 'var(--muted)',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            letterSpacing: 1.5,
+            cursor: 'pointer',
+          }}
+          onClick={() => {}}
+        >
+          SWAP
+        </button>
+      </div>
+
+      {/* Deposit / Withdraw form */}
+      {mode && (
+        <div style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', padding: 16, marginBottom: 24 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 2, color: 'var(--muted)', marginBottom: 12 }}>
+            {mode === 'deposit' ? `DEPOSIT — MAX ${walletBalance} STT` : `WITHDRAW — MAX ${vaultBalance} STT`}
+          </div>
+          <input
+            type="number"
+            placeholder="0.00"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 16,
+              marginBottom: 12,
+              boxSizing: 'border-box',
+              outline: 'none',
+            }}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={mode === 'deposit' ? handleDeposit : handleWithdraw}
+              disabled={loading || !amount}
+              style={{
+                flex: 1, padding: '10px',
+                background: 'var(--cyan)',
+                border: 'none',
+                color: '#0A0A0A',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11, letterSpacing: 2,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontWeight: 700,
+                opacity: loading || !amount ? 0.5 : 1,
+              }}
+            >
+              {loading ? 'CONFIRMING...' : 'CONFIRM'}
+            </button>
+            <button
+              onClick={() => { setMode(null); setAmount('') }}
+              style={{
+                padding: '10px 20px',
+                background: 'transparent',
+                border: '1px solid var(--border)',
+                color: 'var(--muted)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: 11,
+                cursor: 'pointer',
+              }}
+            >
+              CANCEL
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tx status */}
+      {txStatus && (
+        <div style={{
+          fontFamily: 'var(--font-mono)', fontSize: 11,
+          color: txStatus.startsWith('[OK]') ? 'var(--cyan)' : 'var(--danger)',
+          marginBottom: 20, letterSpacing: 1,
+        }}>
+          {txStatus}
+        </div>
+      )}
+
+      {/* Token list */}
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 3, color: 'var(--muted)', marginBottom: 12 }}>
+        WALLET BALANCES
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {tokens.map((t, i) => (
+          <div key={t.symbol} style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '14px 0',
+            borderBottom: i < tokens.length - 1 ? '1px solid var(--border)' : 'none',
+          }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>{t.symbol}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>{t.label}</div>
             </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="card" style={{ marginBottom: 16, padding: '10px 12px', border: '1px solid var(--border)' }}>
-        <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 2 }}>VAULT BALANCE</div>
-        <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 20, fontWeight: 'bold' }}>{vaultBalance} STT</div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-        <button className="send-btn" style={{ flex: 1 }} onClick={() => { setShowDeposit(true); setShowWithdraw(false) }}>Deposit</button>
-        <button className="send-btn" style={{ flex: 1, background: 'transparent', border: '1px solid var(--cyan)', color: 'var(--cyan)' }} onClick={() => { setShowWithdraw(true); setShowDeposit(false) }}>Withdraw</button>
-      </div>
-
-      {showDeposit && (
-        <div className="card" style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>Amount to deposit (max {walletBalance} STT)</div>
-          <input type="number" placeholder="0.00" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} style={{ width: '100%', padding: '8px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--text)', fontFamily: 'var(--font-mono)', marginBottom: 8, boxSizing: 'border-box' }} />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="send-btn" onClick={handleDeposit} disabled={depositLoading} style={{ flex: 1 }}>{depositLoading ? 'Confirming...' : 'Confirm'}</button>
-            <button onClick={() => setShowDeposit(false)} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--muted)', cursor: 'pointer' }}>Cancel</button>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--cyan)', fontWeight: 600 }}>
+              {t.balance}
+            </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {showWithdraw && (
-        <div className="card" style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>Amount to withdraw (max {vaultBalance} STT)</div>
-          <input type="number" placeholder="0.00" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} style={{ width: '100%', padding: '8px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--text)', fontFamily: 'var(--font-mono)', marginBottom: 8, boxSizing: 'border-box' }} />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="send-btn" onClick={handleWithdraw} disabled={withdrawLoading} style={{ flex: 1 }}>{withdrawLoading ? 'Confirming...' : 'Confirm'}</button>
-            <button onClick={() => setShowWithdraw(false)} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid var(--border)', borderRadius: 3, color: 'var(--muted)', cursor: 'pointer' }}>Cancel</button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
