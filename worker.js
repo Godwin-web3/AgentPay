@@ -145,7 +145,7 @@ async function handleHealth(env) {
   return json({ 
     status: 'ok', 
     agent: 'AgentPay', 
-    version: '6.1 (Fully Decentralized)', 
+    version: '6.3 (Fully Decentralized)', 
     address, 
     vault: VAULT_ADDRESS,
     time: new Date().toISOString() 
