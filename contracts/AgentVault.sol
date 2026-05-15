@@ -35,9 +35,20 @@ contract AgentVault is ReentrancyGuard {
         bool active;
     }
 
+    struct Schedule {
+        address to;
+        uint256 amount;
+        uint256 interval;
+        uint256 nextRun;
+        bool active;
+        string reason;
+        uint256 minBalance;
+    }
+
     mapping(address => uint256) public balances;
     mapping(address => Policy) public policies;
     mapping(address => address[]) public whitelists;
+    mapping(address => Schedule[]) public schedules;
     
     // Tracking for policy enforcement
     mapping(address => uint256) public dailySpent;
@@ -47,9 +58,11 @@ contract AgentVault is ReentrancyGuard {
 
     event Deposited(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
-    event Executed(address indexed user, address indexed to, uint256 amount);
+    event Executed(address indexed user, address indexed to, uint256 amount, string reason, bytes32 requestId);
     event PolicyUpdated(address indexed user, uint256 perTxCap, uint256 dailyCap);
     event AgentUpdated(address indexed newAgent);
+    event ScheduleCreated(address indexed user, uint256 index, address to, uint256 amount);
+    event ScheduleCancelled(address indexed user, uint256 index);
 
     error NotOwner();
     error NotAgent();
@@ -61,6 +74,9 @@ contract AgentVault is ReentrancyGuard {
     error NotWhitelisted();
     error TransferFailed();
     error AmountTooHigh();
+    error ScheduleNotDue();
+    error InvalidSchedule();
+    error MinBalanceNotMet();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
@@ -121,9 +137,34 @@ contract AgentVault is ReentrancyGuard {
         emit PolicyUpdated(msg.sender, perTxCap, dailyCap);
     }
 
-    // ── Agent Execution ───────────────────────────────────────────────────────
+    function createSchedule(
+        address to,
+        uint256 amount,
+        uint256 interval,
+        string calldata reason,
+        uint256 minBalance
+    ) external {
+        schedules[msg.sender].push(Schedule({
+            to: to,
+            amount: amount,
+            interval: interval,
+            nextRun: block.timestamp, // Run immediately or on next poke
+            active: true,
+            reason: reason,
+            minBalance: minBalance
+        }));
+        emit ScheduleCreated(msg.sender, schedules[msg.sender].length - 1, to, amount);
+    }
 
-    function execute(address user, address to, uint256 amount) external onlyAgent nonReentrant {
+    function cancelSchedule(uint256 index) external {
+        if (index >= schedules[msg.sender].length) revert InvalidSchedule();
+        schedules[msg.sender][index].active = false;
+        emit ScheduleCancelled(msg.sender, index);
+    }
+
+    // ── Execution Logic ───────────────────────────────────────────────────────
+
+    function _execute(address user, address to, uint256 amount, string memory reason, bytes32 requestId) internal {
         Policy storage policy = policies[user];
         if (!policy.active) revert PolicyNotSet();
         if (balances[user] < amount) revert InsufficientBalance();
@@ -168,7 +209,31 @@ contract AgentVault is ReentrancyGuard {
         (bool ok, ) = payable(to).call{value: amount}("");
         if (!ok) revert TransferFailed();
 
-        emit Executed(user, to, amount);
+        emit Executed(user, to, amount, reason, requestId);
+    }
+
+    function execute(address user, address to, uint256 amount, string calldata reason, bytes32 requestId) external onlyAgent nonReentrant {
+        _execute(user, to, amount, reason, requestId);
+    }
+
+    function executeScheduled(address user, uint256 index) external nonReentrant {
+        if (index >= schedules[user].length) revert InvalidSchedule();
+        Schedule storage schedule = schedules[user][index];
+        
+        if (!schedule.active) revert InvalidSchedule();
+        if (block.timestamp < schedule.nextRun) revert ScheduleNotDue();
+        if (balances[user] < schedule.minBalance) revert MinBalanceNotMet();
+
+        // Update next run before execution to prevent reentrancy issues if _execute failed but didn't revert
+        schedule.nextRun = block.timestamp + schedule.interval;
+        
+        _execute(user, schedule.to, schedule.amount, schedule.reason, bytes32(0));
+    }
+
+    // ── View Functions ────────────────────────────────────────────────────────
+
+    function getSchedules(address user) external view returns (Schedule[] memory) {
+        return schedules[user];
     }
 
     // ── View Functions ────────────────────────────────────────────────────────

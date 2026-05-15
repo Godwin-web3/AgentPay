@@ -1,6 +1,12 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { sendChat, executePay, generateRequestId, executeSwap, getChatHistory, clearChatHistory, createSchedule } from '../api'
+import { sendChat, executePay, generateRequestId, executeSwap, getChatHistory, clearChatHistory } from '../api'
 import type { ChatMessage } from '../types'
+import { ethers } from 'ethers'
+
+const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
+const VAULT_ABI = [
+  "function createSchedule(address to, uint256 amount, uint256 interval, string calldata reason) external"
+]
 
 interface Props {
   messages: ChatMessage[]
@@ -17,7 +23,7 @@ function TxBadge({ result }: { result?: any }) {
   if (result.status === 'executed' || result.status === 'success') {
     return (
       <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
-        [OK] View Transaction ↗
+        [OK] {result.message || 'View Transaction'} ↗
       </a>
     )
   }
@@ -115,9 +121,31 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
             .catch((err: any) => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
         }
 
-        if (intent.action === 'schedule' && intent.to && intent.amount) {
-          createSchedule(intent.to, intent.amount, intent.interval || '1 day', intent.reason || 'Scheduled payment', userAddress, intent.conditions)
-            .then(() => setTxResults(r => ({ ...r, [msgIndex]: { status: 'success', message: 'Schedule created' } })))
+        if (intent.action === 'schedule') {
+          // On-chain schedule creation
+          const interval = intent.interval || '86400' // Default 1 day in seconds
+          const minBalance = intent.conditions?.minBalance || 0
+
+          const handleOnChainSchedule = async () => {
+            if (!window.ethereum) throw new Error("No wallet connected")
+            const provider = new ethers.BrowserProvider(window.ethereum)
+            const signer = await provider.getSigner()
+            const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer)
+            
+            setTxResults(r => ({ ...r, [msgIndex]: { status: 'pending', message: 'Sign in wallet...' } }))
+            const tx = await vault.createSchedule(
+              intent.to, 
+              ethers.parseEther(intent.amount!.toString()), 
+              Number(interval), 
+              intent.reason || '',
+              ethers.parseEther(minBalance.toString())
+            )
+            await tx.wait()
+            return tx
+          }
+
+          handleOnChainSchedule()
+            .then((tx) => setTxResults(r => ({ ...r, [msgIndex]: { status: 'success', message: 'Schedule created', explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash } })))
             .catch((err: any) => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
         }
 

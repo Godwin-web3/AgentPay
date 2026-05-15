@@ -1,4 +1,4 @@
-// AgentPay Cloudflare Worker v5.2 — Feature Complete & Decentralized
+// AgentPay Cloudflare Worker v6.1 — Fully Decentralized History & Condition Engine
 import { ethers } from 'ethers';
 
 const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D';
@@ -6,9 +6,12 @@ const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D';
 const VAULT_ABI = [
   "function getPolicy(address user) external view returns (tuple(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, bool active) policy, address[] memory whitelist)",
   "function getSpendMetrics(address user) external view returns (uint256 todaySpent, uint256 currentHourTx)",
-  "function execute(address user, address to, uint256 amount) external",
+  "function execute(address user, address to, uint256 amount, string reason, bytes32 requestId) external",
   "function setPolicy(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, address[] calldata whitelist) external",
-  "function balances(address) external view returns (uint256)"
+  "function balances(address) external view returns (uint256)",
+  "function getSchedules(address user) external view returns (tuple(address to, uint256 amount, uint256 interval, uint256 nextRun, bool active, string reason, uint256 minBalance)[])",
+  "function createSchedule(address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external",
+  "function cancelSchedule(uint256 index) external"
 ];
 
 const TOKENS = {
@@ -44,9 +47,11 @@ You must respond ONLY with a valid JSON object in this exact format:
   "toToken": "STT" | "PING" | "PONG" | "SUSD" | "0x address" | null,
   "reason": "short description or null",
   "message": "your helpful, conversational response to the user in plain English",
-  "interval": "every X minutes/hours/days or null",
+  "interval": "number of seconds or null",
   "jobId": number or null,
-  "conditions": null,
+  "conditions": {
+    "minBalance": number or null
+  } or null,
   "policyUpdate": {
     "field": "dailyCap" | "perTxCap" | "addWhitelist" | "removeWhitelist" | "activeHours" | "maxTxPerHour" | null,
     "value": number or null,
@@ -67,6 +72,7 @@ Guidelines:
 - If they want to pay, extract details and use action: "pay".
 - If the user asks for history, recent transactions, or activity, use action: "history". Do NOT say you lack access to transaction data.
 - If the user says anything like "my balance", "show balance", "what is my balance", "token balance", "how much do I have", use action: "balance". This is NOT status.
+- For action: "schedule", the "interval" field MUST be the number of seconds (e.g., 86400 for a day, 3600 for an hour). If they mention a minimum balance, put it in conditions.minBalance.
 - The "message" field must NEVER be empty. Always write a helpful, conversational response in plain English. If you have nothing else to say, acknowledge the user.
 - Never make up addresses or amounts.
 - If the user has no wallet connected (no address in context) and they ask to pay, swap, check balance, or do anything on-chain, respond with action: "chat" and tell them to connect their wallet first using the Connect button.
@@ -91,6 +97,46 @@ async function getWalletAddress(env) {
   return wallet.address;
 }
 
+async function executePayment(env, userAddress, to, amount, requestId, reason) {
+  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
+  const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
+  const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, wallet);
+
+  try {
+    const amountWei = ethers.parseEther(amount.toString());
+    
+    // Convert requestId to bytes32. If it's a string, we pad it.
+    let reqIdBytes32 = ethers.ZeroHash;
+    try {
+        if (requestId) {
+            if (requestId.startsWith('0x') && requestId.length === 66) {
+                reqIdBytes32 = requestId;
+            } else {
+                reqIdBytes32 = ethers.id(requestId);
+            }
+        }
+    } catch(e) {}
+
+    const tx = await vault.execute(userAddress, to, amountWei, reason || '', reqIdBytes32, { gasLimit: 500000 });
+    
+    const record = {
+      requestId, to, amount: parseFloat(amount),
+      reason: reason || 'Agent payment',
+      txHash: tx.hash, status: 'executed',
+      timestamp: new Date().toISOString()
+    };
+    
+    // Save to status KV for polling (History is now on-chain)
+    await env.AGENTPAY_KV.put(`status_${requestId}`, JSON.stringify(record), { expirationTtl: 86400 });
+
+    return { success: true, requestId, status: 'pending', txHash: tx.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash };
+  } catch (err) {
+    const errorRecord = { requestId, status: 'rejected', reason: err.shortMessage || err.message, timestamp: new Date().toISOString() };
+    await env.AGENTPAY_KV.put(`status_${requestId}`, JSON.stringify(errorRecord), { expirationTtl: 86400 });
+    return { success: false, ...errorRecord };
+  }
+}
+
 // ── Route handlers ────────────────────────────────────────────────────────────
 
 async function handleHealth(env) {
@@ -98,7 +144,7 @@ async function handleHealth(env) {
   return json({ 
     status: 'ok', 
     agent: 'AgentPay', 
-    version: '5.2 (Feature Complete)', 
+    version: '6.1 (Fully Decentralized)', 
     address, 
     vault: VAULT_ADDRESS,
     time: new Date().toISOString() 
@@ -180,7 +226,8 @@ async function handleChat(request, env) {
 
   const walletContext = `\nThe user wallet is connected. Address: ${userAddress}.`;
   const balanceContext = vaultBalance ? `\nVault balance: ${vaultBalance} STT.` : "";
-  const fullContext = GROQ_SYSTEM_PROMPT + walletContext + balanceContext;
+  const dateContext = `\nToday's date is: ${new Date().toISOString().split('T')[0]}`;
+  const fullContext = GROQ_SYSTEM_PROMPT + walletContext + balanceContext + dateContext;
 
   const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -237,44 +284,15 @@ async function handlePay(request, env, address) {
   const { to, amount, requestId, reason } = body;
   if (!to || !amount) return json({ error: 'Missing to or amount' }, 400);
 
-  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
-  const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
-  const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, wallet);
-
-  try {
-    const amountWei = ethers.parseEther(amount.toString());
-    const tx = await vault.execute(address, to, amountWei, { gasLimit: 500000 });
-    
-    // Save to history KV
-    const kvHistKey = `history_${address.toLowerCase()}`;
-    const storedHist = await env.AGENTPAY_KV.get(kvHistKey);
-    const history = storedHist ? JSON.parse(storedHist) : [];
-    
-    const record = {
-      requestId, to, amount: parseFloat(amount),
-      reason: reason || 'Chat payment',
-      txHash: tx.hash, status: 'executed',
-      timestamp: new Date().toISOString()
-    };
-    
-    history.unshift(record);
-    await env.AGENTPAY_KV.put(kvHistKey, JSON.stringify(history.slice(0, 50)));
-    
-    // Save to status KV for polling
-    await env.AGENTPAY_KV.put(`status_${requestId}`, JSON.stringify(record), { expirationTtl: 86400 });
-
-    return json({ requestId, status: 'pending', txHash: tx.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash });
-  } catch (err) {
-    const errorRecord = { requestId, status: 'rejected', reason: err.shortMessage || err.message, timestamp: new Date().toISOString() };
-    await env.AGENTPAY_KV.put(`status_${requestId}`, JSON.stringify(errorRecord), { expirationTtl: 86400 });
-    return json(errorRecord, 400);
-  }
+  const result = await executePayment(env, address, to, amount, requestId, reason);
+  return json(result, result.success ? 200 : 400);
 }
 
 async function handleGetHistory(request, env, address) {
-  const kvKey = `history_${address.toLowerCase()}`;
-  const stored = await env.AGENTPAY_KV.get(kvKey);
-  return json({ logs: stored ? JSON.parse(stored) : [] });
+  // Frontend now fetches from on-chain logs. 
+  // We'll return an empty list here to avoid breaking old clients,
+  // or return an error to force them to upgrade.
+  return json({ logs: [] });
 }
 
 async function handleStatus(request, env, requestId) {
@@ -284,38 +302,47 @@ async function handleStatus(request, env, requestId) {
 }
 
 async function handleGetSchedules(request, env, address) {
-  const kvKey = `schedules_${address.toLowerCase()}`;
-  const stored = await env.AGENTPAY_KV.get(kvKey);
-  return json({ schedules: stored ? JSON.parse(stored) : [] });
+  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
+  const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, provider);
+  
+  try {
+    const rawSchedules = await vault.getSchedules(address);
+    const schedules = rawSchedules.map((s, index) => ({
+      id: index,
+      to: s.to,
+      amount: parseFloat(ethers.formatEther(s.amount)),
+      interval: Number(s.interval),
+      nextRun: Number(s.nextRun) * 1000,
+      active: s.active,
+      reason: s.reason,
+      minBalance: parseFloat(ethers.formatEther(s.minBalance))
+    }));
+    return json({ schedules });
+  } catch (err) {
+    return json({ error: 'Failed to fetch on-chain schedules', details: err.message }, 500);
+  }
 }
 
 async function handlePostSchedule(request, env, address) {
   const body = await request.json();
   const { to, amount, reason, interval, conditions } = body;
-  const kvKey = `schedules_${address.toLowerCase()}`;
-  const stored = await env.AGENTPAY_KV.get(kvKey);
-  const schedules = stored ? JSON.parse(stored) : [];
-
-  const newSchedule = {
-    id: 'job_' + Date.now(), to, amount: parseFloat(amount),
-    reason: reason || 'Scheduled payment', interval, conditions: conditions || null,
-    status: 'active', createdAt: new Date().toISOString(), lastRun: null,
-    nextRun: new Date(Date.now() + 86400000).toISOString() // Simplified
-  };
-
-  schedules.push(newSchedule);
-  await env.AGENTPAY_KV.put(kvKey, JSON.stringify(schedules));
-  return json({ success: true, schedule: newSchedule });
+  const minBal = conditions?.minBalance || 0;
+  
+  // Return the data for the frontend to sign the createSchedule transaction
+  return json({ 
+    action: 'contract_call',
+    function: 'createSchedule',
+    args: [to, ethers.parseEther(amount.toString()).toString(), Number(interval), reason || '', ethers.parseEther(minBal.toString()).toString()]
+  });
 }
 
 async function handleCancelSchedule(request, env, address, jobId) {
-  const kvKey = `schedules_${address.toLowerCase()}`;
-  const stored = await env.AGENTPAY_KV.get(kvKey);
-  if (!stored) return json({ error: 'No schedules found' }, 404);
-  let schedules = JSON.parse(stored);
-  schedules = schedules.filter(s => s.id !== jobId);
-  await env.AGENTPAY_KV.put(kvKey, JSON.stringify(schedules));
-  return json({ success: true, message: 'Schedule cancelled' });
+  // Return the data for the frontend to sign the cancelSchedule transaction
+  return json({ 
+    action: 'contract_call',
+    function: 'cancelSchedule',
+    args: [Number(jobId)]
+  });
 }
 
 async function handleSwap(request, env, address) {
