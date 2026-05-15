@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, executeSwap } from '../api'
+import { sendChat, executePay, generateRequestId, executeSwap, getChatHistory, clearChatHistory, createSchedule } from '../api'
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -14,28 +14,18 @@ function formatTime(ts: number) {
 
 function TxBadge({ result }: { result?: any }) {
   if (!result) return null
-  if (result.status === 'executed') {
+  if (result.status === 'executed' || result.status === 'success') {
     return (
       <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
-        [OK] View Transaction: {result.txHash?.slice(0, 8)}...
+        [OK] View Transaction ↗
       </a>
     )
   }
   if (result.status === 'rejected') {
     return <div className="tx-badge rejected">[BLOCKED] {result.reason}</div>
   }
-  if (result.status === 'policy_updated') {
-    return <div className="tx-badge success">[POLICY] Synchronized</div>
-  }
   if (result.status === 'failed') {
     return <div className="tx-badge failed">[ERROR] {result.reason}</div>
-  }
-  if (result.status === 'swapped') {
-    return (
-      <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
-        [SWAP] Complete: View TX
-      </a>
-    )
   }
   return null
 }
@@ -49,6 +39,19 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
+    if (userAddress) {
+      setLoading(true)
+      getChatHistory(userAddress)
+        .then(res => {
+          if (res.history && res.history.length > 0) {
+            setMessages(res.history)
+          }
+        })
+        .finally(() => setLoading(false))
+    }
+  }, [userAddress])
+
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
@@ -58,34 +61,27 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
     const text = overrideText || input.trim()
     if (!text || loading) return
 
-    if (text.toLowerCase() === "status") {
-      const userMsg: ChatMessage = { role: "user", content: text, timestamp: Date.now() }
-      setMessages(prev => [...prev, userMsg])
-      setInput("")
-      const RPC = "https://dream-rpc.somnia.network"
-      const VAULT = "0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D"
-      fetch(RPC, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to: VAULT, data: "0xf8b2cb4f000000000000000000000000" + userAddress.replace("0x","").toLowerCase() }, "latest"] }) })
-        .then(r => r.json())
-        .then(data => {
-          const bal = (Number(BigInt(data.result === "0x" ? "0x0" : data.result)) / 1e18).toFixed(4)
-          setMessages(prev => [...prev, { role: "assistant", content: "Vault balance: " + bal + " STT\nWorker: online\nPolicy: active", timestamp: Date.now() }])
-        })
-        .catch(() => setMessages(prev => [...prev, { role: "assistant", content: "Failed to fetch status.", timestamp: Date.now() }]))
+    if (text.toLowerCase() === "clear") {
+      setLoading(true)
+      await clearChatHistory(userAddress)
+      setMessages([{ role: 'assistant', content: 'Memory cleared. How can I help you today?', timestamp: Date.now() }])
+      setLoading(false)
+      setInput('')
       return
     }
-    const history = messages.map(m => ({ role: m.role, content: m.content }))
+
     const userMsg: ChatMessage = { role: 'user', content: text, timestamp: Date.now() }
     setMessages(prev => [...prev, userMsg])
     setInput('')
     setLoading(true)
 
     try {
-      const res = await sendChat(text, history, userAddress)
+      const res = await sendChat(text, userAddress)
       const intent = res.intent
 
       const assistantMsg: ChatMessage = {
         role: 'assistant',
-        content: intent.message?.trim() || 'Agent is thinking...',
+        content: intent.message || 'Agent is thinking...',
         timestamp: Date.now(),
         intent: intent
       }
@@ -100,47 +96,37 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
               setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposed', ...swapRes } }))
               setPendingSwap({ ...intent, msgIndex })
             })
-            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+            .catch((err: any) => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
         }
 
         if (intent.action === 'execute_swap' && pendingSwap) {
           executeSwap(pendingSwap.fromToken, pendingSwap.toToken, pendingSwap.amount, true, userAddress)
             .then(swapRes => {
-              setTxResults(r => ({ ...r, [msgIndex]: { status: 'swapped', explorer: 'https://shannon-explorer.somnia.network/tx/' + swapRes.txHash } }))
+              setTxResults(r => ({ ...r, [msgIndex]: { status: 'success', explorer: swapRes.explorer } }))
               setPendingSwap(null)
             })
-            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+            .catch((err: any) => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
         }
 
         if (intent.action === 'pay' && intent.to && intent.amount) {
           const requestId = generateRequestId()
           executePay(intent.to, intent.amount, intent.reason || 'Chat payment', requestId, userAddress)
             .then(payRes => setTxResults(r => ({ ...r, [msgIndex]: payRes })))
-            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+            .catch((err: any) => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
         }
 
-        if (intent.action === 'update_policy' && intent.policyUpdate) {
-          const up = intent.policyUpdate
-          
-          const applyPolicyUpdate = async () => {
-            const current = await getPolicy(userAddress)
-            const update: any = {}
-            if (up.field === 'dailyCap') update.dailyCap = up.value
-            if (up.field === 'perTxCap') update.perTxCap = up.value
-            if (up.field === 'maxTxPerHour') update.circuitBreaker = { ...current.circuitBreaker, maxTxPerHour: up.value }
-            if (up.field === 'activeHours') update.activeHours = { start: up.start, end: up.end }
-            if (up.field === 'addWhitelist' && up.address) {
-              update.whitelist = [...new Set([...current.whitelist, up.address])]
-            }
-            if (up.field === 'removeWhitelist' && up.address) {
-              update.whitelist = current.whitelist.filter(a => a.toLowerCase() !== up.address?.toLowerCase())
-            }
-            return await updatePolicy(update, userAddress)
-          }
+        if (intent.action === 'schedule' && intent.to && intent.amount) {
+          createSchedule(intent.to, intent.amount, intent.interval || '1 day', intent.reason || 'Scheduled payment', userAddress, intent.conditions)
+            .then(() => setTxResults(r => ({ ...r, [msgIndex]: { status: 'success', message: 'Schedule created' } })))
+            .catch((err: any) => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+        }
 
-          applyPolicyUpdate()
-            .then(() => setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } })))
-            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+        if (intent.action === 'update_policy') {
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: 'To update your policy on-chain, please go to the "Account" -> "Policy Settings" tab. This ensures you sign the transaction directly with your wallet.',
+            timestamp: Date.now()
+          }])
         }
         return next
       })
@@ -219,7 +205,6 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
         {[
           { label: 'SEND', prompt: 'Send STT to ' },
           { label: 'SWAP', prompt: 'Swap STT to ' },
-          { label: 'SCHEDULE', prompt: 'Schedule a payment of ' },
           { label: 'BALANCE', prompt: 'What is my vault balance?' },
           { label: 'POLICY', prompt: 'Show my current policy' },
         ].map(({ label, prompt }) => (

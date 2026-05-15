@@ -59,20 +59,6 @@ function handleGetPolicy(req, res) {
   });
 }
 
-// POST /policy
-async function handleUpdatePolicy(req, res) {
-  const body = await parseBody(req);
-  if (!body || Object.keys(body).length === 0) {
-    return send(res, 400, { error: 'Missing policy update data' });
-  }
-  try {
-    const result = applyUpdate({ policyUpdate: body });
-    return send(res, 200, { success: true, message: result });
-  } catch (err) {
-    return send(res, 500, { error: 'Policy update failed: ' + err.message });
-  }
-}
-
 // GET /agents
 function handleAgents(req, res) {
   return send(res, 200, {
@@ -199,6 +185,17 @@ function startServer() {
       console.log('   GET  /policy            — spending rules');
       console.log('   POST /policy            — update policy');
       console.log('   GET  /agents            — agent directory');
+      console.log('   GET  /history           — recent activity');
+      console.log('   POST /chat              — chat with AI brain');
+      console.log('   POST /pay               — submit payment');
+      console.log('   GET  /status/:id        — check request');
+      resolve();
+    });
+  });
+}
+
+module.exports = { startServer };
+tory');
       console.log('   GET  /history           — recent activity');
       console.log('   POST /chat              — chat with AI brain');
       console.log('   POST /pay               — submit payment');

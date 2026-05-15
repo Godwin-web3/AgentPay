@@ -1,4 +1,4 @@
-// AgentPay Cloudflare Worker v5.0 — Stateless & Decentralized
+// AgentPay Cloudflare Worker v5.2 — Feature Complete & Decentralized
 import { ethers } from 'ethers';
 
 const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D';
@@ -33,7 +33,7 @@ const V2_ROUTER_ABI = [
 
 const GROQ_SYSTEM_PROMPT = `You are AgentPay, a friendly and knowledgeable autonomous payment agent on the Somnia blockchain.
 
-Your goal is to help users manage their funds securely while also being a helpful companion. You can answer questions about Somnia, blockchain, or just chat about anything.
+Your goal is to help users manage their funds securely in their personal Vault while also being a helpful companion. You can answer questions about Somnia, blockchain, or just chat about anything.
 
 You must respond ONLY with a valid JSON object in this exact format:
 {
@@ -81,7 +81,7 @@ function json(data, status = 200) {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Headers': 'x-api-key, Content-Type, x-user-address',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, DELETE'
     }
   });
 }
@@ -98,7 +98,7 @@ async function handleHealth(env) {
   return json({ 
     status: 'ok', 
     agent: 'AgentPay', 
-    version: '5.0 (Stateless)', 
+    version: '5.2 (Feature Complete)', 
     address, 
     vault: VAULT_ADDRESS,
     time: new Date().toISOString() 
@@ -150,7 +150,6 @@ async function handleGetPolicy(request, env, address) {
       whitelist:       whitelist,
       active:          policy.active,
       vaultBalance:    parseFloat(ethers.formatEther(balance)),
-      // Compatibility fields for frontend
       activeHours: { start: 0, end: 23 },
       circuitBreaker: {
         maxTxPerHour: Number(policy.maxTxPerHour),
@@ -160,49 +159,28 @@ async function handleGetPolicy(request, env, address) {
       }
     });
   } catch (err) {
-    return json({ 
-      error: 'Failed to fetch on-chain policy', 
-      details: err.message,
-      active: false 
-    }, 500);
+    return json({ error: 'Failed to fetch on-chain policy', details: err.message, active: false }, 500);
   }
-}
-
-async function handlePostPolicy(request, env, address) {
-  const body = await request.json();
-  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
-  const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
-  const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, wallet);
-
-  // Note: On the free tier, we don't want to pay gas for every user policy update 
-  // if the agent is the one signing. Usually, the user should sign their own policy update.
-  // For the hackathon, we'll allow the agent to set it if it's the owner or if we use a relayer.
-  // But since the agent is likely NOT the owner of the user's policy (unless the agent is the user),
-  // this might fail if AgentVault.setPolicy is not permissioned correctly.
-  
-  // Actually, AgentVault.setPolicy uses msg.sender. So the USER must call it.
-  // The Worker can only call it if it HAS the user's private key (not recommended)
-  // or if we use a "Permit" style pattern.
-  
-  // For now, we'll return an instruction for the frontend to call the contract directly.
-  return json({ 
-    message: 'Policy must be updated directly on-chain by the user wallet for security.',
-    contract: VAULT_ADDRESS,
-    method: 'setPolicy'
-  }, 403);
 }
 
 async function handleChat(request, env) {
   const userAddress = request.headers.get("x-user-address");
+  if (!userAddress) return json({ error: 'Missing address' }, 401);
+
   const body = await request.json();
-  const { message, conversationHistory = [], vaultBalance } = body;
-  
-  const history = conversationHistory.slice(-10);
-  const walletContext = userAddress ? `
-The user wallet is already connected. Address: ${userAddress}. Never tell them to connect a wallet.` : `The user has NOT connected a wallet. If they ask to pay, swap, check balance, or do anything on-chain, tell them to connect their wallet first using the Connect button.`;
-  const balanceContext = vaultBalance ? `
-Vault balance: ${vaultBalance} STT.` : "";
-  const fullContext = walletContext + balanceContext;
+  const { message, vaultBalance } = body;
+  if (!message) return json({ error: 'Missing message' }, 400);
+
+  const kvKey = `chat_history_${userAddress.toLowerCase()}`;
+  let history = [];
+  try {
+    const stored = await env.AGENTPAY_KV.get(kvKey);
+    if (stored) history = JSON.parse(stored);
+  } catch (e) {}
+
+  const walletContext = `\nThe user wallet is connected. Address: ${userAddress}.`;
+  const balanceContext = vaultBalance ? `\nVault balance: ${vaultBalance} STT.` : "";
+  const fullContext = GROQ_SYSTEM_PROMPT + walletContext + balanceContext;
 
   const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -215,8 +193,8 @@ Vault balance: ${vaultBalance} STT.` : "";
       temperature: 0.1,
       max_tokens: 400,
       messages: [
-        { role: 'system', content: GROQ_SYSTEM_PROMPT + fullContext },
-        ...history,
+        { role: 'system', content: fullContext },
+        ...history.slice(-15),
         { role: 'user', content: message }
       ]
     })
@@ -228,16 +206,35 @@ Vault balance: ${vaultBalance} STT.` : "";
 
   try {
     const intent = JSON.parse(cleaned);
-    return json({ intent, message: intent.message || '' });
+    const assistantMsg = intent.message || '';
+    
+    history.push({ role: 'user', content: message, timestamp: Date.now() });
+    history.push({ role: 'assistant', content: assistantMsg, timestamp: Date.now(), intent });
+    
+    if (history.length > 50) history = history.slice(-50);
+    await env.AGENTPAY_KV.put(kvKey, JSON.stringify(history));
+
+    return json({ intent, message: assistantMsg });
   } catch {
     return json({ intent: { action: 'chat', message: raw }, message: raw });
   }
 }
 
+async function handleGetChat(request, env, address) {
+  const kvKey = `chat_history_${address.toLowerCase()}`;
+  const stored = await env.AGENTPAY_KV.get(kvKey);
+  return json({ history: stored ? JSON.parse(stored) : [] });
+}
+
+async function handleClearChat(request, env, address) {
+  const kvKey = `chat_history_${address.toLowerCase()}`;
+  await env.AGENTPAY_KV.delete(kvKey);
+  return json({ success: true, message: 'Memory cleared' });
+}
+
 async function handlePay(request, env, address) {
   const body = await request.json();
-  const { to, amount, requestId } = body;
-
+  const { to, amount, requestId, reason } = body;
   if (!to || !amount) return json({ error: 'Missing to or amount' }, 400);
 
   const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
@@ -246,28 +243,79 @@ async function handlePay(request, env, address) {
 
   try {
     const amountWei = ethers.parseEther(amount.toString());
-    
-    // We use a high gas limit for safety on testnet
     const tx = await vault.execute(address, to, amountWei, { gasLimit: 500000 });
     
-    return json({
-      requestId,
-      status: 'pending',
-      txHash: tx.hash,
-      explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash
-    });
-  } catch (err) {
-    let errorMessage = err.message;
-    if (err.reason) errorMessage = err.reason;
-    else if (err.shortMessage) errorMessage = err.shortMessage;
+    // Save to history KV
+    const kvHistKey = `history_${address.toLowerCase()}`;
+    const storedHist = await env.AGENTPAY_KV.get(kvHistKey);
+    const history = storedHist ? JSON.parse(storedHist) : [];
     
-    return json({ 
-      requestId, 
-      status: 'rejected', 
-      reason: errorMessage,
-      code: 'CONTRACT_REVERT' 
-    }, 400);
+    const record = {
+      requestId, to, amount: parseFloat(amount),
+      reason: reason || 'Chat payment',
+      txHash: tx.hash, status: 'executed',
+      timestamp: new Date().toISOString()
+    };
+    
+    history.unshift(record);
+    await env.AGENTPAY_KV.put(kvHistKey, JSON.stringify(history.slice(0, 50)));
+    
+    // Save to status KV for polling
+    await env.AGENTPAY_KV.put(`status_${requestId}`, JSON.stringify(record), { expirationTtl: 86400 });
+
+    return json({ requestId, status: 'pending', txHash: tx.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash });
+  } catch (err) {
+    const errorRecord = { requestId, status: 'rejected', reason: err.shortMessage || err.message, timestamp: new Date().toISOString() };
+    await env.AGENTPAY_KV.put(`status_${requestId}`, JSON.stringify(errorRecord), { expirationTtl: 86400 });
+    return json(errorRecord, 400);
   }
+}
+
+async function handleGetHistory(request, env, address) {
+  const kvKey = `history_${address.toLowerCase()}`;
+  const stored = await env.AGENTPAY_KV.get(kvKey);
+  return json({ logs: stored ? JSON.parse(stored) : [] });
+}
+
+async function handleStatus(request, env, requestId) {
+  const stored = await env.AGENTPAY_KV.get(`status_${requestId}`);
+  if (!stored) return json({ error: 'Request not found' }, 404);
+  return json(JSON.parse(stored));
+}
+
+async function handleGetSchedules(request, env, address) {
+  const kvKey = `schedules_${address.toLowerCase()}`;
+  const stored = await env.AGENTPAY_KV.get(kvKey);
+  return json({ schedules: stored ? JSON.parse(stored) : [] });
+}
+
+async function handlePostSchedule(request, env, address) {
+  const body = await request.json();
+  const { to, amount, reason, interval, conditions } = body;
+  const kvKey = `schedules_${address.toLowerCase()}`;
+  const stored = await env.AGENTPAY_KV.get(kvKey);
+  const schedules = stored ? JSON.parse(stored) : [];
+
+  const newSchedule = {
+    id: 'job_' + Date.now(), to, amount: parseFloat(amount),
+    reason: reason || 'Scheduled payment', interval, conditions: conditions || null,
+    status: 'active', createdAt: new Date().toISOString(), lastRun: null,
+    nextRun: new Date(Date.now() + 86400000).toISOString() // Simplified
+  };
+
+  schedules.push(newSchedule);
+  await env.AGENTPAY_KV.put(kvKey, JSON.stringify(schedules));
+  return json({ success: true, schedule: newSchedule });
+}
+
+async function handleCancelSchedule(request, env, address, jobId) {
+  const kvKey = `schedules_${address.toLowerCase()}`;
+  const stored = await env.AGENTPAY_KV.get(kvKey);
+  if (!stored) return json({ error: 'No schedules found' }, 404);
+  let schedules = JSON.parse(stored);
+  schedules = schedules.filter(s => s.id !== jobId);
+  await env.AGENTPAY_KV.put(kvKey, JSON.stringify(schedules));
+  return json({ success: true, message: 'Schedule cancelled' });
 }
 
 async function handleSwap(request, env, address) {
@@ -280,22 +328,13 @@ async function handleSwap(request, env, address) {
   const amountWei = ethers.parseEther(amount.toString());
   const deadline = Math.floor(Date.now() / 1000) + 600;
 
-  const resolve = (sym) => {
-    if (sym === 'STT') return TOKENS.WSTT;
-    return TOKENS[sym.toUpperCase()] || sym;
-  };
-
-  const addrIn  = resolve(fromToken);
+  const resolve = (sym) => (sym === 'STT' ? TOKENS.WSTT : (TOKENS[sym.toUpperCase()] || sym));
+  const addrIn = resolve(fromToken);
   const addrOut = resolve(toToken);
   const isNativeIn = fromToken === 'STT';
-  const isV2 = (
-    (addrIn === TOKENS.WSTT && addrOut === TOKENS.SUSD) ||
-    (addrIn === TOKENS.SUSD && addrOut === TOKENS.WSTT)
-  );
+  const isV2 = (addrIn === TOKENS.WSTT && addrOut === TOKENS.SUSD) || (addrIn === TOKENS.SUSD && addrOut === TOKENS.WSTT);
 
-  if (!execute) {
-    return json({ expectedOut: 'estimated on execution', gasFee: '0.0018' });
-  }
+  if (!execute) return json({ expectedOut: 'estimated on execution', gasFee: '0.0018' });
 
   try {
     let tx;
@@ -303,31 +342,18 @@ async function handleSwap(request, env, address) {
       if (!isNativeIn) {
         const token = new ethers.Contract(addrIn, ERC20_ABI, wallet);
         const allowance = await token.allowance(wallet.address, V2_ROUTER);
-        if (allowance < amountWei) {
-          const appTx = await token.approve(V2_ROUTER, ethers.MaxUint256);
-          await appTx.wait();
-        }
+        if (allowance < amountWei) await (await token.approve(V2_ROUTER, ethers.MaxUint256)).wait();
       }
       const router = new ethers.Contract(V2_ROUTER, V2_ROUTER_ABI, wallet);
-      tx = await router.swapExactTokensForTokens(
-        amountWei, 0, [addrIn, addrOut], address, deadline,
-        { gasLimit: 2000000 }
-      );
+      tx = await router.swapExactTokensForTokens(amountWei, 0, [addrIn, addrOut], address, deadline, { gasLimit: 2000000 });
     } else {
       if (!isNativeIn) {
         const token = new ethers.Contract(addrIn, ERC20_ABI, wallet);
         const allowance = await token.allowance(wallet.address, V3_ROUTER);
-        if (allowance < amountWei) {
-          const appTx = await token.approve(V3_ROUTER, ethers.MaxUint256);
-          await appTx.wait();
-        }
+        if (allowance < amountWei) await (await token.approve(V3_ROUTER, ethers.MaxUint256)).wait();
       }
       const router = new ethers.Contract(V3_ROUTER, V3_ROUTER_ABI, wallet);
-      tx = await router.exactInputSingle({
-        tokenIn: addrIn, tokenOut: addrOut, fee: 500,
-        recipient: address, amountIn: amountWei,
-        amountOutMinimum: 0n, sqrtPriceLimitX96: 0n
-      }, { gasLimit: 1400000, value: isNativeIn ? amountWei : 0n });
+      tx = await router.exactInputSingle({ tokenIn: addrIn, tokenOut: addrOut, fee: 500, recipient: address, amountIn: amountWei, amountOutMinimum: 0n, sqrtPriceLimitX96: 0n }, { gasLimit: 1400000, value: isNativeIn ? amountWei : 0n });
     }
     const receipt = await tx.wait();
     return json({ txHash: receipt.hash, status: 'success', explorer: 'https://explorer.somnia.network/tx/' + receipt.hash });
@@ -336,7 +362,6 @@ async function handleSwap(request, env, address) {
   }
 }
 
-
 // ── Main router ───────────────────────────────────────────────────────────────
 
 export default {
@@ -344,7 +369,6 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
-
     const userAddress = request.headers.get('x-user-address');
 
     if (method === 'OPTIONS') {
@@ -353,30 +377,23 @@ export default {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Headers': 'x-api-key, Content-Type, x-user-address',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, DELETE'
         }
       });
     }
 
-    if (method === 'GET'  && path === '/health')  return handleHealth(env);
+    if (method === 'GET' && path === '/health') return handleHealth(env);
     if (!userAddress) return json({ error: 'Missing x-user-address header' }, 401);
 
     if (method === 'GET'  && path === '/policy')  return handleGetPolicy(request, env, userAddress);
-    if (method === 'POST' && path === '/policy')  return handlePostPolicy(request, env, userAddress);
-    if (method === 'POST' && path === '/chat')    return handleChat(request, env, userAddress);
-    if (method === 'POST' && path === '/pay')     return handlePay(request, env, userAddress);
-    if (method === 'GET'  && path === '/balance') return handleBalance(request, env, userAddress);
-    if (method === 'POST' && path === '/swap')    return handleSwap(request, env, userAddress);
-
-    return json({ error: 'Not found' }, 404);
-  }
-};
-ror: 'Not found' }, 404);
-  }
-};
-GetPolicy(request, env, userAddress);
-    if (method === 'POST' && path === '/policy')  return handlePostPolicy(request, env, userAddress);
     if (method === 'POST' && path === '/chat')    return handleChat(request, env);
+    if (method === 'GET'  && path === '/chat')    return handleGetChat(request, env, userAddress);
+    if (method === 'DELETE' && path === '/chat')  return handleClearChat(request, env, userAddress);
+    if (method === 'GET'  && path === '/history') return handleGetHistory(request, env, userAddress);
+    if (method === 'GET'  && path === '/schedules') return handleGetSchedules(request, env, userAddress);
+    if (method === 'POST' && path === '/schedules') return handlePostSchedule(request, env, userAddress);
+    if (path.startsWith('/schedules/') && method === 'DELETE') return handleCancelSchedule(request, env, userAddress, path.split('/').pop());
+    if (path.startsWith('/status/') && method === 'GET') return handleStatus(request, env, path.split('/').pop());
     if (method === 'POST' && path === '/pay')     return handlePay(request, env, userAddress);
     if (method === 'GET'  && path === '/balance') return handleBalance(request, env, userAddress);
     if (method === 'POST' && path === '/swap')    return handleSwap(request, env, userAddress);

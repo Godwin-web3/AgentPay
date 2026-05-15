@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import AgentHeader from './components/AgentHeader'
 import Terminal from './views/Terminal'
 import Policy from './views/Policy'
+import Schedules from './views/Schedules'
 import Landing from './views/Landing'
 import Profile from './views/Profile'
+import Onboarding from './views/Onboarding'
 import type { ChatMessage } from './types'
 import { getTokenBalances } from './api'
 
-type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history'
+type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules'
 
 const TerminalIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -21,14 +23,24 @@ const AccountIcon = () => (
     <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
   </svg>
 )
+const ScheduleIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+    <line x1="16" y1="2" x2="16" y2="6"/>
+    <line x1="8" y1="2" x2="8" y2="6"/>
+    <line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>
+)
 const navItems = [
   { id: 'terminal', icon: TerminalIcon, label: 'Terminal' },
+  { id: 'schedules', icon: ScheduleIcon, label: 'Schedules' },
   { id: 'account',  icon: AccountIcon,  label: 'Account'  },
 ] as const
 
 export default function App() {
   const [view, setView] = useState<View>('landing')
   const [userAddress, setUserAddress] = useState('')
+  const [isOnboarded, setIsOnboarded] = useState(() => localStorage.getItem('agentpay_onboarded') === 'true')
   const [vaultBalance, setVaultBalance] = useState('0')
   const [activeProvider, setActiveProvider] = useState<any>(null)
   const [walletBalance, setWalletBalance] = useState('0')
@@ -40,12 +52,24 @@ export default function App() {
   }])
 
   useEffect(() => {
-    getTokenBalances(userAddress).then(setTokenBalances).catch(console.error)
+    if (userAddress) {
+      getTokenBalances(userAddress).then(setTokenBalances).catch(console.error)
+    }
   }, [userAddress])
 
 
   if (view === 'landing') {
     return <Landing onLaunch={() => setView('terminal')} />
+  }
+
+  if (!isOnboarded) {
+    return (
+      <div className="app">
+        <main className="main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+           <Onboarding userAddress={userAddress} onComplete={() => setIsOnboarded(true)} />
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -77,6 +101,7 @@ export default function App() {
         
         <div className="view-content">
           {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} />}
+          {view === 'schedules' && <Schedules userAddress={userAddress} />}
           {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} />}
           {view === 'policy'   && <Policy userAddress={userAddress} />}
         </div>

@@ -23,7 +23,6 @@ async function request<T>(path: string, options?: RequestInit, userAddress?: str
 
 export async function sendChat(
   message: string,
-  conversationHistory: { role: 'user' | 'assistant'; content: string }[],
   userAddress: string
 ): Promise<ChatResponse> {
   let vaultBalance: string | undefined
@@ -40,8 +39,16 @@ export async function sendChat(
   } catch {}
   return request<ChatResponse>('/chat', {
     method: 'POST',
-    body: JSON.stringify({ message, conversationHistory, vaultBalance })
+    body: JSON.stringify({ message, vaultBalance })
   }, userAddress)
+}
+
+export async function getChatHistory(userAddress: string): Promise<{ history: any[] }> {
+  return request<{ history: any[] }>('/chat', {}, userAddress)
+}
+
+export async function clearChatHistory(userAddress: string): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>('/chat', { method: 'DELETE' }, userAddress)
 }
 
 export async function executePay(
@@ -74,33 +81,35 @@ export async function getPolicy(userAddress: string): Promise<PolicyData> {
   return request<PolicyData>('/policy', {}, userAddress)
 }
 
-export async function updatePolicy(data: Partial<PolicyData>, userAddress: string): Promise<{ message: string; policy: PolicyData }> {
-  // Map frontend fields to what the worker expects if necessary
-  const payload: any = { ...data }
-  if (data.dailyCap !== undefined) payload.dailyCapSTT = data.dailyCap
-  if (data.perTxCap !== undefined) payload.perTxCapSTT = data.perTxCap
-  if (data.whitelist !== undefined) payload.allowedRecipients = data.whitelist
+export async function getSchedules(userAddress: string): Promise<{ schedules: any[] }> {
+  return request<{ schedules: any[] }>('/schedules', {}, userAddress)
+}
 
-  return request<{ message: string; policy: PolicyData }>('/policy', {
+export async function createSchedule(
+  to: string,
+  amount: number,
+  interval: string,
+  reason: string,
+  userAddress: string,
+  conditions?: any
+): Promise<{ success: boolean; schedule: any }> {
+  return request<{ success: boolean; schedule: any }>('/schedules', {
     method: 'POST',
-    body: JSON.stringify(payload)
+    body: JSON.stringify({ to, amount, interval, reason, conditions })
   }, userAddress)
+}
+
+export async function cancelSchedule(jobId: string, userAddress: string): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>('/schedules/' + jobId, { method: 'DELETE' }, userAddress)
 }
 
 export async function getHealth(): Promise<HealthData> {
   return request<HealthData>('/health')
 }
 
-export async function getHistory(userAddress: string): Promise<{ items: any[]; next_page_params: any }> {
-  const CONTRACT = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
-  const url = `https://shannon-explorer.somnia.network/api/v2/addresses/${userAddress}/transactions`
-  const res = await fetch(url)
-  const data = await res.json()
-  const items = (data.items || []).filter((tx: any) => {
-    const to = tx.to?.hash?.toLowerCase() ?? ''
-    return to === CONTRACT.toLowerCase()
-  })
-  return { items, next_page_params: data.next_page_params }
+export async function getHistory(userAddress: string): Promise<{ items: any[] }> {
+  const res = await request<{ logs: any[] }>('/history', {}, userAddress)
+  return { items: res.logs || [] }
 }
 
 export async function getStatus(requestId: string, userAddress: string): Promise<PayResponse> {

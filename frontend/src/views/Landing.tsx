@@ -201,7 +201,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
         <div style={{ flex: 1 }}>
           <h1 style={{
             fontFamily: 'var(--font-head)',
-            fontSize: isMobile ? 38 : 48,
+            fontSize: isMobile ? 36 : 40,
             fontWeight: 800,
             lineHeight: 1.08,
             letterSpacing: -0.5,
@@ -285,7 +285,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
         {[
           { label: 'AGENTS REGISTERED', value: '1' },
           { label: 'TOTAL TRANSACTIONS', value: '12' },
-          { label: 'STT VOLUME', value: '4.5' },
+          { label: 'STT VOLUME', value: '4.50' },
         ].map((stat, i) => (
           <div key={i} style={{
             padding: '20px 24px',
@@ -295,7 +295,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: 3, color: '#555', marginBottom: 10 }}>
               {stat.label}
             </div>
-            <div style={{ fontFamily: 'var(--font-head)', fontSize: 32, fontWeight: 900, color: '#4fdbc8' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 32, fontWeight: 700, color: '#4fdbc8' }}>
               {stat.value}
             </div>
           </div>
@@ -321,7 +321,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
             },
             {
               tag: '03',
-              title: 'ON-CHAIN AUDIT LOG',
+              title: 'ON-CHAIN VAULT LOG',
               desc: 'Every action logged — executed, rejected, or failed — with Somnia Explorer links for full transparency.',
             },
           ].map((f, i) => (
