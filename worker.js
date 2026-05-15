@@ -242,7 +242,7 @@ async function handleChat(request, env) {
       max_tokens: 400,
       messages: [
         { role: 'system', content: fullContext },
-        ...history.slice(-15),
+        ...history.slice(-15).map(m => ({ role: m.role, content: m.content })),
         { role: 'user', content: message }
       ]
     })
