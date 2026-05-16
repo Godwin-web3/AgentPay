@@ -47,6 +47,8 @@ Guidelines:
 - If the user asks for history, recent transactions, or activity (even with typos like "histroy"), use action: "history". Do NOT say you lack access to transaction data.
 - If the user says anything like "my balance", "show balance", "what is my balance", "token balance", "how much do I have", use action: "balance". This is NOT status. Status is only for policy/spending rules/limits.
 - Always keep the "message" field warm and human.
+- If action is "balance", you ALREADY have the vault balance in the system context. State the exact balance in your message. NEVER say "will be displayed shortly" or "give me a moment" — you have the data right now.
+- If action is "policy", you do NOT have policy data — say the agent is fetching it. But for balance, always state the number directly.
 - Never make up addresses or amounts.
 - Today's date is: ${new Date().toISOString().split('T')[0]}
 - Always respond with valid JSON only, no extra text`;

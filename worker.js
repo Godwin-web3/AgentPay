@@ -266,12 +266,18 @@ if (intent.action === 'balance') {
 const balanceRes = await handleBalance({ headers: new Headers() }, env, userAddress);
 const balanceJson = await balanceRes.json();
 enrichedData = balanceJson;
-intent.message = assistantMsg; // keep LLM's friendly text
+const b = balanceJson.balances || {};
+const vb = balanceJson.vault || '0';
+intent.message = `Your current balances:\nVault: ${vb} STT\n${Object.entries(b).map(([t,a]) => `${t}: ${a}`).join('\n')}`;
 }
 else if (intent.action === 'policy') {
 const policyRes = await handleGetPolicy({ headers: new Headers() }, env, userAddress);
 const policyJson = await policyRes.json();
 enrichedData = policyJson;
+const p = policyJson;
+if (p && p.perTxCap !== undefined) {
+intent.message = `Your spending policy:\nPer Tx Cap: ${p.perTxCap} STT\nDaily Cap: ${p.dailyCap} STT\nSpent Today: ${p.dailySpendSoFar} STT\nRemaining: ${p.dailyRemaining} STT\nStatus: ${p.active ? 'ACTIVE' : 'PAUSED'}`;
+}
 }
 // Add more actions later (swap proposal, schedules, etc.)
 
