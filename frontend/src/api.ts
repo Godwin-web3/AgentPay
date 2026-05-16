@@ -87,6 +87,14 @@ export async function getPolicy(userAddress: string): Promise<PolicyData> {
   return request<PolicyData>('/policy', {}, userAddress)
 }
 
+
+export async function updatePolicy(update: Partial<PolicyData>, userAddress: string): Promise<PolicyData> {
+  return request<PolicyData>('/policy', {
+    method: 'POST',
+    body: JSON.stringify(update)
+  }, userAddress)
+}
+
 export async function getSchedules(userAddress: string): Promise<{ schedules: any[] }> {
   return request<{ schedules: any[] }>('/schedules', {}, userAddress)
 }

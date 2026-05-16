@@ -158,7 +158,6 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
       return
     }
 
-    const history = messages.map(m => ({ role: m.role, content: m.content }))
     const userMsg: ChatMessage = { role: 'user', content: text, timestamp: Date.now() }
     setMessages(prev => [...prev, userMsg])
     setInput('')
