@@ -107,7 +107,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
         if (res.history?.length > 0) {
           const filtered = res.history.filter((m: any) => {
             if (m.role !== 'assistant') return true
-            const c = m.content || ''
+            return !m.content?.startsWith("Your current balances") && !m.content?.startsWith("Your current Vault") && !m.content?.startsWith("Your spending policy")
           })
           setMessages(filtered)
         }
