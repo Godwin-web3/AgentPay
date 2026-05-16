@@ -187,62 +187,107 @@ contract AgentVault is ReentrancyGuard {
         emit ScheduleCancelled(msg.sender, index);
     }
 
-    // ── Execution Logic ───────────────────────────────────────────────────────
-
-    function _execute(address user, address token, address to, uint256 amount, string memory reason, bytes32 requestId) internal {
+    /**
+     * @dev Executes a single operation on behalf of a user.
+     * Can be a simple transfer or a complex contract call.
+     */
+    function _execute(
+        address user,
+        address token,
+        address to,
+        uint256 amount,
+        bytes memory data,
+        uint256 value,
+        string memory reason,
+        bytes32 requestId
+    ) internal {
         Policy storage policy = policies[user];
         if (!policy.active) revert PolicyNotSet();
-        if (balances[user][token] < amount) revert InsufficientBalance();
         
-        // 1. Check Per-Tx Cap (Simplified: applies to raw amount)
-        if (amount > policy.perTxCap) revert ExceedsPerTxCap();
-
-        // 2. Check Whitelist
-        if (whitelists[user].length > 0) {
-            bool whitelisted = false;
-            for (uint256 i = 0; i < whitelists[user].length; i++) {
-                if (whitelists[user][i] == to) {
-                    whitelisted = true;
-                    break;
+        // Policy enforcement logic
+        if (amount > 0) {
+            if (amount > policy.perTxCap) revert ExceedsPerTxCap();
+            if (whitelists[user].length > 0) {
+                bool whitelisted = false;
+                for (uint256 i = 0; i < whitelists[user].length; i++) {
+                    if (whitelists[user][i] == to) {
+                        whitelisted = true;
+                        break;
+                    }
                 }
+                if (!whitelisted) revert NotWhitelisted();
             }
-            if (!whitelisted) revert NotWhitelisted();
+
+            if (block.timestamp - lastSpendTimestamp[user] >= 86400) {
+                dailySpent[user] = 0;
+            }
+            if (dailySpent[user] + amount > policy.dailyCap) revert ExceedsDailyCap();
+            
+            dailySpent[user] += amount;
+            lastSpendTimestamp[user] = block.timestamp;
         }
 
-        // 3. Lazy Daily Reset & Check
-        if (block.timestamp - lastSpendTimestamp[user] >= 86400) {
-            dailySpent[user] = 0;
-        }
-        if (dailySpent[user] + amount > policy.dailyCap) revert ExceedsDailyCap();
-
-        // 4. Lazy Hourly Reset & Check
         uint256 currentHour = block.timestamp / 1 hours;
         if (lastTxHourTimestamp[user] < currentHour) {
             hourlyTxCount[user] = 0;
             lastTxHourTimestamp[user] = currentHour;
         }
         if (hourlyTxCount[user] >= policy.maxTxPerHour) revert ExceedsHourlyVelocity();
-
-        // Update State
-        balances[user][token] -= amount;
-        dailySpent[user] += amount;
-        lastSpendTimestamp[user] = block.timestamp;
+        
         hourlyTxCount[user]++;
 
-        // Transfer funds
-        if (token == NATIVE) {
-            (bool ok, ) = payable(to).call{value: amount}("");
-            if (!ok) revert TransferFailed();
+        // Execution
+        if (data.length == 0) {
+            // Simple Transfer
+            if (balances[user][token] < amount) revert InsufficientBalance();
+            balances[user][token] -= amount;
+
+            if (token == NATIVE) {
+                (bool ok, ) = payable(to).call{value: amount}("");
+                if (!ok) revert TransferFailed();
+            } else {
+                bool ok = IERC20(token).transfer(to, amount);
+                if (!ok) revert TransferFailed();
+            }
         } else {
-            bool ok = IERC20(token).transfer(to, amount);
+            // Arbitrary Call (e.g. Swap)
+            // Note: For complex calls, we assume the Agent has checked balances
+            (bool ok, ) = to.call{value: value}(data);
             if (!ok) revert TransferFailed();
         }
 
         emit Executed(user, token, to, amount, reason, requestId);
     }
 
+    /**
+     * @dev Simple transfer execution
+     */
     function execute(address user, address token, address to, uint256 amount, string calldata reason, bytes32 requestId) external onlyAgent nonReentrant {
-        _execute(user, token, to, amount, reason, requestId);
+        _execute(user, token, to, amount, "", 0, reason, requestId);
+    }
+
+    /**
+     * @dev Atomic multicall for complex intents (Swap + Pay, Liquidity, etc.)
+     */
+    function multicall(
+        address user,
+        address[] calldata targets,
+        bytes[] calldata datas,
+        uint256[] calldata values,
+        address policyToken,
+        uint256 totalAmount,
+        string calldata reason,
+        bytes32 requestId
+    ) external onlyAgent nonReentrant {
+        require(targets.length == datas.length && datas.length == values.length, "Length mismatch");
+        
+        // Enforcement once for the whole batch
+        _execute(user, policyToken, targets[0], totalAmount, "BATCH", 0, reason, requestId);
+
+        for (uint256 i = 0; i < targets.length; i++) {
+            (bool ok, ) = targets[i].call{value: values[i]}(datas[i]);
+            if (!ok) revert TransferFailed();
+        }
     }
 
     function executeScheduled(address user, uint256 index) external nonReentrant {
@@ -255,7 +300,7 @@ contract AgentVault is ReentrancyGuard {
 
         schedule.nextRun = block.timestamp + schedule.interval;
         
-        _execute(user, schedule.token, schedule.to, schedule.amount, schedule.reason, bytes32(0));
+        _execute(user, schedule.token, schedule.to, schedule.amount, "", 0, schedule.reason, bytes32(0));
     }
 
     // ── View Functions ────────────────────────────────────────────────────────

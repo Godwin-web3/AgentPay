@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import { getSchedules } from '../api'
+import { getSchedules, VAULT_ADDRESS } from '../api'
 import { ethers } from 'ethers'
 
-const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
 const VAULT_ABI = [
   "function cancelSchedule(uint256 index) external"
 ]

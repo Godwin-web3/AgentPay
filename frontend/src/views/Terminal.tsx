@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy } from '../api'
+import { sendChat, executePay, generateRequestId, getPolicy, WORKER_URL, VAULT_ADDRESS, RPC } from '../api'
 import type { ChatMessage } from '../types'
+import { ethers } from 'ethers'
 
 interface Props {
   messages: ChatMessage[]
@@ -14,6 +15,13 @@ function formatTime(ts: number) {
 
 function TxBadge({ result }: { result?: any }) {
   if (!result) return null
+  if (result.status === 'proposing_swap') {
+    return (
+      <div className="tx-badge success" style={{ background: 'var(--cyan)', color: 'black' }}>
+        🔄 Swap Proposed: {result.amount} {result.fromToken} → {result.toToken}. Say "Confirm" to execute.
+      </div>
+    )
+  }
   if (result.status === 'executed') {
     return (
       <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
@@ -29,6 +37,13 @@ function TxBadge({ result }: { result?: any }) {
   }
   if (result.status === 'failed') {
     return <div className="tx-badge failed">⚠️ Error: {result.reason}</div>
+  }
+  if (result.status === 'success' && result.txHash) {
+    return (
+      <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
+        ✅ Swap Successful: {result.txHash?.slice(0, 8)}...
+      </a>
+    )
   }
   return null
 }
@@ -99,7 +114,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
   // Load chat history on mount
   useEffect(() => {
     if (!userAddress) return
-    fetch('https://agentpay-worker.mbagodwin419.workers.dev/chat', {
+    fetch(`${WORKER_URL}/chat`, {
       headers: { 'x-user-address': userAddress }
     })
       .then(r => r.json())
@@ -127,7 +142,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
 
     // Clear command
     if (text.toLowerCase() === 'clear') {
-      await fetch('https://agentpay-worker.mbagodwin419.workers.dev/chat', {
+      await fetch(`${WORKER_URL}/chat`, {
         method: 'DELETE',
         headers: { 'x-user-address': userAddress }
       }).catch(() => {})
@@ -141,14 +156,12 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
       const userMsg: ChatMessage = { role: 'user', content: text, timestamp: Date.now() }
       setMessages(prev => [...prev, userMsg])
       setInput('')
-      const RPC = 'https://dream-rpc.somnia.network'
-      const VAULT = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
       fetch(RPC, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jsonrpc: '2.0', id: 1, method: 'eth_call',
-          params: [{ to: VAULT, data: '0xf8b2cb4f000000000000000000000000' + userAddress.replace('0x', '').toLowerCase() }, 'latest']
+          params: [{ to: VAULT_ADDRESS, data: '0xf8b2cb4f000000000000000000000000' + userAddress.replace('0x', '').toLowerCase() }, 'latest']
         })
       })
         .then(r => r.json())
@@ -192,6 +205,71 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
             .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
         }
 
+        if (intent.action === 'schedule' && intent.to && intent.amount && intent.interval) {
+          fetch(`${WORKER_URL}/schedules`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-user-address": userAddress },
+            body: JSON.stringify({ to: intent.to, amount: intent.amount, interval: intent.interval, reason: intent.reason, conditions: intent.conditions })
+          })
+            .then(r => r.json())
+            .then(async res => {
+              if (res.action === 'contract_call') {
+                const iface = new ethers.Interface(["function createSchedule(address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external"])
+                const data = iface.encodeFunctionData("createSchedule", res.args)
+                const txHash = await window.ethereum.request({
+                  method: 'eth_sendTransaction',
+                  params: [{ from: userAddress, to: VAULT_ADDRESS, data }]
+                })
+                setTxResults(r => ({ ...r, [msgIndex]: { status: 'executed', txHash, explorer: 'https://shannon-explorer.somnia.network/tx/' + txHash } }))
+              }
+            })
+            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+        }
+
+        if (intent.action === 'propose_swap' && intent.fromToken && intent.toToken && intent.amount) {
+           setTxResults(r => ({ 
+             ...r, 
+             [msgIndex]: { 
+               status: 'proposing_swap', 
+               fromToken: intent.fromToken, 
+               toToken: intent.toToken, 
+               amount: intent.amount 
+             } 
+           }))
+        }
+
+        if (intent.action === 'execute_swap') {
+          // Find last proposed swap
+          const lastSwapIdx = [...next.keys()].reverse().find(idx => txResults[idx]?.status === 'proposing_swap')
+          if (lastSwapIdx !== undefined) {
+            const swap = txResults[lastSwapIdx]
+            fetch(`${WORKER_URL}/swap`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-user-address": userAddress },
+              body: JSON.stringify({ fromToken: swap.fromToken, toToken: swap.toToken, amount: swap.amount, execute: true })
+            })
+              .then(r => r.json())
+              .then(res => setTxResults(r => ({ ...r, [msgIndex]: res })))
+              .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+          }
+        }
+
+        if (intent.action === 'intent' && intent.intentName) {
+          fetch(`${WORKER_URL}/intent`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-user-address": userAddress },
+            body: JSON.stringify({ 
+              intentName: intent.intentName, 
+              amount: intent.amount, 
+              to: intent.to, 
+              reason: intent.reason || 'Atomic Intent' 
+            })
+          })
+            .then(r => r.json())
+            .then(res => setTxResults(r => ({ ...r, [msgIndex]: res })))
+            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+        }
+
         if (intent.action === 'update_policy' && intent.policyUpdate) {
           const up = intent.policyUpdate
           const applyPolicyUpdate = async () => {
@@ -207,7 +285,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
             if (up.field === 'removeWhitelist' && up.address) {
               update.whitelist = current.whitelist.filter(a => a.toLowerCase() !== up.address?.toLowerCase())
             }
-            return await fetch("https://agentpay-worker.mbagodwin419.workers.dev/policy", { method: "POST", headers: { "Content-Type": "application/json", "x-user-address": userAddress }, body: JSON.stringify(update) }).then(r => r.json())
+            return await fetch(`${WORKER_URL}/policy`, { method: "POST", headers: { "Content-Type": "application/json", "x-user-address": userAddress }, body: JSON.stringify(update) }).then(r => r.json())
           }
           applyPolicyUpdate()
             .then(() => setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } })))

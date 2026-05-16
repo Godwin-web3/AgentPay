@@ -8,3 +8,5 @@ id = "ff2d3eece1d846a48bcd013ba566ef48"
 
 [vars]
 SOMNIA_RPC_URL = "https://dream-rpc.somnia.network"
+VAULT_ADDRESS = "0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D"
+GROQ_API_KEY = "PASTE_YOUR_KEY_HERE"

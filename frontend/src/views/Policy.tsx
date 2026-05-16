@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { getPolicy } from '../api'
+import { getPolicy, VAULT_ADDRESS } from '../api'
 import type { PolicyData } from '../types'
+import { ethers } from 'ethers'
 
 export default function Policy({ userAddress }: { userAddress: string }) {
   const [policy, setPolicy] = useState<PolicyData | null>(null)
@@ -43,23 +44,21 @@ export default function Policy({ userAddress }: { userAddress: string }) {
     setError(null)
     setSuccess(null)
     try {
-      const selector = '30edc0f5'
-      const pTx = BigInt(Math.floor(parseFloat(perTxCap) * 1e18)).toString(16).padStart(64, '0')
-      const dCap = BigInt(Math.floor(parseFloat(dailyCap) * 1e18)).toString(16).padStart(64, '0')
-      const maxH = BigInt(policy?.circuitBreaker.maxTxPerHour || 10).toString(16).padStart(64, '0')
-      const offset = (32 * 4).toString(16).padStart(64, '0') 
-      const length = whitelist.length.toString(16).padStart(64, '0')
-      let arrayData = ''
-      for (const addr of whitelist) {
-        arrayData += addr.replace('0x', '').toLowerCase().padStart(64, '0')
-      }
-      const data = '0x' + selector + pTx + dCap + maxH + offset + length + arrayData
+      const iface = new ethers.Interface([
+        "function setPolicy(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, address[] calldata whitelist) external"
+      ])
+      
+      const pTx = ethers.parseEther(perTxCap)
+      const dCap = ethers.parseEther(dailyCap)
+      const maxH = BigInt(policy?.circuitBreaker.maxTxPerHour || 10)
+      
+      const data = iface.encodeFunctionData("setPolicy", [pTx, dCap, maxH, whitelist])
 
       const txHash = await window.ethereum.request({
         method: 'eth_sendTransaction',
         params: [{
           from: userAddress,
-          to: '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D',
+          to: VAULT_ADDRESS,
           data
         }]
       })
