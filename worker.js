@@ -229,7 +229,7 @@ if (stored) history = JSON.parse(stored);
 
 const walletContext = `
 The user wallet is connected. Address: ${userAddress}.`;
-let freshVaultBalance = null;
+let freshVaultBalance = vaultBalance || null;
 try {
   const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
   const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, provider);
