@@ -1,7 +1,7 @@
 // AgentPay Cloudflare Worker v6.3 — Fully Decentralized History & Condition Engine
 import { ethers } from 'ethers';
 
-const VAULT_ADDRESS = '0x4471917E96271F688282ae283d62De0B5Be8084C';
+const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D';
 
 const VAULT_ABI = [
   "function getPolicy(address user) external view returns (tuple(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, bool active) policy, address[] memory whitelist)",
