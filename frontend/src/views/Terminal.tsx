@@ -201,7 +201,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
             if (up.field === 'removeWhitelist' && up.address) {
               update.whitelist = current.whitelist.filter(a => a.toLowerCase() !== up.address?.toLowerCase())
             }
-            return await updatePolicy(update, userAddress)
+            return await fetch("https://agentpay-worker.mbagodwin419.workers.dev/policy", { method: "POST", headers: { "Content-Type": "application/json", "x-user-address": userAddress }, body: JSON.stringify(update) }).then(r => r.json())
           }
           applyPolicyUpdate()
             .then(() => setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } })))
