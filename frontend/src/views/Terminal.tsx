@@ -104,7 +104,13 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
     })
       .then(r => r.json())
       .then(res => {
-        if (res.history?.length > 0) setMessages(res.history)
+        if (res.history?.length > 0) {
+          const filtered = res.history.filter((m: any) => {
+            if (m.role !== 'assistant') return true
+            const c = m.content || ''
+          })
+          setMessages(filtered)
+        }
       })
       .catch(() => {})
   }, [userAddress, setMessages])

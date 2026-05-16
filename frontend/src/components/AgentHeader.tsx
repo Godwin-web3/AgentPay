@@ -9,9 +9,10 @@ interface Props {
   onProviderChange?: (provider: any) => void
   currentView: string
   onNavigate: (view: string) => void
+  onClearMemory?: () => void
 }
 
-export default function AgentHeader({ onAddressChange, onBalanceChange, onProviderChange, currentView, onNavigate }: Props) {
+export default function AgentHeader({ onAddressChange, onBalanceChange, onProviderChange, currentView, onNavigate, onClearMemory }: Props) {
   const [health, setHealth] = useState<HealthData | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
@@ -82,6 +83,17 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
           <WalletConnect onAddressChange={onAddressChange} onBalanceChange={onBalanceChange} onProviderChange={onProviderChange} />
         </div>
 
+        <div className="drawer-divider" />
+        <div className="drawer-section-label">MEMORY</div>
+        <div style={{ padding: "0 16px 12px" }}>
+          <button
+            className="quick-btn"
+            style={{ width: "100%", color: "#ff4444", borderColor: "#ff4444" }}
+            onClick={() => { onClearMemory?.(); setDrawerOpen(false) }}
+          >
+            CLEAR MEMORY
+          </button>
+        </div>
         <div className="drawer-bottom">
           <div className={`status-pill ${health?.status === 'ok' ? 'online' : 'offline'}`}>
             <div className="status-dot" />

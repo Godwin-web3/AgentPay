@@ -57,6 +57,14 @@ export default function App() {
     }
   }, [userAddress])
 
+  async function handleClearMemory() {
+    await fetch('https://agentpay-worker.mbagodwin419.workers.dev/chat', {
+      method: 'DELETE',
+      headers: { 'x-user-address': userAddress }
+    }).catch(() => {})
+    setMessages([{ role: 'assistant', content: 'Memory cleared.', timestamp: Date.now() }])
+  }
+
 
   if (view === 'landing') {
     return <Landing onLaunch={() => setView('terminal')} />
@@ -97,7 +105,7 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="main">
-        <AgentHeader onAddressChange={setUserAddress} onBalanceChange={(v, w) => { setVaultBalance(v); setWalletBalance(w) }} onProviderChange={setActiveProvider} currentView={view} onNavigate={(v) => setView(v as View)} />
+        <AgentHeader onAddressChange={setUserAddress} onBalanceChange={(v, w) => { setVaultBalance(v); setWalletBalance(w) }} onProviderChange={setActiveProvider} currentView={view} onNavigate={(v) => setView(v as View)} onClearMemory={handleClearMemory} />
         
         <div className="view-content">
           {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} />}
