@@ -269,6 +269,34 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
         )}
       </div>
 
+      <div className="quick-actions">
+        {['SEND', 'SWAP', 'BALANCE', 'POLICY'].map(btn => (
+          <button
+            key={btn}
+            className="quick-btn"
+            onClick={() => {
+              const prompts: Record<string, string> = {
+                SEND: 'Send 0.5 STT to 0x...',
+                SWAP: 'Swap 10 SUSD to WSTT',
+                BALANCE: 'What is my vault balance?',
+                POLICY: 'Show my current policy'
+              }
+              const val = prompts[btn]
+              const autoSend = btn === 'BALANCE' || btn === 'POLICY'
+              setInput(val)
+              if (autoSend) {
+                setTimeout(() => handleSend(), 0)
+              } else {
+                inputRef.current?.focus()
+              }
+            }}
+            disabled={loading}
+          >
+            {btn}
+          </button>
+        ))}
+      </div>
+
       <div className="input-area">
         <textarea
           ref={inputRef}
