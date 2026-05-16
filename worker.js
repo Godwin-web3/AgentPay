@@ -9,6 +9,7 @@ const VAULT_ABI = [
   "function execute(address user, address token, address to, uint256 amount, string reason, bytes32 requestId) external",
   "function setPolicy(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, address[] calldata whitelist) external",
   "function balances(address,address) external view returns (uint256)",
+  "function getBalance(address,address) external view returns (uint256)",
   "function getSchedules(address user) external view returns (tuple(address token, address to, uint256 amount, uint256 interval, uint256 nextRun, bool active, string reason, uint256 minBalance)[])",
   "function createSchedule(address token, address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external",
   "function cancelSchedule(uint256 index) external"
@@ -160,7 +161,7 @@ async function handleBalance(request, env, address) {
   try {
     const [sttRaw, vaultRaw, wsttRaw, pingRaw, pongRaw, susdRaw] = await Promise.all([
       provider.getBalance(address),
-      vault.balances(address, ethers.ZeroAddress),
+      vault.getBalance(address, ethers.ZeroAddress),
       new ethers.Contract(TOKENS.WSTT, ERC20_ABI, provider).balanceOf(address),
       new ethers.Contract(TOKENS.PING, ERC20_ABI, provider).balanceOf(address),
       new ethers.Contract(TOKENS.PONG, ERC20_ABI, provider).balanceOf(address),
@@ -189,7 +190,7 @@ async function handleGetPolicy(request, env, address) {
   try {
     const [policy, whitelist] = await vault.getPolicy(address);
     const [todaySpent, currentHourTx] = await vault.getSpendMetrics(address);
-    const balance = await vault.balances(address, ethers.ZeroAddress);
+    const balance = await vault.getBalance(address, ethers.ZeroAddress);
 
     return json({
       perTxCap:        parseFloat(ethers.formatEther(policy.perTxCap)),
@@ -233,7 +234,7 @@ let freshVaultBalance = vaultBalance || null;
 try {
   const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
   const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, provider);
-  const raw = await vault.balances(userAddress, ethers.ZeroAddress);
+  const raw = await vault.getBalance(userAddress, ethers.ZeroAddress);
   freshVaultBalance = parseFloat(ethers.formatEther(raw)).toFixed(4);
 } catch(e) {}
 const balanceContext = freshVaultBalance ? `
