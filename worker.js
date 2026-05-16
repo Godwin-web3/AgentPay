@@ -160,7 +160,7 @@ async function handleBalance(request, env, address) {
   try {
     const [sttRaw, vaultRaw, wsttRaw, pingRaw, pongRaw, susdRaw] = await Promise.all([
       provider.getBalance(address),
-      vault.balances(address),
+      vault.balances(address, ethers.ZeroAddress),
       new ethers.Contract(TOKENS.WSTT, ERC20_ABI, provider).balanceOf(address),
       new ethers.Contract(TOKENS.PING, ERC20_ABI, provider).balanceOf(address),
       new ethers.Contract(TOKENS.PONG, ERC20_ABI, provider).balanceOf(address),
@@ -189,7 +189,7 @@ async function handleGetPolicy(request, env, address) {
   try {
     const [policy, whitelist] = await vault.getPolicy(address);
     const [todaySpent, currentHourTx] = await vault.getSpendMetrics(address);
-    const balance = await vault.balances(address);
+    const balance = await vault.balances(address, ethers.ZeroAddress);
 
     return json({
       perTxCap:        parseFloat(ethers.formatEther(policy.perTxCap)),
@@ -233,7 +233,7 @@ let freshVaultBalance = vaultBalance || null;
 try {
   const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
   const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, provider);
-  const raw = await vault.balances(userAddress);
+  const raw = await vault.balances(userAddress, ethers.ZeroAddress);
   freshVaultBalance = parseFloat(ethers.formatEther(raw)).toFixed(4);
 } catch(e) {}
 const balanceContext = freshVaultBalance ? `
