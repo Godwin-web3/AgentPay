@@ -3,7 +3,7 @@ import { ethers } from 'ethers'
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL || 'https://agentpay-worker.mbagodwin419.workers.dev'
 const RPC = 'https://dream-rpc.somnia.network'
-const VAULT_ADDRESS = '0x4471917E96271F688282ae283d62De0B5Be8084C'
+const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
 const VAULT_ABI = [
   "event Executed(address indexed user, address indexed token, address indexed to, uint256 amount, string reason, bytes32 requestId)",
   "function balances(address,address) external view returns (uint256)"
