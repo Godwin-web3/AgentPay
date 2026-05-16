@@ -16,7 +16,8 @@ export interface ChatMessage {
 }
 
 export interface Intent {
-  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'propose_swap' | 'execute_swap' | 'balance' | 'help' | 'unknown'
+  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'propose_swap' | 'execute_swap' | 'balance' | 'help' | 'unknown' | 'intent'
+  intentName?: string
   to?: string
   amount?: number
   fromToken?: string
