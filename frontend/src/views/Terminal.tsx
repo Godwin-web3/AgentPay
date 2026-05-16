@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy } from '../api'
+import { sendChat, executePay, generateRequestId, getPolicy } from '../api'
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -165,7 +165,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
     setLoading(true)
 
     try {
-      const res = await sendChat(text, history, userAddress)
+      const res = await sendChat(text, userAddress)
       const intent = res.intent
 
       const assistantMsg: ChatMessage = {

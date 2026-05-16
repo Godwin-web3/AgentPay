@@ -45,6 +45,7 @@ export interface Intent {
 export interface ChatResponse {
   intent: Intent
   message: string
+  data?: any
 }
 
 export interface PolicyData {
