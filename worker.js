@@ -229,8 +229,15 @@ if (stored) history = JSON.parse(stored);
 
 const walletContext = `
 The user wallet is connected. Address: ${userAddress}.`;
-const balanceContext = vaultBalance ? `
-Vault balance: ${vaultBalance} STT.` : "";
+let freshVaultBalance = vaultBalance;
+try {
+  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
+  const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, provider);
+  const raw = await vault.balances(userAddress);
+  freshVaultBalance = parseFloat(ethers.formatEther(raw)).toFixed(4);
+} catch(e) {}
+const balanceContext = freshVaultBalance ? `
+Vault balance: ${freshVaultBalance} STT.` : "";
 const dateContext = `
 Today's date is: ${new Date().toISOString().split('T')[0]}`;
 const fullContext = GROQ_SYSTEM_PROMPT + walletContext + balanceContext + dateContext;
