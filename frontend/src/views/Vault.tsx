@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { VAULT_ADDRESS } from '../api'
+import { ethers } from 'ethers'
 
 interface Props {
   userAddress: string
@@ -9,9 +11,23 @@ interface Props {
   onBack: () => void
 }
 
+const VAULT_ABI = [
+  "function deposit(address token, uint256 amount) external payable",
+  "function withdraw(address token, uint256 amount) external"
+]
+
+const TOKENS: Record<string, string> = {
+  STT:  '0x0000000000000000000000000000000000000000',
+  WSTT: '0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7',
+  PING: '0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493',
+  PONG: '0x9beaA0016c22B646Ac311Ab171270B0ECf23098F',
+  SUSD: '0x65296738D4E5edB1515e40287B6FDf8320E6eE04',
+}
+
 export default function Vault({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onBack }: Props) {
   const [mode, setMode] = useState<null | 'deposit' | 'withdraw'>(null)
   const [amount, setAmount] = useState('')
+  const [selectedToken, setSelectedToken] = useState('STT')
   const [loading, setLoading] = useState(false)
   const [txStatus, setTxStatus] = useState<string | null>(null)
 
@@ -19,9 +35,23 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
     setLoading(true)
     setTxStatus(null)
     try {
-      const value = '0x' + BigInt(Math.floor(Number(amount) * 1e18)).toString(16)
-      await activeProvider.request({ method: 'eth_sendTransaction', params: [{ from: userAddress, to: '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D', data: '0xd0e30db0', value }] })
-      setTxStatus('[OK] Deposit confirmed')
+      const iface = new ethers.Interface(VAULT_ABI)
+      const amtWei = ethers.parseEther(amount)
+      const tokenAddr = TOKENS[selectedToken]
+      
+      const data = iface.encodeFunctionData("deposit", [tokenAddr, amtWei])
+      const value = selectedToken === 'STT' ? '0x' + amtWei.toString(16) : '0x0'
+
+      const txHash = await activeProvider.request({ 
+        method: 'eth_sendTransaction', 
+        params: [{ 
+          from: userAddress, 
+          to: VAULT_ADDRESS, 
+          data, 
+          value 
+        }] 
+      })
+      setTxStatus('[OK] Deposit submitted: ' + txHash.slice(0, 10) + '...')
       setMode(null)
       setAmount('')
     } catch (err: any) {
@@ -33,10 +63,21 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
     setLoading(true)
     setTxStatus(null)
     try {
-      const amt = '0x' + BigInt(Math.floor(Number(amount) * 1e18)).toString(16)
-      const data = '0x2e1a7d4d' + amt.replace('0x', '').padStart(64, '0')
-      await activeProvider.request({ method: 'eth_sendTransaction', params: [{ from: userAddress, to: '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D', data }] })
-      setTxStatus('[OK] Withdrawal confirmed')
+      const iface = new ethers.Interface(VAULT_ABI)
+      const amtWei = ethers.parseEther(amount)
+      const tokenAddr = TOKENS[selectedToken]
+      
+      const data = iface.encodeFunctionData("withdraw", [tokenAddr, amtWei])
+
+      const txHash = await activeProvider.request({ 
+        method: 'eth_sendTransaction', 
+        params: [{ 
+          from: userAddress, 
+          to: VAULT_ADDRESS, 
+          data 
+        }] 
+      })
+      setTxStatus('[OK] Withdrawal submitted: ' + txHash.slice(0, 10) + '...')
       setMode(null)
       setAmount('')
     } catch (err: any) {
@@ -128,8 +169,31 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
       {mode && (
         <div style={{ border: '1px solid var(--border)', background: 'var(--bg-card)', padding: 16, marginBottom: 24 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 2, color: 'var(--muted)', marginBottom: 12 }}>
-            {mode === 'deposit' ? `DEPOSIT — MAX ${walletBalance} STT` : `WITHDRAW — MAX ${vaultBalance} STT`}
+            {mode === 'deposit' ? `DEPOSIT` : `WITHDRAW`}
           </div>
+
+          <select 
+            value={selectedToken}
+            onChange={e => setSelectedToken(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 14,
+              marginBottom: 12,
+              boxSizing: 'border-box',
+              outline: 'none',
+              borderRadius: 0,
+            }}
+          >
+            {Object.keys(TOKENS).map(t => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+
           <input
             type="number"
             placeholder="0.00"

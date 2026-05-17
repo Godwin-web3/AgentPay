@@ -7,7 +7,7 @@ import Landing from './views/Landing'
 import Profile from './views/Profile'
 import Onboarding from './views/Onboarding'
 import type { ChatMessage } from './types'
-import { getTokenBalances } from './api'
+import { getTokenBalances, WORKER_URL } from './api'
 
 type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules'
 
@@ -58,7 +58,7 @@ export default function App() {
   }, [userAddress])
 
   async function handleClearMemory() {
-    await fetch('https://agentpay-worker.mbagodwin419.workers.dev/chat', {
+    await fetch(`${WORKER_URL}/chat`, {
       method: 'DELETE',
       headers: { 'x-user-address': userAddress }
     }).catch(() => {})

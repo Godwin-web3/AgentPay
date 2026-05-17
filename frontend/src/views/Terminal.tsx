@@ -13,16 +13,37 @@ function formatTime(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-function TxBadge({ result }: { result?: any }) {
+function TxBadge({ result, onConfirm }: { result?: any, onConfirm?: () => void }) {
+  const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
-  if (result.status === 'proposing_swap') {
+  
+  if (result.status === 'proposing_swap' || result.status === 'proposing_intent') {
     return (
-      <div className="tx-badge success" style={{ background: 'var(--cyan)', color: 'black' }}>
-        🔄 Swap Proposed: {result.amount} {result.fromToken} → {result.toToken}. Say "Confirm" to execute.
+      <div className="tx-badge success" style={{ background: 'var(--cyan)', color: 'black', display: 'flex', flexDirection: 'column', gap: 8, padding: '12px' }}>
+        <div style={{ fontWeight: 600 }}>
+          {result.status === 'proposing_swap' ? '🔄 Swap Proposal' : '⚡ Atomic Intent'}
+        </div>
+        <div style={{ fontSize: 11 }}>
+          {result.status === 'proposing_swap' 
+            ? `${result.amount} ${result.fromToken} → ${result.toToken}` 
+            : `${result.intentName?.replace(/_/g, ' ').toUpperCase()}`}
+        </div>
+        <button 
+          className="send-btn" 
+          disabled={confirming}
+          onClick={async () => {
+            setConfirming(true)
+            if (onConfirm) await onConfirm()
+            setConfirming(false)
+          }}
+          style={{ background: 'black', color: 'var(--cyan)', border: 'none', padding: '6px', fontSize: 10, cursor: 'pointer' }}
+        >
+          {confirming ? 'EXECUTING...' : 'CONFIRM & EXECUTE'}
+        </button>
       </div>
     )
   }
-  if (result.status === 'executed') {
+  if (result.status === 'executed' || result.status === 'success') {
     return (
       <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
         ✅ View Transaction: {result.txHash?.slice(0, 8)}...
@@ -37,13 +58,6 @@ function TxBadge({ result }: { result?: any }) {
   }
   if (result.status === 'failed') {
     return <div className="tx-badge failed">⚠️ Error: {result.reason}</div>
-  }
-  if (result.status === 'success' && result.txHash) {
-    return (
-      <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
-        ✅ Swap Successful: {result.txHash?.slice(0, 8)}...
-      </a>
-    )
   }
   return null
 }
@@ -135,6 +149,37 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages, loading])
+
+  async function handleConfirm(msgIdx: number) {
+    const prop = txResults[msgIdx]
+    if (!prop) return
+
+    if (prop.status === 'proposing_swap') {
+      try {
+        const res = await fetch(`${WORKER_URL}/swap`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-user-address": userAddress },
+          body: JSON.stringify({ fromToken: prop.fromToken, toToken: prop.toToken, amount: prop.amount, execute: true })
+        }).then(r => r.json())
+        setTxResults(r => ({ ...r, [msgIdx]: res }))
+      } catch (err: any) {
+        setTxResults(r => ({ ...r, [msgIdx]: { status: 'failed', reason: err.message } }))
+      }
+    }
+
+    if (prop.status === 'proposing_intent') {
+      try {
+        const res = await fetch(`${WORKER_URL}/intent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-user-address": userAddress },
+          body: JSON.stringify({ intentName: prop.intentName, amount: prop.amount, to: prop.to, reason: prop.reason })
+        }).then(r => r.json())
+        setTxResults(r => ({ ...r, [msgIdx]: res }))
+      } catch (err: any) {
+        setTxResults(r => ({ ...r, [msgIdx]: { status: 'failed', reason: err.message } }))
+      }
+    }
+  }
 
   async function handleSend() {
     const text = input.trim()
@@ -239,35 +284,24 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
         }
 
         if (intent.action === 'execute_swap') {
-          // Find last proposed swap
-          const lastSwapIdx = [...next.keys()].reverse().find(idx => txResults[idx]?.status === 'proposing_swap')
-          if (lastSwapIdx !== undefined) {
-            const swap = txResults[lastSwapIdx]
-            fetch(`${WORKER_URL}/swap`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "x-user-address": userAddress },
-              body: JSON.stringify({ fromToken: swap.fromToken, toToken: swap.toToken, amount: swap.amount, execute: true })
-            })
-              .then(r => r.json())
-              .then(res => setTxResults(r => ({ ...r, [msgIndex]: res })))
-              .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+          // Find last proposal to confirm
+          const lastPropIdx = [...next.keys()].reverse().find(idx => txResults[idx]?.status === 'proposing_swap' || txResults[idx]?.status === 'proposing_intent')
+          if (lastPropIdx !== undefined) {
+             handleConfirm(lastPropIdx)
           }
         }
 
         if (intent.action === 'intent' && intent.intentName) {
-          fetch(`${WORKER_URL}/intent`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-user-address": userAddress },
-            body: JSON.stringify({ 
-              intentName: intent.intentName, 
-              amount: intent.amount, 
-              to: intent.to, 
-              reason: intent.reason || 'Atomic Intent' 
-            })
-          })
-            .then(r => r.json())
-            .then(res => setTxResults(r => ({ ...r, [msgIndex]: res })))
-            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+           setTxResults(r => ({ 
+             ...r, 
+             [msgIndex]: { 
+               status: 'proposing_intent', 
+               intentName: intent.intentName,
+               amount: intent.amount, 
+               to: intent.to, 
+               reason: intent.reason || 'Atomic Intent'
+             } 
+           }))
         }
 
         if (intent.action === 'update_policy' && intent.policyUpdate) {
@@ -328,7 +362,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
               )}
               {msg.role === 'assistant' && txResults[i] && (
                 <div style={{ marginTop: 10 }}>
-                  <TxBadge result={txResults[i]} />
+                  <TxBadge result={txResults[i]} onConfirm={() => handleConfirm(i)} />
                 </div>
               )}
             </div>
