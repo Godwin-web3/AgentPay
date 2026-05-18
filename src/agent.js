@@ -3,8 +3,8 @@ const { SomniaAgentKit, SOMNIA_NETWORKS } = require('somnia-agent-kit');
 const { ethers } = require('ethers');
 const PolicyEngine = require('./policyEngine');
 const { appendSpend, appendFailure, appendSwap, getHistory } = require('../utils/store');
-const { directSend, setPolicy } = require('./escrow');
-const { estimateSwap, executeSwap, TOKENS } = require('./dex');
+const { executePayment, setPolicy, TOKENS } = require('./escrow');
+const { estimateSwap, executeSwap } = require('./dex');
 
 let kit = null;
 let engine = null;
@@ -37,52 +37,36 @@ async function init() {
   console.log('🛡️  AgentPay — Agentic Payment Layer');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('👛 Wallet:  ' + address);
+  
   const ERC20_ABI = ['function balanceOf(address) external view returns (uint256)'];
-  const [wsttBal, pingBal, pongBal, susdBal] = await Promise.all([
-    new ethers.Contract(TOKENS.WSTT, ERC20_ABI, provider).balanceOf(address),
-    new ethers.Contract(TOKENS.PING, ERC20_ABI, provider).balanceOf(address),
-    new ethers.Contract(TOKENS.PONG, ERC20_ABI, provider).balanceOf(address),
-    new ethers.Contract(TOKENS.SUSD, ERC20_ABI, provider).balanceOf(address),
-  ]);
+  const tokenBalances = await Promise.all(
+    Object.entries(TOKENS).map(async ([symbol, addr]) => {
+      if (addr === ethers.ZeroAddress) return { symbol, bal: balance };
+      try {
+        const contract = new ethers.Contract(addr, ERC20_ABI, provider);
+        return { symbol, bal: await contract.balanceOf(address) };
+      } catch {
+        return { symbol, bal: 0n };
+      }
+    })
+  );
+
   console.log('💰 Balances:');
-  console.log('   STT:  ' + parseFloat(ethers.formatEther(balance)).toFixed(4));
-  console.log('   WSTT: ' + parseFloat(ethers.formatEther(wsttBal)).toFixed(4));
-  console.log('   PING: ' + parseFloat(ethers.formatEther(pingBal)).toFixed(4));
-  console.log('   PONG: ' + parseFloat(ethers.formatEther(pongBal)).toFixed(4));
-  console.log('   SUSD: ' + parseFloat(ethers.formatEther(susdBal)).toFixed(4));
+  tokenBalances.forEach(({ symbol, bal }) => {
+    console.log(`   ${symbol}:  ${parseFloat(ethers.formatEther(bal)).toFixed(4)}`);
+  });
 
   return { kit, engine, wallet, address };
 }
 
 async function prepareSwap(fromToken, toToken, amount) {
-  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('🔄 Swap Estimation');
-  console.log('   From:   ' + fromToken);
-  console.log('   To:     ' + toToken);
-  console.log('   Amount: ' + amount);
-
-  const estimation = await estimateSwap(wallet, fromToken, toToken, amount);
-  if (estimation.success) {
-    console.log('\n📊 Estimation Results');
-    console.log('   Expected: ' + estimation.expectedOut);
-    console.log('   Gas Fee:  ' + estimation.estGasCost + ' STT');
-  } else {
-    console.log('\n❌ Estimation failed: ' + (estimation.error ? estimation.error.slice(0, 100) : 'Unknown error'));
-  }
-  return estimation;
+  return await estimateSwap(wallet, fromToken, toToken, amount);
 }
 
 async function confirmSwap(fromToken, toToken, amount) {
-  console.log('\n🚀 Executing Swap...');
   const result = await executeSwap(wallet, fromToken, toToken, amount);
-  
   if (result.success) {
-    console.log('\n✅ Swap successful!');
-    console.log('   TX: ' + result.txHash);
-    console.log('   🔗 https://explorer.somnia.network/tx/' + result.txHash);
-    const _rev = {}; Object.entries(TOKENS).forEach(([s,a]) => { _rev[a.toLowerCase()] = s; }); appendSwap({ fromToken: _rev[fromToken.toLowerCase()] || fromToken, toToken: _rev[toToken.toLowerCase()] || toToken, amount, txHash: result.txHash });
-  } else {
-    console.log('\n❌ Swap failed: ' + (result.error ? result.error.slice(0, 100) : 'Unknown error'));
+    appendSwap({ fromToken, toToken, amount, txHash: result.txHash });
   }
   return result;
 }
@@ -93,18 +77,11 @@ async function registerAgent() {
     const existing = await kit.contracts.registry.getOwnerAgents(address);
     if (existing && existing.length > 0) {
       agentId = existing[0];
-      console.log('\n✅ Agent already registered');
-      console.log('   Agent ID: ' + agentId.toString());
       return agentId;
     }
-  } catch (err) {
-    console.log('⚠️  Could not check existing agents: ' + err.message.slice(0, 80));
-  }
-  // No existing agent — register fresh
+  } catch (err) {}
 
   const agentName = process.env.AGENT_NAME || ('AgentPay-' + (await wallet.getAddress()).slice(0, 8));
-  let _agentNameRef = agentName;
-  console.log('\n📝 Registering ' + agentName + ' on Somnia...');
   try {
     const tx = await kit.contracts.registry.registerAgent(
       agentName,
@@ -113,73 +90,43 @@ async function registerAgent() {
       ['payments', 'policy', 'guard', 'defi']
     );
     const receipt = await tx.wait();
-
     const event = receipt.logs.find(
-      (log) =>
-        log.topics[0] ===
-        kit.contracts.registry.interface.getEvent('AgentRegistered').topicHash
+      (log) => log.topics[0] === kit.contracts.registry.interface.getEvent('AgentRegistered').topicHash
     );
-
     if (event) {
       const parsed = kit.contracts.registry.interface.parseLog(event);
       agentId = parsed?.args.agentId;
-      console.log('✅ AgentPay registered on-chain');
-      console.log('   Agent ID: ' + agentId.toString());
-      console.log('   TX: https://explorer.somnia.network/tx/' + receipt.hash);
     }
-
     return agentId;
   } catch (err) {
-    if (err.message.includes('already') || err.message.includes('0x03')) {
-      console.log('ℹ️  ' + _agentNameRef + ' already registered');
-    } else {
-      console.log('⚠️  Registration error: ' + err.message.slice(0, 80));
-    }
+    return null;
   }
 }
 
-async function pay(to, amountSTT, reason) {
-  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('📨 Payment Request');
-  console.log('   To:     ' + to);
-  console.log('   Amount: ' + amountSTT + ' STT');
-  console.log('   Reason: ' + reason);
-
-  const decision = engine.check(to, amountSTT, reason);
-
-  console.log('\n🔎 Policy Decision: ' + (decision.allowed ? '✅ APPROVED' : '❌ BLOCKED'));
-  console.log('   ' + decision.reason);
+async function pay(to, amount, reason, token = 'STT') {
+  const decision = engine.check(to, amount, reason);
 
   if (!decision.allowed) {
-    appendFailure({ to, amount: amountSTT, reason, blockedReason: decision.reason, agentId });
+    appendFailure({ to, amount, reason, blockedReason: decision.reason });
     return { success: false, reason: decision.reason, code: decision.code };
   }
 
   try {
-    const receipt = await directSend(wallet, to, amountSTT);
+    // In this multi-user version, we might need the user address from the request
+    // For now we use a default if not provided, but server.js should pass it.
+    // Assuming 'wallet' is the agent wallet that has permission to execute on vault.
+    const userAddress = process.env.USER_ADDRESS || (await wallet.getAddress()); 
+    const receipt = await executePayment(wallet, userAddress, token, to, amount, reason, 'req_' + Date.now());
 
-    console.log('\n💸 Transferred ' + amountSTT + ' STT via escrow contract');
-    console.log('   TX:  ' + receipt.hash);
-    console.log('   🔗  https://explorer.somnia.network/tx/' + receipt.hash);
-
-    if (decision.meta) {
-      console.log('\n📊 Spend Status');
-      console.log('   Today:     ' + decision.meta.todaySpend + ' / ' + engine.policy.dailyCapSTT + ' STT');
-      console.log('   Remaining: ' + decision.meta.dailyRemaining + ' STT');
-      console.log('   Hourly tx: ' + decision.meta.hourlyTxCount + ' / ' + engine.policy.circuitBreaker.maxTxPerHour);
-    }
-
-    appendSpend({ to, amount: amountSTT, reason, txHash: receipt.hash, agentId });
+    appendSpend({ to, amount, reason, txHash: receipt.hash, token });
     return { success: true, txHash: receipt.hash };
   } catch (err) {
-    console.log('\n❌ Transfer failed: ' + err.message.slice(0, 100));
-    appendFailure({ to, amount: amountSTT, reason, blockedReason: err.message, agentId });
+    appendFailure({ to, amount, reason, blockedReason: err.message });
     return { success: false, reason: err.message };
   }
 }
 
 async function setupEscrowPolicy() {
-  console.log('\n📋 Setting policy onchain...');
   try {
     await setPolicy(
       wallet,
@@ -188,69 +135,7 @@ async function setupEscrowPolicy() {
       engine.policy.circuitBreaker.maxTxPerHour,
       engine.policy.allowedRecipients
     );
-  } catch (err) {
-    console.log('⚠️  Policy setup error: ' + err.message.slice(0, 80));
-  }
+  } catch (err) {}
 }
 
-function history() {
-  const logs = getHistory(10);
-  console.log('\n📋 Recent Activity (last 10)');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  if (logs.length === 0) {
-    console.log('   No activity yet');
-    return;
-  }
-  logs.forEach(function(entry) {
-    const time = new Date(entry.timestamp).toLocaleTimeString();
-    if (entry.type === 'swap') {
-      console.log('🔄 [' + time + '] ' + entry.amount + ' ' + entry.fromToken + ' → ' + entry.toToken);
-      if (entry.txHash) console.log('   TX: ' + entry.txHash.slice(0, 20) + '...');
-    } else {
-      const status = entry.failed ? '❌' : '✅';
-      console.log(status + ' [' + time + '] ' + entry.amount + ' STT → ' + (entry.to ? entry.to.slice(0, 10) : '?') + '... (' + (entry.reason || '') + ')');
-      if (entry.failed) console.log('   Blocked: ' + (entry.blockedReason ? entry.blockedReason.slice(0, 60) : ''));
-      if (entry.txHash) console.log('   TX: ' + entry.txHash.slice(0, 20) + '...');
-    }
-  });
-}
-
-function status() {
-  const summary = engine.summary();
-  console.log('\n📊 AgentPay Status');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('   Agent:         ' + summary.agentName);
-  console.log('   Daily cap:     ' + summary.dailyCapSTT + ' STT');
-  console.log('   Spent today:   ' + summary.todaySpent + ' STT');
-  console.log('   Remaining:     ' + summary.dailyRemaining + ' STT');
-  console.log('   Per-tx cap:    ' + summary.perTxCapSTT + ' STT');
-  console.log('   Hourly tx:     ' + summary.hourlyTxCount + '/' + summary.maxTxPerHour);
-  console.log('   Active hours:  ' + summary.activeHours);
-  if (summary.whitelistCount === 0) {
-    console.log('   Whitelist:     open (no restrictions)');
-  } else {
-    console.log('   Whitelist:     ' + summary.whitelistCount + ' address(es):');
-    summary.whitelist.forEach(function(a) { console.log('                  ' + a); });
-  }
-  console.log('   Paused:        ' + (summary.isPaused ? '🔴 YES' : '🟢 NO'));
-}
-
-async function showBalances() {
-  const address = await wallet.getAddress();
-  const ERC20_ABI = ['function balanceOf(address) external view returns (uint256)'];
-  const [stt, wstt, ping, pong, susd] = await Promise.all([
-    provider.getBalance(address),
-    new ethers.Contract(TOKENS.WSTT, ERC20_ABI, provider).balanceOf(address),
-    new ethers.Contract(TOKENS.PING, ERC20_ABI, provider).balanceOf(address),
-    new ethers.Contract(TOKENS.PONG, ERC20_ABI, provider).balanceOf(address),
-    new ethers.Contract(TOKENS.SUSD, ERC20_ABI, provider).balanceOf(address),
-  ]);
-  console.log('\n== Balances ==');
-  console.log('   STT:  ' + parseFloat(ethers.formatEther(stt)).toFixed(4));
-  console.log('   WSTT: ' + parseFloat(ethers.formatEther(wstt)).toFixed(4));
-  console.log('   PING: ' + parseFloat(ethers.formatEther(ping)).toFixed(4));
-  console.log('   PONG: ' + parseFloat(ethers.formatEther(pong)).toFixed(4));
-  console.log('   SUSD: ' + parseFloat(ethers.formatEther(susd)).toFixed(4));
-}
-
-module.exports = { init, registerAgent, pay, setupEscrowPolicy, history, status, prepareSwap, confirmSwap, showBalances };
+module.exports = { init, registerAgent, pay, setupEscrowPolicy, prepareSwap, confirmSwap };

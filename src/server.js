@@ -1,13 +1,15 @@
 const http = require('http');
-const { pay } = require('./agent');
+const { pay, prepareSwap, confirmSwap } = require('./agent');
 const { readPolicy, applyUpdate } = require('./policyManager');
 const { getTodaySpend, getHistory } = require('../utils/store');
 const { parseIntent } = require('./brain');
+const { getAllJobs, addJob, cancelJob, parseInterval, intervalLabel } = require('./scheduler');
 
 const PORT = process.env.PORT || 3000;
 
 // ── In-memory store ───────────────────────────────────────────────────────────
 const requestStore = new Map();
+const chatHistories = new Map();
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function send(res, status, data) {
@@ -15,8 +17,8 @@ function send(res, status, data) {
   res.writeHead(status, {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'x-api-key, Content-Type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+    'Access-Control-Allow-Headers': 'x-api-key, Content-Type, x-user-address',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, DELETE'
   });
   res.end(body);
 }
@@ -40,6 +42,7 @@ function handleHealth(req, res) {
     status:  'ok',
     agent:   'AgentPay',
     version: '2.0',
+    address: process.env.WALLET_ADDRESS || '',
     time:    new Date().toISOString()
   });
 }
@@ -59,6 +62,13 @@ function handleGetPolicy(req, res) {
   });
 }
 
+// POST /policy
+async function handleUpdatePolicy(req, res) {
+  const body = await parseBody(req);
+  const updated = applyUpdate(body);
+  return send(res, 200, updated);
+}
+
 // GET /agents
 function handleAgents(req, res) {
   return send(res, 200, {
@@ -75,19 +85,28 @@ function handleAgents(req, res) {
 
 // GET /history
 function handleHistory(req, res) {
-  const logs = getHistory(20);
-  return send(res, 200, { logs, total: logs.length });
+  const logs = getHistory(50);
+  return send(res, 200, { items: logs, total: logs.length });
 }
 
 // POST /chat
 async function handleChat(req, res) {
+  const userAddress = req.headers['x-user-address'] || 'anonymous';
   const body = await parseBody(req);
-  const { message, conversationHistory, vaultBalance } = body;
+  const { message, vaultBalance } = body;
 
   if (!message) return send(res, 400, { error: 'Missing message' });
 
   try {
-    const intent = await parseIntent(message, vaultBalance);
+    const history = chatHistories.get(userAddress) || [];
+    const intent = await parseIntent(message, vaultBalance, history);
+    
+    history.push({ role: 'user', content: message });
+    history.push({ role: 'assistant', content: intent.message, intent });
+    
+    if (history.length > 20) history.splice(0, 2);
+    chatHistories.set(userAddress, history);
+
     return send(res, 200, {
       message: intent.message,
       action:  intent.action,
@@ -98,16 +117,29 @@ async function handleChat(req, res) {
   }
 }
 
+// GET /chat (history)
+function handleGetChatHistory(req, res) {
+  const userAddress = req.headers['x-user-address'] || 'anonymous';
+  const history = chatHistories.get(userAddress) || [];
+  return send(res, 200, { history });
+}
+
+// DELETE /chat
+function handleDeleteChat(req, res) {
+  const userAddress = req.headers['x-user-address'] || 'anonymous';
+  chatHistories.delete(userAddress);
+  return send(res, 200, { success: true });
+}
+
 // POST /pay
 async function handlePay(req, res) {
   const body = await parseBody(req);
-  const { to, amount, reason, requestId } = body;
+  const { to, amount, reason, requestId, fromToken } = body;
 
   if (!to || !amount || !requestId) {
     return send(res, 400, { error: 'Missing required fields: to, amount, requestId' });
   }
 
-  // Prevent duplicate requests
   if (requestStore.has(requestId)) {
     const existing = requestStore.get(requestId);
     return send(res, 200, { requestId, status: existing.status, message: 'Already processed' });
@@ -117,6 +149,7 @@ async function handlePay(req, res) {
     status:    'pending',
     to,
     amount:    parseFloat(amount),
+    token:     fromToken || 'STT',
     reason:    reason || 'No reason provided',
     txHash:    null,
     error:     null,
@@ -124,7 +157,7 @@ async function handlePay(req, res) {
   };
   requestStore.set(requestId, record);
 
-  const result = await pay(to, parseFloat(amount), reason || 'API payment');
+  const result = await pay(to, parseFloat(amount), reason || 'API payment', fromToken);
 
   if (result.success) {
     record.status = 'executed';
@@ -150,6 +183,57 @@ async function handlePay(req, res) {
   }
 }
 
+// POST /swap
+async function handleSwap(req, res) {
+  const body = await parseBody(req);
+  const { fromToken, toToken, amount, execute } = body;
+
+  if (!fromToken || !toToken || !amount) {
+    return send(res, 400, { error: 'Missing swap parameters' });
+  }
+
+  if (execute) {
+    const result = await confirmSwap(fromToken, toToken, amount);
+    return send(res, 200, result);
+  } else {
+    const result = await prepareSwap(fromToken, toToken, amount);
+    return send(res, 200, result);
+  }
+}
+
+// GET /schedules
+function handleGetSchedules(req, res) {
+  const jobs = getAllJobs();
+  return send(res, 200, { schedules: jobs });
+}
+
+// POST /schedules
+async function handleCreateSchedule(req, res) {
+  const body = await parseBody(req);
+  const { to, amount, interval, reason, conditions } = body;
+  
+  const intervalMs = parseInterval(interval);
+  if (!intervalMs) return send(res, 400, { error: 'Invalid interval' });
+
+  const job = addJob({
+    to,
+    amount,
+    reason,
+    intervalMs,
+    intervalLabel: interval,
+    conditions
+  });
+
+  return send(res, 200, { success: true, schedule: job });
+}
+
+// DELETE /schedules/:id
+function handleDeleteSchedule(req, res, jobId) {
+  const job = cancelJob(jobId);
+  if (!job) return send(res, 404, { error: 'Job not found' });
+  return send(res, 200, { success: true });
+}
+
 // GET /status/:requestId
 function handleStatus(req, res, requestId) {
   if (!requestId) return send(res, 400, { error: 'Missing requestId' });
@@ -171,7 +255,13 @@ const server = http.createServer(async (req, res) => {
   if (method === 'GET'  && url === '/agents')          return handleAgents(req, res);
   if (method === 'GET'  && url === '/history')         return handleHistory(req, res);
   if (method === 'POST' && url === '/chat')            return await handleChat(req, res);
+  if (method === 'GET'  && url === '/chat')            return handleGetChatHistory(req, res);
+  if (method === 'DELETE' && url === '/chat')          return handleDeleteChat(req, res);
   if (method === 'POST' && url === '/pay')             return await handlePay(req, res);
+  if (method === 'POST' && url === '/swap')            return await handleSwap(req, res);
+  if (method === 'GET'  && url === '/schedules')       return handleGetSchedules(req, res);
+  if (method === 'POST' && url === '/schedules')       return await handleCreateSchedule(req, res);
+  if (method === 'DELETE' && url.startsWith('/schedules/')) return handleDeleteSchedule(req, res, url.replace('/schedules/', ''));
   if (method === 'GET'  && url.startsWith('/status/')) return handleStatus(req, res, url.replace('/status/', ''));
 
   return send(res, 404, { error: 'Not found' });
@@ -181,14 +271,6 @@ function startServer() {
   return new Promise((resolve) => {
     server.listen(PORT, () => {
       console.log('🌐 AgentPay API running on http://localhost:' + PORT);
-      console.log('   GET  /health            — health check');
-      console.log('   GET  /policy            — spending rules');
-      console.log('   POST /policy            — update policy');
-      console.log('   GET  /agents            — agent directory');
-      console.log('   GET  /history           — recent activity');
-      console.log('   POST /chat              — chat with AI brain');
-      console.log('   POST /pay               — submit payment');
-      console.log('   GET  /status/:id        — check request');
       resolve();
     });
   });

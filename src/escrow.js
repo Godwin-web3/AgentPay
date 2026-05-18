@@ -9,72 +9,115 @@ const deployment = JSON.parse(
   fs.readFileSync(path.join(__dirname, '../artifacts/AgentVault-deployment.json'), 'utf8')
 );
 
-let escrow = null;
+let vaultContract = null;
 
-function getEscrow(wallet) {
-  if (!escrow) {
-    escrow = new ethers.Contract(deployment.address, artifact.abi, wallet);
+function getVaultContract(wallet) {
+  if (!vaultContract) {
+    vaultContract = new ethers.Contract(deployment.address, artifact.abi, wallet);
   }
-  return escrow;
+  return vaultContract;
 }
 
-async function setPolicy(wallet, perTxCapSTT, dailyCapSTT, maxTxPerHour, whitelist) {
-  const contract = getEscrow(wallet);
+const TOKENS = {
+  STT:  ethers.ZeroAddress,
+  WSTT: "0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7",
+  PING: "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
+  PONG: "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
+  SUSD: "0x65296738D4E5edB1515e40287B6FDf8320E6eE04",
+};
+
+function resolveTokenAddress(symbolOrAddr) {
+  if (!symbolOrAddr) return ethers.ZeroAddress;
+  if (symbolOrAddr.toUpperCase() === 'STT') return ethers.ZeroAddress;
+  if (symbolOrAddr.startsWith('0x')) return symbolOrAddr;
+  return TOKENS[symbolOrAddr.toUpperCase()] || ethers.ZeroAddress;
+}
+
+async function setPolicy(wallet, perTxCap, dailyCap, maxTxPerHour, whitelist) {
+  const contract = getVaultContract(wallet);
   const tx = await contract.setPolicy(
-    ethers.parseEther(perTxCapSTT.toString()),
-    ethers.parseEther(dailyCapSTT.toString()),
+    ethers.parseEther(perTxCap.toString()),
+    ethers.parseEther(dailyCap.toString()),
     maxTxPerHour,
     whitelist
   );
-  await tx.wait();
-  console.log('✅ Policy set onchain');
-  return tx;
+  return await tx.wait();
 }
 
-async function directSend(wallet, toAddress, amountSTT) {
-  const contract = getEscrow(wallet);
-  const amountWei = ethers.parseEther(amountSTT.toString());
-  const address = await wallet.getAddress();
-  const tx = await contract.execute(address, toAddress, amountWei);
-  const receipt = await tx.wait();
-  console.log('💸 Payment executed via vault');
-  console.log('   TX: https://explorer.somnia.network/tx/' + receipt.hash);
-  return receipt;
+async function executePayment(wallet, userAddress, token, to, amount, reason, requestId) {
+  const contract = getVaultContract(wallet);
+  const tokenAddr = resolveTokenAddress(token);
+  const amountWei = ethers.parseEther(amount.toString());
+  const reqIdBytes32 = requestId ? (requestId.startsWith('0x') ? requestId : ethers.id(requestId)) : ethers.ZeroHash;
+
+  const tx = await contract.execute(userAddress, tokenAddr, to, amountWei, reason || '', reqIdBytes32, {
+    gasLimit: 800000
+  });
+  return await tx.wait();
 }
 
-async function createJob(wallet, jobId, agentAddress, amountSTT) {
-  const contract = getEscrow(wallet);
-  const amountWei = ethers.parseEther(amountSTT.toString());
-  const jobIdBytes = ethers.id(jobId);
-  const tx = await contract.createJob(jobIdBytes, agentAddress, { value: amountWei });
-  await tx.wait();
-  console.log('✅ Job created onchain: ' + jobId);
-  return tx;
+async function getOnChainPolicy(wallet, userAddress) {
+  const contract = getVaultContract(wallet);
+  const [policy, whitelist] = await contract.getPolicy(userAddress);
+  const [todaySpent, currentHourTx] = await contract.getSpendMetrics(userAddress);
+  const balance = await contract.getBalance(userAddress, ethers.ZeroAddress);
+  
+  return {
+    perTxCap: parseFloat(ethers.formatEther(policy.perTxCap)),
+    dailyCap: parseFloat(ethers.formatEther(policy.dailyCap)),
+    maxTxPerHour: Number(policy.maxTxPerHour),
+    active: policy.active,
+    whitelist,
+    todaySpent: parseFloat(ethers.formatEther(todaySpent)),
+    currentHourTx: Number(currentHourTx),
+    vaultBalance: parseFloat(ethers.formatEther(balance))
+  };
 }
 
-async function releasePayment(wallet, jobId) {
-  const contract = getEscrow(wallet);
-  const jobIdBytes = ethers.id(jobId);
-  const tx = await contract.releasePayment(jobIdBytes);
-  const receipt = await tx.wait();
-  console.log('💸 Payment released onchain');
-  console.log('   TX: https://explorer.somnia.network/tx/' + receipt.hash);
-  return receipt;
+async function createOnChainSchedule(wallet, userAddress, token, to, amount, interval, reason, minBalance) {
+  const contract = getVaultContract(wallet);
+  const tokenAddr = resolveTokenAddress(token);
+  const tx = await contract.createSchedule(
+    tokenAddr,
+    to,
+    ethers.parseEther(amount.toString()),
+    interval,
+    reason || '',
+    ethers.parseEther((minBalance || 0).toString())
+  );
+  return await tx.wait();
 }
 
-async function disputeJob(wallet, jobId) {
-  const contract = getEscrow(wallet);
-  const jobIdBytes = ethers.id(jobId);
-  const tx = await contract.disputeJob(jobIdBytes);
-  await tx.wait();
-  console.log('⚠️  Job disputed: ' + jobId);
-  return tx;
+async function getOnChainSchedules(wallet, userAddress) {
+  const contract = getVaultContract(wallet);
+  const schedules = await contract.getSchedules(userAddress);
+  return schedules.map((s, index) => ({
+    id: index,
+    token: s.token,
+    to: s.to,
+    amount: parseFloat(ethers.formatEther(s.amount)),
+    interval: Number(s.interval),
+    nextRun: new Date(Number(s.nextRun) * 1000).toISOString(),
+    active: s.active,
+    reason: s.reason,
+    minBalance: parseFloat(ethers.formatEther(s.minBalance))
+  }));
 }
 
-async function getJob(wallet, jobId) {
-  const contract = getEscrow(wallet);
-  const jobIdBytes = ethers.id(jobId);
-  return await contract.getJob(jobIdBytes);
+async function cancelOnChainSchedule(wallet, index) {
+  const contract = getVaultContract(wallet);
+  const tx = await contract.cancelSchedule(index);
+  return await tx.wait();
 }
 
-module.exports = { setPolicy, directSend, createJob, releasePayment, disputeJob, getJob, getEscrow };
+module.exports = {
+  setPolicy,
+  executePayment,
+  getOnChainPolicy,
+  createOnChainSchedule,
+  getOnChainSchedules,
+  cancelOnChainSchedule,
+  getVaultContract,
+  TOKENS,
+  resolveTokenAddress
+};

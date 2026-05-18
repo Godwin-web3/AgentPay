@@ -1,33 +1,34 @@
 const { ethers } = require('ethers');
 require('dotenv').config();
 
-async function getBalance(address) {
+async function getOnChainMetrics(userAddress) {
   try {
+    const { getVaultContract } = require('./escrow');
     const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
-    const balance = await provider.getBalance(address);
-    return parseFloat(ethers.formatEther(balance));
+    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+    const contract = getVaultContract(wallet);
+    
+    const balance = await contract.getBalance(userAddress, ethers.ZeroAddress);
+    const [todaySpent, currentHourTx] = await contract.getSpendMetrics(userAddress);
+    
+    return {
+      balance: parseFloat(ethers.formatEther(balance)),
+      todaySpent: parseFloat(ethers.formatEther(todaySpent)),
+      currentHourTx: Number(currentHourTx)
+    };
   } catch (err) {
-    console.log('   ⚠️  Could not fetch balance: ' + err.message.slice(0, 50));
+    console.log('   ⚠️  Could not fetch on-chain metrics: ' + err.message.slice(0, 50));
     return null;
   }
 }
 
-function getHour() {
-  return new Date().getHours();
-}
-
-function getMinute() {
-  return new Date().getMinutes();
-}
-
+function getHour() { return new Date().getHours(); }
+function getMinute() { return new Date().getMinutes(); }
 function getDayOfWeek() {
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   return days[new Date().getDay()];
 }
-
-function getDateString() {
-  return new Date().toDateString();
-}
+function getDateString() { return new Date().toDateString(); }
 
 function parseExecuteAt(str) {
   if (!str) return null;
@@ -36,28 +37,24 @@ function parseExecuteAt(str) {
   return { hour: parseInt(match[1]), minute: parseInt(match[2]) };
 }
 
-async function checkConditions(conditions, walletAddress) {
+async function checkConditions(conditions, userAddress) {
   const results = [];
-
   if (!conditions) return { passed: true, results: [] };
+
+  const metrics = await getOnChainMetrics(userAddress);
 
   // 1. Balance condition
   if (conditions.minBalance !== null && conditions.minBalance !== undefined) {
-    const balance = await getBalance(walletAddress);
-    if (balance === null) {
+    if (!metrics) {
       results.push({ check: 'balance', passed: false, reason: 'Could not fetch balance' });
-    } else if (balance < conditions.minBalance) {
+    } else if (metrics.balance < conditions.minBalance) {
       results.push({
         check: 'balance',
         passed: false,
-        reason: 'Balance ' + balance.toFixed(4) + ' STT is below minimum ' + conditions.minBalance + ' STT'
+        reason: 'Balance ' + metrics.balance.toFixed(4) + ' STT is below minimum ' + conditions.minBalance + ' STT'
       });
     } else {
-      results.push({
-        check: 'balance',
-        passed: true,
-        reason: 'Balance ' + balance.toFixed(4) + ' STT ✅'
-      });
+      results.push({ check: 'balance', passed: true, reason: 'Balance ' + metrics.balance.toFixed(4) + ' STT ✅' });
     }
   }
 
@@ -80,65 +77,22 @@ async function checkConditions(conditions, walletAddress) {
     }
   }
 
-  // 3. Execute on specific day
-  if (conditions.executeOnDay) {
-    const today = getDayOfWeek();
-    const target = conditions.executeOnDay.toLowerCase();
-    if (today !== target) {
-      results.push({
-        check: 'day',
-        passed: false,
-        reason: 'Today is ' + today + ', waiting for ' + target
-      });
-    } else {
-      results.push({ check: 'day', passed: true, reason: 'Day matched: ' + today + ' ✅' });
-    }
-  }
-
-  // 4. Execute on specific date (tomorrow, specific date)
-  if (conditions.executeOnDate) {
-    const today = getDateString();
-    const target = new Date(conditions.executeOnDate).toDateString();
-    if (today !== target) {
-      results.push({
-        check: 'date',
-        passed: false,
-        reason: 'Today is ' + today + ', waiting for ' + target
-      });
-    } else {
-      results.push({ check: 'date', passed: true, reason: 'Date matched ✅' });
-    }
-  }
-
-  // 5. Max daily spend condition
+  // 3. Max daily spend condition
   if (conditions.maxDailySpend !== null && conditions.maxDailySpend !== undefined) {
-    const { getTodaySpend } = require('../utils/store');
-    const spent = getTodaySpend();
-    if (spent >= conditions.maxDailySpend) {
+    if (!metrics) {
+      results.push({ check: 'dailySpend', passed: false, reason: 'Could not fetch spend metrics' });
+    } else if (metrics.todaySpent >= conditions.maxDailySpend) {
       results.push({
         check: 'dailySpend',
         passed: false,
-        reason: 'Already spent ' + spent + ' STT today (max: ' + conditions.maxDailySpend + ' STT)'
+        reason: 'On-chain today spend ' + metrics.todaySpent + ' STT exceeds max ' + conditions.maxDailySpend + ' STT'
       });
     } else {
-      results.push({
-        check: 'dailySpend',
-        passed: true,
-        reason: 'Daily spend ' + spent + '/' + conditions.maxDailySpend + ' STT ✅'
-      });
+      results.push({ check: 'dailySpend', passed: true, reason: 'Daily spend ' + metrics.todaySpent + '/' + conditions.maxDailySpend + ' STT ✅' });
     }
   }
 
-  // 6. Execute once (one-time scheduled payment)
-  if (conditions.executeOnce && conditions.executed) {
-    results.push({
-      check: 'executeOnce',
-      passed: false,
-      reason: 'One-time payment already executed'
-    });
-  }
-
-  const allPassed = results.every(function(r) { return r.passed; });
+  const allPassed = results.every(r => r.passed);
   return { passed: allPassed, results };
 }
 
