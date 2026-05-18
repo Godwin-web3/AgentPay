@@ -3,7 +3,7 @@ import { ethers } from 'ethers'
 
 export const WORKER_URL = import.meta.env.VITE_WORKER_URL || 'https://agentpay-worker.mbagodwin419.workers.dev'
 export const RPC = import.meta.env.VITE_RPC_URL || 'https://dream-rpc.somnia.network'
-export const VAULT_ADDRESS = import.meta.env.VITE_VAULT_ADDRESS || '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
+export const VAULT_ADDRESS = import.meta.env.VITE_VAULT_ADDRESS || '0x4471917E96271F688282ae283d62De0B5Be8084C'
 const VAULT_ABI = [
   "event Executed(address indexed user, address indexed token, address indexed to, uint256 amount, string reason, bytes32 requestId)",
   "function balances(address,address) external view returns (uint256)"
@@ -37,7 +37,15 @@ export async function sendChat(
     const res = await fetch(RPC, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: VAULT_ADDRESS, data: '0xf8b2cb4f000000000000000000000000' + userAddress.replace('0x','').toLowerCase() }, 'latest'] })
+      body: JSON.stringify({ 
+        jsonrpc: '2.0', 
+        id: 1, 
+        method: 'eth_call', 
+        params: [{ 
+          to: VAULT_ADDRESS, 
+          data: '0xf8b2cb4f' + userAddress.replace('0x','').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000' 
+        }, 'latest'] 
+      })
     })
     const data = await res.json()
     vaultBalance = (Number(BigInt(data.result === '0x' ? '0x0' : data.result)) / 1e18).toFixed(4)
