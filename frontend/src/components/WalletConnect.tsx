@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 
-const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D'
+const VAULT_ADDRESS = '0x4471917E96271F688282ae283d62De0B5Be8084C'
 const SOMNIA_CHAIN_ID = '0xc488' // 50312 in hex
 
 interface EIP6963ProviderDetail {
@@ -92,7 +92,7 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
   async function fetchOnChainData(userAddr: string, provider: any) {
     if (!provider) return
     try {
-      const data = '0xf8b2cb4f' + userAddr.replace('0x', '').padStart(64, '0')
+      const data = '0xf8b2cb4f' + userAddr.replace('0x', '').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000'
       const res = await provider.request({
         method: 'eth_call',
         params: [{ to: VAULT_ADDRESS, data }, 'latest']

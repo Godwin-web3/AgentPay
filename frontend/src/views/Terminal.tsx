@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, WORKER_URL, VAULT_ADDRESS, RPC } from '../api'
+import { sendChat, executePay, generateRequestId, getPolicy, getChatHistory, WORKER_URL, VAULT_ADDRESS, RPC } from '../api'
 import type { ChatMessage } from '../types'
 import { ethers } from 'ethers'
 
@@ -128,10 +128,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
   // Load chat history on mount
   useEffect(() => {
     if (!userAddress) return
-    fetch(`${WORKER_URL}/chat`, {
-      headers: { 'x-user-address': userAddress }
-    })
-      .then(r => r.json())
+    getChatHistory(userAddress)
       .then(res => {
         if (res.history?.length > 0) {
           const filtered = res.history.filter((m: any) => {
@@ -181,8 +178,8 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
     }
   }
 
-  async function handleSend() {
-    const text = input.trim()
+  async function handleSend(overrideText?: string) {
+    const text = (overrideText || input).trim()
     if (!text || loading) return
 
     // Clear command
@@ -206,7 +203,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jsonrpc: '2.0', id: 1, method: 'eth_call',
-          params: [{ to: VAULT_ADDRESS, data: '0xf8b2cb4f000000000000000000000000' + userAddress.replace('0x', '').toLowerCase() }, 'latest']
+          params: [{ to: VAULT_ADDRESS, data: '0xf8b2cb4f' + userAddress.replace('0x', '').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000' }, 'latest']
         })
       })
         .then(r => r.json())
@@ -243,88 +240,94 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
         const next = [...prev, assistantMsg]
         const msgIndex = next.length - 1
 
-        if (intent.action === 'pay' && intent.to && intent.amount) {
-          const requestId = generateRequestId()
-          executePay(intent.to, intent.amount, intent.reason || 'Chat payment', requestId, userAddress)
-            .then(payRes => setTxResults(r => ({ ...r, [msgIndex]: payRes })))
-            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
-        }
+        // Handle actions after state is updated
+        setTimeout(async () => {
+          if (intent.action === 'pay' && intent.to && intent.amount) {
+            const requestId = generateRequestId()
+            executePay(intent.to, intent.amount, intent.reason || 'Chat payment', requestId, userAddress)
+              .then(payRes => setTxResults(r => ({ ...r, [msgIndex]: payRes })))
+              .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+          }
 
-        if (intent.action === 'schedule' && intent.to && intent.amount && intent.interval) {
-          fetch(`${WORKER_URL}/schedules`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-user-address": userAddress },
-            body: JSON.stringify({ to: intent.to, amount: intent.amount, interval: intent.interval, reason: intent.reason, conditions: intent.conditions })
-          })
-            .then(r => r.json())
-            .then(async res => {
-              if (res.action === 'contract_call') {
-                const iface = new ethers.Interface(["function createSchedule(address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external"])
-                const data = iface.encodeFunctionData("createSchedule", res.args)
-                const txHash = await window.ethereum.request({
-                  method: 'eth_sendTransaction',
-                  params: [{ from: userAddress, to: VAULT_ADDRESS, data }]
-                })
-                setTxResults(r => ({ ...r, [msgIndex]: { status: 'executed', txHash, explorer: 'https://shannon-explorer.somnia.network/tx/' + txHash } }))
-              }
+          if (intent.action === 'schedule' && intent.to && intent.amount && intent.interval) {
+            fetch(`${WORKER_URL}/schedules`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-user-address": userAddress },
+              body: JSON.stringify({ to: intent.to, amount: intent.amount, interval: intent.interval, reason: intent.reason, conditions: intent.conditions })
             })
-            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
-        }
-
-        if (intent.action === 'propose_swap' && intent.fromToken && intent.toToken && intent.amount) {
-           setTxResults(r => ({ 
-             ...r, 
-             [msgIndex]: { 
-               status: 'proposing_swap', 
-               fromToken: intent.fromToken, 
-               toToken: intent.toToken, 
-               amount: intent.amount 
-             } 
-           }))
-        }
-
-        if (intent.action === 'execute_swap') {
-          // Find last proposal to confirm
-          const lastPropIdx = [...next.keys()].reverse().find(idx => txResults[idx]?.status === 'proposing_swap' || txResults[idx]?.status === 'proposing_intent')
-          if (lastPropIdx !== undefined) {
-             handleConfirm(lastPropIdx)
+              .then(r => r.json())
+              .then(async res => {
+                if (res.action === 'contract_call') {
+                  const iface = new ethers.Interface(["function createSchedule(address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external"])
+                  const data = iface.encodeFunctionData("createSchedule", res.args)
+                  const txHash = await window.ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [{ from: userAddress, to: VAULT_ADDRESS, data }]
+                  })
+                  setTxResults(r => ({ ...r, [msgIndex]: { status: 'executed', txHash, explorer: 'https://shannon-explorer.somnia.network/tx/' + txHash } }))
+                }
+              })
+              .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
           }
-        }
 
-        if (intent.action === 'intent' && intent.intentName) {
-           setTxResults(r => ({ 
-             ...r, 
-             [msgIndex]: { 
-               status: 'proposing_intent', 
-               intentName: intent.intentName,
-               amount: intent.amount, 
-               to: intent.to, 
-               reason: intent.reason || 'Atomic Intent'
-             } 
-           }))
-        }
-
-        if (intent.action === 'update_policy' && intent.policyUpdate) {
-          const up = intent.policyUpdate
-          const applyPolicyUpdate = async () => {
-            const current = await getPolicy(userAddress)
-            const update: any = {}
-            if (up.field === 'dailyCap') update.dailyCap = up.value
-            if (up.field === 'perTxCap') update.perTxCap = up.value
-            if (up.field === 'maxTxPerHour') update.circuitBreaker = { ...current.circuitBreaker, maxTxPerHour: up.value }
-            if (up.field === 'activeHours') update.activeHours = { start: up.start, end: up.end }
-            if (up.field === 'addWhitelist' && up.address) {
-              update.whitelist = [...new Set([...current.whitelist, up.address])]
-            }
-            if (up.field === 'removeWhitelist' && up.address) {
-              update.whitelist = current.whitelist.filter(a => a.toLowerCase() !== up.address?.toLowerCase())
-            }
-            return await fetch(`${WORKER_URL}/policy`, { method: "POST", headers: { "Content-Type": "application/json", "x-user-address": userAddress }, body: JSON.stringify(update) }).then(r => r.json())
+          if (intent.action === 'propose_swap' && intent.fromToken && intent.toToken && intent.amount) {
+             setTxResults(r => ({ 
+               ...r, 
+               [msgIndex]: { 
+                 status: 'proposing_swap', 
+                 fromToken: intent.fromToken, 
+                 toToken: intent.toToken, 
+                 amount: intent.amount 
+               } 
+             }))
           }
-          applyPolicyUpdate()
-            .then(() => setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } })))
-            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
-        }
+
+          if (intent.action === 'execute_swap') {
+            // Use functional update to avoid stale txResults
+            setTxResults(currentResults => {
+              const lastPropIdx = [...next.keys()].reverse().find(idx => currentResults[idx]?.status === 'proposing_swap' || currentResults[idx]?.status === 'proposing_intent')
+              if (lastPropIdx !== undefined) {
+                 handleConfirm(lastPropIdx)
+              }
+              return currentResults
+            })
+          }
+
+          if (intent.action === 'intent' && intent.intentName) {
+             setTxResults(r => ({ 
+               ...r, 
+               [msgIndex]: { 
+                 status: 'proposing_intent', 
+                 intentName: intent.intentName,
+                 amount: intent.amount, 
+                 to: intent.to, 
+                 reason: intent.reason || 'Atomic Intent'
+               } 
+             }))
+          }
+
+          if (intent.action === 'update_policy' && intent.policyUpdate) {
+            const up = intent.policyUpdate
+            const applyPolicyUpdate = async () => {
+              const current = await getPolicy(userAddress)
+              const update: any = {}
+              if (up.field === 'dailyCap') update.dailyCap = up.value
+              if (up.field === 'perTxCap') update.perTxCap = up.value
+              if (up.field === 'maxTxPerHour') update.circuitBreaker = { ...current.circuitBreaker, maxTxPerHour: up.value }
+              if (up.field === 'activeHours') update.activeHours = { start: up.start, end: up.end }
+              if (up.field === 'addWhitelist' && up.address) {
+                update.whitelist = [...new Set([...current.whitelist, up.address])]
+              }
+              if (up.field === 'removeWhitelist' && up.address) {
+                update.whitelist = current.whitelist.filter(a => a.toLowerCase() !== up.address?.toLowerCase())
+              }
+              return await fetch(`${WORKER_URL}/policy`, { method: "POST", headers: { "Content-Type": "application/json", "x-user-address": userAddress }, body: JSON.stringify(update) }).then(r => r.json())
+            }
+            applyPolicyUpdate()
+              .then(() => setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } })))
+              .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+          }
+        }, 0)
 
         return next
       })
@@ -401,10 +404,10 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
               }
               const val = prompts[btn]
               const autoSend = btn === 'BALANCE' || btn === 'POLICY'
-              setInput(val)
               if (autoSend) {
-                setTimeout(() => handleSend(), 0)
+                handleSend(val)
               } else {
+                setInput(val)
                 inputRef.current?.focus()
               }
             }}
@@ -431,7 +434,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
           disabled={loading}
           style={{ maxHeight: '120px' }}
         />
-        <button className="send-btn icon-btn" onClick={handleSend} disabled={loading || !input.trim()}>
+        <button className="send-btn icon-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>
           ➤
         </button>
       </div>

@@ -159,7 +159,7 @@ async function handleIntent(env, userAddress, intentName, amount, to, reason) {
     values.push(0);
 
     const tx = await vault.multicall(userAddress, targets, datas, values, ethers.ZeroAddress, amountWei, reason || "Atomic Swap+Pay", ethers.id(Date.now().toString()));
-    return { success: true, status: 'executed', txHash: tx.hash, explorer: 'https://explorer.somnia.network/tx/' + tx.hash };
+    return { success: true, status: 'executed', txHash: tx.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash };
   }
 
   if (intentName === 'provide_liquidity') {
@@ -263,6 +263,7 @@ export default {
     if (path === '/policy') return handleGetPolicy(request, env, userAddress);
     if (path === '/pay') return handlePay(request, env, userAddress);
     if (path === '/balance') return handleBalance(request, env, userAddress);
+    if (path === '/swap') return handleSwap(request, env, userAddress);
     if (path === '/intent') {
       const { intentName, amount, to, reason } = await request.json();
       return json(await handleIntent(env, userAddress, intentName, amount, to, reason));
@@ -274,4 +275,41 @@ export default {
 async function handlePay(request, env, address) {
   const { to, amount, requestId, reason, fromToken } = await request.json();
   return json(await executePayment(env, address, to, amount, requestId, reason, fromToken || 'STT'));
+}
+
+async function handleSwap(request, env, userAddress) {
+  const { fromToken, toToken, amount, execute } = await request.json();
+  if (!execute) {
+    return json({ success: true, status: 'proposing_swap', fromToken, toToken, amount });
+  }
+
+  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
+  const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
+  const vaultAddr = env.VAULT_ADDRESS || VAULT_ADDRESS;
+  const vault = new ethers.Contract(vaultAddr, VAULT_ABI, wallet);
+  const amountWei = ethers.parseEther(amount.toString());
+
+  const fromAddr = fromToken.toUpperCase() === 'STT' ? TOKENS.WSTT : TOKENS[fromToken.toUpperCase()];
+  const toAddr = toToken.toUpperCase() === 'STT' ? TOKENS.WSTT : TOKENS[toToken.toUpperCase()];
+
+  if (!fromAddr || !toAddr) return json({ error: 'Unsupported token', success: false }, 400);
+
+  const targets = [];
+  const datas = [];
+  const values = [];
+
+  const routerIface = new ethers.Interface(V3_ROUTER_ABI);
+  datas.push(routerIface.encodeFunctionData("exactInputSingle", [{
+    tokenIn: fromAddr, tokenOut: toAddr, fee: 500, recipient: vaultAddr,
+    amountIn: amountWei, amountOutMinimum: 0, sqrtPriceLimitX96: 0
+  }]));
+  targets.push(V3_ROUTER);
+  values.push(fromToken.toUpperCase() === 'STT' ? amountWei : 0);
+
+  try {
+    const tx = await vault.multicall(userAddress, targets, datas, values, fromToken.toUpperCase() === 'STT' ? ethers.ZeroAddress : fromAddr, amountWei, `Swap ${fromToken} to ${toToken}`, ethers.id(Date.now().toString()));
+    return json({ success: true, status: 'executed', txHash: tx.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash });
+  } catch (err) {
+    return json({ success: false, error: err.message });
+  }
 }
