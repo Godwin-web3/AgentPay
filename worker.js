@@ -245,6 +245,7 @@ async function handleChat(request, env) {
   });
 
   const groqData = await groqRes.json();
+  if (!groqData.choices) return json({ error: groqData.error?.message || JSON.stringify(groqData) }, 500);
   const intent = JSON.parse(groqData.choices[0].message.content.replace(/```json|```/g, '').trim());
   let enrichedData = null;
 
