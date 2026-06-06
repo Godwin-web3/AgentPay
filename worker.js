@@ -229,12 +229,11 @@ async function handleGetPolicy(request, env, address) {
 }
 
 async function handleChat(request, env) {
-  const userAddress = request.headers.get("x-user-address");
-  if (!userAddress) return json({ error: 'Missing address' }, 401);
-  await trackUser(env, userAddress);
+  const userAddress = request.headers.get("x-user-address") || null;
+  if (userAddress) await trackUser(env, userAddress);
   const { message, vaultBalance } = await request.json();
-  const kvKey = `chat_history_${userAddress.toLowerCase()}`;
-  let history = JSON.parse(await env.AGENTPAY_KV.get(kvKey) || '[]');
+  const kvKey = userAddress ? `chat_history_${userAddress.toLowerCase()}` : null;
+  let history = kvKey ? JSON.parse(await env.AGENTPAY_KV.get(kvKey) || '[]') : [];
 
   const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -253,7 +252,7 @@ async function handleChat(request, env) {
   if (intent.action === 'policy') enrichedData = await (await handleGetPolicy(null, env, userAddress)).json();
 
   history.push({ role: 'user', content: message }, { role: 'assistant', content: intent.message, intent });
-  await env.AGENTPAY_KV.put(kvKey, JSON.stringify(history.slice(-50)));
+  if (kvKey) await env.AGENTPAY_KV.put(kvKey, JSON.stringify(history.slice(-50)));
 
   return json({ intent, message: intent.message, data: enrichedData });
 }
