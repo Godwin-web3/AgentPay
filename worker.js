@@ -304,35 +304,34 @@ async function handlePay(request, env, address) {
 async function handleSwap(request, env, userAddress) {
   const { fromToken, toToken, amount, execute } = await request.json();
   if (!execute) {
-    return json({ success: true, status: 'proposing_swap', fromToken, toToken, amount });
+    return json({ success: true, status: "proposing_swap", fromToken, toToken, amount });
   }
-
   const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
   const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
-  const vaultAddr = env.VAULT_ADDRESS || VAULT_ADDRESS;
-  const vault = new ethers.Contract(vaultAddr, VAULT_ABI, wallet);
   const amountWei = ethers.parseEther(amount.toString());
-
-  const fromAddr = fromToken.toUpperCase() === 'STT' ? TOKENS.WSTT : TOKENS[fromToken.toUpperCase()];
-  const toAddr = toToken.toUpperCase() === 'STT' ? TOKENS.WSTT : TOKENS[toToken.toUpperCase()];
-
-  if (!fromAddr || !toAddr) return json({ error: 'Unsupported token', success: false }, 400);
-
-  const targets = [];
-  const datas = [];
-  const values = [];
-
-  const routerIface = new ethers.Interface(V3_ROUTER_ABI);
-  datas.push(routerIface.encodeFunctionData("exactInputSingle", [{
-    tokenIn: fromAddr, tokenOut: toAddr, fee: 500, recipient: vaultAddr,
-    amountIn: amountWei, amountOutMinimum: 0, sqrtPriceLimitX96: 0
-  }]));
-  targets.push(V3_ROUTER);
-  values.push(fromToken.toUpperCase() === 'STT' ? amountWei : 0);
-
+  const deadline = Math.floor(Date.now() / 1000) + 600;
+  const fromAddr = TOKENS[fromToken.toUpperCase()];
+  const toAddr = TOKENS[toToken.toUpperCase()];
+  if (!fromAddr || !toAddr) return json({ error: "Unsupported token. Supported: PING, PONG, WSTT, SUSD", success: false }, 400);
+  const isV2Pair = ((fromAddr === TOKENS.WSTT && toAddr === TOKENS.SUSD) || (fromAddr === TOKENS.SUSD && toAddr === TOKENS.WSTT));
   try {
-    const tx = await vault.multicall(userAddress, targets, datas, values, fromToken.toUpperCase() === 'STT' ? ethers.ZeroAddress : fromAddr, amountWei, `Swap ${fromToken} to ${toToken}`, ethers.id(Date.now().toString()));
-    return json({ success: true, status: 'executed', txHash: tx.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash });
+    const erc20 = new ethers.Contract(fromAddr, ["function allowance(address,address) external view returns (uint256)", "function approve(address,uint256) external returns (bool)"], wallet);
+    const routerAddr = isV2Pair ? V2_ROUTER : V3_ROUTER;
+    const allowance = await erc20.allowance(wallet.address, routerAddr);
+    if (allowance < amountWei) {
+      const appTx = await erc20.approve(routerAddr, ethers.MaxUint256);
+      await appTx.wait();
+    }
+    let tx;
+    if (isV2Pair) {
+      const v2 = new ethers.Contract(V2_ROUTER, ["function swapExactTokensForTokens(uint256,uint256,address[],address,uint256) external returns (uint256[])"], wallet);
+      tx = await v2.swapExactTokensForTokens(amountWei, 0, [fromAddr, toAddr], wallet.address, deadline, { gasLimit: 2000000 });
+    } else {
+      const v3 = new ethers.Contract(V3_ROUTER, V3_ROUTER_ABI, wallet);
+      tx = await v3.exactInputSingle({ tokenIn: fromAddr, tokenOut: toAddr, fee: 500, recipient: wallet.address, amountIn: amountWei, amountOutMinimum: 0, sqrtPriceLimitX96: 0 }, { gasLimit: 1400000 });
+    }
+    const receipt = await tx.wait();
+    return json({ success: true, status: "executed", txHash: receipt.hash, explorer: "https://shannon-explorer.somnia.network/tx/" + receipt.hash });
   } catch (err) {
     return json({ success: false, error: err.message });
   }
