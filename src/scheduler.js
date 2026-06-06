@@ -73,6 +73,12 @@ function getActiveJobs() {
 }
 
 // Note: The loop.js will use these to execute onchain
+function stopAllJobs() {
+  const store = readSchedules();
+  store.jobs.forEach(j => { j.active = false; });
+  writeSchedules(store);
+}
+
 module.exports = {
   readSchedules,
   writeSchedules,
@@ -80,5 +86,6 @@ module.exports = {
   addJob,
   cancelJob,
   getAllJobs,
-  getActiveJobs
+  getActiveJobs,
+  stopAllJobs
 };

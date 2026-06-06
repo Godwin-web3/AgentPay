@@ -175,6 +175,51 @@
       "txHash": "0x39a0c439bd300cfae6a34231652a8e27793573dee94a905c5f983a1b43e84e13",
       "timestamp": 1778764398228,
       "date": "Thu May 14 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
+      "toToken": "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
+      "amount": 50,
+      "txHash": "0x73dc373b28e5fec93e7588a0a31024ee4d6742a8b7af2e7ef7472b0a2929f98d",
+      "timestamp": 1780747023754,
+      "date": "Sat Jun 06 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
+      "toToken": "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
+      "amount": 50,
+      "txHash": "0x4cec2f6cbee6cd65858b25968b2a2bcc3dff07d51793bc3d23a6a29aa6a59323",
+      "timestamp": 1780747079956,
+      "date": "Sat Jun 06 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
+      "toToken": "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
+      "amount": 50,
+      "txHash": "0x69be94208553251170e690550cc422175d8facda5810e94412c6675d0b077f45",
+      "timestamp": 1780747353747,
+      "date": "Sat Jun 06 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
+      "toToken": "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
+      "amount": 50,
+      "txHash": "0xa8417f37fc36af1fe5bd984ed9cc777c0fc65dc1cdaf0c6c61b8bdb6ff82a52c",
+      "timestamp": 1780747436172,
+      "date": "Sat Jun 06 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
+      "toToken": "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
+      "amount": 30,
+      "txHash": "0x5538695344124405f6824531a5ca74b3d34f71f99194c899f0fbdfb4f5b6186d",
+      "timestamp": 1780747667269,
+      "date": "Sat Jun 06 2026"
     }
   ],
   "sessions": []

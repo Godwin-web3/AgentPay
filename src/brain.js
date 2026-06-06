@@ -94,4 +94,5 @@ async function parseIntent(userInput, vaultBalance, history = []) {
   }
 }
 
-module.exports = { parseIntent };
+function resetConversation() {}
+module.exports = { parseIntent, resetConversation };

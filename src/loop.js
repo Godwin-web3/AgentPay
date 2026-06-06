@@ -74,6 +74,20 @@ function prompt() {
 
     console.log('\n🧠 AgentPay is thinking...');
 
+
+    // Intercept swap confirmation before sending to AI
+    if (pendingSwap && ['yes','confirm','go ahead','yep','y'].includes(input.toLowerCase())) {
+      const result = await confirmSwap(resolveSymbol(pendingSwap.fromToken), resolveSymbol(pendingSwap.toToken), pendingSwap.amount);
+      if (result.success) {
+        pendingSwap = null;
+        console.log("\n✅ Swap executed! TX: " + result.txHash);
+      } else {
+        console.log("\n❌ Swap failed: " + (result.error || result.reason));
+      }
+      resetConversation();
+      prompt(); return;
+    }
+
     try {
       const intent = await parseIntent(input);
       const _skipMsg = ['history','status','list_schedules','help','cancel_schedule','balance'].includes(intent.action);

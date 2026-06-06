@@ -145,4 +145,26 @@ async function getSummary() {
   return engine ? await engine.summary() : null;
 }
 
-module.exports = { init, registerAgent, pay, setupEscrowPolicy, prepareSwap, confirmSwap, getSummary };
+
+async function showBalances() {
+  const address = await wallet.getAddress();
+  const balance = await provider.getBalance(address);
+  const ERC20_ABI = ['function balanceOf(address) external view returns (uint256)'];
+  const tokenBalances = await Promise.all(
+    Object.entries(TOKENS).map(async ([symbol, addr]) => {
+      if (addr === ethers.ZeroAddress) return { symbol, bal: balance };
+      try {
+        const contract = new ethers.Contract(addr, ERC20_ABI, provider);
+        return { symbol, bal: await contract.balanceOf(address) };
+      } catch {
+        return { symbol, bal: 0n };
+      }
+    })
+  );
+  console.log('\n💰 Balances:');
+  tokenBalances.forEach(({ symbol, bal }) => {
+    console.log(`   ${symbol}:  ${parseFloat(ethers.formatEther(bal)).toFixed(4)}`);
+  });
+}
+
+module.exports = { init, registerAgent, pay, setupEscrowPolicy, prepareSwap, confirmSwap, getSummary, showBalances };
