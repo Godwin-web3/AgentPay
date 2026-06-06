@@ -76,10 +76,17 @@ function prompt() {
 
 
     // Intercept swap confirmation before sending to AI
+    if (pendingSwap && ['no','cancel','nope','n'].includes(input.toLowerCase())) {
+      pendingSwap = null;
+      resetConversation();
+      console.log('\n🚫 Swap cancelled.');
+      prompt(); return;
+    }
+
     if (pendingSwap && ['yes','confirm','go ahead','yep','y'].includes(input.toLowerCase())) {
       const result = await confirmSwap(resolveSymbol(pendingSwap.fromToken), resolveSymbol(pendingSwap.toToken), pendingSwap.amount);
+      pendingSwap = null;
       if (result.success) {
-        pendingSwap = null;
         console.log("\n✅ Swap executed! TX: " + result.txHash);
       } else {
         console.log("\n❌ Swap failed: " + (result.error || result.reason));
