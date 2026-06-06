@@ -124,6 +124,24 @@ function prompt() {
         }
         resetConversation();
 
+      } else if (intent.action === 'intent') {
+        if (!intent.intentName) { console.log('   ⚠️  Unknown intent.'); prompt(); return; }
+        
+        console.log('\n⚠️  Confirm Atomic Intent:');
+        console.log('   Intent: ' + intent.intentName.replace(/_/g, ' ').toUpperCase());
+        if (intent.amount) console.log('   Amount: ' + intent.amount + ' STT');
+        if (intent.to) console.log('   To:     ' + intent.to);
+
+        const confirm = await ask('\n   Execute this complex operation? (yes/no): ');
+        if (confirm !== 'yes' && confirm !== 'y') { console.log('\n🚫 Operation cancelled.'); resetConversation(); prompt(); return; }
+
+        console.log('\n⛓️  Executing on Somnia...');
+        // In local mode, we'd ideally call the same multicall logic.
+        // For the demo parity, we'll log the intent.
+        console.log('   [DEMO] Atomic multicall triggered for ' + intent.intentName);
+        console.log('   ✅ Operation submitted (Simulation)');
+        resetConversation();
+
       } else if (intent.action === 'pay') {
         if (!intent.to) { console.log('   ⚠️  Please provide a recipient address.'); prompt(); return; }
         if (!intent.amount || intent.amount <= 0) { console.log('   ⚠️  Please provide a valid amount.'); prompt(); return; }

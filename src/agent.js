@@ -28,9 +28,12 @@ async function init() {
   });
 
   await kit.initialize();
-  engine = new PolicyEngine();
-
+  
   const address = await wallet.getAddress();
+  const userAddress = process.env.USER_ADDRESS || address;
+  engine = new PolicyEngine(wallet, userAddress);
+  await engine.syncOnChain();
+
   const balance = await provider.getBalance(address);
 
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -104,7 +107,7 @@ async function registerAgent() {
 }
 
 async function pay(to, amount, reason, token = 'STT') {
-  const decision = engine.check(to, amount, reason);
+  const decision = await engine.check(to, amount, reason);
 
   if (!decision.allowed) {
     appendFailure({ to, amount, reason, blockedReason: decision.reason });
@@ -130,12 +133,16 @@ async function setupEscrowPolicy() {
   try {
     await setPolicy(
       wallet,
-      engine.policy.perTxCapSTT,
-      engine.policy.dailyCapSTT,
-      engine.policy.circuitBreaker.maxTxPerHour,
-      engine.policy.allowedRecipients
+      engine.localPolicy.perTxCapSTT,
+      engine.localPolicy.dailyCapSTT,
+      engine.localPolicy.circuitBreaker.maxTxPerHour,
+      engine.localPolicy.allowedRecipients
     );
   } catch (err) {}
 }
 
-module.exports = { init, registerAgent, pay, setupEscrowPolicy, prepareSwap, confirmSwap };
+async function getSummary() {
+  return engine ? await engine.summary() : null;
+}
+
+module.exports = { init, registerAgent, pay, setupEscrowPolicy, prepareSwap, confirmSwap, getSummary };

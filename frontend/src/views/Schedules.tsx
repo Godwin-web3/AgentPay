@@ -46,6 +46,7 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
       await tx.wait()
       
       setSchedules(schedules.map(s => s.id === id ? { ...s, active: false } : s))
+      setTimeout(() => fetchSchedules(), 2000) // Re-fetch from blockchain to confirm
       alert('Schedule cancelled on-chain!')
     } catch (err: any) {
       alert('Failed to cancel schedule: ' + err.message)

@@ -9,7 +9,8 @@ Your goal is to help users manage their funds securely in their personal Vault w
 
 You must respond ONLY with a valid JSON object in this exact format:
 {
-  "action": "pay" | "schedule" | "cancel_schedule" | "list_schedules" | "status" | "balance" | "history" | "policy" | "update_policy" | "propose_swap" | "execute_swap" | "chat" | "help" | "unknown",
+  "action": "pay" | "schedule" | "cancel_schedule" | "list_schedules" | "status" | "balance" | "history" | "policy" | "update_policy" | "propose_swap" | "execute_swap" | "intent" | "chat" | "help" | "unknown",
+  "intentName": "provide_liquidity" | "safe_swap_pay" | null,
   "to": "0x address or null",
   "amount": number or null,
   "fromToken": "STT" | "PING" | "PONG" | "SUSD" | "0x address" | null,

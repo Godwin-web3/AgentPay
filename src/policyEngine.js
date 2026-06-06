@@ -1,17 +1,27 @@
 const fs = require('fs');
 const path = require('path');
 const { getTodaySpend, getLastHourTxCount, getConsecutiveFailures } = require('../utils/store');
+const { getOnChainPolicy } = require('./escrow');
 
 class PolicyEngine {
-  constructor(policyPath) {
-    this.policyPath = policyPath || path.join(__dirname, '../config/policy.json');
-    this.policy = JSON.parse(fs.readFileSync(this.policyPath, 'utf8'));
+  constructor(wallet, userAddress) {
+    this.wallet = wallet;
+    this.userAddress = userAddress;
+    this.policyPath = path.join(__dirname, '../config/policy.json');
+    this.localPolicy = JSON.parse(fs.readFileSync(this.policyPath, 'utf8'));
+    this.onChainPolicy = null;
     this.paused = false;
     this.pausedUntil = null;
   }
 
-  reload() {
-    this.policy = JSON.parse(fs.readFileSync(this.policyPath, 'utf8'));
+  async syncOnChain() {
+    if (!this.wallet || !this.userAddress) return;
+    try {
+      this.onChainPolicy = await getOnChainPolicy(this.wallet, this.userAddress);
+      console.log('🔄 Policy synchronized with blockchain');
+    } catch (err) {
+      console.error('⚠️ Failed to sync policy with blockchain:', err.message);
+    }
   }
 
   isPaused() {
@@ -29,50 +39,63 @@ class PolicyEngine {
 
   triggerCircuitBreaker() {
     this.paused = true;
-    const mins = this.policy.circuitBreaker.pauseDurationMinutes;
+    const mins = this.localPolicy.circuitBreaker.pauseDurationMinutes;
     this.pausedUntil = Date.now() + mins * 60 * 1000;
     console.log('🔴 Circuit breaker triggered — agent paused for ' + mins + ' minutes');
   }
 
-  check(to, amountInSTT, reason) {
+  async check(to, amountInSTT, reason) {
     reason = reason || '';
-    this.reload();
+    
+    // Always sync before checking to ensure we have the latest on-chain state
+    await this.syncOnChain();
 
     if (this.isPaused()) {
       return { allowed: false, reason: 'Agent paused — circuit breaker active', code: 'CIRCUIT_BREAKER_ACTIVE' };
     }
 
     const consecutiveFails = getConsecutiveFailures();
-    if (consecutiveFails >= this.policy.circuitBreaker.maxConsecutiveFailures) {
+    if (consecutiveFails >= this.localPolicy.circuitBreaker.maxConsecutiveFailures) {
       this.triggerCircuitBreaker();
       return { allowed: false, reason: 'Too many consecutive failures — agent paused', code: 'CIRCUIT_BREAKER_TRIGGERED' };
     }
 
-    const hourlyTx = getLastHourTxCount();
-    if (hourlyTx >= this.policy.circuitBreaker.maxTxPerHour) {
+    // Use on-chain velocity check if available, fallback to local store
+    const hourlyTx = this.onChainPolicy ? this.onChainPolicy.currentHourTx : getLastHourTxCount();
+    const maxTxPerHour = this.onChainPolicy ? this.onChainPolicy.maxTxPerHour : this.localPolicy.circuitBreaker.maxTxPerHour;
+
+    if (hourlyTx >= maxTxPerHour) {
       this.triggerCircuitBreaker();
       return { allowed: false, reason: 'Tx velocity too high — ' + hourlyTx + ' tx in last hour', code: 'VELOCITY_EXCEEDED' };
     }
 
+    // Active hours are still local for now (agent-side preference)
     const hour = new Date().getHours();
-    if (hour < this.policy.activeHours.start || hour > this.policy.activeHours.end) {
-      return { allowed: false, reason: 'Outside active hours (' + this.policy.activeHours.start + ':00 — ' + this.policy.activeHours.end + ':00)', code: 'OUTSIDE_ACTIVE_HOURS' };
+    if (hour < this.localPolicy.activeHours.start || hour > this.localPolicy.activeHours.end) {
+      return { allowed: false, reason: 'Outside active hours (' + this.localPolicy.activeHours.start + ':00 — ' + this.localPolicy.activeHours.end + ':00)', code: 'OUTSIDE_ACTIVE_HOURS' };
     }
 
-    if (amountInSTT > this.policy.perTxCapSTT) {
-      return { allowed: false, reason: 'Amount ' + amountInSTT + ' STT exceeds per-tx cap of ' + this.policy.perTxCapSTT + ' STT', code: 'PER_TX_CAP_EXCEEDED' };
+    // Use on-chain caps
+    const perTxCap = this.onChainPolicy ? this.onChainPolicy.perTxCap : this.localPolicy.perTxCapSTT;
+    if (amountInSTT > perTxCap) {
+      return { allowed: false, reason: 'Amount ' + amountInSTT + ' STT exceeds per-tx cap of ' + perTxCap + ' STT', code: 'PER_TX_CAP_EXCEEDED' };
     }
 
-    if (this.policy.allowedRecipients.length > 0) {
-      const whitelist = this.policy.allowedRecipients.map(function(a) { return a.toLowerCase(); });
-      if (!whitelist.includes(to.toLowerCase())) {
+    // On-chain whitelist
+    const whitelist = this.onChainPolicy ? this.onChainPolicy.whitelist : this.localPolicy.allowedRecipients;
+    if (whitelist && whitelist.length > 0) {
+      const lowerWhitelist = whitelist.map(a => a.toLowerCase());
+      if (!lowerWhitelist.includes(to.toLowerCase())) {
         return { allowed: false, reason: 'Recipient ' + to + ' is not whitelisted', code: 'RECIPIENT_NOT_WHITELISTED' };
       }
     }
 
-    const todaySpend = getTodaySpend();
-    if (todaySpend + amountInSTT > this.policy.dailyCapSTT) {
-      return { allowed: false, reason: 'Daily cap reached — spent ' + todaySpend + '/' + this.policy.dailyCapSTT + ' STT today', code: 'DAILY_CAP_EXCEEDED' };
+    // On-chain daily cap
+    const dailyCap = this.onChainPolicy ? this.onChainPolicy.dailyCap : this.localPolicy.dailyCapSTT;
+    const todaySpend = this.onChainPolicy ? this.onChainPolicy.todaySpent : getTodaySpend();
+    
+    if (todaySpend + amountInSTT > dailyCap) {
+      return { allowed: false, reason: 'Daily cap reached — spent ' + todaySpend + '/' + dailyCap + ' STT today', code: 'DAILY_CAP_EXCEEDED' };
     }
 
     return {
@@ -81,29 +104,34 @@ class PolicyEngine {
       code: 'APPROVED',
       meta: {
         todaySpend: todaySpend + amountInSTT,
-        dailyRemaining: this.policy.dailyCapSTT - todaySpend - amountInSTT,
+        dailyRemaining: dailyCap - todaySpend - amountInSTT,
         hourlyTxCount: hourlyTx + 1
       }
     };
   }
 
-  summary() {
-    this.reload();
-    const todaySpend = getTodaySpend();
-    const hourlyTx = getLastHourTxCount();
-    const whitelist = this.policy.allowedRecipients;
+  async summary() {
+    await this.syncOnChain();
+    const todaySpend = this.onChainPolicy ? this.onChainPolicy.todaySpent : getTodaySpend();
+    const dailyCap = this.onChainPolicy ? this.onChainPolicy.dailyCap : this.localPolicy.dailyCapSTT;
+    const perTxCap = this.onChainPolicy ? this.onChainPolicy.perTxCap : this.localPolicy.perTxCapSTT;
+    const hourlyTx = this.onChainPolicy ? this.onChainPolicy.currentHourTx : getLastHourTxCount();
+    const maxTxPerHour = this.onChainPolicy ? this.onChainPolicy.maxTxPerHour : this.localPolicy.circuitBreaker.maxTxPerHour;
+    const whitelist = this.onChainPolicy ? this.onChainPolicy.whitelist : this.localPolicy.allowedRecipients;
+
     return {
-      agentName: this.policy.agentName,
-      dailyCapSTT: this.policy.dailyCapSTT,
+      agentName: this.localPolicy.agentName,
+      dailyCapSTT: dailyCap,
       todaySpent: todaySpend,
-      dailyRemaining: this.policy.dailyCapSTT - todaySpend,
-      perTxCapSTT: this.policy.perTxCapSTT,
+      dailyRemaining: dailyCap - todaySpend,
+      perTxCapSTT: perTxCap,
       hourlyTxCount: hourlyTx,
-      maxTxPerHour: this.policy.circuitBreaker.maxTxPerHour,
-      activeHours: this.policy.activeHours.start + ':00 — ' + this.policy.activeHours.end + ':00',
+      maxTxPerHour: maxTxPerHour,
+      activeHours: this.localPolicy.activeHours.start + ':00 — ' + this.localPolicy.activeHours.end + ':00',
       whitelistCount: whitelist.length,
       whitelist: whitelist,
-      isPaused: this.isPaused()
+      isPaused: this.isPaused(),
+      source: this.onChainPolicy ? 'blockchain' : 'local'
     };
   }
 }

@@ -163,8 +163,33 @@ async function handleIntent(env, userAddress, intentName, amount, to, reason) {
   }
 
   if (intentName === 'provide_liquidity') {
-     // Multi-step complex logic...
-     return { error: 'Intent implementation in progress', success: false };
+    // 1. Swap HALF of STT to SUSD (V2)
+    const halfAmount = amountWei / 2n;
+    const routerIface = new ethers.Interface(V2_ROUTER_ABI);
+    const erc20Iface = new ethers.Interface(ERC20_ABI);
+    
+    // Path: WSTT -> SUSD
+    datas.push(routerIface.encodeFunctionData("swapExactTokensForTokens", [
+      halfAmount, 0, [TOKENS.WSTT, TOKENS.SUSD], vaultAddr, Math.floor(Date.now() / 1000) + 600
+    ]));
+    targets.push(V2_ROUTER);
+    values.push(halfAmount);
+
+    // 2. Add Liquidity STT + SUSD
+    // We assume the other half of STT and the received SUSD are used.
+    // For simplicity in the multicall, we use the same halfAmount for SUSD desired (demo logic)
+    datas.push(routerIface.encodeFunctionData("addLiquidity", [
+      TOKENS.WSTT, TOKENS.SUSD, halfAmount, halfAmount, 0, 0, vaultAddr, Math.floor(Date.now() / 1000) + 600
+    ]));
+    targets.push(V2_ROUTER);
+    values.push(halfAmount);
+
+    try {
+      const tx = await vault.multicall(userAddress, targets, datas, values, ethers.ZeroAddress, amountWei, "Provide Liquidity (Atomic)", ethers.id(Date.now().toString()));
+      return { success: true, status: 'executed', txHash: tx.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   }
 
   return { error: 'Unknown intent', success: false };

@@ -44,26 +44,24 @@ export default function Policy({ userAddress }: { userAddress: string }) {
     setError(null)
     setSuccess(null)
     try {
-      const iface = new ethers.Interface([
+      if (!window.ethereum) throw new Error("No wallet connected")
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const signer = await provider.getSigner()
+      const vault = new ethers.Contract(VAULT_ADDRESS, [
         "function setPolicy(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, address[] calldata whitelist) external"
-      ])
+      ], signer)
       
       const pTx = ethers.parseEther(perTxCap)
       const dCap = ethers.parseEther(dailyCap)
       const maxH = BigInt(policy?.circuitBreaker.maxTxPerHour || 10)
       
-      const data = iface.encodeFunctionData("setPolicy", [pTx, dCap, maxH, whitelist])
-
-      const txHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from: userAddress,
-          to: VAULT_ADDRESS,
-          data
-        }]
-      })
-      setSuccess('Transaction submitted: ' + txHash)
+      const tx = await vault.setPolicy(pTx, dCap, maxH, whitelist)
+      setSuccess('Transaction submitted! Waiting for confirmation...')
+      
+      await tx.wait()
+      setSuccess('Policy successfully updated on-chain!')
       setIsEditing(false)
+      setTimeout(() => fetchPolicy(), 1000) // Wait a bit for nodes to sync
     } catch (err: any) {
       setError(err.message || 'Failed to update policy')
     } finally {

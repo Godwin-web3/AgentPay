@@ -3,6 +3,7 @@ import AgentHeader from './components/AgentHeader'
 import Terminal from './views/Terminal'
 import Policy from './views/Policy'
 import Schedules from './views/Schedules'
+import History from './views/History'
 import Landing from './views/Landing'
 import Profile from './views/Profile'
 import Onboarding from './views/Onboarding'
@@ -31,10 +32,16 @@ const ScheduleIcon = () => (
     <line x1="3" y1="10" x2="21" y2="10"/>
   </svg>
 )
+const HistoryIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+  </svg>
+)
 const navItems = [
   { id: 'terminal', icon: TerminalIcon, label: 'Terminal' },
   { id: 'schedules', icon: ScheduleIcon, label: 'Schedules' },
-  { id: 'account',  icon: AccountIcon,  label: 'Account'  },
+  { id: 'history',   icon: HistoryIcon,  label: 'History'   },
+  { id: 'account',   icon: AccountIcon,  label: 'Account'   },
 ] as const
 
 export default function App() {
@@ -110,6 +117,7 @@ export default function App() {
         <div className="view-content">
           {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} />}
           {view === 'schedules' && <Schedules userAddress={userAddress} />}
+          {view === 'history' && <History userAddress={userAddress} />}
           {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} />}
           {view === 'policy'   && <Policy userAddress={userAddress} />}
         </div>

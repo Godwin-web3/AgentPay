@@ -91,6 +91,19 @@ export async function executeSwap(
   }, userAddress)
 }
 
+export async function executeIntent(
+  intentName: string,
+  amount: number,
+  to: string,
+  reason: string,
+  userAddress: string
+): Promise<any> {
+  return request<any>('/intent', {
+    method: 'POST',
+    body: JSON.stringify({ intentName, amount, to, reason })
+  }, userAddress)
+}
+
 export async function getPolicy(userAddress: string): Promise<PolicyData> {
   return request<PolicyData>('/policy', {}, userAddress)
 }

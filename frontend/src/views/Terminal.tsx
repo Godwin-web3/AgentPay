@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, getChatHistory, WORKER_URL, VAULT_ADDRESS, RPC } from '../api'
+import { sendChat, executePay, executeSwap, executeIntent, generateRequestId, getPolicy, getChatHistory, WORKER_URL, VAULT_ADDRESS, RPC } from '../api'
 import type { ChatMessage } from '../types'
 import { ethers } from 'ethers'
 
@@ -19,14 +19,14 @@ function TxBadge({ result, onConfirm }: { result?: any, onConfirm?: () => void }
   
   if (result.status === 'proposing_swap' || result.status === 'proposing_intent') {
     return (
-      <div className="tx-badge success" style={{ background: 'var(--cyan)', color: 'black', display: 'flex', flexDirection: 'column', gap: 8, padding: '12px' }}>
-        <div style={{ fontWeight: 600 }}>
-          {result.status === 'proposing_swap' ? '🔄 Swap Proposal' : '⚡ Atomic Intent'}
+      <div className="tx-badge success" style={{ background: 'var(--cyan)', color: 'black', display: 'flex', flexDirection: 'column', gap: 8, padding: '12px', border: '1px solid black' }}>
+        <div style={{ fontWeight: 600, fontSize: 12 }}>
+          {result.status === 'proposing_swap' ? '🔄 SWAP PROPOSAL' : '⚡ ATOMIC INTENT'}
         </div>
-        <div style={{ fontSize: 11 }}>
+        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', background: 'rgba(0,0,0,0.1)', padding: '4px 8px', borderRadius: 4 }}>
           {result.status === 'proposing_swap' 
             ? `${result.amount} ${result.fromToken} → ${result.toToken}` 
-            : `${result.intentName?.replace(/_/g, ' ').toUpperCase()}`}
+            : `${result.intentName?.replace(/_/g, ' ').toUpperCase()}${result.amount ? `: ${result.amount} STT` : ''}`}
         </div>
         <button 
           className="send-btn" 
@@ -36,17 +36,17 @@ function TxBadge({ result, onConfirm }: { result?: any, onConfirm?: () => void }
             if (onConfirm) await onConfirm()
             setConfirming(false)
           }}
-          style={{ background: 'black', color: 'var(--cyan)', border: 'none', padding: '6px', fontSize: 10, cursor: 'pointer' }}
+          style={{ background: 'black', color: 'var(--cyan)', border: 'none', padding: '8px', fontSize: 11, cursor: 'pointer', fontWeight: 600, marginTop: 4 }}
         >
-          {confirming ? 'EXECUTING...' : 'CONFIRM & EXECUTE'}
+          {confirming ? 'EXECUTING TRANSACTION...' : 'CONFIRM & EXECUTE'}
         </button>
       </div>
     )
   }
   if (result.status === 'executed' || result.status === 'success') {
     return (
-      <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer">
-        ✅ View Transaction: {result.txHash?.slice(0, 8)}...
+      <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer" style={{ display: 'block', textAlign: 'center' }}>
+        ✅ EXECUTED: {result.txHash?.slice(0, 8)}...
       </a>
     )
   }
@@ -151,30 +151,19 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
     const prop = txResults[msgIdx]
     if (!prop) return
 
-    if (prop.status === 'proposing_swap') {
-      try {
-        const res = await fetch(`${WORKER_URL}/swap`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-user-address": userAddress },
-          body: JSON.stringify({ fromToken: prop.fromToken, toToken: prop.toToken, amount: prop.amount, execute: true })
-        }).then(r => r.json())
-        setTxResults(r => ({ ...r, [msgIdx]: res }))
-      } catch (err: any) {
-        setTxResults(r => ({ ...r, [msgIdx]: { status: 'failed', reason: err.message } }))
+    try {
+      let res
+      if (prop.status === 'proposing_swap') {
+        res = await executeSwap(prop.fromToken, prop.toToken, prop.amount, true, userAddress)
+      } else if (prop.status === 'proposing_intent') {
+        res = await executeIntent(prop.intentName, prop.amount, prop.to, prop.reason || 'Atomic Intent', userAddress)
       }
-    }
-
-    if (prop.status === 'proposing_intent') {
-      try {
-        const res = await fetch(`${WORKER_URL}/intent`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-user-address": userAddress },
-          body: JSON.stringify({ intentName: prop.intentName, amount: prop.amount, to: prop.to, reason: prop.reason })
-        }).then(r => r.json())
+      
+      if (res) {
         setTxResults(r => ({ ...r, [msgIdx]: res }))
-      } catch (err: any) {
-        setTxResults(r => ({ ...r, [msgIdx]: { status: 'failed', reason: err.message } }))
       }
+    } catch (err: any) {
+      setTxResults(r => ({ ...r, [msgIdx]: { status: 'failed', reason: err.message } }))
     }
   }
 

@@ -1,5 +1,5 @@
 const http = require('http');
-const { pay, prepareSwap, confirmSwap } = require('./agent');
+const { pay, prepareSwap, confirmSwap, getSummary } = require('./agent');
 const { readPolicy, applyUpdate } = require('./policyManager');
 const { getTodaySpend, getHistory } = require('../utils/store');
 const { parseIntent } = require('./brain');
@@ -48,7 +48,21 @@ function handleHealth(req, res) {
 }
 
 // GET /policy
-function handleGetPolicy(req, res) {
+async function handleGetPolicy(req, res) {
+  const summary = await getSummary();
+  if (summary) {
+    return send(res, 200, {
+      perTxCap:        summary.perTxCapSTT,
+      dailyCap:        summary.dailyCapSTT,
+      dailySpendSoFar: parseFloat(summary.todaySpent.toFixed(4)),
+      dailyRemaining:  parseFloat(summary.dailyRemaining.toFixed(4)),
+      whitelist:       summary.whitelist,
+      activeHours:     summary.activeHours,
+      circuitBreaker:  { maxTxPerHour: summary.maxTxPerHour },
+      source:          summary.source
+    });
+  }
+
   const policy     = readPolicy();
   const todaySpend = getTodaySpend();
   return send(res, 200, {
@@ -58,7 +72,8 @@ function handleGetPolicy(req, res) {
     dailyRemaining:  parseFloat((policy.dailyCapSTT - todaySpend).toFixed(4)),
     whitelist:       policy.allowedRecipients,
     activeHours:     policy.activeHours,
-    circuitBreaker:  policy.circuitBreaker
+    circuitBreaker:  policy.circuitBreaker,
+    source:          'local'
   });
 }
 
