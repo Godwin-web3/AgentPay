@@ -281,9 +281,8 @@ export default {
     const userAddress = request.headers.get('x-user-address');
     if (method === 'OPTIONS') return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*' } });
     if (path === '/health') return handleHealth(env);
-    if (!userAddress) return json({ error: 'Unauthorized' }, 401);
-
     if (path === '/chat') return handleChat(request, env);
+    if (!userAddress) return json({ error: 'Unauthorized' }, 401);
     if (path === '/policy') return handleGetPolicy(request, env, userAddress);
     if (path === '/pay') return handlePay(request, env, userAddress);
     if (path === '/balance') return handleBalance(request, env, userAddress);
