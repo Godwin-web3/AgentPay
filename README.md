@@ -32,45 +32,28 @@ A sleek, terminal-inspired frontend that lets you talk to your money. Powered by
 - **Brain**: Groq Llama-3.3-70b for intent extraction.
 
 ---
+## 🚀 Quick Start (Demo)
 
-## 🚀 Quick Start
+The preferred way to experience AgentPay is through the **Conversational Frontend**.
 
-### Prerequisites
-- Node.js v18+
-- Metamask configured for **Somnia Shannon Testnet**
-- Groq API Key
+### 1. Launch the Agent Backend
+```bash
+npm install
+node index.js
+```
+*This starts the local agent server on port 3000.*
 
-### Installation
-
-1. **Clone & Install**
-   ```bash
-   git clone https://github.com/your-repo/agentpay
-   cd agentpay
-   npm install
-   ```
-
-2. **Configure Environment**
-   Create a `.env` file in the root:
-   ```env
-   GROQ_API_KEY=your_key
-   PRIVATE_KEY=your_agent_operator_key
-   SOMNIA_RPC_URL=https://dream-rpc.somnia.network
-   VAULT_ADDRESS=0x4471917E96271F688282ae283d62De0B5Be8084C
-   ```
-
-3. **Run Local Demo**
-   ```bash
-   node index.js
-   ```
-
-4. **Launch Frontend**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+### 2. Launch the Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*Open [http://localhost:5173](http://localhost:5173) to talk to your agent.*
 
 ---
+
+## 🏗️ Architecture
 
 ## 🛠️ Hackathon Submission Details
 

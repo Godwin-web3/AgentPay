@@ -1,73 +1,43 @@
-# React + TypeScript + Vite
+# 🎨 AgentPay Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the conversational interface for **AgentPay**, an AI-powered, policy-enforced autonomous payment agent built for the Somnia Network.
 
-Currently, two official plugins are available:
+## 🚀 Getting Started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### 1. Prerequisites
+- Node.js v18+
+- Metamask (configured for Somnia Shannon Testnet)
+- The AgentPay Worker running (locally or deployed)
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 2. Configuration
+Create a `.env` file in this directory:
+```env
+VITE_WORKER_URL=https://your-worker.workers.dev
+VITE_RPC_URL=https://dream-rpc.somnia.network
+VITE_VAULT_ADDRESS=0x4471917E96271F688282ae283d62De0B5Be8084C
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 3. Installation & Launch
+```bash
+npm install
+npm run dev
 ```
+
+## 📺 Demo Flow
+
+1. **Onboarding**: Connect your wallet and set your initial spending policy.
+2. **Terminal**: Use the chat interface to:
+   - "Send 0.5 STT to 0x..." (Simple Payment)
+   - "Swap 1 STT to SUSD and pay Bob" (Atomic Intent)
+   - "Set a schedule to pay 1 STT every Friday" (Smart Scheduling)
+3. **Policy**: View and update your on-chain spending limits.
+4. **History**: Track all executed and scheduled transactions.
+
+## 🛠️ Tech Stack
+- **Framework**: React 19 + TypeScript
+- **Bundler**: Vite 6
+- **Web3**: Ethers.js v6
+- **Styling**: Vanilla CSS (Terminal-inspired aesthetic)
+
+---
+Built for the Somnia Hackathon.
