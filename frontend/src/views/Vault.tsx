@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { VAULT_ADDRESS } from '../api'
+import { getVaultAddress } from '../api'
 import { ethers } from 'ethers'
 
 interface Props {
@@ -42,11 +42,13 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
       const data = iface.encodeFunctionData("deposit", [tokenAddr, amtWei])
       const value = selectedToken === 'STT' ? '0x' + amtWei.toString(16) : '0x0'
 
+      const { address: vaultAddr } = await getVaultAddress(userAddress)
+
       const txHash = await activeProvider.request({ 
         method: 'eth_sendTransaction', 
         params: [{ 
           from: userAddress, 
-          to: VAULT_ADDRESS, 
+          to: vaultAddr, 
           data, 
           value 
         }] 
@@ -69,11 +71,13 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
       
       const data = iface.encodeFunctionData("withdraw", [tokenAddr, amtWei])
 
+      const { address: vaultAddr } = await getVaultAddress(userAddress)
+
       const txHash = await activeProvider.request({ 
         method: 'eth_sendTransaction', 
         params: [{ 
           from: userAddress, 
-          to: VAULT_ADDRESS, 
+          to: vaultAddr, 
           data 
         }] 
       })

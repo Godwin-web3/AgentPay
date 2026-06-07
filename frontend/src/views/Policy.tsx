@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getPolicy, VAULT_ADDRESS } from '../api'
+import { getPolicy, getVaultAddress } from '../api'
 import type { PolicyData } from '../types'
 import { ethers } from 'ethers'
 
@@ -45,9 +45,10 @@ export default function Policy({ userAddress }: { userAddress: string }) {
     setSuccess(null)
     try {
       if (!window.ethereum) throw new Error("No wallet connected")
+      const { address: vaultAddr } = await getVaultAddress(userAddress)
       const provider = new ethers.BrowserProvider(window.ethereum)
       const signer = await provider.getSigner()
-      const vault = new ethers.Contract(VAULT_ADDRESS, [
+      const vault = new ethers.Contract(vaultAddr, [
         "function setPolicy(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, address[] calldata whitelist) external"
       ], signer)
       

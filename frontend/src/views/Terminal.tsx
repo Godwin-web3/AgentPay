@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, executeSwap, executeIntent, generateRequestId, getPolicy, getChatHistory, WORKER_URL, VAULT_ADDRESS, RPC } from '../api'
+import { sendChat, executePay, executeSwap, executeIntent, generateRequestId, getPolicy, getChatHistory, getVaultAddress, WORKER_URL, RPC } from '../api'
 import type { ChatMessage } from '../types'
 import { ethers } from 'ethers'
 
@@ -187,24 +187,26 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
       const userMsg: ChatMessage = { role: 'user', content: text, timestamp: Date.now() }
       setMessages(prev => [...prev, userMsg])
       setInput('')
-      fetch(RPC, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0', id: 1, method: 'eth_call',
-          params: [{ to: VAULT_ADDRESS, data: '0xf8b2cb4f' + userAddress.replace('0x', '').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000' }, 'latest']
+      getVaultAddress(userAddress).then(({ address: vaultAddr }) => {
+        fetch(RPC, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0', id: 1, method: 'eth_call',
+            params: [{ to: vaultAddr, data: '0xf8b2cb4f' + userAddress.replace('0x', '').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000' }, 'latest']
+          })
         })
+          .then(r => r.json())
+          .then(data => {
+            const bal = (Number(BigInt(data.result === '0x' ? '0x0' : data.result)) / 1e18).toFixed(4)
+            setMessages(prev => [...prev, {
+              role: 'assistant',
+              content: `Vault balance: ${bal} STT\nWorker: online\nPolicy: active`,
+              timestamp: Date.now()
+            }])
+          })
+          .catch(() => setMessages(prev => [...prev, { role: 'assistant', content: 'Failed to fetch status.', timestamp: Date.now() }]))
       })
-        .then(r => r.json())
-        .then(data => {
-          const bal = (Number(BigInt(data.result === '0x' ? '0x0' : data.result)) / 1e18).toFixed(4)
-          setMessages(prev => [...prev, {
-            role: 'assistant',
-            content: `Vault balance: ${bal} STT\nWorker: online\nPolicy: active`,
-            timestamp: Date.now()
-          }])
-        })
-        .catch(() => setMessages(prev => [...prev, { role: 'assistant', content: 'Failed to fetch status.', timestamp: Date.now() }]))
       return
     }
 
@@ -249,9 +251,10 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
                 if (res.action === 'contract_call') {
                   const iface = new ethers.Interface(["function createSchedule(address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external"])
                   const data = iface.encodeFunctionData("createSchedule", res.args)
+                  const { address: vaultAddr } = await getVaultAddress(userAddress)
                   const txHash = await window.ethereum.request({
                     method: 'eth_sendTransaction',
-                    params: [{ from: userAddress, to: VAULT_ADDRESS, data }]
+                    params: [{ from: userAddress, to: vaultAddr, data }]
                   })
                   setTxResults(r => ({ ...r, [msgIndex]: { status: 'executed', txHash, explorer: 'https://shannon-explorer.somnia.network/tx/' + txHash } }))
                 }

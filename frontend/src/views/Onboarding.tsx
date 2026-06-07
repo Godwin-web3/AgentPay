@@ -70,8 +70,8 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
     setLoading(true)
     try {
       await updatePolicy({
-        perTxCapSTT: Number(perTxCap),
-        dailyCapSTT: Number(dailyCap),
+        perTxCap: Number(perTxCap),
+        dailyCap: Number(dailyCap),
         activeHours: { start: Number(startHour), end: Number(endHour) }
       }, userAddress)
       finish()

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSchedules, VAULT_ADDRESS } from '../api'
+import { getSchedules, getVaultAddress } from '../api'
 import { ethers } from 'ethers'
 
 const VAULT_ABI = [
@@ -38,9 +38,10 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
     if (!confirm('Are you sure you want to cancel this on-chain automated payment?')) return
     try {
       if (!window.ethereum) throw new Error("No wallet connected")
+      const { address: vaultAddr } = await getVaultAddress(userAddress)
       const provider = new ethers.BrowserProvider(window.ethereum)
       const signer = await provider.getSigner()
-      const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer)
+      const vault = new ethers.Contract(vaultAddr, VAULT_ABI, signer)
       
       const tx = await vault.cancelSchedule(id)
       await tx.wait()

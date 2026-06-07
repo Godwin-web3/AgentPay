@@ -1,5 +1,4 @@
 import type { ChatResponse, PolicyData, HealthData, PayResponse } from './types'
-import { ethers } from 'ethers'
 
 export const WORKER_URL = import.meta.env.VITE_WORKER_URL || 'https://agentpay-worker.mbagodwin419.workers.dev'
 export const RPC = import.meta.env.VITE_RPC_URL || 'https://dream-rpc.somnia.network'

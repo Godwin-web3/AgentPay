@@ -84,7 +84,6 @@ export default function History({ userAddress }: { userAddress: string }) {
 
       {txs.map((tx, i) => {
         const explorerUrl = tx.txHash ? 'https://shannon-explorer.somnia.network/tx/' + tx.txHash : null
-        const proofUrl = tx.requestId ? 'https://shannon-explorer.somnia.network/address/0x4471917E96271F688282ae283d62De0B5Be8084C' : null // Vault address for proofs
 
         return (
           <div className="log-item" key={tx.id || i} style={{ opacity: tx.status === 'blocked' ? 0.7 : 1 }}>
