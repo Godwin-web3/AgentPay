@@ -273,7 +273,7 @@ function prompt() {
         resetConversation();
       } else if (intent.action === 'history') {
         const h = await getUnifiedHistory(ownerAddress);
-        if (!h.length) { console.log('No history yet.'); } else h.forEach(i => console.log('[' + i.status + '] ' + i.label + ' ' + (i.amount ? i.amount + (i.type !== 'swap' ? ' ' + (i.token||'STT') : '') : '') + ' ' + (i.timestamp ? new Date(i.timestamp).toLocaleTimeString() : '')));
+        if (!h.length) { console.log('No history yet.'); } else h.forEach(i => console.log('[' + i.status + '] ' + i.label + ' ' + (i.amount ? i.amount + (i.type !== 'swap' ? ' ' + (i.token||'STT') : '') : '') + ' ' + (i.timestamp ? new Date(i.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '')));
         resetConversation();
 
       } else if (intent.action === 'help') {
