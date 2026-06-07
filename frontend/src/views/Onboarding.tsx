@@ -89,7 +89,7 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
 
   return (
     <div className="onboarding-container">
-      <div className="progress-stepper">
+      <div className="progress-stepper" style={{ '--progress': `${((step - 1) / 2) * 100}%` } as any}>
         {[1, 2, 3].map((s) => (
           <div key={s} className={`step-dot ${step === s ? 'active' : ''} ${step > s ? 'completed' : ''}`}>
             {step > s ? '✓' : s}
@@ -105,7 +105,7 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
             <h2>Step 1: Connect Wallet</h2>
             <p>Connect your wallet to establish your autonomous agent identity on Somnia.</p>
             
-            <div style={{ transform: 'scale(1.2)', margin: '20px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', transform: 'scale(1.2)', margin: '40px 0' }}>
               <WalletConnect 
                 onAddressChange={(addr) => { if (addr) resolveVault() }} 
                 onProviderChange={(p) => setActiveProvider(p)}
@@ -152,8 +152,6 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
                 </div>
               )}
             </div>
-
-            <button className="skip-link" onClick={() => setStep(3)} style={{ marginTop: 20 }}>Skip for now →</button>
           </div>
         )}
 
@@ -199,11 +197,21 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
                 {loading ? 'Saving...' : 'Set Policy'}
               </button>
             </div>
-
-            <button className="skip-link" onClick={finish} style={{ marginTop: 20 }}>Skip for now →</button>
           </div>
         )}
       </div>
+
+      <button 
+        className="skip-link" 
+        onClick={() => {
+          if (step === 1) setStep(2)
+          else if (step === 2) setStep(3)
+          else finish()
+        }}
+        style={{ margin: '20px auto', display: 'block' }}
+      >
+        Skip this step →
+      </button>
     </div>
   )
 }

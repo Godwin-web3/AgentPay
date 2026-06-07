@@ -806,7 +806,7 @@ body::after {
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--border);
+  background: linear-gradient(to right, var(--cyan) var(--progress, 0%), var(--border) var(--progress, 0%));
   z-index: 1;
 }
 
