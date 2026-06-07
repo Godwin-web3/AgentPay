@@ -47,7 +47,17 @@ const navItems = [
 export default function App() {
   const [view, setView] = useState<View>('landing')
   const [userAddress, setUserAddress] = useState('')
-  const [isOnboarded, setIsOnboarded] = useState(() => localStorage.getItem('agentpay_onboarded') === 'true')
+  const [isOnboarded, setIsOnboarded] = useState(false)
+
+  useEffect(() => {
+    if (userAddress) {
+      const onboarded = localStorage.getItem(`agentpay_onboarded_${userAddress}`) === 'true'
+      setIsOnboarded(onboarded)
+    } else {
+      setIsOnboarded(false)
+    }
+  }, [userAddress])
+
   const [vaultBalance, setVaultBalance] = useState('0')
   const [activeProvider, setActiveProvider] = useState<any>(null)
   const [walletBalance, setWalletBalance] = useState('0')
