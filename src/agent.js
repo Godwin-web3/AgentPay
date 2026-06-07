@@ -204,7 +204,7 @@ async function getUnifiedHistory(userAddress, limit = 50) {
         status: 'executed',
         label: log.args.reason || 'Payment',
         amount: ethers.formatEther(log.args.amount),
-        token: 'STT',
+        token: Object.keys(TOKENS).find(key => TOKENS[key].toLowerCase() === (log.args.token || ethers.ZeroAddress).toLowerCase()) || 'STT',
         to: log.args.to,
         txHash: log.transactionHash,
         requestId: requestId === ethers.ZeroHash ? null : requestId,

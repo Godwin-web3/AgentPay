@@ -1,7 +1,21 @@
 // AgentPay Cloudflare Worker v6.4 — Autonomous Atomic Intent Engine
 import { ethers } from 'ethers';
 
-const VAULT_ADDRESS = '0x4471917E96271F688282ae283d62De0B5Be8084C';
+async function getDynamicVaultAddress(env, userAddress) {
+  if (!userAddress) throw new Error("Could not resolve your vault. Please reconnect your wallet.");
+  try {
+    const serverUrl = env.NODE_SERVER_URL || 'http://localhost:3000';
+    const res = await fetch(`${serverUrl}/vault-address`, {
+      headers: { 'x-user-address': userAddress }
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    if (!data.address) throw new Error();
+    return data.address;
+  } catch (e) {
+    throw new Error("Could not resolve your vault. Please reconnect your wallet.");
+  }
+}
 
 const VAULT_ABI = [
   "function getPolicy(address user) external view returns (tuple(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, bool active) policy, address[] memory whitelist)",
@@ -107,7 +121,7 @@ async function trackUser(env, address) {
 async function executePayment(env, userAddress, to, amount, requestId, reason, tokenSymbol = 'STT') {
   const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
   const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
-  const vaultAddr = env.VAULT_ADDRESS || VAULT_ADDRESS;
+  const vaultAddr = await getDynamicVaultAddress(env, userAddress);
   const vault = new ethers.Contract(vaultAddr, VAULT_ABI, wallet);
 
   const tokenAddress = tokenSymbol === 'STT' ? ethers.ZeroAddress : (TOKENS[tokenSymbol.toUpperCase()] || tokenSymbol);
@@ -128,7 +142,7 @@ async function executePayment(env, userAddress, to, amount, requestId, reason, t
 async function handleIntent(env, userAddress, intentName, amount, to, reason) {
   const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
   const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
-  const vaultAddr = env.VAULT_ADDRESS || VAULT_ADDRESS;
+  const vaultAddr = await getDynamicVaultAddress(env, userAddress);
   const vault = new ethers.Contract(vaultAddr, VAULT_ABI, wallet);
   const amountWei = ethers.parseEther(amount.toString());
 
@@ -199,13 +213,12 @@ async function handleIntent(env, userAddress, intentName, amount, to, reason) {
 
 async function handleHealth(env) {
   const address = await getWalletAddress(env);
-  const vaultAddr = env.VAULT_ADDRESS || VAULT_ADDRESS;
-  return json({ status: 'ok', version: '6.4 (Atomic)', address, vault: vaultAddr });
+  return json({ status: 'ok', version: '6.4 (Atomic)', address });
 }
 
 async function handleBalance(request, env, address) {
   const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
-  const vaultAddr = env.VAULT_ADDRESS || VAULT_ADDRESS;
+  const vaultAddr = await getDynamicVaultAddress(env, address);
   const vault = new ethers.Contract(vaultAddr, VAULT_ABI, provider);
   const [sttRaw, vaultRaw, wsttRaw, pingRaw, pongRaw, susdRaw] = await Promise.all([
     provider.getBalance(address),
@@ -220,7 +233,7 @@ async function handleBalance(request, env, address) {
 
 async function handleGetPolicy(request, env, address) {
   const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
-  const vaultAddr = env.VAULT_ADDRESS || VAULT_ADDRESS;
+  const vaultAddr = await getDynamicVaultAddress(env, address);
   const vault = new ethers.Contract(vaultAddr, VAULT_ABI, provider);
   const [policy, whitelist] = await vault.getPolicy(address);
   const [todaySpent, currentHourTx] = await vault.getSpendMetrics(address);
@@ -265,13 +278,18 @@ export default {
     const users = JSON.parse(await env.AGENTPAY_KV.get('active_users') || '[]');
     const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
     const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
-    const vault = new ethers.Contract(env.VAULT_ADDRESS || VAULT_ADDRESS, VAULT_ABI, wallet);
     for (const user of users) {
-      const schedules = await vault.getSchedules(user);
-      for (let i = 0; i < schedules.length; i++) {
-        if (schedules[i].active && Math.floor(Date.now() / 1000) >= Number(schedules[i].nextRun)) {
-          await (await vault.executeSchedule(user, i, { gasLimit: 1000000 })).wait();
+      try {
+        const vaultAddr = await getDynamicVaultAddress(env, user);
+        const vault = new ethers.Contract(vaultAddr, VAULT_ABI, wallet);
+        const schedules = await vault.getSchedules(user);
+        for (let i = 0; i < schedules.length; i++) {
+          if (schedules[i].active && Math.floor(Date.now() / 1000) >= Number(schedules[i].nextRun)) {
+            await (await vault.executeSchedule(user, i, { gasLimit: 1000000 })).wait();
+          }
         }
+      } catch (e) {
+        console.error(`Scheduled task failed for user ${user}: ${e.message}`);
       }
     }
   },
@@ -282,15 +300,24 @@ export default {
     const userAddress = request.headers.get('x-user-address');
     if (method === 'OPTIONS') return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*' } });
     if (path === '/health') return handleHealth(env);
-    if (path === '/chat') return handleChat(request, env);
-    if (!userAddress) return json({ error: 'Unauthorized' }, 401);
-    if (path === '/policy') return handleGetPolicy(request, env, userAddress);
-    if (path === '/pay') return handlePay(request, env, userAddress);
-    if (path === '/balance') return handleBalance(request, env, userAddress);
-    if (path === '/swap') return handleSwap(request, env, userAddress);
-    if (path === '/intent') {
-      const { intentName, amount, to, reason } = await request.json();
-      return json(await handleIntent(env, userAddress, intentName, amount, to, reason));
+
+    try {
+      if (path === '/chat') return handleChat(request, env);
+      if (!userAddress) return json({ error: 'Unauthorized' }, 401);
+      if (path === '/policy') return handleGetPolicy(request, env, userAddress);
+      if (path === '/pay') return handlePay(request, env, userAddress);
+      if (path === '/balance') return handleBalance(request, env, userAddress);
+      if (path === '/swap') return handleSwap(request, env, userAddress);
+      if (path === '/intent') {
+        const { intentName, amount, to, reason } = await request.json();
+        return json(await handleIntent(env, userAddress, intentName, amount, to, reason));
+      }
+    } catch (err) {
+      if (err.message.includes("Could not resolve your vault")) {
+        return json({ error: err.message }, 400);
+      }
+      console.error(`Request failed: ${err.message}`);
+      return json({ error: 'Internal Server Error' }, 500);
     }
     return json({ error: 'Not found' }, 404);
   }
