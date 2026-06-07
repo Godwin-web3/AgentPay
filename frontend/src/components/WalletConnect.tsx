@@ -100,7 +100,11 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
         setVaultAddress(currentVault)
       }
 
-      const data = '0xf8b2cb4f' + userAddr.replace('0x', '').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000'
+      const NATIVE_ADDR = '0x0000000000000000000000000000000000000000'
+      const data = '0xc23f001f' + 
+        userAddr.replace('0x', '').toLowerCase().padStart(64, '0') + 
+        NATIVE_ADDR.replace('0x', '').toLowerCase().padStart(64, '0')
+      
       const res = await provider.request({
         method: 'eth_call',
         params: [{ to: currentVault, data }, 'latest']
@@ -118,15 +122,20 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
 
   async function handleDeposit() {
     if (!depositAmount || isNaN(Number(depositAmount)) || !activeProvider || !vaultAddress) return
+    const NATIVE_ADDR = '0x0000000000000000000000000000000000000000'
     setLoading(true)
     try {
       const value = '0x' + (BigInt(Math.floor(Number(depositAmount) * 1e18))).toString(16)
+      const data = '0x47e7ef24' +
+        NATIVE_ADDR.replace('0x', '').toLowerCase().padStart(64, '0') +
+        '0000000000000000000000000000000000000000000000000000000000000000'
+
       await activeProvider.request({
         method: 'eth_sendTransaction',
         params: [{
           from: address,
           to: vaultAddress,
-          data: '0xd0e30db0',
+          data,
           value
         }]
       })
