@@ -3,16 +3,19 @@ const path = require('path');
 const solc = require('solc');
 
 async function compile() {
-  const contractPath = path.join(__dirname, '../contracts/AgentVault.sol');
-  const source = fs.readFileSync(contractPath, 'utf8');
+  const contractsDir = path.join(__dirname, '../contracts');
+  const files = fs.readdirSync(contractsDir).filter(f => f.endsWith('.sol'));
+  
+  const sources = {};
+  for (const file of files) {
+    sources[file] = {
+      content: fs.readFileSync(path.join(contractsDir, file), 'utf8'),
+    };
+  }
 
   const input = {
     language: 'Solidity',
-    sources: {
-      'AgentVault.sol': {
-        content: source,
-      },
-    },
+    sources,
     settings: {
       optimizer: {
         enabled: true,
@@ -27,34 +30,34 @@ async function compile() {
     },
   };
 
-  console.log('🔨 Compiling AgentVault.sol...');
+  console.log(`🔨 Compiling ${files.length} contracts...`);
   const output = JSON.parse(solc.compile(JSON.stringify(input)));
 
   if (output.errors) {
+    let hasError = false;
     output.errors.forEach((err) => {
+      if (err.severity === 'error') hasError = true;
       console.error(err.formattedMessage);
     });
-    if (output.errors.some(err => err.severity === 'error')) {
-      process.exit(1);
-    }
+    if (hasError) process.exit(1);
   }
-
-  const contract = output.contracts['AgentVault.sol']['AgentVault'];
 
   const artifactDir = path.join(__dirname, '../artifacts');
-  if (!fs.existsSync(artifactDir)) {
-    fs.mkdirSync(artifactDir);
+  if (!fs.existsSync(artifactDir)) fs.mkdirSync(artifactDir);
+
+  for (const fileName in output.contracts) {
+    for (const contractName in output.contracts[fileName]) {
+      const contract = output.contracts[fileName][contractName];
+      fs.writeFileSync(
+        path.join(artifactDir, `${contractName}.json`),
+        JSON.stringify({
+          abi: contract.abi,
+          bytecode: contract.evm.bytecode.object,
+        }, null, 2)
+      );
+      console.log(`✅ ${contractName} compiled.`);
+    }
   }
-
-  fs.writeFileSync(
-    path.join(artifactDir, 'AgentVault.json'),
-    JSON.stringify({
-      abi: contract.abi,
-      bytecode: contract.evm.bytecode.object,
-    }, null, 2)
-  );
-
-  console.log('✅ Compiled successfully! Artifact saved to artifacts/AgentVault.json');
 }
 
 compile().catch(console.error);

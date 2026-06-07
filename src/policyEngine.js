@@ -4,23 +4,21 @@ const { getTodaySpend, getLastHourTxCount, getConsecutiveFailures } = require('.
 const { getOnChainPolicy } = require('./escrow');
 
 class PolicyEngine {
-  constructor(wallet, userAddress) {
+  constructor(wallet) {
     this.wallet = wallet;
-    this.userAddress = userAddress;
     this.policyPath = path.join(__dirname, '../config/policy.json');
     this.localPolicy = JSON.parse(fs.readFileSync(this.policyPath, 'utf8'));
-    this.onChainPolicy = null;
     this.paused = false;
     this.pausedUntil = null;
   }
 
-  async syncOnChain() {
-    if (!this.wallet || !this.userAddress) return;
+  async getOnChainPolicyFor(userAddress) {
+    if (!this.wallet || !userAddress) return null;
     try {
-      this.onChainPolicy = await getOnChainPolicy(this.wallet, this.userAddress);
-      console.log('🔄 Policy synchronized with blockchain');
+      return await getOnChainPolicy(this.wallet, userAddress);
     } catch (err) {
-      console.error('⚠️ Failed to sync policy with blockchain:', err.message);
+      console.error('⚠️ Failed to sync policy for ' + userAddress + ':', err.message);
+      return null;
     }
   }
 
@@ -44,11 +42,9 @@ class PolicyEngine {
     console.log('🔴 Circuit breaker triggered — agent paused for ' + mins + ' minutes');
   }
 
-  async check(to, amountInSTT, reason) {
+  async check(to, amountInSTT, reason, userAddress) {
     reason = reason || '';
-    
-    // Always sync before checking to ensure we have the latest on-chain state
-    await this.syncOnChain();
+    const onChainPolicy = await this.getOnChainPolicyFor(userAddress);
 
     if (this.isPaused()) {
       return { allowed: false, reason: 'Agent paused — circuit breaker active', code: 'CIRCUIT_BREAKER_ACTIVE' };
@@ -61,8 +57,8 @@ class PolicyEngine {
     }
 
     // Use on-chain velocity check if available, fallback to local store
-    const hourlyTx = this.onChainPolicy ? this.onChainPolicy.currentHourTx : getLastHourTxCount();
-    const maxTxPerHour = this.onChainPolicy ? this.onChainPolicy.maxTxPerHour : this.localPolicy.circuitBreaker.maxTxPerHour;
+    const hourlyTx = onChainPolicy ? onChainPolicy.currentHourTx : getLastHourTxCount();
+    const maxTxPerHour = onChainPolicy ? onChainPolicy.maxTxPerHour : this.localPolicy.circuitBreaker.maxTxPerHour;
 
     if (hourlyTx >= maxTxPerHour) {
       this.triggerCircuitBreaker();
@@ -76,13 +72,13 @@ class PolicyEngine {
     }
 
     // Use on-chain caps
-    const perTxCap = this.onChainPolicy ? this.onChainPolicy.perTxCap : this.localPolicy.perTxCapSTT;
+    const perTxCap = onChainPolicy ? onChainPolicy.perTxCap : this.localPolicy.perTxCapSTT;
     if (amountInSTT > perTxCap) {
       return { allowed: false, reason: 'Amount ' + amountInSTT + ' STT exceeds per-tx cap of ' + perTxCap + ' STT', code: 'PER_TX_CAP_EXCEEDED' };
     }
 
     // On-chain whitelist
-    const whitelist = this.onChainPolicy ? this.onChainPolicy.whitelist : this.localPolicy.allowedRecipients;
+    const whitelist = onChainPolicy ? onChainPolicy.whitelist : this.localPolicy.allowedRecipients;
     if (whitelist && whitelist.length > 0) {
       const lowerWhitelist = whitelist.map(a => a.toLowerCase());
       if (!lowerWhitelist.includes(to.toLowerCase())) {
@@ -91,8 +87,8 @@ class PolicyEngine {
     }
 
     // On-chain daily cap
-    const dailyCap = this.onChainPolicy ? this.onChainPolicy.dailyCap : this.localPolicy.dailyCapSTT;
-    const todaySpend = this.onChainPolicy ? this.onChainPolicy.todaySpent : getTodaySpend();
+    const dailyCap = onChainPolicy ? onChainPolicy.dailyCap : this.localPolicy.dailyCapSTT;
+    const todaySpend = onChainPolicy ? onChainPolicy.todaySpent : getTodaySpend();
     
     if (todaySpend + amountInSTT > dailyCap) {
       return { allowed: false, reason: 'Daily cap reached — spent ' + todaySpend + '/' + dailyCap + ' STT today', code: 'DAILY_CAP_EXCEEDED' };
@@ -110,14 +106,14 @@ class PolicyEngine {
     };
   }
 
-  async summary() {
-    await this.syncOnChain();
-    const todaySpend = this.onChainPolicy ? this.onChainPolicy.todaySpent : getTodaySpend();
-    const dailyCap = this.onChainPolicy ? this.onChainPolicy.dailyCap : this.localPolicy.dailyCapSTT;
-    const perTxCap = this.onChainPolicy ? this.onChainPolicy.perTxCap : this.localPolicy.perTxCapSTT;
-    const hourlyTx = this.onChainPolicy ? this.onChainPolicy.currentHourTx : getLastHourTxCount();
-    const maxTxPerHour = this.onChainPolicy ? this.onChainPolicy.maxTxPerHour : this.localPolicy.circuitBreaker.maxTxPerHour;
-    const whitelist = this.onChainPolicy ? this.onChainPolicy.whitelist : this.localPolicy.allowedRecipients;
+  async summary(userAddress) {
+    const onChainPolicy = await this.getOnChainPolicyFor(userAddress);
+    const todaySpend = onChainPolicy ? onChainPolicy.todaySpent : getTodaySpend();
+    const dailyCap = onChainPolicy ? onChainPolicy.dailyCap : this.localPolicy.dailyCapSTT;
+    const perTxCap = onChainPolicy ? onChainPolicy.perTxCap : this.localPolicy.perTxCapSTT;
+    const hourlyTx = onChainPolicy ? onChainPolicy.currentHourTx : getLastHourTxCount();
+    const maxTxPerHour = onChainPolicy ? onChainPolicy.maxTxPerHour : this.localPolicy.circuitBreaker.maxTxPerHour;
+    const whitelist = onChainPolicy ? onChainPolicy.whitelist : this.localPolicy.allowedRecipients;
 
     return {
       agentName: this.localPolicy.agentName,
@@ -131,7 +127,7 @@ class PolicyEngine {
       whitelistCount: whitelist.length,
       whitelist: whitelist,
       isPaused: this.isPaused(),
-      source: this.onChainPolicy ? 'blockchain' : 'local'
+      source: onChainPolicy ? 'blockchain' : 'local'
     };
   }
 }

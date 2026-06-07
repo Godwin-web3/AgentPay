@@ -1,8 +1,7 @@
 const http = require('http');
-const { pay, prepareSwap, confirmSwap, getSummary } = require('./agent');
+const { pay, prepareSwap, confirmSwap, getSummary, chat, chatOnChain, getUnifiedHistory } = require('./agent');
 const { readPolicy, applyUpdate } = require('./policyManager');
 const { getTodaySpend, getHistory } = require('../utils/store');
-const { parseIntent } = require('./brain');
 const { getAllJobs, addJob, cancelJob, parseInterval, intervalLabel } = require('./scheduler');
 
 const PORT = process.env.PORT || 3000;
@@ -49,7 +48,8 @@ function handleHealth(req, res) {
 
 // GET /policy
 async function handleGetPolicy(req, res) {
-  const summary = await getSummary();
+  const userAddress = req.headers['x-user-address'];
+  const summary = await getSummary(userAddress);
   if (summary) {
     return send(res, 200, {
       perTxCap:        summary.perTxCapSTT,
@@ -79,8 +79,10 @@ async function handleGetPolicy(req, res) {
 
 // POST /policy
 async function handleUpdatePolicy(req, res) {
+  const userAddress = req.headers['x-user-address'];
   const body = await parseBody(req);
   const updated = applyUpdate(body);
+  await setupEscrowPolicy(userAddress);
   return send(res, 200, updated);
 }
 
@@ -99,22 +101,34 @@ function handleAgents(req, res) {
 }
 
 // GET /history
-function handleHistory(req, res) {
-  const logs = getHistory(50);
-  return send(res, 200, { items: logs, total: logs.length });
+async function handleHistory(req, res) {
+  const userAddress = req.headers['x-user-address'];
+  try {
+    const items = await getUnifiedHistory(userAddress, 50);
+    return send(res, 200, { items, total: items.length });
+  } catch (err) {
+    return send(res, 500, { error: 'History fetch failed: ' + err.message });
+  }
 }
 
 // POST /chat
 async function handleChat(req, res) {
   const userAddress = req.headers['x-user-address'] || 'anonymous';
   const body = await parseBody(req);
-  const { message, vaultBalance } = body;
+  const { message, vaultBalance, verifiable } = body;
 
   if (!message) return send(res, 400, { error: 'Missing message' });
 
   try {
     const history = chatHistories.get(userAddress) || [];
-    const intent = await parseIntent(message, vaultBalance, history);
+    let intent;
+    
+    if (verifiable) {
+      console.log(`🛡️  Processing Verifiable Intent via Somnia AI...`);
+      intent = await chatOnChain(message, vaultBalance);
+    } else {
+      intent = await chat(message, vaultBalance, history);
+    }
     
     history.push({ role: 'user', content: message });
     history.push({ role: 'assistant', content: intent.message, intent });
@@ -125,7 +139,8 @@ async function handleChat(req, res) {
     return send(res, 200, {
       message: intent.message,
       action:  intent.action,
-      intent
+      intent,
+      verifiable: !!verifiable
     });
   } catch (err) {
     return send(res, 500, { error: 'Brain error: ' + err.message });
@@ -148,6 +163,7 @@ function handleDeleteChat(req, res) {
 
 // POST /pay
 async function handlePay(req, res) {
+  const userAddress = req.headers['x-user-address'];
   const body = await parseBody(req);
   const { to, amount, reason, requestId, fromToken } = body;
 
@@ -172,7 +188,7 @@ async function handlePay(req, res) {
   };
   requestStore.set(requestId, record);
 
-  const result = await pay(to, parseFloat(amount), reason || 'API payment', fromToken);
+  const result = await pay(to, parseFloat(amount), reason || 'API payment', fromToken, userAddress);
 
   if (result.success) {
     record.status = 'executed';
@@ -257,6 +273,19 @@ function handleStatus(req, res, requestId) {
   return send(res, 200, { requestId, ...record });
 }
 
+// GET /vault-address
+async function handleGetVaultAddress(req, res) {
+  const userAddress = req.headers['x-user-address'];
+  if (!userAddress) return send(res, 400, { error: 'Missing user address' });
+  try {
+    const contract = await getVaultContract(null, userAddress);
+    const address = await contract.getAddress();
+    return send(res, 200, { address });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
 // ── Main router ───────────────────────────────────────────────────────────────
 const server = http.createServer(async (req, res) => {
   const url    = req.url.split('?')[0];
@@ -265,10 +294,11 @@ const server = http.createServer(async (req, res) => {
   if (method === 'OPTIONS') return send(res, 204, {});
 
   if (method === 'GET'  && url === '/health')          return handleHealth(req, res);
-  if (method === 'GET'  && url === '/policy')          return handleGetPolicy(req, res);
+  if (method === 'GET'  && url === '/vault-address')   return await handleGetVaultAddress(req, res);
+  if (method === 'GET'  && url === '/policy')          return await handleGetPolicy(req, res);
   if (method === 'POST' && url === '/policy')          return await handleUpdatePolicy(req, res);
   if (method === 'GET'  && url === '/agents')          return handleAgents(req, res);
-  if (method === 'GET'  && url === '/history')         return handleHistory(req, res);
+  if (method === 'GET'  && url === '/history')         return await handleHistory(req, res);
   if (method === 'POST' && url === '/chat')            return await handleChat(req, res);
   if (method === 'GET'  && url === '/chat')            return handleGetChatHistory(req, res);
   if (method === 'DELETE' && url === '/chat')          return handleDeleteChat(req, res);

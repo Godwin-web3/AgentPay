@@ -17,6 +17,7 @@
     "ethers": "^6.16.0",
     "groq-sdk": "^1.1.2",
     "solc": "^0.8.35",
-    "somnia-agent-kit": "^3.0.11"
+    "somnia-agent-kit": "^3.0.11",
+    "viem": "^2.52.2"
   }
 }

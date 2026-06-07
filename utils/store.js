@@ -101,10 +101,25 @@ function appendSwap({ fromToken, toToken, amount, txHash }) {
   writeStore(store);
 }
 
+function appendInference({ message, response, requestId, verifiable }) {
+  const store = readStore();
+  store.spends.push({
+    type: 'inference',
+    message,
+    response,
+    requestId,
+    verifiable: !!verifiable,
+    timestamp: Date.now(),
+    date: new Date().toDateString()
+  });
+  writeStore(store);
+}
+
 module.exports = {
   appendSpend,
   appendSwap,
   appendFailure,
+  appendInference,
   getTodaySpend,
   getLastHourTxCount,
   getConsecutiveFailures,

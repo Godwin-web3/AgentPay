@@ -37,14 +37,14 @@ function parseExecuteAt(str) {
   return { hour: parseInt(match[1]), minute: parseInt(match[2]) };
 }
 
-async function checkConditions(conditions, userAddress) {
+async function checkConditions(conditions, userAddress, job = null, wallet = null) {
   const results = [];
-  if (!conditions) return { passed: true, results: [] };
+  if (!conditions && (!job || !job.trigger)) return { passed: true, results: [] };
 
   const metrics = await getOnChainMetrics(userAddress);
 
   // 1. Balance condition
-  if (conditions.minBalance !== null && conditions.minBalance !== undefined) {
+  if (conditions && conditions.minBalance !== null && conditions.minBalance !== undefined) {
     if (!metrics) {
       results.push({ check: 'balance', passed: false, reason: 'Could not fetch balance' });
     } else if (metrics.balance < conditions.minBalance) {
@@ -59,7 +59,7 @@ async function checkConditions(conditions, userAddress) {
   }
 
   // 2. Execute at specific time
-  if (conditions.executeAt) {
+  if (conditions && conditions.executeAt) {
     const target = parseExecuteAt(conditions.executeAt);
     if (target) {
       const currentHour = getHour();
@@ -78,7 +78,7 @@ async function checkConditions(conditions, userAddress) {
   }
 
   // 3. Max daily spend condition
-  if (conditions.maxDailySpend !== null && conditions.maxDailySpend !== undefined) {
+  if (conditions && conditions.maxDailySpend !== null && conditions.maxDailySpend !== undefined) {
     if (!metrics) {
       results.push({ check: 'dailySpend', passed: false, reason: 'Could not fetch spend metrics' });
     } else if (metrics.todaySpent >= conditions.maxDailySpend) {
@@ -89,6 +89,31 @@ async function checkConditions(conditions, userAddress) {
       });
     } else {
       results.push({ check: 'dailySpend', passed: true, reason: 'Daily spend ' + metrics.todaySpent + '/' + conditions.maxDailySpend + ' STT ✅' });
+    }
+  }
+
+  // 4. Trigger condition (NEW)
+  if (job && job.trigger) {
+    try {
+      const { evaluateTrigger } = require('./triggers');
+      const result = await evaluateTrigger(job.trigger, wallet);
+      if (result.met) {
+        results.push({ 
+          check: 'trigger', 
+          passed: true, 
+          reason: 'Trigger verified on Somnia ✅', 
+          proof: result.proof 
+        });
+      } else {
+        results.push({ 
+          check: 'trigger', 
+          passed: false, 
+          reason: 'Trigger condition not met on-chain', 
+          proof: result.proof 
+        });
+      }
+    } catch (err) {
+      results.push({ check: 'trigger', passed: false, reason: 'Trigger error: ' + err.message });
     }
   }
 

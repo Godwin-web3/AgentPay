@@ -3,11 +3,6 @@ import { ethers } from 'ethers'
 
 export const WORKER_URL = import.meta.env.VITE_WORKER_URL || 'https://agentpay-worker.mbagodwin419.workers.dev'
 export const RPC = import.meta.env.VITE_RPC_URL || 'https://dream-rpc.somnia.network'
-export const VAULT_ADDRESS = import.meta.env.VITE_VAULT_ADDRESS || '0x4471917E96271F688282ae283d62De0B5Be8084C'
-const VAULT_ABI = [
-  "event Executed(address indexed user, address indexed token, address indexed to, uint256 amount, string reason, bytes32 requestId)",
-  "function balances(address,address) external view returns (uint256)"
-]
 
 async function request<T>(path: string, options?: RequestInit, userAddress?: string): Promise<T> {
   const headers: any = {
@@ -30,10 +25,12 @@ async function request<T>(path: string, options?: RequestInit, userAddress?: str
 
 export async function sendChat(
   message: string,
-  userAddress: string
+  userAddress: string,
+  verifiable: boolean = false
 ): Promise<ChatResponse> {
   let vaultBalance: string | undefined
   try {
+    const { address: userVaultAddr } = await getVaultAddress(userAddress)
     const res = await fetch(RPC, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -42,7 +39,7 @@ export async function sendChat(
         id: 1, 
         method: 'eth_call', 
         params: [{ 
-          to: VAULT_ADDRESS, 
+          to: userVaultAddr, 
           data: '0xf8b2cb4f' + userAddress.replace('0x','').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000' 
         }, 'latest'] 
       })
@@ -52,7 +49,7 @@ export async function sendChat(
   } catch {}
   return request<ChatResponse>('/chat', {
     method: 'POST',
-    body: JSON.stringify({ message, vaultBalance })
+    body: JSON.stringify({ message, vaultBalance, verifiable })
   }, userAddress)
 }
 
@@ -138,38 +135,16 @@ export async function cancelSchedule(jobId: string, userAddress: string): Promis
   return request<{ success: boolean }>('/schedules/' + jobId, { method: 'DELETE' }, userAddress)
 }
 
+export async function getVaultAddress(userAddress: string): Promise<{ address: string }> {
+  return request<{ address: string }>('/vault-address', {}, userAddress)
+}
+
 export async function getHealth(): Promise<HealthData> {
   return request<HealthData>('/health')
 }
 
 export async function getHistory(userAddress: string): Promise<{ items: any[] }> {
-  try {
-    const provider = new ethers.JsonRpcProvider(RPC)
-    const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, provider)
-    
-    // Fetch logs for the Executed event filtered by the user's address
-    const filter = vault.filters.Executed(userAddress)
-    const logs = await vault.queryFilter(filter, -2000) // Last 2000 blocks
-    
-    const items = await Promise.all(logs.map(async (log: any) => {
-      const block = await provider.getBlock(log.blockNumber)
-      return {
-        requestId: log.args.requestId,
-        to: log.args.to,
-        amount: parseFloat(ethers.formatEther(log.args.amount)),
-        reason: log.args.reason,
-        txHash: log.transactionHash,
-        timestamp: (block?.timestamp || 0) * 1000,
-        date: new Date((block?.timestamp || 0) * 1000).toISOString(),
-        failed: false
-      }
-    }))
-
-    return { items: items.reverse() }
-  } catch (err) {
-    console.error('Failed to fetch on-chain history:', err)
-    return { items: [] }
-  }
+  return request<{ items: any[] }>('/history', {}, userAddress)
 }
 
 export async function getStatus(requestId: string, userAddress: string): Promise<PayResponse> {

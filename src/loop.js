@@ -1,7 +1,7 @@
 require('dotenv').config();
 const readline = require('readline');
-const { parseIntent, resetConversation } = require('./brain');
-const { pay, status, history, prepareSwap, confirmSwap, showBalances } = require('./agent');
+const { parseIntent, parseIntentOnChain, resetConversation } = require('./brain');
+const { pay, status, getUnifiedHistory, prepareSwap, confirmSwap, showBalances, wallet } = require('./agent');
 const { applyUpdate } = require('./policyManager');
 const scheduler = require('./scheduler');
 const { TOKENS } = require('./dex');
@@ -74,16 +74,18 @@ function prompt() {
 
     console.log('\n🧠 AgentPay is thinking...');
 
+    const isVerifiable = input.toLowerCase().startsWith('/verifiable');
+    const actualInput = isVerifiable ? input.slice(11).trim() : input;
 
     // Intercept swap confirmation before sending to AI
-    if (pendingSwap && ['no','cancel','nope','n'].includes(input.toLowerCase())) {
+    if (pendingSwap && ['no','cancel','nope','n'].includes(actualInput.toLowerCase())) {
       pendingSwap = null;
       resetConversation();
       console.log('\n🚫 Swap cancelled.');
       prompt(); return;
     }
 
-    if (pendingSwap && ['yes','confirm','go ahead','yep','y'].includes(input.toLowerCase())) {
+    if (pendingSwap && ['yes','confirm','go ahead','yep','y'].includes(actualInput.toLowerCase())) {
       const result = await confirmSwap(resolveSymbol(pendingSwap.fromToken), resolveSymbol(pendingSwap.toToken), pendingSwap.amount);
       pendingSwap = null;
       if (result.success) {
@@ -96,7 +98,14 @@ function prompt() {
     }
 
     try {
-      const intent = await parseIntent(input);
+      let intent;
+      if (isVerifiable) {
+        console.log('🛡️  Using Somnia Verifiable AI (this may take a minute)...');
+        intent = await parseIntentOnChain(actualInput, wallet);
+      } else {
+        intent = await parseIntent(actualInput);
+      }
+
       const _skipMsg = ['history','status','list_schedules','help','cancel_schedule','balance'].includes(intent.action);
         if (!_skipMsg) console.log('\n🤖 AgentPay: ' + intent.message);
 
@@ -107,7 +116,7 @@ function prompt() {
         }
         
         // Extract symbols directly from user input as fallback
-        const inputUpper = input.toUpperCase();
+        const inputUpper = actualInput.toUpperCase();
         const knownSymbols = ['PING', 'PONG', 'SUSD', 'WSTT', 'STT'];
         const foundSymbols = knownSymbols
           .filter(s => {
@@ -175,7 +184,7 @@ function prompt() {
         const confirm = await ask('\n   Proceed? (yes/no): ');
         if (confirm !== 'yes' && confirm !== 'y') { console.log('\n🚫 Payment cancelled.'); resetConversation(); prompt(); return; }
 
-        const result = await pay(intent.to, intent.amount, intent.reason || input);
+        const result = await pay(intent.to, intent.amount, intent.reason || actualInput);
         if (result.success) {
           console.log('\n✅ Payment complete!');
           console.log('   🔗 https://explorer.somnia.network/tx/' + result.txHash);
@@ -214,6 +223,7 @@ function prompt() {
           to: intent.to,
           amount: intent.amount,
           reason: intent.reason || 'scheduled payment',
+          trigger: intent.trigger || null,
           intervalMs,
           intervalLabel: label,
           conditions: intent.conditions || null
@@ -262,8 +272,7 @@ function prompt() {
       } else if (intent.action === 'balance') {
         await showBalances();
         resetConversation();
-      } else if (intent.action === 'history') {
-        history();
+      undefined
         resetConversation();
 
       } else if (intent.action === 'help') {

@@ -9,13 +9,32 @@ const deployment = JSON.parse(
   fs.readFileSync(path.join(__dirname, '../artifacts/AgentVault-deployment.json'), 'utf8')
 );
 
-let vaultContract = null;
+const factoryArtifact = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../artifacts/VaultFactory.json'), 'utf8')
+);
+const factoryDeployment = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../artifacts/VaultFactory-deployment.json'), 'utf8')
+);
 
-function getVaultContract(wallet) {
-  if (!vaultContract) {
-    vaultContract = new ethers.Contract(deployment.address, artifact.abi, wallet);
+async function getVaultContract(wallet, userAddress) {
+  // If no userAddress (CLI usage), use the default vault from .env or deployment
+  if (!userAddress) {
+    const defaultAddr = process.env.VAULT_ADDRESS || deployment.address;
+    return new ethers.Contract(defaultAddr, artifact.abi, wallet);
   }
-  return vaultContract;
+
+  const factory = new ethers.Contract(factoryDeployment.address, factoryArtifact.abi, wallet);
+  let vaultAddr = await factory.getVault(userAddress);
+
+  if (vaultAddr === ethers.ZeroAddress) {
+    console.log(`🏭 Creating new AgentVault for ${userAddress}...`);
+    const tx = await factory.createVault(userAddress);
+    await tx.wait();
+    vaultAddr = await factory.getVault(userAddress);
+    console.log(`✅ Vault created at ${vaultAddr}`);
+  }
+
+  return new ethers.Contract(vaultAddr, artifact.abi, wallet);
 }
 
 const TOKENS = {
@@ -33,8 +52,8 @@ function resolveTokenAddress(symbolOrAddr) {
   return TOKENS[symbolOrAddr.toUpperCase()] || ethers.ZeroAddress;
 }
 
-async function setPolicy(wallet, perTxCap, dailyCap, maxTxPerHour, whitelist) {
-  const contract = getVaultContract(wallet);
+async function setPolicy(wallet, perTxCap, dailyCap, maxTxPerHour, whitelist, userAddress) {
+  const contract = await getVaultContract(wallet, userAddress);
   const tx = await contract.setPolicy(
     ethers.parseEther(perTxCap.toString()),
     ethers.parseEther(dailyCap.toString()),
@@ -45,7 +64,7 @@ async function setPolicy(wallet, perTxCap, dailyCap, maxTxPerHour, whitelist) {
 }
 
 async function executePayment(wallet, userAddress, token, to, amount, reason, requestId) {
-  const contract = getVaultContract(wallet);
+  const contract = await getVaultContract(wallet, userAddress);
   const tokenAddr = resolveTokenAddress(token);
   const amountWei = ethers.parseEther(amount.toString());
   const reqIdBytes32 = requestId ? (requestId.startsWith('0x') ? requestId : ethers.id(requestId)) : ethers.ZeroHash;
@@ -57,7 +76,7 @@ async function executePayment(wallet, userAddress, token, to, amount, reason, re
 }
 
 async function getOnChainPolicy(wallet, userAddress) {
-  const contract = getVaultContract(wallet);
+  const contract = await getVaultContract(wallet, userAddress);
   const [policy, whitelist] = await contract.getPolicy(userAddress);
   const [todaySpent, currentHourTx] = await contract.getSpendMetrics(userAddress);
   const balance = await contract.getBalance(userAddress, ethers.ZeroAddress);
@@ -75,7 +94,7 @@ async function getOnChainPolicy(wallet, userAddress) {
 }
 
 async function createOnChainSchedule(wallet, userAddress, token, to, amount, interval, reason, minBalance) {
-  const contract = getVaultContract(wallet);
+  const contract = await getVaultContract(wallet, userAddress);
   const tokenAddr = resolveTokenAddress(token);
   const tx = await contract.createSchedule(
     tokenAddr,
@@ -89,7 +108,7 @@ async function createOnChainSchedule(wallet, userAddress, token, to, amount, int
 }
 
 async function getOnChainSchedules(wallet, userAddress) {
-  const contract = getVaultContract(wallet);
+  const contract = await getVaultContract(wallet, userAddress);
   const schedules = await contract.getSchedules(userAddress);
   return schedules.map((s, index) => ({
     id: index,
@@ -104,8 +123,8 @@ async function getOnChainSchedules(wallet, userAddress) {
   }));
 }
 
-async function cancelOnChainSchedule(wallet, index) {
-  const contract = getVaultContract(wallet);
+async function cancelOnChainSchedule(wallet, index, userAddress) {
+  const contract = await getVaultContract(wallet, userAddress);
   const tx = await contract.cancelSchedule(index);
   return await tx.wait();
 }

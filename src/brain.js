@@ -1,5 +1,6 @@
 require('dotenv').config();
 const Groq = require('groq-sdk');
+const { inferOnChain } = require('./somniaAi');
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -27,6 +28,18 @@ You must respond ONLY with a valid JSON object in this exact format:
     "maxDailySpend": number or null,
     "executeOnce": true or false
   } or null,
+  "trigger": {
+    "type": "sports" | "github" | "weather" | "onchain" | "custom",
+    "query": "search query or null",
+    "repo": "org/repo or null",
+    "number": number or null,
+    "city": "city name or null",
+    "address": "0x address or null",
+    "url": "full url or null",
+    "selector": "jsonpath selector or null",
+    "operator": ">" | "<" | "==" | "contains" | "true",
+    "threshold": any
+  } or null,
   "policyUpdate": {
     "field": "dailyCap" | "perTxCap" | "addWhitelist" | "removeWhitelist" | "activeHours" | "maxTxPerHour" | null,
     "value": number or null,
@@ -37,6 +50,17 @@ You must respond ONLY with a valid JSON object in this exact format:
 }
 
 Guidelines:
+- Triggers:
+  - sports: Use for player scores, team wins. API: TheSportsDB.
+  - github: Use for PR merges, issue status.
+  - weather: Use for rain, temperature.
+  - onchain: Use for transaction counts, address balances on Somnia.
+  - custom: Use for any other JSON API.
+- Examples:
+  - "Pay 10 STT to 0x123 if Ronaldo scores" -> action: "schedule", amount: 10, to: "0x123", interval: "every 1 hour", trigger: { type: "sports", query: "Cristiano Ronaldo", selector: "$.player[0].strHeight", operator: ">", threshold: 0 }
+  - "Send 0x456 5 STT when PR #12 is merged in somnia/docs" -> action: "schedule", amount: 5, to: "0x456", interval: "every 30 minutes", trigger: { type: "github", repo: "somnia/docs", number: 12, selector: "$.merged", operator: "true", threshold: true }
+  - "Send 20 STT to 0x789 if it rains in London" -> action: "schedule", amount: 20, to: "0x789", interval: "every 4 hours", trigger: { type: "weather", city: "London", selector: "$.current_condition[0].precipMM", operator: ">", threshold: 0 }
+  - "Pay 0xabc when 0xdef gets 100 tx" -> action: "schedule", amount: 1, to: "0xabc", interval: "every 1 hour", trigger: { type: "onchain", address: "0xdef", selector: "$.transaction_count", operator: ">=", threshold: 100 }
 - If the user wants to swap assets, use action: "propose_swap". For fromToken and toToken, ONLY use the symbol name (PING, PONG, SUSD, STT).
 - If the user says "Yes", "Confirm", "Go ahead", or similar after you proposed a swap, use action: "execute_swap".
 - Available tokens on Somnia Shannon Testnet: 
@@ -94,5 +118,34 @@ async function parseIntent(userInput, vaultBalance, history = []) {
   }
 }
 
+async function parseIntentOnChain(userInput, wallet, vaultBalance) {
+  const balanceLine = vaultBalance !== undefined
+    ? 'The user current vault balance is: ' + vaultBalance + ' STT.'
+    : 'Vault balance is unknown.';
+  
+  const prompt = `User Request: ${userInput}\n${balanceLine}`;
+
+  try {
+    const raw = await inferOnChain(prompt, SYSTEM_PROMPT, wallet);
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+
+    try {
+      return JSON.parse(cleaned);
+    } catch (error) {
+      console.error('Error parsing On-Chain JSON:', cleaned);
+      return {
+        action: 'chat',
+        message: 'I understood your request via Somnia AI but had trouble formatting the response. ' + raw.slice(0, 100)
+      };
+    }
+  } catch (error) {
+    console.error('Error in On-Chain Inference:', error);
+    return {
+      action: 'unknown',
+      message: 'An error occurred during on-chain verifiable inference.'
+    };
+  }
+}
+
 function resetConversation() {}
-module.exports = { parseIntent, resetConversation };
+module.exports = { parseIntent, parseIntentOnChain, resetConversation };

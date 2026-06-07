@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
+import { getVaultAddress } from "../api"
 
-const VAULT_ADDRESS = '0x4471917E96271F688282ae283d62De0B5Be8084C'
 const SOMNIA_CHAIN_ID = '0xc488' // 50312 in hex
 
 interface EIP6963ProviderDetail {
@@ -16,6 +16,7 @@ interface EIP6963ProviderDetail {
 
 export default function WalletConnect({ onAddressChange, onProviderChange, onBalanceChange }: { onAddressChange: (addr: string) => void, onProviderChange?: (provider: any) => void, onBalanceChange?: (vault: string, wallet: string) => void }) {
   const [address, setAddress] = useState('')
+  const [vaultAddress, setVaultAddress] = useState('')
   const [balance, setBalance] = useState('0')
   const [showModal, setShowModal] = useState(false)
   const [showWalletList, setShowWalletList] = useState(false)
@@ -92,10 +93,17 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
   async function fetchOnChainData(userAddr: string, provider: any) {
     if (!provider) return
     try {
+      let currentVault = vaultAddress
+      if (!currentVault) {
+        const res = await getVaultAddress(userAddr)
+        currentVault = res.address
+        setVaultAddress(currentVault)
+      }
+
       const data = '0xf8b2cb4f' + userAddr.replace('0x', '').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000'
       const res = await provider.request({
         method: 'eth_call',
-        params: [{ to: VAULT_ADDRESS, data }, 'latest']
+        params: [{ to: currentVault, data }, 'latest']
       })
       const wei = BigInt(res === '0x' ? '0' : res)
       const vaultBal = (Number(wei) / 1e18).toFixed(4)
@@ -109,7 +117,7 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
   }
 
   async function handleDeposit() {
-    if (!depositAmount || isNaN(Number(depositAmount)) || !activeProvider) return
+    if (!depositAmount || isNaN(Number(depositAmount)) || !activeProvider || !vaultAddress) return
     setLoading(true)
     try {
       const value = '0x' + (BigInt(Math.floor(Number(depositAmount) * 1e18))).toString(16)
@@ -117,7 +125,7 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
         method: 'eth_sendTransaction',
         params: [{
           from: address,
-          to: VAULT_ADDRESS,
+          to: vaultAddress,
           data: '0xd0e30db0',
           value
         }]

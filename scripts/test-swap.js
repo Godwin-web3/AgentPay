@@ -3,7 +3,7 @@ const { ethers, getAddress } = require('ethers');
 const { estimateSwap, executeSwap, SOMNIA_ROUTER } = require('../src/dex');
 
 // PING Token on Shannon Testnet
-const PING = getAddress("0x4296495d4d3A766F9578278788fE7640f0c034B7");
+const PING = getAddress("0x4296495d4D3A766f9578278788Fe7640f0C034b7");
 
 async function main() {
   const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);

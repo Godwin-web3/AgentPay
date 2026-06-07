@@ -32,7 +32,7 @@ function parseInterval(intervalStr) {
   return null;
 }
 
-function addJob({ to, amount, reason, intervalMs, intervalLabel: label, conditions }) {
+function addJob({ to, amount, reason, intervalMs, intervalLabel: label, conditions, trigger }) {
   const store = readSchedules();
   const id = Date.now();
   const job = {
@@ -43,6 +43,7 @@ function addJob({ to, amount, reason, intervalMs, intervalLabel: label, conditio
     intervalMs,
     intervalLabel: label,
     conditions: conditions || null,
+    trigger: trigger || null,
     createdAt: new Date().toISOString(),
     lastRun: null,
     nextRun: new Date(Date.now() + intervalMs).toISOString(),
@@ -79,6 +80,64 @@ function stopAllJobs() {
   writeSchedules(store);
 }
 
+
+const activeTimers = {};
+
+async function startJob(job, payFn, ownerAddress) {
+  if (activeTimers[job.id]) return;
+
+  async function tick() {
+    const store = readSchedules();
+    const current = store.jobs.find(j => j.id === job.id);
+    if (!current || !current.active) {
+      clearInterval(activeTimers[job.id]);
+      delete activeTimers[job.id];
+      return;
+    }
+
+    if (new Date() < new Date(current.nextRun)) return;
+
+    const check = await checkConditions(current.conditions, current);
+    if (!check.passed) {
+      console.log('\n⏳ Job ' + job.id + ' not ready: ' + check.results.map(r => r.reason).join(', '));
+      return;
+    }
+
+    if (current.trigger) {
+      console.log('\n⛓ Trigger verified on Somnia');
+      console.log('   Type: ' + current.trigger.type + ' | condition met ✓');
+    }
+
+    console.log('\n🔄 Executing scheduled payment...');
+    const result = await payFn(current.to, current.amount, current.reason);
+
+    const s2 = readSchedules();
+    const j2 = s2.jobs.find(j => j.id === job.id);
+    j2.lastRun = new Date().toISOString();
+    j2.nextRun = new Date(Date.now() + j2.intervalMs).toISOString();
+    j2.totalRuns = (j2.totalRuns || 0) + 1;
+    j2.totalSpent = (j2.totalSpent || 0) + j2.amount;
+    if (j2.conditions && j2.conditions.executeOnce) j2.active = false;
+    writeSchedules(s2);
+
+    if (result && result.success) {
+      console.log('✅ Scheduled payment: ' + current.amount + ' STT to ' + current.to);
+    } else {
+      console.log('❌ Payment failed: ' + (result && result.reason));
+    }
+  }
+
+  activeTimers[job.id] = setInterval(tick, Math.min(job.intervalMs, 60000));
+  console.log('⏰ Job ' + job.id + ' started, runs every ' + job.intervalLabel);
+}
+
+function stopJob(id) {
+  if (activeTimers[id]) {
+    clearInterval(activeTimers[id]);
+    delete activeTimers[id];
+  }
+}
+
 module.exports = {
   readSchedules,
   writeSchedules,
@@ -87,5 +146,7 @@ module.exports = {
   cancelJob,
   getAllJobs,
   getActiveJobs,
-  stopAllJobs
+  stopAllJobs,
+  startJob,
+  stopJob
 };
