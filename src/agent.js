@@ -170,16 +170,25 @@ async function chatOnChain(message, vaultBalance) {
 
 async function getUnifiedHistory(userAddress, limit = 50) {
   const finalUserAddr = userAddress || process.env.USER_ADDRESS || (await wallet.getAddress());
-  const vault = await getVaultContract(wallet, finalUserAddr);
+  const vaultArtifact = require('../artifacts/AgentVault.json');
+  const vaultDeployment = require('../artifacts/AgentVault-deployment.json');
+  const vaultAddr = process.env.VAULT_ADDRESS || vaultDeployment.address;
+  const vault = new ethers.Contract(vaultAddr, vaultArtifact.abi, wallet);
   
   const history = [];
 
   // 1. Fetch On-Chain Events
   try {
-    const [execLogs, depLogs, withLogs] = await Promise.all([
-      vault.queryFilter(vault.filters.Executed(finalUserAddr), -10000),
-      vault.queryFilter(vault.filters.Deposited(finalUserAddr), -100000),
-      vault.queryFilter(vault.filters.Withdrawn(finalUserAddr), -100000)
+    const latestBlock = await provider.getBlockNumber();
+    const fromBlock = Math.max(0, latestBlock - 900);
+    const onChainTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('On-chain history timeout')), 8000));
+    const [execLogs, depLogs, withLogs] = await Promise.race([
+      Promise.all([
+      vault.queryFilter(vault.filters.Executed(finalUserAddr), fromBlock),
+      vault.queryFilter(vault.filters.Deposited(finalUserAddr), fromBlock),
+      vault.queryFilter(vault.filters.Withdrawn(finalUserAddr), fromBlock)
+    ]),
+      onChainTimeout
     ]);
 
     const blockTimestamps = new Map();
@@ -190,6 +199,9 @@ async function getUnifiedHistory(userAddress, limit = 50) {
       blockTimestamps.set(num, ts);
       return ts;
     };
+
+    const uniqueBlocks = [...new Set([...execLogs, ...depLogs, ...withLogs].map(l => l.blockNumber))];
+    await Promise.all(uniqueBlocks.map(num => getBlockTime(num)));
 
     const seenRequestIds = new Set();
 

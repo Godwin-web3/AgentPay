@@ -129,13 +129,12 @@ function prompt() {
           .sort((a, b) => inputUpper.indexOf(a) - inputUpper.indexOf(b));
         const fromRaw = foundSymbols[0] || intent.fromToken;
         const toRaw = foundSymbols[1] || intent.toToken;
-        const fromAddr = resolveSymbol(fromRaw);
-        const toAddr = resolveSymbol(toRaw);
-        const estimation = await prepareSwap(fromAddr, toAddr, intent.amount);
+        
+        const estimation = await prepareSwap(fromRaw, toRaw, intent.amount);
         if (estimation.success) {
           pendingSwap = {
-            fromToken: fromAddr,
-            toToken: toAddr,
+            fromToken: fromRaw,
+            toToken: toRaw,
             amount: intent.amount
           };
           console.log('\n💬 Say "Confirm" or "Yes" to execute this swap.');
@@ -148,7 +147,7 @@ function prompt() {
           prompt(); return;
         }
 
-        const result = await confirmSwap(resolveSymbol(pendingSwap.fromToken), resolveSymbol(pendingSwap.toToken), pendingSwap.amount);
+        const result = await confirmSwap(pendingSwap.fromToken, pendingSwap.toToken, pendingSwap.amount);
         if (result.success) {
           pendingSwap = null;
         }
@@ -272,7 +271,9 @@ function prompt() {
       } else if (intent.action === 'balance') {
         await showBalances();
         resetConversation();
-      undefined
+      } else if (intent.action === 'history') {
+        const h = await getUnifiedHistory(ownerAddress);
+        if (!h.length) { console.log('No history yet.'); } else h.forEach(i => console.log('[' + i.status + '] ' + i.label + ' ' + (i.amount ? i.amount + (i.type !== 'swap' ? ' ' + (i.token||'STT') : '') : '') + ' ' + (i.timestamp ? new Date(i.timestamp).toLocaleTimeString() : '')));
         resetConversation();
 
       } else if (intent.action === 'help') {
