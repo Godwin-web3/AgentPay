@@ -8,7 +8,7 @@ import Landing from './views/Landing'
 import Profile from './views/Profile'
 import Onboarding from './views/Onboarding'
 import type { ChatMessage } from './types'
-import { getTokenBalances, WORKER_URL } from './api'
+import { getTokenBalances } from './api'
 
 type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules'
 
