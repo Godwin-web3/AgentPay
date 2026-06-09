@@ -289,6 +289,7 @@ async function handleGetVaultAddress(req, res) {
   const userAddress = req.headers['x-user-address'];
   if (!userAddress) return send(res, 400, { error: 'Missing user address' });
   try {
+    if (process.env.VAULT_ADDRESS) return send(res, 200, { address: process.env.VAULT_ADDRESS });
     const contract = await getVaultContract(backendWallet, userAddress);
     const address = await contract.getAddress();
     return send(res, 200, { address });
