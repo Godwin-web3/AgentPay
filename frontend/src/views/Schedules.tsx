@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSchedules, getVaultAddress, getOnChainSchedules } from '../api'
+import { getSchedules, getVaultAddress, getOnChainSchedules, cancelSchedule } from '../api'
 import { ethers } from 'ethers'
 
 const VAULT_ABI = [
@@ -67,11 +67,8 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
         await tx.wait()
         alert('On-chain schedule cancelled!')
       } else {
-        // Local cancel via worker
-        await fetch(`${import.meta.env.VITE_WORKER_URL || 'https://agentpay-worker.mbagodwin419.workers.dev'}/schedules/${id}`, {
-          method: 'DELETE',
-          headers: { 'x-user-address': userAddress }
-        })
+        // Local cancel via helper
+        await cancelSchedule(id.toString(), userAddress)
         alert('Local schedule cancelled!')
       }
       

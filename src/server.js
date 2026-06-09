@@ -1,5 +1,5 @@
 const http = require('http');
-const { pay, prepareSwap, confirmSwap, getSummary, chatOnChain, getUnifiedHistory, executeIntent, getVaultBalance } = require('./agent');
+const { pay, prepareSwap, confirmSwap, getSummary, chatOnChain, getUnifiedHistory, executeIntent, getVaultBalance, setupEscrowPolicy } = require('./agent');
 const { readPolicy, applyUpdate } = require('./policyManager');
 const { getTodaySpend, getHistory } = require('../utils/store');
 const { getAllJobs, addJob, cancelJob, parseInterval, intervalLabel } = require('./scheduler');

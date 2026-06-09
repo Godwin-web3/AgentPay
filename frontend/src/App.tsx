@@ -75,7 +75,8 @@ export default function App() {
   }, [userAddress])
 
   async function handleClearMemory() {
-    await fetch(`${WORKER_URL}/chat`, {
+    const serverUrl = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
+    await fetch(`${serverUrl}/chat`, {
       method: 'DELETE',
       headers: { 'x-user-address': userAddress }
     }).catch(() => {})

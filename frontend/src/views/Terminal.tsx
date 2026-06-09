@@ -248,7 +248,8 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
 
     // Clear command
     if (text.toLowerCase() === 'clear') {
-      await fetch(`${WORKER_URL}/chat`, {
+      const serverUrl = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
+      await fetch(`${serverUrl}/chat`, {
         method: 'DELETE',
         headers: { 'x-user-address': userAddress }
       }).catch(() => {})
@@ -367,6 +368,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
           if (intent.action === 'update_policy' && intent.policyUpdate) {
             const up = intent.policyUpdate
             const applyPolicyUpdate = async () => {
+              const serverUrl = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
               const current = await getPolicy(userAddress)
               const update: any = {}
               if (up.field === 'dailyCap') update.dailyCap = up.value
@@ -379,7 +381,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
               if (up.field === 'removeWhitelist' && up.address) {
                 update.whitelist = current.whitelist.filter(a => a.toLowerCase() !== up.address?.toLowerCase())
               }
-              return await fetch(`${WORKER_URL}/policy`, { method: "POST", headers: { "Content-Type": "application/json", "x-user-address": userAddress }, body: JSON.stringify(update) }).then(r => r.json())
+              return await fetch(`${serverUrl}/policy`, { method: "POST", headers: { "Content-Type": "application/json", "x-user-address": userAddress }, body: JSON.stringify(update) }).then(r => r.json())
             }
             applyPolicyUpdate()
               .then(() => setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } })))
