@@ -87,7 +87,7 @@ export default function App() {
     return <Landing onLaunch={() => setView('terminal')} />
   }
 
-  if (!isOnboarded) {
+  if (userAddress && !isOnboarded) {
     return (
       <div className="app">
         <main className="main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
