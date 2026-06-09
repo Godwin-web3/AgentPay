@@ -152,6 +152,19 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
                 </div>
               </div>
 
+              {!job.onChain && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Last Run</div>
+                    <div style={{ fontSize: 13 }}>{job.lastRun ? new Date(job.lastRun).toLocaleString() : 'Never'}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Total Runs</div>
+                    <div style={{ fontSize: 13 }}>{job.totalRuns || 0}</div>
+                  </div>
+                </div>
+              )}
+
               {job.minBalance > 0 && (
                 <div style={{ marginBottom: 16, fontSize: 12, color: 'var(--cyan)' }}>
                   <span style={{ color: 'var(--muted)', textTransform: 'uppercase', fontSize: 10 }}>Condition:</span> Bal {'>'} {job.minBalance} STT

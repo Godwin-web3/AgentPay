@@ -32,11 +32,12 @@ function parseInterval(intervalStr) {
   return null;
 }
 
-function addJob({ to, amount, reason, intervalMs, intervalLabel: label, conditions, trigger }) {
+function addJob({ to, amount, reason, intervalMs, intervalLabel: label, conditions, trigger, userAddress }) {
   const store = readSchedules();
   const id = Date.now();
   const job = {
     id,
+    userAddress, // Added userAddress
     to,
     amount,
     reason,
@@ -56,17 +57,25 @@ function addJob({ to, amount, reason, intervalMs, intervalLabel: label, conditio
   return job;
 }
 
-function cancelJob(id) {
+function cancelJob(id, userAddress) {
   const store = readSchedules();
   const job = store.jobs.find(j => j.id.toString() === id.toString());
   if (!job) return null;
+  
+  // Security check: only owner can cancel
+  if (userAddress && job.userAddress && job.userAddress !== userAddress) {
+    return null;
+  }
+
   job.active = false;
   writeSchedules(store);
   return job;
 }
 
-function getAllJobs() {
-  return readSchedules().jobs;
+function getAllJobs(userAddress) {
+  const jobs = readSchedules().jobs;
+  if (!userAddress) return jobs;
+  return jobs.filter(j => !j.userAddress || j.userAddress === userAddress);
 }
 
 function getActiveJobs() {
@@ -85,6 +94,7 @@ const activeTimers = {};
 
 async function startJob(job, payFn, ownerAddress) {
   if (activeTimers[job.id]) return;
+  const userAddr = ownerAddress || job.userAddress;
 
   async function tick() {
     const store = readSchedules();
@@ -108,8 +118,8 @@ async function startJob(job, payFn, ownerAddress) {
       console.log('   Type: ' + current.trigger.type + ' | condition met ✓');
     }
 
-    console.log('\n🔄 Executing scheduled payment...');
-    const result = await payFn(current.to, current.amount, current.reason);
+    console.log('\n🔄 Executing scheduled payment for ' + userAddr + '...');
+    const result = await payFn(current.to, current.amount, current.reason, 'STT', userAddr);
 
     const s2 = readSchedules();
     const j2 = s2.jobs.find(j => j.id === job.id);
@@ -128,7 +138,7 @@ async function startJob(job, payFn, ownerAddress) {
   }
 
   activeTimers[job.id] = setInterval(tick, Math.min(job.intervalMs, 60000));
-  console.log('⏰ Job ' + job.id + ' started, runs every ' + job.intervalLabel);
+  console.log('⏰ Job ' + job.id + ' started, runs every ' + job.intervalLabel + ' for ' + userAddr);
 }
 
 function stopJob(id) {

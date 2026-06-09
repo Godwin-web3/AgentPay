@@ -234,12 +234,14 @@ async function handleSwap(req, res) {
 
 // GET /schedules
 function handleGetSchedules(req, res) {
-  const jobs = getAllJobs();
+  const userAddress = req.headers['x-user-address'];
+  const jobs = getAllJobs(userAddress);
   return send(res, 200, { schedules: jobs });
 }
 
 // POST /schedules
 async function handleCreateSchedule(req, res) {
+  const userAddress = req.headers['x-user-address'];
   const body = await parseBody(req);
   const { to, amount, interval, reason, conditions } = body;
   
@@ -252,7 +254,8 @@ async function handleCreateSchedule(req, res) {
     reason,
     intervalMs,
     intervalLabel: interval,
-    conditions
+    conditions,
+    userAddress
   });
 
   return send(res, 200, { success: true, schedule: job });
@@ -260,8 +263,9 @@ async function handleCreateSchedule(req, res) {
 
 // DELETE /schedules/:id
 function handleDeleteSchedule(req, res, jobId) {
-  const job = cancelJob(jobId);
-  if (!job) return send(res, 404, { error: 'Job not found' });
+  const userAddress = req.headers['x-user-address'];
+  const job = cancelJob(jobId, userAddress);
+  if (!job) return send(res, 404, { error: 'Job not found or unauthorized' });
   return send(res, 200, { success: true });
 }
 
