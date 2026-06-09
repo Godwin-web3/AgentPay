@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import { getVaultAddress } from "../api"
+import { ethers } from "ethers"
 
 const SOMNIA_CHAIN_ID = '0xc488' // 50312 in hex
+const VAULT_ABI = [
+  "function balances(address user, address token) external view returns (uint256)",
+  "function deposit(address token, uint256 amount) external payable"
+]
 
 interface EIP6963ProviderDetail {
   info: {
@@ -100,16 +105,15 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
         setVaultAddress(currentVault)
       }
 
+      const iface = new ethers.Interface(VAULT_ABI)
       const NATIVE_ADDR = '0x0000000000000000000000000000000000000000'
-      const data = '0xc23f001f' + 
-        userAddr.replace('0x', '').toLowerCase().padStart(64, '0') + 
-        NATIVE_ADDR.replace('0x', '').toLowerCase().padStart(64, '0')
+      const data = iface.encodeFunctionData("balances", [userAddr, NATIVE_ADDR])
       
       const res = await provider.request({
         method: 'eth_call',
         params: [{ to: currentVault, data }, 'latest']
       })
-      const wei = BigInt(res === '0x' ? '0' : res)
+      const wei = BigInt(res === '0x' || !res ? '0' : res)
       const vaultBal = (Number(wei) / 1e18).toFixed(4)
       setBalance(vaultBal)
       const walletRes = await provider.request({ method: "eth_getBalance", params: [userAddr, "latest"] })
@@ -125,10 +129,9 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
     const NATIVE_ADDR = '0x0000000000000000000000000000000000000000'
     setLoading(true)
     try {
-      const value = '0x' + (BigInt(Math.floor(Number(depositAmount) * 1e18))).toString(16)
-      const data = '0x47e7ef24' +
-        NATIVE_ADDR.replace('0x', '').toLowerCase().padStart(64, '0') +
-        '0000000000000000000000000000000000000000000000000000000000000000'
+      const amountWei = ethers.parseEther(depositAmount)
+      const iface = new ethers.Interface(VAULT_ABI)
+      const data = iface.encodeFunctionData("deposit", [NATIVE_ADDR, amountWei])
 
       await activeProvider.request({
         method: 'eth_sendTransaction',
@@ -136,7 +139,7 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
           from: address,
           to: vaultAddress,
           data,
-          value
+          value: '0x' + amountWei.toString(16)
         }]
       })
       setShowModal(false)

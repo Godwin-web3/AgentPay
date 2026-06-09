@@ -33,8 +33,7 @@ async function request<T>(path: string, options?: RequestInit, userAddress?: str
 
 export async function sendChat(
   message: string,
-  userAddress: string,
-  verifiable: boolean = false
+  userAddress: string
 ): Promise<ChatResponse> {
   let vaultBalance: string | undefined
   try {
@@ -48,7 +47,7 @@ export async function sendChat(
         method: 'eth_call', 
         params: [{ 
           to: userVaultAddr, 
-          data: '0xf8b2cb4f' + userAddress.replace('0x','').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000' 
+          data: '0xd4fac45d' + userAddress.replace('0x', '').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000' 
         }, 'latest'] 
       })
     })
@@ -57,7 +56,7 @@ export async function sendChat(
   } catch {}
   return request<ChatResponse>('/chat', {
     method: 'POST',
-    body: JSON.stringify({ message, vaultBalance, verifiable })
+    body: JSON.stringify({ message, vaultBalance })
   }, userAddress)
 }
 

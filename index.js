@@ -3,8 +3,8 @@ const { startLoop } = require('./src/loop');
 const { startServer } = require('./src/server');
 
 async function main() {
-  const { address } = await init();
-  await startServer();
+  const { address, wallet } = await init();
+  await startServer(wallet);
   await registerAgent();
   await setupEscrowPolicy();
   await startLoop(address);

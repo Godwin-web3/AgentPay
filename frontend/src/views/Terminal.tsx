@@ -170,7 +170,6 @@ function PolicyCard({ data }: { data: any }) {
 export default function Terminal({ messages, setMessages, userAddress }: Props) {
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
-  const [isVerifiable, setIsVerifiable] = React.useState(false)
   const [txResults, setTxResults] = React.useState<Record<number, any>>({})
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -269,7 +268,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             jsonrpc: '2.0', id: 1, method: 'eth_call',
-            params: [{ to: vaultAddr, data: '0xf8b2cb4f' + userAddress.replace('0x', '').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000' }, 'latest']
+            params: [{ to: vaultAddr, data: '0xd4fac45d' + userAddress.replace('0x', '').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000' }, 'latest']
           })
         })
           .then(r => r.json())
@@ -292,7 +291,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
     setLoading(true)
 
     try {
-      const res = await sendChat(text, userAddress, isVerifiable)
+      const res = await sendChat(text, userAddress)
       const intent = res.intent
 
       const assistantMsg: ChatMessage = {
@@ -453,22 +452,6 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
       </div>
 
       <div className="quick-actions">
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginRight: 'auto', background: 'rgba(0,255,255,0.05)', padding: '4px 10px', borderRadius: 20, border: '1px solid rgba(0,255,255,0.1)' }}>
-          <div 
-            onClick={() => setIsVerifiable(!isVerifiable)} 
-            style={{ 
-              width: 32, height: 16, background: isVerifiable ? 'var(--cyan)' : '#333', 
-              borderRadius: 10, position: 'relative', cursor: 'pointer', transition: '0.2s' 
-            }}
-          >
-            <div style={{ 
-              width: 12, height: 12, background: isVerifiable ? 'black' : '#666', 
-              borderRadius: '50%', position: 'absolute', top: 2, left: isVerifiable ? 18 : 2, transition: '0.2s' 
-            }} />
-          </div>
-          <span style={{ fontSize: 9, color: isVerifiable ? 'var(--cyan)' : 'var(--muted)', fontWeight: 'bold', letterSpacing: 1 }}>VERIFIABLE MODE</span>
-        </div>
-
         {['SEND', 'SWAP', 'BALANCE', 'POLICY'].map(btn => (
           <button
             key={btn}

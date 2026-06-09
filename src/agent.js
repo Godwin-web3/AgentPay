@@ -66,7 +66,7 @@ async function init() {
     console.log(`   ${symbol}:  ${parseFloat(ethers.formatEther(bal)).toFixed(4)}`);
   });
 
-  return { kit, engine, wallet, address };
+  return { kit, engine, wallet, address, provider };
 }
 
 async function prepareSwap(fromToken, toToken, amount) {
@@ -174,8 +174,11 @@ async function chatOnChain(message, vaultBalance) {
 async function getUnifiedHistory(userAddress, limit = 50) {
   const finalUserAddr = userAddress || process.env.USER_ADDRESS || (await wallet.getAddress());
   const vaultArtifact = require('../artifacts/AgentVault.json');
-  const vaultDeployment = require('../artifacts/AgentVault-deployment.json');
-  const vaultAddr = process.env.VAULT_ADDRESS || vaultDeployment.address;
+  
+  const { findVault } = require('./escrow');
+  const vaultAddr = await findVault(finalUserAddr);
+  if (!vaultAddr) return [];
+
   const vault = new ethers.Contract(vaultAddr, vaultArtifact.abi, wallet);
   
   const history = [];
@@ -183,7 +186,7 @@ async function getUnifiedHistory(userAddress, limit = 50) {
   // 1. Fetch On-Chain Events
   try {
     const latestBlock = await provider.getBlockNumber();
-    const fromBlock = Math.max(0, latestBlock - 900);
+    const fromBlock = Math.max(0, latestBlock - 2000);
     const onChainTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('On-chain history timeout')), 8000));
     const [execLogs, depLogs, withLogs] = await Promise.race([
       Promise.all([

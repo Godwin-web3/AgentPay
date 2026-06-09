@@ -27,11 +27,13 @@ function writeStore(data) {
   fs.writeFileSync(STORE_PATH, stringify(data));
 }
 
-function appendSpend({ to, amount, reason, txHash, agentId }) {
+function appendSpend({ userAddress, to, amount, reason, txHash, agentId, token }) {
   const store = readStore();
   store.spends.push({
+    userAddress,
     to,
     amount,
+    token: token || 'STT',
     reason,
     txHash,
     agentId: agentId ? agentId.toString() : null,
@@ -41,9 +43,10 @@ function appendSpend({ to, amount, reason, txHash, agentId }) {
   writeStore(store);
 }
 
-function appendFailure({ to, amount, reason, blockedReason, agentId }) {
+function appendFailure({ userAddress, to, amount, reason, blockedReason, agentId }) {
   const store = readStore();
   store.spends.push({
+    userAddress,
     to,
     amount,
     reason,
@@ -56,40 +59,49 @@ function appendFailure({ to, amount, reason, blockedReason, agentId }) {
   writeStore(store);
 }
 
-function getTodaySpend() {
+function getTodaySpend(userAddress) {
   const store = readStore();
   const today = new Date().toDateString();
   return store.spends
-    .filter(function(s) { return s.date === today && !s.failed; })
+    .filter(function(s) { 
+      return s.date === today && !s.failed && (!userAddress || s.userAddress === userAddress); 
+    })
     .reduce(function(sum, s) { return sum + s.amount; }, 0);
 }
 
-function getLastHourTxCount() {
+function getLastHourTxCount(userAddress) {
   const store = readStore();
   const oneHourAgo = Date.now() - 60 * 60 * 1000;
-  return store.spends.filter(function(s) { return s.timestamp > oneHourAgo && !s.failed; }).length;
+  return store.spends.filter(function(s) { 
+    return s.timestamp > oneHourAgo && !s.failed && (!userAddress || s.userAddress === userAddress); 
+  }).length;
 }
 
-function getConsecutiveFailures() {
+function getConsecutiveFailures(userAddress) {
   const store = readStore();
   const spends = store.spends;
   let count = 0;
   for (let i = spends.length - 1; i >= 0; i--) {
+    if (userAddress && spends[i].userAddress !== userAddress) continue;
     if (spends[i].failed) count++;
     else break;
   }
   return count;
 }
 
-function getHistory(limit) {
-  limit = limit || 20;
+function getHistory(userAddress, limit) {
+  limit = limit || 50;
   const store = readStore();
-  return store.spends.slice(-limit).reverse();
+  return store.spends
+    .filter(s => !userAddress || s.userAddress === userAddress)
+    .slice(-limit)
+    .reverse();
 }
 
-function appendSwap({ fromToken, toToken, amount, txHash }) {
+function appendSwap({ userAddress, fromToken, toToken, amount, txHash }) {
   const store = readStore();
   store.spends.push({
+    userAddress,
     type: 'swap',
     fromToken,
     toToken,
@@ -101,9 +113,10 @@ function appendSwap({ fromToken, toToken, amount, txHash }) {
   writeStore(store);
 }
 
-function appendInference({ message, response, requestId, verifiable }) {
+function appendInference({ userAddress, message, response, requestId, verifiable }) {
   const store = readStore();
   store.spends.push({
+    userAddress,
     type: 'inference',
     message,
     response,

@@ -7,6 +7,8 @@ const { getVaultContract, findVault } = require('./escrow');
 
 const PORT = process.env.PORT || 3000;
 
+let backendWallet = null;
+
 // ── In-memory store ───────────────────────────────────────────────────────────
 const requestStore = new Map();
 const chatHistories = new Map();
@@ -287,7 +289,7 @@ async function handleGetVaultAddress(req, res) {
   const userAddress = req.headers['x-user-address'];
   if (!userAddress) return send(res, 400, { error: 'Missing user address' });
   try {
-    const contract = await getVaultContract(null, userAddress);
+    const contract = await getVaultContract(backendWallet, userAddress);
     const address = await contract.getAddress();
     return send(res, 200, { address });
   } catch (err) {
@@ -340,7 +342,8 @@ const server = http.createServer(async (req, res) => {
   return send(res, 404, { error: 'Not found' });
 });
 
-function startServer() {
+function startServer(wallet) {
+  backendWallet = wallet;
   return new Promise((resolve) => {
     server.listen(PORT, () => {
       console.log('🌐 AgentPay API running on http://localhost:' + PORT);
