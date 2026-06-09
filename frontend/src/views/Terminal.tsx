@@ -54,22 +54,27 @@ function ProofBadge({ requestId }: { requestId: string }) {
   )
 }
 
-function TxBadge({ result, onConfirm }: { result?: any, onConfirm?: () => void }) {
+function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: () => void, onCancel?: () => void }) {
   const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
   
-  if (result.status === 'proposing_swap' || result.status === 'proposing_intent' || result.status === 'proposing_schedule') {
+  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_swap' || result.status === 'proposing_intent' || result.status === 'proposing_schedule'
+
+  if (isProposal) {
     let title = 'TX PROPOSAL'
     let detail = ''
-    if (result.status === 'proposing_swap') {
+    if (result.status === 'proposing_pay') {
+      title = '💸 PAYMENT PROPOSAL'
+      detail = `Send ${result.amount} ${result.token || 'STT'} to ${result.to?.slice(0, 8)}...`
+    } else if (result.status === 'proposing_swap') {
       title = '🔄 SWAP PROPOSAL'
-      detail = `${result.amount} ${result.fromToken} → ${result.toToken}`
+      detail = `Swap ${result.amount} ${result.fromToken} → ${result.toToken}`
     } else if (result.status === 'proposing_intent') {
       title = '⚡ ATOMIC INTENT'
       detail = `${result.intentName?.replace(/_/g, ' ').toUpperCase()}${result.amount ? `: ${result.amount} STT` : ''}`
     } else if (result.status === 'proposing_schedule') {
       title = '⏰ ON-CHAIN SCHEDULE'
-      detail = `${result.amount} STT every ${result.interval}`
+      detail = `Pay ${result.amount} STT to ${result.to?.slice(0, 8)}... every ${result.interval}`
     }
 
     return (
@@ -78,37 +83,72 @@ function TxBadge({ result, onConfirm }: { result?: any, onConfirm?: () => void }
         <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', background: 'rgba(0,0,0,0.1)', padding: '4px 8px', borderRadius: 4 }}>
           {detail}
         </div>
-        <button 
-          className="send-btn" 
-          disabled={confirming}
-          onClick={async () => {
-            setConfirming(true)
-            if (onConfirm) await onConfirm()
-            setConfirming(false)
-          }}
-          style={{ background: 'black', color: 'var(--cyan)', border: 'none', padding: '8px', fontSize: 11, cursor: 'pointer', fontWeight: 600, marginTop: 4 }}
-        >
-          {confirming ? 'EXECUTING TRANSACTION...' : 'CONFIRM & EXECUTE'}
-        </button>
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <button 
+            className="send-btn" 
+            disabled={confirming}
+            onClick={async () => {
+              setConfirming(true)
+              if (onConfirm) await onConfirm()
+              setConfirming(false)
+            }}
+            style={{ flex: 2, background: 'black', color: 'var(--cyan)', border: 'none', padding: '8px', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}
+          >
+            {confirming ? 'EXECUTING...' : 'CONFIRM & EXECUTE'}
+          </button>
+          <button 
+            className="send-btn" 
+            disabled={confirming}
+            onClick={onCancel}
+            style={{ flex: 1, background: 'rgba(0,0,0,0.1)', color: 'black', border: '1px solid black', padding: '8px', fontSize: 11, cursor: 'pointer' }}
+          >
+            CANCEL
+          </button>
+        </div>
       </div>
     )
   }
+
   if (result.status === 'executed' || result.status === 'success') {
+    let feedback = `✓ Executed`
+    if (result.type === 'pay' || result.to) {
+       feedback = `✓ Sent ${result.amount} ${result.token || 'STT'} to ${result.to?.slice(0, 10)}...`
+    } else if (result.type === 'swap' || (result.fromToken && result.toToken)) {
+       feedback = `✓ Swapped ${result.amount} ${result.fromToken} → ${result.toToken}`
+    } else if (result.type === 'intent') {
+       feedback = `✓ Intent executed`
+    }
+
     return (
-      <a className="tx-badge success" href={result.explorer} target="_blank" rel="noreferrer" style={{ display: 'block', textAlign: 'center' }}>
-        ✅ EXECUTED: {result.txHash?.slice(0, 8)}...
+      <a 
+        className="tx-badge success" 
+        href={result.explorer} 
+        target="_blank" 
+        rel="noreferrer" 
+        style={{ display: 'block', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: 10, padding: '8px 12px' }}
+      >
+        <div style={{ fontWeight: 'bold', marginBottom: 2 }}>{feedback}</div>
+        <div style={{ opacity: 0.7 }}>Tx: {result.txHash?.slice(0, 16)}... ↗</div>
       </a>
     )
   }
+
+  if (result.status === 'cancelled') {
+    return <div className="tx-badge" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 10, fontFamily: 'var(--font-mono)' }}>✗ Cancelled</div>
+  }
+
   if (result.status === 'rejected') {
     return <div className="tx-badge rejected">🚫 Blocked: {result.reason}</div>
   }
+
   if (result.status === 'policy_updated') {
     return <div className="tx-badge success">🛡️ Policy Synchronized</div>
   }
+
   if (result.status === 'failed') {
     return <div className="tx-badge failed">⚠️ Error: {result.reason}</div>
   }
+
   return null
 }
 
@@ -213,10 +253,17 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
 
     try {
       let res
-      if (prop.status === 'proposing_swap') {
-        res = await executeSwap(prop.fromToken, prop.toToken, prop.amount, true, userAddress)
+      if (prop.status === 'proposing_pay') {
+        const requestId = generateRequestId()
+        const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userAddress, prop.token || 'STT')
+        res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'STT' }
+      }
+ else if (prop.status === 'proposing_swap') {
+        const swapRes = await executeSwap(prop.fromToken, prop.toToken, prop.amount, true, userAddress)
+        res = { ...swapRes, type: 'swap', fromToken: prop.fromToken, toToken: prop.toToken, amount: prop.amount }
       } else if (prop.status === 'proposing_intent') {
-        res = await executeIntent(prop.intentName, prop.amount, prop.to, prop.reason || 'Atomic Intent', userAddress)
+        const intentRes = await executeIntent(prop.intentName, prop.amount, prop.to, prop.reason || 'Atomic Intent', userAddress)
+        res = { ...intentRes, type: 'intent', intentName: prop.intentName }
       } else if (prop.status === 'proposing_schedule') {
         const { address: vaultAddr } = await getVaultAddress(userAddress)
         const iface = new ethers.Interface(["function createSchedule(address token, address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external"])
@@ -236,7 +283,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
         const provider = new ethers.JsonRpcProvider(RPC)
         await provider.waitForTransaction(txHash)
 
-        res = { status: 'executed', txHash, explorer: 'https://shannon-explorer.somnia.network/tx/' + txHash }
+        res = { status: 'executed', txHash, explorer: 'https://shannon-explorer.somnia.network/tx/' + txHash, type: 'schedule', to: prop.to, amount: prop.amount }
       }
       
       if (res) {
@@ -248,6 +295,10 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
     } catch (err: any) {
       setTxResults(r => ({ ...r, [msgIdx]: { status: 'failed', reason: err.message } }))
     }
+  }
+
+  function handleCancel(msgIdx: number) {
+    setTxResults(r => ({ ...r, [msgIdx]: { status: 'cancelled' } }))
   }
 
   async function handleSend(overrideText?: string) {
@@ -318,10 +369,16 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
         // Handle actions after state is updated
         setTimeout(async () => {
           if (intent.action === 'pay' && intent.to && intent.amount) {
-            const requestId = generateRequestId()
-            executePay(intent.to, intent.amount, intent.reason || 'Chat payment', requestId, userAddress)
-              .then(payRes => setTxResults(r => ({ ...r, [msgIndex]: payRes })))
-              .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+            setTxResults(r => ({ 
+              ...r, 
+              [msgIndex]: { 
+                status: 'proposing_pay', 
+                to: intent.to, 
+                amount: intent.amount, 
+                token: intent.fromToken || 'STT',
+                reason: intent.reason
+              } 
+            }))
           }
 
           if (intent.action === 'schedule' && intent.to && intent.amount && intent.interval) {
@@ -352,7 +409,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
 
           if (intent.action === 'execute_swap') {
             setTxResults(currentResults => {
-              const lastPropIdx = [...next.keys()].reverse().find(idx => currentResults[idx]?.status === 'proposing_swap' || currentResults[idx]?.status === 'proposing_intent')
+              const lastPropIdx = [...next.keys()].reverse().find(idx => currentResults[idx]?.status.startsWith('proposing_'))
               if (lastPropIdx !== undefined) {
                  handleConfirm(lastPropIdx)
               }
@@ -451,7 +508,11 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
               )}
               {msg.role === 'assistant' && txResults[i] && (
                 <div style={{ marginTop: 10 }}>
-                  <TxBadge result={txResults[i]} onConfirm={() => handleConfirm(i)} />
+                  <TxBadge 
+                    result={txResults[i]} 
+                    onConfirm={() => handleConfirm(i)} 
+                    onCancel={() => handleCancel(i)}
+                  />
                 </div>
               )}
             </div>

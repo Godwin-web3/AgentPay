@@ -2,29 +2,16 @@ import { useEffect, useState } from 'react'
 import { getHistory } from '../api'
 
 function formatTime(ts: number | string) {
-  return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const d = new Date(ts)
+  const month = d.toLocaleString([], { month: 'short' })
+  const day = d.getDate()
+  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return `${month} ${day}, ${time}`
 }
 
-function shortAddr(addr: string) {
-  if (!addr) return ''
-  return addr.slice(0, 6) + '...' + addr.slice(-4)
-}
-
-function labelColor(tx: any) {
-  if (tx.status === 'blocked') return 'var(--red, #ef4444)'
-  if (tx.status === 'pending') return 'var(--yellow, #facc15)'
-  if (tx.type === 'deposit') return 'var(--green, #4ade80)'
-  if (tx.type === 'withdrawal') return 'var(--yellow, #facc15)'
-  if (tx.type === 'swap') return 'var(--purple, #a855f7)'
-  if (tx.type === 'inference') return 'var(--blue, #3b82f6)'
-  return 'var(--cyan, #22d3ee)'
-}
-
-function statusIcon(tx: any) {
-  if (tx.status === 'executed') return '✅'
-  if (tx.status === 'blocked') return '🚫'
-  if (tx.status === 'pending') return '⏳'
-  return '❓'
+function formatDayOnly(ts: number | string) {
+  const d = new Date(ts)
+  return d.toLocaleString([], { month: 'short', day: 'numeric' })
 }
 
 export default function History({ userAddress }: { userAddress: string }) {
@@ -37,7 +24,12 @@ export default function History({ userAddress }: { userAddress: string }) {
     setLoading(true)
     setError('')
     getHistory(userAddress)
-      .then(res => setTxs(res.items))
+      .then(res => {
+        const items = res.items || []
+        // Filter out non-financial items (like pure inferences/chat)
+        const financial = items.filter((tx: any) => tx.type !== 'inference' && tx.type !== 'chat')
+        setTxs(financial)
+      })
       .catch(() => setError('Failed to load history'))
       .finally(() => setLoading(false))
   }, [userAddress])
@@ -45,8 +37,8 @@ export default function History({ userAddress }: { userAddress: string }) {
   if (loading) return (
     <div className="history-view">
       <div className="empty-state">
-        <div className="icon">⚡</div>
-        Loading unified history...
+        <div className="icon" style={{ animation: 'pulse 1.5s infinite' }}>⚡</div>
+        Syncing activity...
       </div>
     </div>
   )
@@ -64,80 +56,80 @@ export default function History({ userAddress }: { userAddress: string }) {
     <div className="history-view">
       <div className="empty-state">
         <div className="icon">📭</div>
-        No recorded activity.
-        <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>Try making a payment or a deposit first.</p>
+        No financial activity.
       </div>
     </div>
   )
 
   return (
-    <div className="history-view">
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4, fontFamily: 'var(--font-mono)' }}>UNIFIED ACTIVITY LOG FOR</div>
-        <div style={{ fontSize: 12, color: 'var(--blue)', fontFamily: 'var(--font-mono)' }}>{userAddress || 'Not Connected'}</div>
-      </div>
-      
-      <div className="section-title" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-        <span>Activity Feed</span>
-        <span style={{ fontSize: 10, opacity: 0.6 }}>{txs.length} records</span>
+    <div className="history-view" style={{ paddingBottom: 80 }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 6, fontFamily: 'var(--font-mono)', letterSpacing: 2 }}>FINANCIAL LOG</div>
+        <div style={{ fontSize: 11, color: 'var(--cyan)', fontFamily: 'var(--font-mono)', opacity: 0.8 }}>{userAddress}</div>
       </div>
 
-      {txs.map((tx, i) => {
-        const explorerUrl = tx.txHash ? 'https://shannon-explorer.somnia.network/tx/' + tx.txHash : null
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {txs.map((tx, i) => {
+          const explorerUrl = tx.txHash ? 'https://shannon-explorer.somnia.network/tx/' + tx.txHash : null
+          
+          let actionLabel = tx.label || 'Activity'
+          if (tx.status === 'blocked') {
+             actionLabel = `Blocked: ${tx.blockedReason || 'Policy violation'}`
+          } else if (tx.type === 'schedule') {
+             actionLabel = `Scheduled: ${tx.label || ('Pay ' + tx.amount + ' STT to ' + (tx.to?.slice(0,6) + '...'))}`
+          } else if (tx.type === 'swap') {
+             // If label already contains "Swap", use it, otherwise add it
+             actionLabel = tx.label?.toLowerCase().startsWith('swap') ? tx.label : `Swap ${tx.label}`
+          } else if (tx.type === 'payment') {
+             const to = tx.to ? ` → ${tx.to.slice(0, 6)}...` : ''
+             actionLabel = `Sent ${tx.amount} ${tx.token || 'STT'}${to}`
+          } else if (tx.type === 'deposit' || tx.type === 'withdrawal') {
+             const verb = tx.type === 'deposit' ? 'Deposited' : 'Withdrew'
+             actionLabel = `${verb} ${tx.amount} ${tx.token || 'STT'}`
+          }
 
-        return (
-          <div className="log-item" key={tx.id || i} style={{ opacity: tx.status === 'blocked' ? 0.7 : 1 }}>
-            <div className="log-status-icon">{statusIcon(tx)}</div>
-            <div className="log-details">
-              <div className="log-reason" style={{ color: labelColor(tx), fontWeight: 'bold' }}>
-                {tx.label || 'Activity'}
-              </div>
-              
-              {tx.reason && (
-                <div style={{ fontSize: 11, color: 'var(--foreground)', marginTop: 2 }}>{tx.reason}</div>
-              )}
+          return (
+            <div key={tx.id || i} style={{ 
+              display: 'flex',
+              alignItems: 'center',
+              padding: '12px 0',
+              borderBottom: '1px solid var(--border)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              color: tx.status === 'blocked' ? '#FF3B5C' : 'var(--text)'
+            }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1, minWidth: 0 }}>
+                {actionLabel}
+              </span>
 
-              {tx.blockedReason && (
-                <div style={{ fontSize: 10, color: 'var(--red)', marginTop: 2, fontStyle: 'italic' }}>
-                  Blocked: {tx.blockedReason}
-                </div>
-              )}
-
-              {tx.condition && (
-                <div style={{ fontSize: 10, color: 'var(--yellow)', marginTop: 2 }}>
-                  Trigger: {tx.condition}
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                {tx.to && (
-                  <div className="log-address" style={{ fontSize: 9 }}>To: {shortAddr(tx.to)}</div>
-                )}
-                
-                {tx.txHash && (
-                  <a href={explorerUrl!} target="_blank" rel="noreferrer" style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--blue)', textDecoration: 'none' }}>
-                    Tx: {tx.txHash.slice(0, 10)}... ↗
+              {tx.txHash && (
+                <>
+                  <span style={{ margin: '0 8px', color: 'var(--muted)' }}>·</span>
+                  <a href={explorerUrl!} target="_blank" rel="noreferrer" style={{ color: 'var(--blue)', textDecoration: 'none', flexShrink: 0 }}>
+                    Tx: {tx.txHash.slice(0, 6)}... ↗
                   </a>
-                )}
+                </>
+              )}
 
-                {tx.requestId && (
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--purple)' }}>
-                    Proof: {tx.requestId.slice(0, 10)}...
-                    {tx.verifiable && <span title="Verifiable Proof Available" style={{ marginLeft: 2 }}>🛡️</span>}
-                  </div>
-                )}
-              </div>
+              {tx.amount && tx.type !== 'payment' && tx.type !== 'deposit' && tx.type !== 'withdrawal' && (
+                <>
+                  <span style={{ margin: '0 8px', color: 'var(--muted)' }}>·</span>
+                  <span style={{ fontWeight: 'bold', flexShrink: 0 }}>
+                    {tx.amount} {tx.token || 'STT'}
+                  </span>
+                </>
+              )}
+
+              <span style={{ margin: '0 8px', color: 'var(--muted)' }}>·</span>
+              <span style={{ color: 'var(--muted)', flexShrink: 0 }}>
+                {tx.type === 'schedule' ? formatDayOnly(tx.timestamp) : formatTime(tx.timestamp)}
+              </span>
             </div>
-            
-            <div style={{ textAlign: 'right' }}>
-              <div className="log-amount" style={{ color: tx.type === 'deposit' ? 'var(--green)' : tx.type === 'withdrawal' ? 'var(--yellow)' : 'inherit' }}>
-                {tx.amount ? `${tx.amount} ${tx.token || 'STT'}` : '--'}
-              </div>
-              <div className="log-time" style={{ fontSize: 10, opacity: 0.8, marginTop: 4 }}>{formatTime(tx.timestamp)}</div>
-            </div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
-  }
+}
