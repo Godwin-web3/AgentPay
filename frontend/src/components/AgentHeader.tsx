@@ -10,9 +10,10 @@ interface Props {
   currentView: string
   onNavigate: (view: string) => void
   onClearMemory?: () => void
+  refreshTrigger?: any
 }
 
-export default function AgentHeader({ onAddressChange, onBalanceChange, onProviderChange, currentView, onNavigate, onClearMemory }: Props) {
+export default function AgentHeader({ onAddressChange, onBalanceChange, onProviderChange, currentView, onNavigate, onClearMemory, refreshTrigger }: Props) {
   const [health, setHealth] = useState<HealthData | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
@@ -80,7 +81,7 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
         <div className="drawer-divider" />
         <div className="drawer-section-label">WALLET</div>
         <div className="drawer-wallet">
-          <WalletConnect onAddressChange={onAddressChange} onBalanceChange={onBalanceChange} onProviderChange={onProviderChange} />
+          <WalletConnect onAddressChange={onAddressChange} onBalanceChange={onBalanceChange} onProviderChange={onProviderChange} refreshTrigger={refreshTrigger} />
         </div>
 
         <div className="drawer-divider" />

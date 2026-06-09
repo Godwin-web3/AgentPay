@@ -181,13 +181,19 @@ async function getUnifiedHistory(userAddress, limit = 50) {
   
   const history = [];
 
+  const getTokenSymbol = (symOrAddr) => {
+    if (!symOrAddr) return 'STT';
+    if (typeof symOrAddr === 'string' && symOrAddr.length < 10) return symOrAddr.toUpperCase();
+    return Object.keys(TOKENS).find(key => TOKENS[key].toLowerCase() === (symOrAddr || ethers.ZeroAddress).toLowerCase()) || 'STT';
+  };
+
   if (vaultAddr) {
     const vault = new ethers.Contract(vaultAddr, vaultArtifact.abi, wallet);
     
     // 1. Fetch On-Chain Events
     try {
       const latestBlock = await provider.getBlockNumber();
-      const fromBlock = Math.max(0, latestBlock - 500);
+      const fromBlock = Math.max(0, latestBlock - 50000); // Increased range to 50k blocks
       const onChainTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('On-chain history timeout')), 8000));
       const [execLogs, depLogs, withLogs] = await Promise.race([
         Promise.all([
@@ -223,7 +229,7 @@ async function getUnifiedHistory(userAddress, limit = 50) {
           status: 'executed',
           label: log.args.reason || 'Payment',
           amount: ethers.formatEther(log.args.amount),
-          token: Object.keys(TOKENS).find(key => TOKENS[key].toLowerCase() === (log.args.token || ethers.ZeroAddress).toLowerCase()) || 'STT',
+          token: getTokenSymbol(log.args.token),
           to: log.args.to,
           txHash: log.transactionHash,
           requestId: requestId === ethers.ZeroHash ? null : requestId,
@@ -239,6 +245,7 @@ async function getUnifiedHistory(userAddress, limit = 50) {
           status: 'executed',
           label: 'Vault Deposit',
           amount: ethers.formatEther(log.args.amount),
+          token: getTokenSymbol(log.args.token),
           timestamp: await getBlockTime(log.blockNumber),
           txHash: log.transactionHash
         });
@@ -251,6 +258,7 @@ async function getUnifiedHistory(userAddress, limit = 50) {
           status: 'executed',
           label: 'Vault Withdrawal',
           amount: ethers.formatEther(log.args.amount),
+          token: getTokenSymbol(log.args.token),
           timestamp: await getBlockTime(log.blockNumber),
           txHash: log.transactionHash
         });
@@ -274,15 +282,19 @@ async function getUnifiedHistory(userAddress, limit = 50) {
         reason: log.reason,
         blockedReason: log.blockedReason,
         amount: log.amount?.toString(),
+        token: log.token || 'STT',
         timestamp: log.timestamp
       });
     } else if (log.type === 'swap') {
+      const fromSym = getTokenSymbol(log.fromToken);
+      const toSym = getTokenSymbol(log.toToken);
       history.push({
         id: log.txHash,
         type: 'swap',
         status: 'executed',
-        label: `Swap ${log.fromToken} → ${log.toToken}`,
+        label: `Swap ${fromSym} → ${toSym}`,
         amount: log.amount?.toString(),
+        token: fromSym,
         txHash: log.txHash,
         timestamp: log.timestamp
       });

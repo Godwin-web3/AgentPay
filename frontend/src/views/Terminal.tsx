@@ -7,6 +7,7 @@ interface Props {
   messages: ChatMessage[]
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
   userAddress: string
+  onActionSuccess?: () => void
 }
 
 function formatTime(ts: number) {
@@ -167,7 +168,7 @@ function PolicyCard({ data }: { data: any }) {
   )
 }
 
-export default function Terminal({ messages, setMessages, userAddress }: Props) {
+export default function Terminal({ messages, setMessages, userAddress, onActionSuccess }: Props) {
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [txResults, setTxResults] = React.useState<Record<number, any>>({})
@@ -231,11 +232,18 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
           method: 'eth_sendTransaction',
           params: [{ from: userAddress, to: vaultAddr, data }]
         })
+
+        const provider = new ethers.JsonRpcProvider(RPC)
+        await provider.waitForTransaction(txHash)
+
         res = { status: 'executed', txHash, explorer: 'https://shannon-explorer.somnia.network/tx/' + txHash }
       }
       
       if (res) {
         setTxResults(r => ({ ...r, [msgIdx]: res }))
+        if ((res.status === 'executed' || res.status === 'success') && onActionSuccess) {
+          onActionSuccess()
+        }
       }
     } catch (err: any) {
       setTxResults(r => ({ ...r, [msgIdx]: { status: 'failed', reason: err.message } }))
@@ -384,7 +392,10 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
               return await fetch(`${serverUrl}/policy`, { method: "POST", headers: { "Content-Type": "application/json", "x-user-address": userAddress }, body: JSON.stringify(update) }).then(r => r.json())
             }
             applyPolicyUpdate()
-              .then(() => setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } })))
+              .then(() => {
+                setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } }))
+                if (onActionSuccess) onActionSuccess()
+              })
               .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
           }
         }, 0)

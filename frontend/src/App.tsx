@@ -45,11 +45,16 @@ const navItems = [
 ] as const
 
 export default function App() {
-  const [view, setView] = useState<View>('landing')
-  const [userAddress, setUserAddress] = useState('')
+  const [view, setView] = useState<View>(() => (localStorage.getItem('agentpay_view') as View) || 'landing')
+  const [userAddress, setUserAddress] = useState(() => localStorage.getItem('agentpay_address') || '')
   const [isOnboarded, setIsOnboarded] = useState(false)
 
   useEffect(() => {
+    localStorage.setItem('agentpay_view', view)
+  }, [view])
+
+  useEffect(() => {
+    localStorage.setItem('agentpay_address', userAddress)
     if (userAddress) {
       const onboarded = localStorage.getItem(`agentpay_onboarded_${userAddress}`) === 'true'
       setIsOnboarded(onboarded)
@@ -62,15 +67,38 @@ export default function App() {
   const [activeProvider, setActiveProvider] = useState<any>(null)
   const [walletBalance, setWalletBalance] = useState('0')
   const [tokenBalances, setTokenBalances] = useState<Record<string,string>>({})
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [{
-    role: 'assistant',
-    content: 'AgentPay online. I can send payments, manage schedules, and enforce your policy. What do you need?',
-    timestamp: Date.now()
-  }])
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const saved = localStorage.getItem(`agentpay_chat_${userAddress}`)
+    if (saved) return JSON.parse(saved)
+    return [{
+      role: 'assistant',
+      content: 'AgentPay online. I can send payments, manage schedules, and enforce your policy. What do you need?',
+      timestamp: Date.now()
+    }]
+  })
 
   useEffect(() => {
     if (userAddress) {
-      getTokenBalances(userAddress).then(setTokenBalances).catch(console.error)
+      localStorage.setItem(`agentpay_chat_${userAddress}`, JSON.stringify(messages))
+    }
+  }, [messages, userAddress])
+
+  const refreshBalances = async () => {
+    setRefreshKey(prev => prev + 1)
+    if (!userAddress) return
+    try {
+      const balances = await getTokenBalances(userAddress)
+      setTokenBalances(balances)
+    } catch (e) {
+      console.error('Failed to refresh balances', e)
+    }
+  }
+
+  useEffect(() => {
+    if (userAddress) {
+      refreshBalances()
     }
   }, [userAddress])
 
@@ -123,13 +151,21 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="main">
-        <AgentHeader onAddressChange={setUserAddress} onBalanceChange={(v, w) => { setVaultBalance(v); setWalletBalance(w) }} onProviderChange={setActiveProvider} currentView={view} onNavigate={(v) => setView(v as View)} onClearMemory={handleClearMemory} />
+        <AgentHeader 
+          onAddressChange={setUserAddress} 
+          onBalanceChange={(v, w) => { setVaultBalance(v); setWalletBalance(w) }} 
+          onProviderChange={setActiveProvider} 
+          currentView={view} 
+          onNavigate={(v) => setView(v as View)} 
+          onClearMemory={handleClearMemory} 
+          refreshTrigger={refreshKey}
+        />
         
         <div className="view-content">
-          {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} />}
+          {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} onActionSuccess={refreshBalances} />}
           {view === 'schedules' && <Schedules userAddress={userAddress} />}
           {view === 'history' && <History userAddress={userAddress} />}
-          {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} />}
+          {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} />}
           {view === 'policy'   && <Policy userAddress={userAddress} />}
         </div>
       </main>

@@ -133,11 +133,11 @@ export default function History({ userAddress }: { userAddress: string }) {
               <div className="log-amount" style={{ color: tx.type === 'deposit' ? 'var(--green)' : tx.type === 'withdrawal' ? 'var(--yellow)' : 'inherit' }}>
                 {tx.amount ? `${tx.amount} ${tx.token || 'STT'}` : '--'}
               </div>
-              <div className="log-time" style={{ fontSize: 9, opacity: 0.5 }}>{formatTime(tx.timestamp)}</div>
+              <div className="log-time" style={{ fontSize: 10, opacity: 0.8, marginTop: 4 }}>{formatTime(tx.timestamp)}</div>
             </div>
           </div>
         )
       })}
     </div>
   )
-}
+  }

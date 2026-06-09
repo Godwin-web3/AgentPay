@@ -9,6 +9,7 @@ interface Props {
   walletBalance: string
   tokenBalances: Record<string, string>
   activeProvider: any
+  onActionSuccess?: () => void
 }
 
 type SubView = null | 'vault' | 'policy' | 'history' | 'agent'
@@ -19,7 +20,7 @@ const ChevronRight = () => (
   </svg>
 )
 
-export default function Profile({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider }: Props) {
+export default function Profile({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onActionSuccess }: Props) {
   const [subView, setSubView] = useState<SubView>(null)
 
   function shortAddr(addr: string) {
@@ -35,7 +36,7 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
   }
 
   if (subView === 'vault') {
-    return <Vault userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onBack={() => setSubView(null)} />
+    return <Vault userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onBack={() => setSubView(null)} onActionSuccess={onActionSuccess} />
   }
 
   if (subView === 'policy') {

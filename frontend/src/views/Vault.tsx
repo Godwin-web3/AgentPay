@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { getVaultAddress } from '../api'
 import { ethers } from 'ethers'
 
+import { RPC } from '../api'
+
 interface Props {
   userAddress: string
   vaultBalance: string
@@ -9,6 +11,7 @@ interface Props {
   tokenBalances: Record<string, string>
   activeProvider: any
   onBack: () => void
+  onActionSuccess?: () => void
 }
 
 const VAULT_ABI = [
@@ -24,7 +27,7 @@ const TOKENS: Record<string, string> = {
   SUSD: '0x65296738D4E5edB1515e40287B6FDf8320E6eE04',
 }
 
-export default function Vault({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onBack }: Props) {
+export default function Vault({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onBack, onActionSuccess }: Props) {
   const [mode, setMode] = useState<null | 'deposit' | 'withdraw'>(null)
   const [amount, setAmount] = useState('')
   const [selectedToken, setSelectedToken] = useState('STT')
@@ -53,9 +56,15 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
           value 
         }] 
       })
-      setTxStatus('[OK] Deposit submitted: ' + txHash.slice(0, 10) + '...')
+      setTxStatus('Waiting for confirmation...')
+      
+      const provider = new ethers.JsonRpcProvider(RPC)
+      await provider.waitForTransaction(txHash)
+
+      setTxStatus('[OK] Deposit confirmed!')
       setMode(null)
       setAmount('')
+      if (onActionSuccess) onActionSuccess()
     } catch (err: any) {
       setTxStatus('[ERROR] ' + (err?.message || 'Transaction failed'))
     } finally { setLoading(false) }
@@ -81,9 +90,15 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
           data 
         }] 
       })
-      setTxStatus('[OK] Withdrawal submitted: ' + txHash.slice(0, 10) + '...')
+      setTxStatus('Waiting for confirmation...')
+
+      const provider = new ethers.JsonRpcProvider(RPC)
+      await provider.waitForTransaction(txHash)
+
+      setTxStatus('[OK] Withdrawal confirmed!')
       setMode(null)
       setAmount('')
+      if (onActionSuccess) onActionSuccess()
     } catch (err: any) {
       setTxStatus('[ERROR] ' + (err?.message || 'Transaction failed'))
     } finally { setLoading(false) }

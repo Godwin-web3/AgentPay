@@ -19,7 +19,7 @@ interface EIP6963ProviderDetail {
   provider: any
 }
 
-export default function WalletConnect({ onAddressChange, onProviderChange, onBalanceChange }: { onAddressChange: (addr: string) => void, onProviderChange?: (provider: any) => void, onBalanceChange?: (vault: string, wallet: string) => void }) {
+export default function WalletConnect({ onAddressChange, onProviderChange, onBalanceChange, refreshTrigger }: { onAddressChange: (addr: string) => void, onProviderChange?: (provider: any) => void, onBalanceChange?: (vault: string, wallet: string) => void, refreshTrigger?: any }) {
   const [address, setAddress] = useState('')
   const [vaultAddress, setVaultAddress] = useState('')
   const [balance, setBalance] = useState('0')
@@ -35,22 +35,48 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
     const onAnnouncement = (event: any) => {
       setProviders(prev => {
         if (prev.find(p => p.info.uuid === event.detail.info.uuid)) return prev
-        return [...prev, event.detail]
+        const next = [...prev, event.detail]
+        // Auto-connect if we have a saved address and this provider matches a known RDNS or it's the first one
+        const savedAddr = localStorage.getItem('agentpay_address')
+        if (savedAddr && !address && event.detail.provider) {
+           checkAndConnect(event.detail)
+        }
+        return next
       })
     }
     window.addEventListener('eip6963:announceProvider', onAnnouncement)
     window.dispatchEvent(new Event('eip6963:requestProvider'))
 
-    if (window.ethereum && providers.length === 0) {
+    // Fallback for non-EIP6963
+    if (window.ethereum) {
       const fallback: EIP6963ProviderDetail = {
         info: { uuid: 'default', name: 'Browser Wallet', icon: '', rdns: 'default' },
         provider: window.ethereum
       }
-      setProviders([fallback])
+      setProviders(prev => prev.length === 0 ? [fallback] : prev)
+      const savedAddr = localStorage.getItem('agentpay_address')
+      if (savedAddr && !address) {
+        checkAndConnect(fallback)
+      }
     }
 
     return () => window.removeEventListener('eip6963:announceProvider', onAnnouncement)
-  }, [])
+  }, [address])
+
+  async function checkAndConnect(detail: EIP6963ProviderDetail) {
+    try {
+      const accounts = await detail.provider.request({ method: 'eth_accounts' })
+      if (accounts.length > 0) {
+        connect(detail)
+      }
+    } catch (e) {}
+  }
+
+  useEffect(() => {
+    if (address && activeProvider) {
+      fetchOnChainData(address, activeProvider)
+    }
+  }, [refreshTrigger])
 
   async function connect(providerDetail: EIP6963ProviderDetail) {
     const provider = providerDetail.provider
