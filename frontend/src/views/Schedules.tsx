@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getSchedules, getVaultAddress } from '../api'
+import { getSchedules, getVaultAddress, getOnChainSchedules } from '../api'
 import { ethers } from 'ethers'
 
 const VAULT_ABI = [
@@ -24,46 +24,74 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
   async function fetchSchedules() {
     if (!userAddress) return
     setLoading(true)
+    setError('')
     try {
-      const res = await getSchedules(userAddress)
-      setSchedules(res.schedules)
+      // Try fetching both local and on-chain
+      let all: any[] = []
+      try {
+        const res = await getSchedules(userAddress)
+        if (res.schedules) all = [...res.schedules]
+      } catch (e) {}
+
+      try {
+        const onChain = await getOnChainSchedules(userAddress)
+        // Merge or just append
+        onChain.forEach(oc => {
+          if (!all.find(a => a.id === oc.id && a.onChain)) {
+             all.push({ ...oc, onChain: true })
+          }
+        })
+      } catch (e) {
+        console.warn("Failed to fetch on-chain schedules", e)
+      }
+      
+      setSchedules(all)
     } catch (err) {
-      setError('Failed to load schedules from blockchain')
+      setError('Failed to load schedules')
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleCancel(id: number) {
-    if (!confirm('Are you sure you want to cancel this on-chain automated payment?')) return
+  async function handleCancel(id: number, onChain: boolean) {
+    if (!confirm('Are you sure you want to cancel this automated payment?')) return
     try {
-      if (!window.ethereum) throw new Error("No wallet connected")
-      const { address: vaultAddr } = await getVaultAddress(userAddress)
-      const provider = new ethers.BrowserProvider(window.ethereum)
-      const signer = await provider.getSigner()
-      const vault = new ethers.Contract(vaultAddr, VAULT_ABI, signer)
+      if (onChain) {
+        if (!window.ethereum) throw new Error("No wallet connected")
+        const { address: vaultAddr } = await getVaultAddress(userAddress)
+        const provider = new ethers.BrowserProvider(window.ethereum)
+        const signer = await provider.getSigner()
+        const vault = new ethers.Contract(vaultAddr, VAULT_ABI, signer)
+        
+        const tx = await vault.cancelSchedule(id)
+        await tx.wait()
+        alert('On-chain schedule cancelled!')
+      } else {
+        // Local cancel via worker
+        await fetch(`${import.meta.env.VITE_WORKER_URL || 'https://agentpay-worker.mbagodwin419.workers.dev'}/schedules/${id}`, {
+          method: 'DELETE',
+          headers: { 'x-user-address': userAddress }
+        })
+        alert('Local schedule cancelled!')
+      }
       
-      const tx = await vault.cancelSchedule(id)
-      await tx.wait()
-      
-      setSchedules(schedules.map(s => s.id === id ? { ...s, active: false } : s))
-      setTimeout(() => fetchSchedules(), 2000) // Re-fetch from blockchain to confirm
-      alert('Schedule cancelled on-chain!')
+      setSchedules(schedules.map(s => (s.id === id && s.onChain === onChain) ? { ...s, active: false } : s))
+      setTimeout(() => fetchSchedules(), 2000)
     } catch (err: any) {
       alert('Failed to cancel schedule: ' + err.message)
     }
   }
 
-  if (loading) return (
+  if (loading && schedules.length === 0) return (
     <div className="view-container">
-      <div className="empty-state">Loading schedules from blockchain...</div>
+      <div className="empty-state">Loading schedules...</div>
     </div>
   )
 
   return (
     <div className="view-container" style={{ padding: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2 style={{ margin: 0 }}>Automated Schedules (On-Chain)</h2>
+        <h2 style={{ margin: 0 }}>Automated Schedules</h2>
         <button className="send-btn" onClick={fetchSchedules} style={{ width: 'auto', padding: '0 15px' }}>Refresh</button>
       </div>
 
@@ -72,7 +100,7 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
       {schedules.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}>⏰</div>
-          <div style={{ color: 'var(--muted)', marginBottom: 20 }}>No on-chain automated payments found.</div>
+          <div style={{ color: 'var(--muted)', marginBottom: 20 }}>No automated payments found.</div>
           <p style={{ fontSize: 13, maxWidth: 300, margin: '0 auto' }}>
             You can create schedules by asking the Agent in the Terminal. Try saying:
             <br/><br/>
@@ -83,11 +111,21 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {schedules.map(job => (
-            <div key={job.id} className={`card ${!job.active ? 'cancelled' : ''}`} style={{ position: 'relative', opacity: job.active ? 1 : 0.6 }}>
+          {schedules.map((job, idx) => (
+            <div key={`${job.id}-${job.onChain ? 'oc' : 'lc'}`} className={`card ${!job.active ? 'cancelled' : ''}`} style={{ position: 'relative', opacity: job.active ? 1 : 0.6 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div style={{ fontWeight: 600, color: job.active ? 'var(--cyan)' : 'var(--muted)' }}>{job.amount} STT</div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ 
+                    fontSize: 10, 
+                    padding: '2px 6px', 
+                    borderRadius: 4, 
+                    background: job.onChain ? 'rgba(0,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+                    color: job.onChain ? 'var(--cyan)' : 'var(--muted)',
+                    border: '1px solid currentColor'
+                  }}>
+                    {job.onChain ? 'ON-CHAIN' : 'LOCAL AGENT'}
+                  </div>
                   <div style={{ 
                     fontSize: 10, 
                     padding: '2px 6px', 
@@ -98,7 +136,6 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
                   }}>
                     {job.active ? 'ACTIVE' : 'INACTIVE'}
                   </div>
-                  <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>IDX:{job.id}</div>
                 </div>
               </div>
               
@@ -110,10 +147,10 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                 <div>
                   <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Interval</div>
-                  <div style={{ fontSize: 13 }}>Every {formatInterval(job.interval)}</div>
+                  <div style={{ fontSize: 13 }}>Every {job.onChain ? formatInterval(job.interval) : (job.intervalLabel || formatInterval(job.interval / 1000))}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Next Run (Min)</div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Next Run</div>
                   <div style={{ fontSize: 13 }}>{new Date(job.nextRun).toLocaleString()}</div>
                 </div>
               </div>
@@ -133,7 +170,7 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
               {job.active && (
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button 
-                    onClick={() => handleCancel(job.id)}
+                    onClick={() => handleCancel(job.id, job.onChain)}
                     style={{ 
                       flex: 1, 
                       background: 'rgba(255,100,100,0.1)', 

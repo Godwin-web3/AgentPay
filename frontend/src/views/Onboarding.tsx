@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import WalletConnect from '../components/WalletConnect'
-import { getVaultAddress, updatePolicy, checkVault } from '../api'
+import { getVaultAddress, updatePolicy, checkVault, TOKENS } from '../api'
+import { ethers } from 'ethers'
 
 interface Props {
   userAddress: string
@@ -56,14 +57,17 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
     if (!activeProvider || !vaultAddress) return
     setLoading(true)
     try {
-      const value = '0x' + (BigInt(Math.floor(Number(depositAmount) * 1e18))).toString(16)
+      const amountWei = ethers.parseEther(depositAmount)
+      const iface = new ethers.Interface(["function deposit(address token, uint256 amount) external payable"])
+      const data = iface.encodeFunctionData("deposit", [TOKENS.STT, amountWei])
+
       const hash = await activeProvider.request({
         method: 'eth_sendTransaction',
         params: [{
           from: userAddress,
           to: vaultAddress,
-          data: '0xd0e30db0', // deposit()
-          value
+          data,
+          value: '0x' + amountWei.toString(16)
         }]
       })
       setTxHash(hash)

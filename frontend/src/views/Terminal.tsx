@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, executeSwap, executeIntent, generateRequestId, getPolicy, getChatHistory, getVaultAddress, WORKER_URL, RPC } from '../api'
+import { sendChat, executePay, executeSwap, executeIntent, generateRequestId, getPolicy, getChatHistory, getVaultAddress, WORKER_URL, RPC, TOKENS } from '../api'
 import type { ChatMessage } from '../types'
 import { ethers } from 'ethers'
 
@@ -15,19 +15,25 @@ function formatTime(ts: number) {
 
 function ProofBadge({ requestId }: { requestId: string }) {
   return (
-    <div style={{
-      marginTop: 8,
-      padding: '6px 10px',
-      background: 'rgba(0, 255, 255, 0.05)',
-      border: '1px dashed var(--cyan)',
-      borderRadius: 4,
-      fontSize: 10,
-      fontFamily: 'var(--font-mono)',
-      color: 'var(--cyan)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8
-    }}>
+    <a 
+      href={`https://shannon-explorer.somnia.network/address/0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776`} 
+      target="_blank" 
+      rel="noreferrer"
+      style={{
+        marginTop: 8,
+        padding: '6px 10px',
+        background: 'rgba(0, 255, 255, 0.05)',
+        border: '1px dashed var(--cyan)',
+        borderRadius: 4,
+        fontSize: 10,
+        fontFamily: 'var(--font-mono)',
+        color: 'var(--cyan)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        textDecoration: 'none'
+      }}
+    >
       <span style={{ fontSize: 14 }}>🛡️</span>
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 'bold', marginBottom: 2 }}>DECENTRALIZED PROOF</div>
@@ -43,7 +49,7 @@ function ProofBadge({ requestId }: { requestId: string }) {
       }}>
         VERIFIED
       </div>
-    </div>
+    </a>
   )
 }
 
@@ -51,16 +57,25 @@ function TxBadge({ result, onConfirm }: { result?: any, onConfirm?: () => void }
   const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
   
-  if (result.status === 'proposing_swap' || result.status === 'proposing_intent') {
+  if (result.status === 'proposing_swap' || result.status === 'proposing_intent' || result.status === 'proposing_schedule') {
+    let title = 'TX PROPOSAL'
+    let detail = ''
+    if (result.status === 'proposing_swap') {
+      title = '🔄 SWAP PROPOSAL'
+      detail = `${result.amount} ${result.fromToken} → ${result.toToken}`
+    } else if (result.status === 'proposing_intent') {
+      title = '⚡ ATOMIC INTENT'
+      detail = `${result.intentName?.replace(/_/g, ' ').toUpperCase()}${result.amount ? `: ${result.amount} STT` : ''}`
+    } else if (result.status === 'proposing_schedule') {
+      title = '⏰ ON-CHAIN SCHEDULE'
+      detail = `${result.amount} STT every ${result.interval}`
+    }
+
     return (
       <div className="tx-badge success" style={{ background: 'var(--cyan)', color: 'black', display: 'flex', flexDirection: 'column', gap: 8, padding: '12px', border: '1px solid black' }}>
-        <div style={{ fontWeight: 600, fontSize: 12 }}>
-          {result.status === 'proposing_swap' ? '🔄 SWAP PROPOSAL' : '⚡ ATOMIC INTENT'}
-        </div>
+        <div style={{ fontWeight: 600, fontSize: 12 }}>{title}</div>
         <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', background: 'rgba(0,0,0,0.1)', padding: '4px 8px', borderRadius: 4 }}>
-          {result.status === 'proposing_swap' 
-            ? `${result.amount} ${result.fromToken} → ${result.toToken}` 
-            : `${result.intentName?.replace(/_/g, ' ').toUpperCase()}${result.amount ? `: ${result.amount} STT` : ''}`}
+          {detail}
         </div>
         <button 
           className="send-btn" 
@@ -155,6 +170,7 @@ function PolicyCard({ data }: { data: any }) {
 export default function Terminal({ messages, setMessages, userAddress }: Props) {
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
+  const [isVerifiable, setIsVerifiable] = React.useState(false)
   const [txResults, setTxResults] = React.useState<Record<number, any>>({})
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -181,6 +197,16 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
     }
   }, [messages, loading])
 
+  function parseInterval(str: string) {
+    if (!str) return 86400;
+    const s = str.toLowerCase();
+    if (s.includes('minute')) return (parseInt(s) || 1) * 60;
+    if (s.includes('hour')) return (parseInt(s) || 1) * 3600;
+    if (s.includes('day')) return (parseInt(s) || 1) * 86400;
+    if (s.includes('week')) return (parseInt(s) || 1) * 604800;
+    return 86400;
+  }
+
   async function handleConfirm(msgIdx: number) {
     const prop = txResults[msgIdx]
     if (!prop) return
@@ -191,6 +217,22 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
         res = await executeSwap(prop.fromToken, prop.toToken, prop.amount, true, userAddress)
       } else if (prop.status === 'proposing_intent') {
         res = await executeIntent(prop.intentName, prop.amount, prop.to, prop.reason || 'Atomic Intent', userAddress)
+      } else if (prop.status === 'proposing_schedule') {
+        const { address: vaultAddr } = await getVaultAddress(userAddress)
+        const iface = new ethers.Interface(["function createSchedule(address token, address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external"])
+        const amountWei = ethers.parseEther(prop.amount.toString())
+        const intervalSec = parseInterval(prop.interval)
+        const minBalWei = ethers.parseEther((prop.conditions?.minBalance || 0).toString())
+        
+        const data = iface.encodeFunctionData("createSchedule", [
+          TOKENS.STT, prop.to, amountWei, intervalSec, prop.reason || '', minBalWei
+        ])
+        
+        const txHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{ from: userAddress, to: vaultAddr, data }]
+        })
+        res = { status: 'executed', txHash, explorer: 'https://shannon-explorer.somnia.network/tx/' + txHash }
       }
       
       if (res) {
@@ -232,7 +274,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
         })
           .then(r => r.json())
           .then(data => {
-            const bal = (Number(BigInt(data.result === '0x' ? '0x0' : data.result)) / 1e18).toFixed(4)
+            const bal = (Number(BigInt(data.result === '0x' || !data.result ? '0x0' : data.result)) / 1e18).toFixed(4)
             setMessages(prev => [...prev, {
               role: 'assistant',
               content: `Vault balance: ${bal} STT\nWorker: online\nPolicy: active`,
@@ -250,7 +292,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
     setLoading(true)
 
     try {
-      const res = await sendChat(text, userAddress)
+      const res = await sendChat(text, userAddress, isVerifiable)
       const intent = res.intent
 
       const assistantMsg: ChatMessage = {
@@ -275,25 +317,17 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
           }
 
           if (intent.action === 'schedule' && intent.to && intent.amount && intent.interval) {
-            fetch(`${WORKER_URL}/schedules`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "x-user-address": userAddress },
-              body: JSON.stringify({ to: intent.to, amount: intent.amount, interval: intent.interval, reason: intent.reason, conditions: intent.conditions })
-            })
-              .then(r => r.json())
-              .then(async res => {
-                if (res.action === 'contract_call') {
-                  const iface = new ethers.Interface(["function createSchedule(address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external"])
-                  const data = iface.encodeFunctionData("createSchedule", res.args)
-                  const { address: vaultAddr } = await getVaultAddress(userAddress)
-                  const txHash = await window.ethereum.request({
-                    method: 'eth_sendTransaction',
-                    params: [{ from: userAddress, to: vaultAddr, data }]
-                  })
-                  setTxResults(r => ({ ...r, [msgIndex]: { status: 'executed', txHash, explorer: 'https://shannon-explorer.somnia.network/tx/' + txHash } }))
-                }
-              })
-              .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+             setTxResults(r => ({ 
+               ...r, 
+               [msgIndex]: { 
+                 status: 'proposing_schedule', 
+                 to: intent.to, 
+                 amount: intent.amount, 
+                 interval: intent.interval,
+                 reason: intent.reason,
+                 conditions: intent.conditions
+               } 
+             }))
           }
 
           if (intent.action === 'propose_swap' && intent.fromToken && intent.toToken && intent.amount) {
@@ -309,7 +343,6 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
           }
 
           if (intent.action === 'execute_swap') {
-            // Use functional update to avoid stale txResults
             setTxResults(currentResults => {
               const lastPropIdx = [...next.keys()].reverse().find(idx => currentResults[idx]?.status === 'proposing_swap' || currentResults[idx]?.status === 'proposing_intent')
               if (lastPropIdx !== undefined) {
@@ -420,6 +453,22 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
       </div>
 
       <div className="quick-actions">
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginRight: 'auto', background: 'rgba(0,255,255,0.05)', padding: '4px 10px', borderRadius: 20, border: '1px solid rgba(0,255,255,0.1)' }}>
+          <div 
+            onClick={() => setIsVerifiable(!isVerifiable)} 
+            style={{ 
+              width: 32, height: 16, background: isVerifiable ? 'var(--cyan)' : '#333', 
+              borderRadius: 10, position: 'relative', cursor: 'pointer', transition: '0.2s' 
+            }}
+          >
+            <div style={{ 
+              width: 12, height: 12, background: isVerifiable ? 'black' : '#666', 
+              borderRadius: '50%', position: 'absolute', top: 2, left: isVerifiable ? 18 : 2, transition: '0.2s' 
+            }} />
+          </div>
+          <span style={{ fontSize: 9, color: isVerifiable ? 'var(--cyan)' : 'var(--muted)', fontWeight: 'bold', letterSpacing: 1 }}>VERIFIABLE MODE</span>
+        </div>
+
         {['SEND', 'SWAP', 'BALANCE', 'POLICY'].map(btn => (
           <button
             key={btn}
