@@ -7,7 +7,7 @@ async function main() {
   await startServer(wallet);
   await registerAgent();
   await setupEscrowPolicy();
-  await startLoop(address);
+  if (process.stdin.isTTY) await startLoop(address);
 }
 
 main().catch(console.error);
