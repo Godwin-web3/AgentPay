@@ -134,6 +134,10 @@ export async function cancelSchedule(jobId: string, userAddress: string): Promis
   return request<{ success: boolean }>('/schedules/' + jobId, { method: 'DELETE' }, userAddress)
 }
 
+export async function checkVault(userAddress: string): Promise<{ exists: boolean; address: string | null }> {
+  return request<{ exists: boolean; address: string | null }>('/vault-check', {}, userAddress)
+}
+
 export async function getVaultAddress(userAddress: string): Promise<{ address: string }> {
   return request<{ address: string }>('/vault-address', {}, userAddress)
 }

@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 const artifact = JSON.parse(fs.readFileSync(path.join(__dirname, 'artifacts/AgentVault.json')));
-const VAULT = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D';
+const VAULT = '0x27c9DE593d325EF3C8C7B859b02ec83EEac22602';
 
 (async () => {
   const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);

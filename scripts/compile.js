@@ -21,6 +21,7 @@ async function compile() {
         enabled: true,
         runs: 200,
       },
+      evmVersion: 'shanghai',
       viaIR: true,
       outputSelection: {
         '*': {

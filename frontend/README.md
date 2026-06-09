@@ -14,7 +14,7 @@ Create a `.env` file in this directory:
 ```env
 VITE_WORKER_URL=https://your-worker.workers.dev
 VITE_RPC_URL=https://dream-rpc.somnia.network
-VITE_VAULT_ADDRESS=0x4471917E96271F688282ae283d62De0B5Be8084C
+VITE_VAULT_ADDRESS=0x27c9DE593d325EF3C8C7B859b02ec83EEac22602
 ```
 
 ### 3. Installation & Launch

@@ -1,8 +1,9 @@
 const http = require('http');
-const { pay, prepareSwap, confirmSwap, getSummary, chat, chatOnChain, getUnifiedHistory } = require('./agent');
+const { pay, prepareSwap, confirmSwap, getSummary, chatOnChain, getUnifiedHistory, executeIntent, getVaultBalance } = require('./agent');
 const { readPolicy, applyUpdate } = require('./policyManager');
 const { getTodaySpend, getHistory } = require('../utils/store');
 const { getAllJobs, addJob, cancelJob, parseInterval, intervalLabel } = require('./scheduler');
+const { getVaultContract, findVault } = require('./escrow');
 
 const PORT = process.env.PORT || 3000;
 
@@ -121,15 +122,12 @@ async function handleChat(req, res) {
 
   try {
     const history = chatHistories.get(userAddress) || [];
-    let intent;
-    
-    if (verifiable) {
-      console.log(`🛡️  Processing Verifiable Intent via Somnia AI...`);
-      intent = await chatOnChain(message, vaultBalance);
-    } else {
-      intent = await chat(message, vaultBalance, history);
+    console.log('🛡️  Somnia Verifiable AI...');
+    let resolvedVaultBalance = vaultBalance;
+    if (resolvedVaultBalance === undefined) {
+      try { resolvedVaultBalance = await getVaultBalance(); } catch(e) { console.error("getVaultBalance error:", e.message); }
     }
-    
+    const intent = await chatOnChain(message, resolvedVaultBalance);
     history.push({ role: 'user', content: message });
     history.push({ role: 'assistant', content: intent.message, intent });
     
@@ -140,7 +138,7 @@ async function handleChat(req, res) {
       message: intent.message,
       action:  intent.action,
       intent,
-      verifiable: !!verifiable
+      verifiable: !!intent.requestId
     });
   } catch (err) {
     return send(res, 500, { error: 'Brain error: ' + err.message });
@@ -274,6 +272,17 @@ function handleStatus(req, res, requestId) {
 }
 
 // GET /vault-address
+async function handleVaultCheck(req, res) {
+  const userAddress = req.headers['x-user-address'];
+  if (!userAddress) return send(res, 400, { error: 'Missing user address' });
+  try {
+    const address = await findVault(userAddress);
+    return send(res, 200, { exists: !!address, address });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
 async function handleGetVaultAddress(req, res) {
   const userAddress = req.headers['x-user-address'];
   if (!userAddress) return send(res, 400, { error: 'Missing user address' });
@@ -281,6 +290,23 @@ async function handleGetVaultAddress(req, res) {
     const contract = await getVaultContract(null, userAddress);
     const address = await contract.getAddress();
     return send(res, 200, { address });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+async function handleIntent(req, res) {
+  const userAddress = req.headers['x-user-address'];
+  const body = await parseBody(req);
+  const { intentName, amount, to, reason } = body;
+
+  if (!intentName || !amount) {
+    return send(res, 400, { error: 'Missing intentName or amount' });
+  }
+
+  try {
+    const result = await executeIntent(intentName, amount, to, reason, userAddress);
+    return send(res, 200, result);
   } catch (err) {
     return send(res, 500, { error: err.message });
   }
@@ -294,6 +320,7 @@ const server = http.createServer(async (req, res) => {
   if (method === 'OPTIONS') return send(res, 204, {});
 
   if (method === 'GET'  && url === '/health')          return handleHealth(req, res);
+  if (method === 'GET'  && url === '/vault-check')     return await handleVaultCheck(req, res);
   if (method === 'GET'  && url === '/vault-address')   return await handleGetVaultAddress(req, res);
   if (method === 'GET'  && url === '/policy')          return await handleGetPolicy(req, res);
   if (method === 'POST' && url === '/policy')          return await handleUpdatePolicy(req, res);
@@ -304,6 +331,7 @@ const server = http.createServer(async (req, res) => {
   if (method === 'DELETE' && url === '/chat')          return handleDeleteChat(req, res);
   if (method === 'POST' && url === '/pay')             return await handlePay(req, res);
   if (method === 'POST' && url === '/swap')            return await handleSwap(req, res);
+  if (method === 'POST' && url === '/intent')          return await handleIntent(req, res);
   if (method === 'GET'  && url === '/schedules')       return handleGetSchedules(req, res);
   if (method === 'POST' && url === '/schedules')       return await handleCreateSchedule(req, res);
   if (method === 'DELETE' && url.startsWith('/schedules/')) return handleDeleteSchedule(req, res, url.replace('/schedules/', ''));

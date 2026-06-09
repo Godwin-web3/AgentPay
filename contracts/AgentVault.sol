@@ -33,9 +33,40 @@ abstract contract ReentrancyGuard {
     }
 }
 
+enum ConsensusType { Majority, Threshold }
+enum ResponseStatus { None, Pending, Success, Failed, TimedOut }
+struct Response {
+    address validator;
+    bytes result;
+    ResponseStatus status;
+    uint256 receipt;
+    uint256 timestamp;
+    uint256 executionCost;
+}
+
+struct Request {
+    uint256 id;
+    address requester;
+    address callbackAddress;
+    bytes4 callbackSelector;
+    address[] subcommittee;
+    Response[] responses;
+    uint256 responseCount;
+    uint256 failureCount;
+    uint256 threshold;
+    uint256 createdAt;
+    uint256 deadline;
+    ResponseStatus status;
+    ConsensusType consensusType;
+    uint256 remainingBudget;
+    uint256 perAgentBudget;
+}
+
 contract AgentVault is ReentrancyGuard {
     address public owner;
     address public agent;
+    address public somniaAgentPlatform = 0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776;
+    mapping(uint256 => address) public pendingInferences;
     uint256 public constant MAX_EXECUTE_HARD_CAP = 1000000 ether;
 
     address public constant NATIVE = address(0);
@@ -77,6 +108,7 @@ contract AgentVault is ReentrancyGuard {
     event AgentUpdated(address indexed newAgent);
     event ScheduleCreated(address indexed user, uint256 index, address token, address to, uint256 amount);
     event ScheduleCancelled(address indexed user, uint256 index);
+    event InferenceResult(uint256 indexed requestId, address indexed requester, bytes result, bool success);
 
     error NotOwner();
     error NotAgent();
@@ -365,5 +397,37 @@ contract AgentVault is ReentrancyGuard {
         }
         
         return (_spent, _hrTx);
+    }
+
+    // ── Somnia Agent Callback ──────────────────────────────────────────────────
+
+    function setSomniaAgentPlatform(address _platform) external onlyOwner {
+        somniaAgentPlatform = _platform;
+    }
+
+    function registerInference(uint256 requestId, address requester) external onlyAgent {
+        pendingInferences[requestId] = requester;
+    }
+
+    receive() external payable {}
+
+    function callbackSelector() external pure returns (bytes4) {
+        return this.handleResponse.selector;
+    }
+
+    function handleResponse(
+        uint256 requestId,
+        Response[] memory responses,
+        ResponseStatus status,
+        Request memory
+    ) external {
+        require(msg.sender == somniaAgentPlatform, "Only Somnia platform");
+        address requester = pendingInferences[requestId];
+        delete pendingInferences[requestId];
+        if (status == ResponseStatus.Success && responses.length > 0) {
+            emit InferenceResult(requestId, requester, responses[0].result, true);
+        } else {
+            emit InferenceResult(requestId, requester, "", false);
+        }
     }
 }

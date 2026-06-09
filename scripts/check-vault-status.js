@@ -1,7 +1,7 @@
 const { ethers } = require('ethers');
 require('dotenv').config();
 
-const VAULT_ADDRESS = '0x4471917E96271F688282ae283d62De0B5Be8084C';
+const VAULT_ADDRESS = '0x27c9DE593d325EF3C8C7B859b02ec83EEac22602';
 const VAULT_ABI = [
   "function getBalance(address user, address token) external view returns (uint256)",
   "function getPolicy(address user) external view returns (tuple(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, bool active) policy, address[] memory whitelist)",

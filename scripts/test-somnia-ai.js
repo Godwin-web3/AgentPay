@@ -41,7 +41,7 @@ async function main() {
             agentData, 
             3, 
             "0x00000000",
-            { value: ethers.parseEther("0.3") }
+            { value: ethers.parseEther("2.5") }
         );
 
         console.log(`⏳ Transaction sent: ${tx.hash}`);

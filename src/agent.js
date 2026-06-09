@@ -5,7 +5,7 @@ const PolicyEngine = require('./policyEngine');
 const { appendSpend, appendFailure, appendSwap, appendInference, getHistory } = require('../utils/store');
 const { executePayment, setPolicy, TOKENS, getVaultContract } = require('./escrow');
 const { estimateSwap, executeSwap } = require('./dex');
-const { parseIntent, parseIntentOnChain } = require('./brain');
+const { parseIntentOnChain } = require('./brain');
 const { getAllJobs, addJob, cancelJob, parseInterval, intervalLabel } = require('./scheduler');
 
 let kit = null;
@@ -19,7 +19,7 @@ async function init() {
   wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   kit = new SomniaAgentKit({
-    network: SOMNIA_NETWORKS.testnet,
+    network: { rpcUrl: process.env.SOMNIA_RPC_URL, chainId: 50312, name: "testnet", explorer: "https://shannon-explorer.somnia.network" },
     privateKey: process.env.PRIVATE_KEY,
     contracts: {
       agentRegistry: process.env.AGENT_REGISTRY_ADDRESS,
@@ -54,6 +54,13 @@ async function init() {
     })
   );
 
+  // Show vault balance
+  try {
+    const vaultAbi = ['function getBalance(address user, address token) external view returns (uint256)'];
+    const vaultContract = new ethers.Contract(process.env.VAULT_ADDRESS, vaultAbi, provider);
+    const vaultBal = await vaultContract.getBalance(address, ethers.ZeroAddress);
+    console.log('🏦 Vault:    ' + parseFloat(ethers.formatEther(vaultBal)).toFixed(4) + ' STT');
+  } catch(e) {}
   console.log('💰 Balances:');
   tokenBalances.forEach(({ symbol, bal }) => {
     console.log(`   ${symbol}:  ${parseFloat(ethers.formatEther(bal)).toFixed(4)}`);
@@ -149,10 +156,6 @@ async function setupEscrowPolicy(userAddress) {
 async function getSummary(userAddress) {
   const finalUserAddr = userAddress || process.env.USER_ADDRESS || (await wallet.getAddress());
   return engine ? await engine.summary(finalUserAddr) : null;
-}
-
-async function chat(message, vaultBalance, history = []) {
-  return await parseIntent(message, vaultBalance, history);
 }
 
 async function chatOnChain(message, vaultBalance) {
@@ -294,16 +297,16 @@ async function getUnifiedHistory(userAddress, limit = 50) {
 
   // 3. Pending Schedules
   const schedules = getAllJobs();
-  schedules.forEach(job => {
+  schedules.filter(job => job.active).forEach(job => {
     history.push({
-      id: 'sched_' + job.jobId,
+      id: 'sched_' + job.id,
       type: 'schedule',
       status: 'pending',
-      label: 'Waiting for trigger',
-      reason: job.reason,
+      label: 'Scheduled: ' + (job.reason || 'payment') + ' → ' + (job.to ? job.to.slice(0,10) + '...' : 'unknown'),
       amount: job.amount?.toString(),
-      condition: job.intervalLabel || (job.conditions ? JSON.stringify(job.conditions) : 'Pending'),
-      timestamp: Date.now() + 1000
+      token: 'STT',
+      condition: 'every ' + job.intervalLabel,
+      timestamp: job.nextRun || Date.now() + 1000
     });
   });
 
@@ -327,10 +330,115 @@ async function showBalances() {
       }
     })
   );
+  try {
+    const vaultAbi = ['function getBalance(address user, address token) external view returns (uint256)'];
+    const vaultContract = new ethers.Contract(process.env.VAULT_ADDRESS, vaultAbi, provider);
+    const vaultBal = await vaultContract.getBalance(address, ethers.ZeroAddress);
+    console.log('🏦 Vault:    ' + parseFloat(ethers.formatEther(vaultBal)).toFixed(4) + ' STT');
+  } catch(e) {}
   console.log('\n💰 Balances:');
   tokenBalances.forEach(({ symbol, bal }) => {
     console.log(`   ${symbol}:  ${parseFloat(ethers.formatEther(bal)).toFixed(4)}`);
   });
 }
 
-module.exports = { init, registerAgent, pay, setupEscrowPolicy, prepareSwap, confirmSwap, getSummary, showBalances, chat, chatOnChain, getUnifiedHistory };
+async function executeIntent(intentName, amount, to, reason, userAddress) {
+  const finalUserAddr = userAddress || process.env.USER_ADDRESS || (await wallet.getAddress());
+  const vaultContract = await getVaultContract(wallet, finalUserAddr);
+  const amountWei = ethers.parseEther(amount.toString());
+
+  const targets = [];
+  const datas = [];
+  const values = [];
+
+  if (intentName === 'safe_swap_pay') {
+    // 1. Swap STT -> SUSD (V3)
+    const routerAddr = require('./dex').SOMNIA_ROUTER;
+    const routerIface = new ethers.Interface([
+      "function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) params) external payable returns (uint256 amountOut)"
+    ]);
+    const erc20Iface = new ethers.Interface([
+      "function transfer(address,uint256) external returns (bool)"
+    ]);
+    
+    const TOKENS = require('./dex').TOKENS;
+    
+    datas.push(routerIface.encodeFunctionData("exactInputSingle", [{
+      tokenIn: TOKENS.WSTT, 
+      tokenOut: TOKENS.SUSD, 
+      fee: 500, 
+      recipient: await vaultContract.getAddress(),
+      amountIn: amountWei, 
+      amountOutMinimum: 0, 
+      sqrtPriceLimitX96: 0
+    }]));
+    targets.push(routerAddr);
+    values.push(amountWei);
+
+    // 2. Transfer SUSD to recipient
+    datas.push(erc20Iface.encodeFunctionData("transfer", [to, amountWei])); 
+    targets.push(TOKENS.SUSD);
+    values.push(0);
+
+    try {
+      const tx = await vaultContract.multicall(
+        finalUserAddr, targets, datas, values, ethers.ZeroAddress, amountWei, 
+        reason || "Atomic Swap+Pay", ethers.id(Date.now().toString()),
+        { gasLimit: 2000000 }
+      );
+      const receipt = await tx.wait();
+      return { success: true, status: 'executed', txHash: receipt.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + receipt.hash };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  if (intentName === 'provide_liquidity') {
+    const halfAmount = amountWei / 2n;
+    const v2RouterAddr = "0xc81501B65A040bF5f1794D0Ca2b953aebb2b1996";
+    const routerIface = new ethers.Interface([
+      "function swapExactTokensForTokens(uint256,uint256,address[],address,uint256) external returns (uint256[])",
+      "function addLiquidity(address,address,uint256,uint256,uint256,uint256,address,uint256) external returns (uint256,uint256,uint256)"
+    ]);
+    
+    const TOKENS = require('./dex').TOKENS;
+    
+    // 1. Swap HALF of STT to SUSD (V2)
+    datas.push(routerIface.encodeFunctionData("swapExactTokensForTokens", [
+      halfAmount, 0, [TOKENS.WSTT, TOKENS.SUSD], await vaultContract.getAddress(), Math.floor(Date.now() / 1000) + 600
+    ]));
+    targets.push(v2RouterAddr);
+    values.push(halfAmount);
+
+    // 2. Add Liquidity STT + SUSD
+    datas.push(routerIface.encodeFunctionData("addLiquidity", [
+      TOKENS.WSTT, TOKENS.SUSD, halfAmount, halfAmount, 0, 0, await vaultContract.getAddress(), Math.floor(Date.now() / 1000) + 600
+    ]));
+    targets.push(v2RouterAddr);
+    values.push(halfAmount);
+
+    try {
+      const tx = await vaultContract.multicall(
+        finalUserAddr, targets, datas, values, ethers.ZeroAddress, amountWei, 
+        "Provide Liquidity (Atomic)", ethers.id(Date.now().toString()),
+        { gasLimit: 3000000 }
+      );
+      const receipt = await tx.wait();
+      return { success: true, status: 'executed', txHash: receipt.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + receipt.hash };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  return { success: false, error: 'Unsupported intent: ' + intentName };
+}
+
+
+async function getVaultBalance() {
+  const vaultAbi = ['function getBalance(address user, address token) external view returns (uint256)'];
+  const vaultContract = new ethers.Contract(process.env.VAULT_ADDRESS, vaultAbi, provider);
+  const bal = await vaultContract.getBalance(wallet.address, ethers.ZeroAddress);
+  return parseFloat(ethers.formatEther(bal)).toFixed(4);
+}
+
+module.exports = { init, registerAgent, pay, setupEscrowPolicy, prepareSwap, confirmSwap, getSummary, showBalances, chatOnChain, getUnifiedHistory, executeIntent, getVaultBalance };

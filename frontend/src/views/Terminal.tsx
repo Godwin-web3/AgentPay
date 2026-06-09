@@ -13,6 +13,40 @@ function formatTime(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+function ProofBadge({ requestId }: { requestId: string }) {
+  return (
+    <div style={{
+      marginTop: 8,
+      padding: '6px 10px',
+      background: 'rgba(0, 255, 255, 0.05)',
+      border: '1px dashed var(--cyan)',
+      borderRadius: 4,
+      fontSize: 10,
+      fontFamily: 'var(--font-mono)',
+      color: 'var(--cyan)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8
+    }}>
+      <span style={{ fontSize: 14 }}>🛡️</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontWeight: 'bold', marginBottom: 2 }}>DECENTRALIZED PROOF</div>
+        <div style={{ color: 'var(--muted)' }}>Request ID: {requestId.slice(0, 16)}...</div>
+      </div>
+      <div style={{ 
+        padding: '2px 6px', 
+        background: 'var(--cyan)', 
+        color: 'black', 
+        borderRadius: 2, 
+        fontWeight: 'bold',
+        fontSize: 9
+      }}>
+        VERIFIED
+      </div>
+    </div>
+  )
+}
+
 function TxBadge({ result, onConfirm }: { result?: any, onConfirm?: () => void }) {
   const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
@@ -349,6 +383,9 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
           <div key={i} className={`message ${msg.role}`}>
             <div className="message-bubble">
               {msg.content}
+              {msg.role === 'assistant' && msg.intent?.requestId && (
+                <ProofBadge requestId={msg.intent.requestId} />
+              )}
               {msg.role === 'assistant' && (msg as any).data && (msg as any).intent?.action === 'balance' && (
                 <BalanceCard data={(msg as any).data} />
               )}

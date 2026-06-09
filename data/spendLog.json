@@ -220,6 +220,109 @@
       "txHash": "0x5538695344124405f6824531a5ca74b3d34f71f99194c899f0fbdfb4f5b6186d",
       "timestamp": 1780747667269,
       "date": "Sat Jun 06 2026"
+    },
+    {
+      "type": "inference",
+      "message": "pay 0.1 STT to 0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA for testing",
+      "response": "0.1 STT will be sent to 0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA. Vault balance is unknown.",
+      "requestId": "5696181",
+      "verifiable": true,
+      "timestamp": 1780952150096,
+      "date": "Mon Jun 08 2026"
+    },
+    {
+      "type": "inference",
+      "message": "schedule 0.01 STT to 0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA every 1 day",
+      "response": "Scheduled 0.01 STT to be sent to 0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA every 1 day. Vault balance is unknown.",
+      "requestId": "5696377",
+      "verifiable": true,
+      "timestamp": 1780952206222,
+      "date": "Mon Jun 08 2026"
+    },
+    {
+      "type": "inference",
+      "message": "set my daily limit to 10 STT",
+      "response": "Vault balance is unknown. Please check your vault balance first before setting daily limits.",
+      "requestId": "5696619",
+      "verifiable": true,
+      "timestamp": 1780952286680,
+      "date": "Mon Jun 08 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
+      "toToken": "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
+      "amount": 100,
+      "txHash": "0xc96fb6001fb4b86747626e333959ad35de01df44a36d44bfd955da106d68adeb",
+      "timestamp": 1780954501753,
+      "date": "Mon Jun 08 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
+      "toToken": "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
+      "amount": 500,
+      "txHash": "0x321ef89b9ccb3a05d1fc7e31f312151c5686827ad78b397be63b127c8ed31c25",
+      "timestamp": 1780954953313,
+      "date": "Mon Jun 08 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.01,
+      "reason": "testing",
+      "blockedReason": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, r",
+      "agentId": null,
+      "failed": true,
+      "timestamp": 1780983346098,
+      "date": "Tue Jun 09 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.01,
+      "reason": "testing",
+      "blockedReason": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, r",
+      "agentId": null,
+      "failed": true,
+      "timestamp": 1780984225425,
+      "date": "Tue Jun 09 2026"
+    },
+    {
+      "type": "swap",
+      "fromToken": "0x65296738D4E5edB1515e40287B6FDf8320E6eE04",
+      "toToken": "0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7",
+      "amount": 100,
+      "txHash": "0xc4859b8e0e82fad067d35449a9837d73d9a9c6dfab98df933f30fb377959111d",
+      "timestamp": 1780987967627,
+      "date": "Tue Jun 09 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.01,
+      "reason": "payment",
+      "blockedReason": "Daily cap reached — spent 100/20 STT today",
+      "agentId": null,
+      "failed": true,
+      "timestamp": 1780989776122,
+      "date": "Tue Jun 09 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.01,
+      "reason": "payment",
+      "blockedReason": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, r",
+      "agentId": null,
+      "failed": true,
+      "timestamp": 1780991354601,
+      "date": "Tue Jun 09 2026"
+    },
+    {
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.01,
+      "reason": "payment",
+      "txHash": "0xb90c6b0db5ee5b773c24efec4e7bb1a8ad0789dfbada7ed1caebef4352797cfa",
+      "agentId": null,
+      "timestamp": 1780992802944,
+      "date": "Tue Jun 09 2026"
     }
   ],
   "sessions": []

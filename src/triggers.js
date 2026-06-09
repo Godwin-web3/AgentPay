@@ -12,7 +12,8 @@ const PER_NODE_COST = 30000000000000000n; // 0.03 STT
 const SUBCOMMITTEE_SIZE = 3n;
 
 const JSON_AGENT_ABI = parseAbi([
-    'function get(string url, string selector) external returns (string)'
+    'function get(string url, string selector) external returns (string)',
+    'function fetchUint(string url, string selector, uint8 decimals) external returns (uint256)'
 ]);
 
 async function evaluateTrigger(trigger, wallet) {
@@ -153,4 +154,97 @@ async function evaluateTrigger(trigger, wallet) {
     }
 }
 
-module.exports = { evaluateTrigger };
+
+const PRICE_MAP = {
+  bitcoin: 'bitcoin', btc: 'bitcoin',
+  ethereum: 'ethereum', eth: 'ethereum',
+  solana: 'solana', sol: 'solana',
+  sui: 'sui', bnb: 'binancecoin',
+  xrp: 'ripple', doge: 'dogecoin',
+  cardano: 'cardano', ada: 'cardano',
+  avalanche: 'avalanche-2', avax: 'avalanche-2',
+  polkadot: 'polkadot', dot: 'polkadot',
+};
+
+async function fetchContext(userInput, wallet) {
+  const lower = userInput.toLowerCase();
+  const found = Object.keys(PRICE_MAP).find(k => lower.includes(k));
+  if (!found) return null;
+
+  const coinId = PRICE_MAP[found];
+  const url = 'https://api.coingecko.com/api/v3/simple/price?ids=' + coinId + '&vs_currencies=usd';
+  const selector = coinId + '.usd';
+
+  console.log('⛓  Fetching real-time ' + found.toUpperCase() + ' price on-chain...');
+
+  const privateKey = (wallet && wallet.privateKey) || process.env.PRIVATE_KEY;
+  const account = privateKeyToAccount(privateKey.startsWith('0x') ? privateKey : '0x' + privateKey);
+  const walletClient = createWalletClient({ account, transport: http(RPC_URL) });
+
+  try {
+    const payload = encodeFunctionData({
+      abi: JSON_AGENT_ABI,
+      functionName: 'fetchUint',
+      args: [url, selector, 2]
+    });
+
+    const baseDeposit = await publicClient.readContract({
+      address: PLATFORM_ADDRESS,
+      abi: PLATFORM_ABI,
+      functionName: 'getRequestDeposit'
+    });
+
+    const totalDeposit = baseDeposit + (PER_NODE_COST * SUBCOMMITTEE_SIZE);
+
+    const hash = await walletClient.writeContract({
+      address: PLATFORM_ADDRESS,
+      abi: PLATFORM_ABI,
+      functionName: 'createRequest',
+      args: [JSON_AGENT_ID, '0x0000000000000000000000000000000000000000', '0x00000000', payload],
+      value: totalDeposit
+    });
+
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    let requestId;
+    for (const log of receipt.logs) {
+      try {
+        const event = publicClient.decodeEventLog({ abi: PLATFORM_ABI, data: log.data, topics: log.topics });
+        if (event.eventName === 'RequestCreated') { requestId = event.args.requestId; break; }
+      } catch (e) {}
+    }
+
+
+    return new Promise((resolve) => {
+      const unwatch = publicClient.watchContractEvent({
+        address: PLATFORM_ADDRESS,
+        abi: PLATFORM_ABI,
+        eventName: 'RequestFinalized',
+        args: { requestId },
+        onLogs: async () => {
+          unwatch();
+          try {
+            const requestData = await publicClient.readContract({
+              address: PLATFORM_ADDRESS,
+              abi: PLATFORM_ABI,
+              functionName: 'getRequest',
+              args: [requestId]
+            });
+            const decoded = decodeFunctionResult({
+              abi: JSON_AGENT_ABI,
+              functionName: 'fetchUint',
+              data: requestData.responses[0].result
+            });
+            const price = (Number(decoded) / 100).toFixed(2);
+            resolve({ type: 'price', coin: found.toUpperCase(), value: price, proof: requestId.toString() });
+          } catch(e) { resolve(null); }
+        }
+      });
+      setTimeout(() => { unwatch(); resolve(null); }, 120000);
+    });
+  } catch(err) {
+    console.warn('⚠️  Context fetch failed:', err.message);
+    return null;
+  }
+}
+
+module.exports = { evaluateTrigger, fetchContext };

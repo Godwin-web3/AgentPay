@@ -16,9 +16,16 @@ const factoryDeployment = JSON.parse(
   fs.readFileSync(path.join(__dirname, '../artifacts/VaultFactory-deployment.json'), 'utf8')
 );
 
+async function findVault(userAddress) {
+  const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
+  const factory = new ethers.Contract(factoryDeployment.address, factoryArtifact.abi, provider);
+  const vaultAddr = await factory.getVault(userAddress);
+  return vaultAddr === ethers.ZeroAddress ? null : vaultAddr;
+}
+
 async function getVaultContract(wallet, userAddress) {
-  // If no userAddress (CLI usage), use the default vault from .env or deployment
-  if (!userAddress) {
+  // Always prefer VAULT_ADDRESS from env if set
+  if (!userAddress || process.env.VAULT_ADDRESS) {
     const defaultAddr = process.env.VAULT_ADDRESS || deployment.address;
     return new ethers.Contract(defaultAddr, artifact.abi, wallet);
   }
@@ -70,7 +77,7 @@ async function executePayment(wallet, userAddress, token, to, amount, reason, re
   const reqIdBytes32 = requestId ? (requestId.startsWith('0x') ? requestId : ethers.id(requestId)) : ethers.ZeroHash;
 
   const tx = await contract.execute(userAddress, tokenAddr, to, amountWei, reason || '', reqIdBytes32, {
-    gasLimit: 800000
+    gasLimit: 3000000
   });
   return await tx.wait();
 }
@@ -137,6 +144,7 @@ module.exports = {
   getOnChainSchedules,
   cancelOnChainSchedule,
   getVaultContract,
+  findVault,
   TOKENS,
   resolveTokenAddress
 };

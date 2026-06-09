@@ -1,7 +1,7 @@
 require('dotenv').config();
 const readline = require('readline');
-const { parseIntent, parseIntentOnChain, resetConversation } = require('./brain');
-const { pay, status, getUnifiedHistory, prepareSwap, confirmSwap, showBalances, wallet } = require('./agent');
+const { parseIntentOnChain, resetConversation } = require('./brain');
+const { pay, getSummary, getUnifiedHistory, prepareSwap, confirmSwap, showBalances, getVaultBalance } = require('./agent');
 const { applyUpdate } = require('./policyManager');
 const scheduler = require('./scheduler');
 const { TOKENS } = require('./dex');
@@ -98,13 +98,10 @@ function prompt() {
     }
 
     try {
-      let intent;
-      if (isVerifiable) {
-        console.log('🛡️  Using Somnia Verifiable AI (this may take a minute)...');
-        intent = await parseIntentOnChain(actualInput, wallet);
-      } else {
-        intent = await parseIntent(actualInput);
-      }
+      console.log('🛡️  Somnia Verifiable AI...');
+      let vaultBal;
+      try { vaultBal = await getVaultBalance(); } catch(e) {}
+      const intent = await parseIntentOnChain(actualInput, null, vaultBal);
 
       const _skipMsg = ['history','status','list_schedules','help','cancel_schedule','balance'].includes(intent.action);
         if (!_skipMsg) console.log('\n🤖 AgentPay: ' + intent.message);
@@ -183,7 +180,7 @@ function prompt() {
         const confirm = await ask('\n   Proceed? (yes/no): ');
         if (confirm !== 'yes' && confirm !== 'y') { console.log('\n🚫 Payment cancelled.'); resetConversation(); prompt(); return; }
 
-        const result = await pay(intent.to, intent.amount, intent.reason || actualInput);
+        const result = await pay(intent.to, intent.amount, intent.reason || actualInput, 'STT', ownerAddress);
         if (result.success) {
           console.log('\n✅ Payment complete!');
           console.log('   🔗 https://explorer.somnia.network/tx/' + result.txHash);
@@ -265,15 +262,22 @@ function prompt() {
         resetConversation();
 
       } else if (intent.action === 'status') {
-        status();
+        const summary = await getSummary(); if (summary) console.log(JSON.stringify(summary, null, 2));
         resetConversation();
 
       } else if (intent.action === 'balance') {
+        console.log('\n🤖 AgentPay: ' + intent.message);
         await showBalances();
         resetConversation();
       } else if (intent.action === 'history') {
         const h = await getUnifiedHistory(ownerAddress);
-        if (!h.length) { console.log('No history yet.'); } else h.forEach(i => console.log('[' + i.status + '] ' + i.label + ' ' + (i.amount ? i.amount + (i.type !== 'swap' ? ' ' + (i.token||'STT') : '') : '') + ' ' + (i.timestamp ? new Date(i.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '')));
+        if (!h.length) { console.log('No history yet.'); } else { console.log('Transaction History:'); h.forEach(i => {
+          const TOKENS = {'0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7':'WSTT','0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493':'PING','0x9beaA0016c22B646Ac311Ab171270B0ECf23098F':'PONG','0x65296738D4E5edB1515e40287B6FDf8320E6eE04':'SUSD'};
+          let label = i.label || '';
+          Object.entries(TOKENS).forEach(([addr, sym]) => { label = label.split(addr).join(sym); });
+          const ts = i.timestamp ? new Date(i.timestamp).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit', hour12:true }) : '';
+          console.log('  [' + i.status + '] ' + label + (i.amount ? ' ' + i.amount + (i.type === 'swap' ? '' : (' ' + (i.token||'STT'))) : '') + (ts ? ' — ' + ts : ''));
+        }); }
         resetConversation();
 
       } else if (intent.action === 'help') {

@@ -1,154 +1,146 @@
 const { createPublicClient, createWalletClient, http, parseAbi, encodeFunctionData, decodeFunctionResult } = require('viem');
 const { privateKeyToAccount } = require('viem/accounts');
 
-// Somnia Platform Constants
 const PLATFORM_ADDRESS = '0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776';
 const LLM_AGENT_ID = 12847293847561029384n;
-const PER_AGENT_EXECUTION_COST = 700000000000000000n;
 const SUBCOMMITTEE_SIZE = 3n;
-
 const RPC_URL = 'https://dream-rpc.somnia.network';
 
-const publicClient = createPublicClient({
-    transport: http(RPC_URL)
-});
+const publicClient = createPublicClient({ transport: http(RPC_URL) });
 
 const PLATFORM_ABI = parseAbi([
-    'function createRequest(uint256 agentId, address callbackAddress, bytes4 callbackSelector, bytes payload) external payable returns (uint256 requestId)',
+    'function createRequest(uint256 agentId, address callbackAddress, bytes4 callbackSelector, bytes calldata payload) external payable returns (uint256 requestId)',
     'function getRequestDeposit() external view returns (uint256)',
-    'function getRequest(uint256 requestId) external view returns ((uint256 requestId, address sender, uint256 agentId, address callbackAddress, bytes4 callbackSelector, bytes payload, uint256 deposit, uint8 status, (address responder, bytes result)[] responses))',
-    'event RequestCreated(uint256 indexed requestId, uint256 indexed agentId, address indexed sender)',
-    'event RequestFinalized(uint256 indexed requestId, uint256 indexed agentId)'
+    'function getRequest(uint256 requestId) external view returns (uint256 id, address requester, address callbackAddress, bytes4 callbackSelector, uint8 status, bytes result)',
+    'event RequestCreated(uint256 indexed requestId, uint256 indexed agentId, uint256 perAgentBudget, bytes payload, address[] subcommittee)',
+    'event RequestFinalized(uint256 indexed requestId, uint8 status)'
 ]);
 
 const AGENT_ABI = parseAbi([
     'function inferString(string prompt, string system, bool chainOfThought, string[] allowedValues) external returns (string)'
 ]);
 
-/**
- * Executes a verifiable LLM inference on the Somnia blockchain using viem.
- * @param {string} prompt The user's prompt
- * @param {string} system The system instructions
- * @param {object} wallet The wallet object (expects privateKey property or similar)
- * @returns {Promise<string>} The AI's response after decentralized consensus
- */
 async function inferOnChain(prompt, system = "You are a helpful assistant.", wallet) {
-    // Extract private key from ethers wallet or use from env
-    const privateKey = wallet.privateKey || process.env.PRIVATE_KEY;
-    if (!privateKey) {
-        throw new Error("Private key required for on-chain inference");
-    }
+    const privateKey = (wallet && wallet.privateKey) || process.env.PRIVATE_KEY;
+    if (!privateKey) throw new Error("Private key required for on-chain inference");
 
     const account = privateKeyToAccount(privateKey.startsWith('0x') ? privateKey : `0x${privateKey}`);
-    
-    const walletClient = createWalletClient({
-        account,
-        transport: http(RPC_URL)
-    });
+    const walletClient = createWalletClient({ account, transport: http(RPC_URL) });
 
     console.log(`📡 Creating on-chain AI request (Agent ID: ${LLM_AGENT_ID})...`);
 
     try {
-        // 1. Encode the call to the agent: inferString(prompt, system, chainOfThought, allowedValues)
         const payload = encodeFunctionData({
             abi: AGENT_ABI,
             functionName: 'inferString',
             args: [prompt, system, false, []]
         });
 
-        // 2. Calculate Deposit
-        const baseDeposit = await publicClient.readContract({
-            address: PLATFORM_ADDRESS,
-            abi: PLATFORM_ABI,
-            functionName: 'getRequestDeposit'
-        });
+        let totalDeposit = 240000000000000000n; // Default 0.24 STT
+        try {
+            const minDeposit = await publicClient.readContract({
+                address: PLATFORM_ADDRESS,
+                abi: PLATFORM_ABI,
+                functionName: 'getRequestDeposit'
+            });
+            console.log(`📊 Platform required deposit: ${minDeposit.toString()} wei (${(Number(minDeposit) / 1e18).toFixed(4)} STT)`);
+            if (minDeposit > totalDeposit) {
+                totalDeposit = minDeposit;
+            }
+        } catch (e) {
+            console.warn('⚠️ Could not fetch min deposit from platform, using default');
+        }
 
-        const totalDeposit = baseDeposit + (PER_AGENT_EXECUTION_COST * SUBCOMMITTEE_SIZE);
-        console.log(`💰 Calculated deposit: ${totalDeposit.toString()} wei`);
+        console.log(`💰 Using deposit: ${totalDeposit.toString()} wei (${(Number(totalDeposit) / 1e18).toFixed(4)} STT)`);
 
-        // 3. Create Request
         const hash = await walletClient.writeContract({
             address: PLATFORM_ADDRESS,
             abi: PLATFORM_ABI,
             functionName: 'createRequest',
-            args: [LLM_AGENT_ID, '0x0000000000000000000000000000000000000000', '0x00000000', payload],
+            args: [LLM_AGENT_ID, process.env.VAULT_ADDRESS, '0x387e0801', payload],
             value: totalDeposit
         });
 
         console.log(`⏳ Transaction sent: ${hash}. Waiting for receipt...`);
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
-        // Extract requestId from RequestCreated event
-        const logs = receipt.logs;
-        // In viem, we can use decodeEventLog or just find the event by topic
-        // But since we have the ABI, we can parse it.
-        // RequestCreated(uint256 requestId, uint256 agentId, address sender)
-        // Usually requestId is the first param.
-        
-        let requestId;
-        for (const log of logs) {
-            try {
-                const event = publicClient.decodeEventLog({
-                    abi: PLATFORM_ABI,
-                    data: log.data,
-                    topics: log.topics
-                });
-                if (event.eventName === 'RequestCreated') {
-                    requestId = event.args.requestId;
-                    break;
-                }
-            } catch (e) {
-                // Ignore logs that don't match
-            }
-        }
+        if (!receipt.logs || receipt.logs.length === 0) throw new Error('No logs in transaction receipt');
+        const requestId = BigInt(receipt.logs[0].topics[1]);
+        const startBlock = receipt.blockNumber;
+        const reqIdHex = '0x' + requestId.toString(16).padStart(64, '0');
 
-        if (!requestId) {
-            throw new Error('RequestCreated event not found in transaction receipt');
-        }
+        // Register inference on vault so it tracks the callback
+        const VAULT_ABI = parseAbi([
+            'function registerInference(uint256 requestId, address requester) external',
+            'event InferenceResult(uint256 indexed requestId, address indexed requester, bytes result, bool success)'
+        ]);
+        await walletClient.writeContract({
+            address: process.env.VAULT_ADDRESS,
+            abi: VAULT_ABI,
+            functionName: 'registerInference',
+            args: [requestId, account.address]
+        });
 
-        console.log(`✨ Request Created! ID: ${requestId}. Waiting for Somnia consensus (RequestFinalized)...`);
+        console.log(`✨ Request Created! ID: ${requestId}. Waiting for Somnia consensus...`);
 
-        // 4. Wait for RequestFinalized event
         return new Promise((resolve, reject) => {
+            const startBlock = receipt.blockNumber;
+            // Poll for event directly as fallback
+            const pollInterval = setInterval(async () => {
+                try {
+                    const logs = await publicClient.getContractEvents({
+                        address: process.env.VAULT_ADDRESS,
+                        abi: parseAbi(['event InferenceResult(uint256 indexed requestId, address indexed requester, bytes result, bool success)']),
+                        eventName: 'InferenceResult',
+                        args: { requestId },
+                        fromBlock: startBlock,
+                        toBlock: 'latest'
+                    });
+                    if (logs.length > 0) {
+                        clearInterval(pollInterval);
+                        clearTimeout(timeout);
+                        if (unwatch) unwatch();
+                        const log = logs[0];
+                        try {
+                            const result = decodeFunctionResult({ abi: AGENT_ABI, functionName: 'inferString', data: log.args.result });
+                            console.log('✅ Inference Result Received!');
+                            console.log('🔗 Proof: https://shannon-explorer.somnia.network/tx/' + log.transactionHash);
+                            resolve({ result, requestId: requestId.toString() });
+                        } catch (e) { reject(new Error('Failed to decode response: ' + e.message)); }
+                    }
+                } catch(e) {}
+            }, 15000);
             const timeout = setTimeout(() => {
-                unwatch();
+                clearInterval(pollInterval);
+                if (unwatch) unwatch();
                 reject(new Error('Timeout waiting for Somnia on-chain AI response (5m)'));
-            }, 300000); // 5 minute timeout
+            }, 300000);
 
             const unwatch = publicClient.watchContractEvent({
-                address: PLATFORM_ADDRESS,
-                abi: PLATFORM_ABI,
-                eventName: 'RequestFinalized',
+                address: process.env.VAULT_ADDRESS,
+                abi: parseAbi(['event InferenceResult(uint256 indexed requestId, address indexed requester, bytes result, bool success)']),
+                eventName: 'InferenceResult',
                 args: { requestId },
-                onLogs: async (logs) => {
+                onLogs: (logs) => {
                     clearTimeout(timeout);
-                    unwatch();
-                    console.log('✅ Request Finalized! Fetching results...');
+                    if (unwatch) unwatch();
+                    const log = logs[0];
+                    console.log('✅ Inference Result Received!');
+                    console.log('🔗 Proof: https://shannon-explorer.somnia.network/tx/' + log.transactionHash);
                     
+                    if (!log.args.success) {
+                        return reject(new Error('On-chain inference reported failure'));
+                    }
+
                     try {
-                        // 5. Get Request and Decode Result
-                        const requestData = await publicClient.readContract({
-                            address: PLATFORM_ADDRESS,
-                            abi: PLATFORM_ABI,
-                            functionName: 'getRequest',
-                            args: [requestId]
-                        });
-
-                        const responses = requestData.responses;
-                        if (!responses || responses.length === 0) {
-                            throw new Error('No responses found in finalized request');
-                        }
-
-                        const firstResponse = responses[0].result;
-                        const decoded = decodeFunctionResult({
+                        const result = decodeFunctionResult({
                             abi: AGENT_ABI,
                             functionName: 'inferString',
-                            data: firstResponse
+                            data: log.args.result
                         });
-
-                        resolve(decoded);
+                        resolve({ result, requestId: requestId.toString() });
                     } catch (e) {
-                        reject(new Error('Failed to decode response data: ' + e.message));
+                        reject(new Error('Failed to decode response: ' + e.message));
                     }
                 }
             });
@@ -160,10 +152,4 @@ async function inferOnChain(prompt, system = "You are a helpful assistant.", wal
     }
 }
 
-module.exports = { 
-    inferOnChain, 
-    publicClient, 
-    PLATFORM_ADDRESS, 
-    PLATFORM_ABI, 
-    RPC_URL 
-};
+module.exports = { inferOnChain, publicClient, PLATFORM_ADDRESS, PLATFORM_ABI, RPC_URL };

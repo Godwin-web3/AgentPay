@@ -17,6 +17,7 @@ export interface ChatMessage {
 
 export interface Intent {
   action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'propose_swap' | 'execute_swap' | 'balance' | 'help' | 'unknown' | 'intent'
+  requestId?: string
   intentName?: string
   to?: string
   amount?: number
@@ -47,6 +48,7 @@ export interface ChatResponse {
   intent: Intent
   message: string
   data?: any
+  verifiable?: boolean
 }
 
 export interface PolicyData {

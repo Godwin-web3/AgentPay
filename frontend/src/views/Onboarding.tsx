@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import WalletConnect from '../components/WalletConnect'
-import { getVaultAddress, updatePolicy } from '../api'
+import { getVaultAddress, updatePolicy, checkVault } from '../api'
 
 interface Props {
   userAddress: string
@@ -11,6 +11,7 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
   const [step, setStep] = useState(1)
   const [vaultAddress, setVaultAddress] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isDeploying, setIsDeploying] = useState(false)
   const [activeProvider, setActiveProvider] = useState<any>(null)
   
   // Step 2: Funding State
@@ -33,14 +34,21 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
   async function resolveVault() {
     setLoading(true)
     try {
-      // This call will hang while the backend factory deploys the vault if it doesn't exist
-      const res = await getVaultAddress(userAddress)
-      setVaultAddress(res.address)
-      setStep(2)
+      const check = await checkVault(userAddress)
+      if (check.exists && check.address) {
+        setVaultAddress(check.address)
+        setStep(2)
+      } else {
+        setIsDeploying(true)
+        const res = await getVaultAddress(userAddress)
+        setVaultAddress(res.address)
+        setStep(2)
+      }
     } catch (err) {
       console.error("Vault resolution failed", err)
     } finally {
       setLoading(false)
+      setIsDeploying(false)
     }
   }
 
@@ -114,7 +122,7 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
 
             {loading && (
               <div style={{ marginTop: 20, color: 'var(--cyan)', fontSize: 13 }}>
-                <span className="spinner">⚙️</span> Deploying your vault on Somnia...
+                <span className="spinner">⚙️</span> {isDeploying ? 'Deploying your vault on Somnia...' : 'Searching for your vault...'}
               </div>
             )}
           </div>

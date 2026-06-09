@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { ethers } = require('ethers');
 
-const VAULT_ADDRESS = '0x7E5235C0c711Cf2CA57a18d7BFD79a8cd453793D';
+const VAULT_ADDRESS = '0x27c9DE593d325EF3C8C7B859b02ec83EEac22602';
 const VAULT_ABI = [
   "function getSchedules(address user) external view returns (tuple(address to, uint256 amount, uint256 interval, uint256 nextRun, bool active, string reason, uint256 minBalance)[])",
   "function executeScheduled(address user, uint256 index) external"
