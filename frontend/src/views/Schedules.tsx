@@ -111,7 +111,7 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {schedules.map((job, idx) => (
+          {schedules.map((job, _idx) => (
             <div key={`${job.id}-${job.onChain ? 'oc' : 'lc'}`} className={`card ${!job.active ? 'cancelled' : ''}`} style={{ position: 'relative', opacity: job.active ? 1 : 0.6 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div style={{ fontWeight: 600, color: job.active ? 'var(--cyan)' : 'var(--muted)' }}>{job.amount} STT</div>

@@ -1,3 +1,4 @@
+import { ethers } from 'ethers'
 import type { ChatResponse, PolicyData, HealthData, PayResponse } from './types'
 
 export const WORKER_URL = import.meta.env.VITE_WORKER_URL || 'https://agentpay-worker.mbagodwin419.workers.dev'
