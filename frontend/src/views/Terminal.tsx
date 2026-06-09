@@ -184,7 +184,7 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
             if (m.role !== 'assistant') return true
             return !m.content?.startsWith("Your current balances") && !m.content?.startsWith("Your current Vault") && !m.content?.startsWith("Your spending policy")
           })
-          setMessages(filtered)
+          setMessages(filtered.map((m: any) => ({ ...m, timestamp: m.timestamp || Date.now() })))
         }
       })
       .catch(() => {})
