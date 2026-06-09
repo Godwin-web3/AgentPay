@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: agentpay-node
+    env: node
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: PRIVATE_KEY
+        sync: false
+      - key: SOMNIA_RPC_URL
+        value: https://dream-rpc.somnia.network
+      - key: VAULT_ADDRESS
+        value: 0xaB130f3f915AB9722AC6cd17E0d360f971970817
+      - key: PORT
+        value: 3000
