@@ -76,7 +76,7 @@ async function prepareSwap(fromToken, toToken, amount) {
 async function confirmSwap(fromToken, toToken, amount) {
   const result = await executeSwap(wallet, fromToken, toToken, amount);
   if (result.success) {
-    appendSwap({ fromToken, toToken, amount, txHash: result.txHash });
+    appendSwap({ userAddress: wallet.address, fromToken, toToken, amount, txHash: result.txHash });
   }
   return result;
 }
@@ -121,20 +121,20 @@ async function registerAgent() {
 
 async function pay(to, amount, reason, token = 'STT', userAddress) {
   const decision = await engine.check(to, amount, reason, userAddress);
+  const finalUserAddr = userAddress || process.env.USER_ADDRESS || wallet.address;
 
   if (!decision.allowed) {
-    appendFailure({ to, amount, reason, blockedReason: decision.reason });
+    appendFailure({ userAddress: finalUserAddr, to, amount, reason, blockedReason: decision.reason });
     return { success: false, reason: decision.reason, code: decision.code };
   }
 
   try {
-    const finalUserAddr = userAddress || process.env.USER_ADDRESS || (await wallet.getAddress()); 
     const receipt = await executePayment(wallet, finalUserAddr, token, to, amount, reason, 'req_' + Date.now());
 
-    appendSpend({ to, amount, reason, txHash: receipt.hash, token });
+    appendSpend({ userAddress: finalUserAddr, to, amount, reason, txHash: receipt.hash, token });
     return { success: true, txHash: receipt.hash };
   } catch (err) {
-    appendFailure({ to, amount, reason, blockedReason: err.message });
+    appendFailure({ userAddress: finalUserAddr, to, amount, reason, blockedReason: err.message });
     return { success: false, reason: err.message };
   }
 }
@@ -158,10 +158,11 @@ async function getSummary(userAddress) {
   return engine ? await engine.summary(finalUserAddr) : null;
 }
 
-async function chatOnChain(message, vaultBalance) {
+async function chatOnChain(message, vaultBalance, userAddress) {
   const intent = await parseIntentOnChain(message, wallet, vaultBalance);
   if (intent.requestId) {
     appendInference({
+      userAddress: userAddress || wallet.address,
       message,
       response: intent.message,
       requestId: intent.requestId,
@@ -177,89 +178,90 @@ async function getUnifiedHistory(userAddress, limit = 50) {
   
   const { findVault } = require('./escrow');
   const vaultAddr = await findVault(finalUserAddr);
-  if (!vaultAddr) return [];
-
-  const vault = new ethers.Contract(vaultAddr, vaultArtifact.abi, wallet);
   
   const history = [];
 
-  // 1. Fetch On-Chain Events
-  try {
-    const latestBlock = await provider.getBlockNumber();
-    const fromBlock = Math.max(0, latestBlock - 2000);
-    const onChainTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('On-chain history timeout')), 8000));
-    const [execLogs, depLogs, withLogs] = await Promise.race([
-      Promise.all([
-      vault.queryFilter(vault.filters.Executed(finalUserAddr), fromBlock),
-      vault.queryFilter(vault.filters.Deposited(finalUserAddr), fromBlock),
-      vault.queryFilter(vault.filters.Withdrawn(finalUserAddr), fromBlock)
-    ]),
-      onChainTimeout
-    ]);
+  if (vaultAddr) {
+    const vault = new ethers.Contract(vaultAddr, vaultArtifact.abi, wallet);
+    
+    // 1. Fetch On-Chain Events
+    try {
+      const latestBlock = await provider.getBlockNumber();
+      const fromBlock = Math.max(0, latestBlock - 500);
+      const onChainTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('On-chain history timeout')), 8000));
+      const [execLogs, depLogs, withLogs] = await Promise.race([
+        Promise.all([
+          vault.queryFilter(vault.filters.Executed(finalUserAddr), fromBlock),
+          vault.queryFilter(vault.filters.Deposited(finalUserAddr), fromBlock),
+          vault.queryFilter(vault.filters.Withdrawn(finalUserAddr), fromBlock)
+        ]),
+        onChainTimeout
+      ]);
 
-    const blockTimestamps = new Map();
-    const getBlockTime = async (num) => {
-      if (blockTimestamps.has(num)) return blockTimestamps.get(num);
-      const block = await provider.getBlock(num);
-      const ts = (block?.timestamp || 0) * 1000;
-      blockTimestamps.set(num, ts);
-      return ts;
-    };
+      const blockTimestamps = new Map();
+      const getBlockTime = async (num) => {
+        if (blockTimestamps.has(num)) return blockTimestamps.get(num);
+        const block = await provider.getBlock(num);
+        const ts = (block?.timestamp || 0) * 1000;
+        blockTimestamps.set(num, ts);
+        return ts;
+      };
 
-    const uniqueBlocks = [...new Set([...execLogs, ...depLogs, ...withLogs].map(l => l.blockNumber))];
-    await Promise.all(uniqueBlocks.map(num => getBlockTime(num)));
+      const uniqueBlocks = [...new Set([...execLogs, ...depLogs, ...withLogs].map(l => l.blockNumber))];
+      await Promise.all(uniqueBlocks.map(num => getBlockTime(num)));
 
-    const seenRequestIds = new Set();
+      const seenRequestIds = new Set();
 
-    for (const log of execLogs) {
-      const requestId = log.args.requestId;
-      if (requestId !== ethers.ZeroHash && seenRequestIds.has(requestId)) continue;
-      if (requestId !== ethers.ZeroHash) seenRequestIds.add(requestId);
+      for (const log of execLogs) {
+        const requestId = log.args.requestId;
+        if (requestId !== ethers.ZeroHash && seenRequestIds.has(requestId)) continue;
+        if (requestId !== ethers.ZeroHash) seenRequestIds.add(requestId);
 
-      history.push({
-        id: log.transactionHash,
-        type: 'payment',
-        status: 'executed',
-        label: log.args.reason || 'Payment',
-        amount: ethers.formatEther(log.args.amount),
-        token: Object.keys(TOKENS).find(key => TOKENS[key].toLowerCase() === (log.args.token || ethers.ZeroAddress).toLowerCase()) || 'STT',
-        to: log.args.to,
-        txHash: log.transactionHash,
-        requestId: requestId === ethers.ZeroHash ? null : requestId,
-        timestamp: await getBlockTime(log.blockNumber),
-        verifiable: requestId !== ethers.ZeroHash
-      });
+        history.push({
+          id: log.transactionHash,
+          type: 'payment',
+          status: 'executed',
+          label: log.args.reason || 'Payment',
+          amount: ethers.formatEther(log.args.amount),
+          token: Object.keys(TOKENS).find(key => TOKENS[key].toLowerCase() === (log.args.token || ethers.ZeroAddress).toLowerCase()) || 'STT',
+          to: log.args.to,
+          txHash: log.transactionHash,
+          requestId: requestId === ethers.ZeroHash ? null : requestId,
+          timestamp: await getBlockTime(log.blockNumber),
+          verifiable: requestId !== ethers.ZeroHash
+        });
+      }
+
+      for (const log of depLogs) {
+        history.push({
+          id: log.transactionHash,
+          type: 'deposit',
+          status: 'executed',
+          label: 'Vault Deposit',
+          amount: ethers.formatEther(log.args.amount),
+          timestamp: await getBlockTime(log.blockNumber),
+          txHash: log.transactionHash
+        });
+      }
+
+      for (const log of withLogs) {
+        history.push({
+          id: log.transactionHash,
+          type: 'withdrawal',
+          status: 'executed',
+          label: 'Vault Withdrawal',
+          amount: ethers.formatEther(log.args.amount),
+          timestamp: await getBlockTime(log.blockNumber),
+          txHash: log.transactionHash
+        });
+      }
+    } catch (err) {
+      console.warn('⚠️  On-chain history fetch partially failed:', err.message);
     }
-
-    for (const log of depLogs) {
-      history.push({
-        id: log.transactionHash,
-        type: 'deposit',
-        status: 'executed',
-        label: 'Vault Deposit',
-        amount: ethers.formatEther(log.args.amount),
-        timestamp: await getBlockTime(log.blockNumber),
-        txHash: log.transactionHash
-      });
-    }
-
-    for (const log of withLogs) {
-      history.push({
-        id: log.transactionHash,
-        type: 'withdrawal',
-        status: 'executed',
-        label: 'Vault Withdrawal',
-        amount: ethers.formatEther(log.args.amount),
-        timestamp: await getBlockTime(log.blockNumber),
-        txHash: log.transactionHash
-      });
-    }
-  } catch (err) {
-    console.warn('⚠️  On-chain history fetch partially failed:', err.message);
   }
 
   // 2. Local Logs (Blocked, Swaps, Inferences)
-  const localLogs = getHistory(200);
+  const localLogs = getHistory(finalUserAddr, 200);
   localLogs.forEach(log => {
     if (log.txHash && history.some(h => h.txHash === log.txHash)) return;
 

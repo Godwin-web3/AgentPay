@@ -129,7 +129,7 @@ async function handleChat(req, res) {
     if (resolvedVaultBalance === undefined) {
       try { resolvedVaultBalance = await getVaultBalance(); } catch(e) { console.error("getVaultBalance error:", e.message); }
     }
-    const intent = await chatOnChain(message, resolvedVaultBalance);
+    const intent = await chatOnChain(message, resolvedVaultBalance, userAddress);
     history.push({ role: 'user', content: message });
     history.push({ role: 'assistant', content: intent.message, intent });
     

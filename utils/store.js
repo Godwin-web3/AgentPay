@@ -93,7 +93,7 @@ function getHistory(userAddress, limit) {
   limit = limit || 50;
   const store = readStore();
   return store.spends
-    .filter(s => !userAddress || s.userAddress === userAddress)
+    .filter(s => !userAddress || !s.userAddress || s.userAddress === userAddress)
     .slice(-limit)
     .reverse();
 }
