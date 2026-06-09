@@ -408,6 +408,18 @@ export default function Terminal({ messages, setMessages, userAddress }: Props) 
     }
   }
 
+  if (!userAddress) return (
+    <div className="terminal">
+      <div className="messages">
+        <div className="message assistant">
+          <div className="message-bubble">
+            👋 Connect your wallet to get started — tap the menu (☰) in the top right.
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="terminal">
       <div className="messages" ref={scrollRef}>
