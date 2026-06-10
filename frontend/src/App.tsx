@@ -8,7 +8,7 @@ import Landing from './views/Landing'
 import Profile from './views/Profile'
 import Onboarding from './views/Onboarding'
 import type { ChatMessage } from './types'
-import { getTokenBalances, clearChatHistory } from './api'
+import { getTokenBalances } from './api'
 
 type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules'
 
@@ -104,7 +104,11 @@ export default function App() {
   }, [userAddress])
 
   async function handleClearMemory() {
-    await clearChatHistory(userAddress).catch(() => {})
+    const serverUrl = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
+    await fetch(`${serverUrl}/chat`, {
+      method: 'DELETE',
+      headers: { 'x-user-address': userAddress }
+    }).catch(() => {})
     setMessages([{ role: 'assistant', content: 'Memory cleared.', timestamp: Date.now() }])
   }
 
@@ -159,7 +163,7 @@ export default function App() {
         />
         
         <div className="view-content">
-          {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} onActionSuccess={refreshBalances} activeProvider={activeProvider} />}
+          {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} onActionSuccess={refreshBalances} />}
           {view === 'schedules' && <Schedules userAddress={userAddress} />}
           {view === 'history' && <History userAddress={userAddress} />}
           {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} />}

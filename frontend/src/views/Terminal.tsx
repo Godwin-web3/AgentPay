@@ -8,7 +8,6 @@ interface Props {
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
   userAddress: string
   onActionSuccess?: () => void
-  activeProvider?: any
 }
 
 function formatTime(ts: number) {
@@ -66,70 +65,44 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     let detail = ''
     if (result.status === 'proposing_pay') {
       title = '💸 PAYMENT PROPOSAL'
-      detail = `TO:     ${result.to}\nAMT:    ${result.amount} ${result.token || 'STT'}\nWHY:    ${result.reason || 'N/A'}`
+      detail = `Send ${result.amount} ${result.token || 'STT'} to ${result.to?.slice(0, 8)}...`
     } else if (result.status === 'proposing_swap') {
       title = '🔄 SWAP PROPOSAL'
-      detail = `FROM:   ${result.fromToken}\nTO:     ${result.toToken}\nAMT:    ${result.amount}`
+      detail = `Swap ${result.amount} ${result.fromToken} → ${result.toToken}`
     } else if (result.status === 'proposing_intent') {
       title = '⚡ ATOMIC INTENT'
-      detail = `INTENT: ${result.intentName?.replace(/_/g, ' ').toUpperCase()}\nAMT:    ${result.amount} STT\nTO:     ${result.to || 'N/A'}`
+      detail = `${result.intentName?.replace(/_/g, ' ').toUpperCase()}${result.amount ? `: ${result.amount} STT` : ''}`
     } else if (result.status === 'proposing_schedule') {
       title = '⏰ ON-CHAIN SCHEDULE'
-      detail = `TO:     ${result.to}\nAMT:    ${result.amount} STT\nEVERY:  ${result.interval}`
+      detail = `Pay ${result.amount} STT to ${result.to?.slice(0, 8)}... every ${result.interval}`
     }
 
     return (
-      <div style={{ 
-        marginTop: 12, 
-        border: '1px solid var(--cyan)', 
-        background: 'rgba(79, 219, 200, 0.05)',
-        fontFamily: 'var(--font-mono)',
-        fontSize: 11
-      }}>
-        <div style={{ background: 'var(--cyan)', color: 'black', padding: '4px 8px', fontWeight: 'bold', letterSpacing: 1 }}>
-          {title}
-        </div>
-        <div style={{ padding: '10px', whiteSpace: 'pre-wrap', color: 'var(--text)', borderBottom: '1px solid rgba(79, 219, 200, 0.2)' }}>
+      <div className="tx-badge success" style={{ background: 'var(--cyan)', color: 'black', display: 'flex', flexDirection: 'column', gap: 8, padding: '12px', border: '1px solid black' }}>
+        <div style={{ fontWeight: 600, fontSize: 12 }}>{title}</div>
+        <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', background: 'rgba(0,0,0,0.1)', padding: '4px 8px', borderRadius: 4 }}>
           {detail}
         </div>
-        <div style={{ display: 'flex', gap: 0 }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
           <button 
+            className="send-btn" 
             disabled={confirming}
             onClick={async () => {
               setConfirming(true)
               if (onConfirm) await onConfirm()
               setConfirming(false)
             }}
-            style={{ 
-              flex: 1, 
-              background: 'transparent', 
-              color: 'var(--cyan)', 
-              border: 'none', 
-              borderRight: '1px solid rgba(79, 219, 200, 0.2)',
-              padding: '8px', 
-              fontSize: 10, 
-              cursor: 'pointer', 
-              fontWeight: 'bold',
-              fontFamily: 'var(--font-mono)'
-            }}
+            style={{ flex: 2, background: 'black', color: 'var(--cyan)', border: 'none', padding: '8px', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}
           >
-            {confirming ? '[ EXECUTING... ]' : '[ CONFIRM ]'}
+            {confirming ? 'EXECUTING...' : 'CONFIRM & EXECUTE'}
           </button>
           <button 
+            className="send-btn" 
             disabled={confirming}
             onClick={onCancel}
-            style={{ 
-              flex: 1, 
-              background: 'transparent', 
-              color: 'var(--muted)', 
-              border: 'none', 
-              padding: '8px', 
-              fontSize: 10, 
-              cursor: 'pointer',
-              fontFamily: 'var(--font-mono)'
-            }}
+            style={{ flex: 1, background: 'rgba(0,0,0,0.1)', color: 'black', border: '1px solid black', padding: '8px', fontSize: 11, cursor: 'pointer' }}
           >
-            [ CANCEL ]
+            CANCEL
           </button>
         </div>
       </div>
@@ -148,45 +121,32 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
 
     return (
       <a 
+        className="tx-badge success" 
         href={result.explorer} 
         target="_blank" 
         rel="noreferrer" 
-        style={{ 
-          display: 'block', 
-          textDecoration: 'none', 
-          fontFamily: 'var(--font-mono)', 
-          fontSize: 10, 
-          padding: '8px 12px',
-          border: '1px solid var(--success)',
-          background: 'rgba(79, 219, 200, 0.05)',
-          marginTop: 8
-        }}
+        style={{ display: 'block', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: 10, padding: '8px 12px' }}
       >
-        <div style={{ color: 'var(--success)', fontWeight: 'bold', marginBottom: 2 }}>{feedback}</div>
-        <div style={{ color: 'var(--muted)' }}>TX: {result.txHash?.slice(0, 24)}... ↗</div>
+        <div style={{ fontWeight: 'bold', marginBottom: 2 }}>{feedback}</div>
+        <div style={{ opacity: 0.7 }}>Tx: {result.txHash?.slice(0, 16)}... ↗</div>
       </a>
     )
   }
 
   if (result.status === 'cancelled') {
-    return <div style={{ border: '1px solid var(--border)', padding: '6px 10px', color: 'var(--muted)', fontSize: 10, fontFamily: 'var(--font-mono)', marginTop: 8 }}>❌ Operation cancelled.</div>
+    return <div className="tx-badge" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--muted)', fontSize: 10, fontFamily: 'var(--font-mono)' }}>✗ Cancelled</div>
   }
 
   if (result.status === 'rejected') {
-    return (
-      <div style={{ border: '1px solid var(--danger)', background: 'rgba(255, 59, 92, 0.05)', padding: '10px', marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-        <div style={{ color: 'var(--danger)', fontWeight: 'bold', marginBottom: 4 }}>🚫 BLOCKED BY POLICY</div>
-        <div style={{ color: 'var(--text)' }}>Reason: {result.reason}</div>
-      </div>
-    )
+    return <div className="tx-badge rejected">🚫 Blocked: {result.reason}</div>
   }
 
   if (result.status === 'policy_updated') {
-    return <div style={{ border: '1px solid var(--cyan)', padding: '8px', color: 'var(--cyan)', fontSize: 10, fontFamily: 'var(--font-mono)', marginTop: 8 }}>🛡️ Policy synchronized.</div>
+    return <div className="tx-badge success">🛡️ Policy Synchronized</div>
   }
 
   if (result.status === 'failed') {
-    return <div style={{ border: '1px solid var(--danger)', padding: '8px', color: 'var(--danger)', fontSize: 10, fontFamily: 'var(--font-mono)', marginTop: 8 }}>⚠️ ERROR: {result.reason}</div>
+    return <div className="tx-badge failed">⚠️ Error: {result.reason}</div>
   }
 
   return null
@@ -196,30 +156,26 @@ function BalanceCard({ data }: { data: any }) {
   if (!data?.balances) return null
   return (
     <div style={{
-      marginTop: 12,
+      marginTop: 10,
       border: '1px solid var(--border)',
-      background: 'rgba(255, 255, 255, 0.02)',
+      padding: '10px 14px',
       fontFamily: 'var(--font-mono)',
-      fontSize: 11,
+      fontSize: 12,
       color: 'var(--text)'
     }}>
-      <div style={{ borderBottom: '1px solid var(--border)', padding: '4px 10px', color: 'var(--cyan)', letterSpacing: 2, fontSize: 9 }}>
-        ━━━━━━━━━━ ACCOUNT BALANCES ━━━━━━━━━━
-      </div>
-      <div style={{ padding: '10px' }}>
-        {Object.entries(data.balances).map(([token, amt]) => (
-          <div key={token} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ color: 'var(--muted)' }}>{token.padEnd(8, ' ')}</span>
-            <span style={{ color: 'var(--cyan)' }}>{String(amt)}</span>
-          </div>
-        ))}
-        {data.vault !== undefined && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, borderTop: '1px dashed var(--border)', paddingTop: 6 }}>
-            <span style={{ color: 'var(--muted)' }}>VAULT (STT)</span>
-            <span style={{ color: 'var(--cyan)', fontWeight: 'bold' }}>{data.vault}</span>
-          </div>
-        )}
-      </div>
+      <div style={{ color: 'var(--teal)', marginBottom: 6, letterSpacing: 1 }}>// BALANCES</div>
+      {Object.entries(data.balances).map(([token, amt]) => (
+        <div key={token} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+          <span style={{ color: 'var(--muted)' }}>{token}</span>
+          <span>{String(amt)}</span>
+        </div>
+      ))}
+      {data.vault && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, borderTop: '1px solid var(--border)', paddingTop: 6 }}>
+          <span style={{ color: 'var(--muted)' }}>VAULT</span>
+          <span style={{ color: 'var(--teal)' }}>{data.vault} STT</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -228,35 +184,31 @@ function PolicyCard({ data }: { data: any }) {
   if (!data?.perTxCap) return null
   return (
     <div style={{
-      marginTop: 12,
+      marginTop: 10,
       border: '1px solid var(--border)',
-      background: 'rgba(255, 255, 255, 0.02)',
+      padding: '10px 14px',
       fontFamily: 'var(--font-mono)',
-      fontSize: 11,
+      fontSize: 12,
       color: 'var(--text)'
     }}>
-      <div style={{ borderBottom: '1px solid var(--border)', padding: '4px 10px', color: 'var(--cyan)', letterSpacing: 2, fontSize: 9 }}>
-        ━━━━━━━━━━ SPENDING POLICY ━━━━━━━━━━
-      </div>
-      <div style={{ padding: '10px' }}>
-        {[
-          ['PER_TX_CAP', `${data.perTxCap} STT`],
-          ['DAILY_CAP', `${data.dailyCap} STT`],
-          ['SPENT_TODAY', `${data.dailySpendSoFar} STT`],
-          ['REMAINING', `${data.dailyRemaining} STT`],
-          ['STATUS', data.active !== false ? 'ACTIVE' : 'PAUSED'],
-        ].map(([k, v]) => (
-          <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ color: 'var(--muted)' }}>{k.padEnd(12, ' ')}</span>
-            <span style={{ color: k === 'STATUS' ? (data.active !== false ? 'var(--cyan)' : 'var(--danger)') : 'inherit' }}>{v}</span>
-          </div>
-        ))}
-      </div>
+      <div style={{ color: 'var(--teal)', marginBottom: 6, letterSpacing: 1 }}>// POLICY</div>
+      {[
+        ['PER_TX', `${data.perTxCap} STT`],
+        ['DAILY_CAP', `${data.dailyCap} STT`],
+        ['SPENT_TODAY', `${data.dailySpendSoFar} STT`],
+        ['REMAINING', `${data.dailyRemaining} STT`],
+        ['STATUS', data.active ? 'ACTIVE' : 'PAUSED'],
+      ].map(([k, v]) => (
+        <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+          <span style={{ color: 'var(--muted)' }}>{k}</span>
+          <span style={{ color: k === 'STATUS' ? (data.active ? 'var(--teal)' : '#ff4444') : 'inherit' }}>{v}</span>
+        </div>
+      ))}
     </div>
   )
 }
 
-export default function Terminal({ messages, setMessages, userAddress, onActionSuccess, activeProvider }: Props) {
+export default function Terminal({ messages, setMessages, userAddress, onActionSuccess }: Props) {
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [txResults, setTxResults] = React.useState<Record<number, any>>({})
@@ -323,14 +275,13 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
           TOKENS.STT, prop.to, amountWei, intervalSec, prop.reason || '', minBalWei
         ])
         
-        const provider = activeProvider || window.ethereum
-        const txHash = await provider.request({
+        const txHash = await window.ethereum.request({
           method: 'eth_sendTransaction',
           params: [{ from: userAddress, to: vaultAddr, data }]
         })
 
-        const rpcProvider = new ethers.JsonRpcProvider(RPC)
-        await rpcProvider.waitForTransaction(txHash)
+        const provider = new ethers.JsonRpcProvider(RPC)
+        await provider.waitForTransaction(txHash)
 
         res = { status: 'executed', txHash, explorer: 'https://shannon-explorer.somnia.network/tx/' + txHash, type: 'schedule', to: prop.to, amount: prop.amount }
       }
@@ -356,35 +307,14 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
 
     // Clear command
     if (text.toLowerCase() === 'clear') {
-      await clearChatHistory(userAddress).catch(() => {})
+      const serverUrl = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
+      await fetch(`${serverUrl}/chat`, {
+        method: 'DELETE',
+        headers: { 'x-user-address': userAddress }
+      }).catch(() => {})
       setMessages([{ role: 'assistant', content: 'Memory cleared.', timestamp: Date.now() }])
       setInput('')
       return
-    }
-
-    // Natural Language Confirmations (Match CLI pendingSwap/pendingAction logic)
-    const lowerText = text.toLowerCase()
-    const isConfirm = ['yes', 'confirm', 'go ahead', 'yep', 'y'].includes(lowerText)
-    const isCancel = ['no', 'cancel', 'nope', 'n'].includes(lowerText)
-
-    if (isConfirm || isCancel) {
-      // Find the last pending proposal
-      const lastPropIdx = Object.keys(txResults)
-        .map(Number)
-        .sort((a, b) => b - a)
-        .find(idx => txResults[idx]?.status.startsWith('proposing_'))
-
-      if (lastPropIdx !== undefined) {
-        const userMsg: ChatMessage = { role: 'user', content: text, timestamp: Date.now() }
-        setMessages(prev => [...prev, userMsg])
-        setInput('')
-        if (isConfirm) {
-          await handleConfirm(lastPropIdx)
-        } else {
-          handleCancel(lastPropIdx)
-        }
-        return
-      }
     }
 
     // Status shortcut
@@ -436,81 +366,96 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
         const next = [...prev, assistantMsg]
         const msgIndex = next.length - 1
 
-        let newTxResult: any = null
-
-        if (intent.action === 'pay' && intent.to && intent.amount) {
-          newTxResult = { 
-            status: 'proposing_pay', 
-            to: intent.to, 
-            amount: intent.amount, 
-            token: intent.fromToken || 'STT',
-            reason: intent.reason
+        // Handle actions after state is updated
+        setTimeout(async () => {
+          if (intent.action === 'pay' && intent.to && intent.amount) {
+            setTxResults(r => ({ 
+              ...r, 
+              [msgIndex]: { 
+                status: 'proposing_pay', 
+                to: intent.to, 
+                amount: intent.amount, 
+                token: intent.fromToken || 'STT',
+                reason: intent.reason
+              } 
+            }))
           }
-        } else if (intent.action === 'schedule' && intent.to && intent.amount && intent.interval) {
-           newTxResult = { 
-             status: 'proposing_schedule', 
-             to: intent.to, 
-             amount: intent.amount, 
-             interval: intent.interval,
-             reason: intent.reason,
-             conditions: intent.conditions
-           }
-        } else if (intent.action === 'propose_swap' && intent.fromToken && intent.toToken && intent.amount) {
-           newTxResult = { 
-             status: 'proposing_swap', 
-             fromToken: intent.fromToken, 
-             toToken: intent.toToken, 
-             amount: intent.amount 
-           }
-        } else if (intent.action === 'intent' && intent.intentName) {
-           newTxResult = { 
-             status: 'proposing_intent', 
-             intentName: intent.intentName,
-             amount: intent.amount, 
-             to: intent.to, 
-             reason: intent.reason || 'Atomic Intent'
-           }
-        }
 
-        if (newTxResult) {
-          setTxResults(r => ({ ...r, [msgIndex]: newTxResult }))
-        }
-
-        if (intent.action === 'execute_swap') {
-          const lastPropIdx = Object.keys(txResults)
-            .map(Number)
-            .sort((a, b) => b - a)
-            .find(idx => txResults[idx]?.status === 'proposing_swap')
-          
-          if (lastPropIdx !== undefined) {
-             handleConfirm(lastPropIdx)
+          if (intent.action === 'schedule' && intent.to && intent.amount && intent.interval) {
+             setTxResults(r => ({ 
+               ...r, 
+               [msgIndex]: { 
+                 status: 'proposing_schedule', 
+                 to: intent.to, 
+                 amount: intent.amount, 
+                 interval: intent.interval,
+                 reason: intent.reason,
+                 conditions: intent.conditions
+               } 
+             }))
           }
-        }
 
-        if (intent.action === 'update_policy' && intent.policyUpdate) {
-          const up = intent.policyUpdate
-          const applyPolicyUpdate = async () => {
-            const current = await getPolicy(userAddress)
-            const update: any = {}
-            if (up.field === 'dailyCap') update.dailyCap = up.value
-            if (up.field === 'perTxCap') update.perTxCap = up.value
-            if (up.field === 'maxTxPerHour') update.circuitBreaker = { ...current.circuitBreaker, maxTxPerHour: up.value }
-            if (up.field === 'activeHours') update.activeHours = { start: up.start, end: up.end }
-            if (up.field === 'addWhitelist' && up.address) {
-              update.whitelist = [...new Set([...current.whitelist, up.address])]
-            }
-            if (up.field === 'removeWhitelist' && up.address) {
-              update.whitelist = current.whitelist.filter(a => a.toLowerCase() !== up.address?.toLowerCase())
-            }
-            return await updatePolicy(update, userAddress)
+          if (intent.action === 'propose_swap' && intent.fromToken && intent.toToken && intent.amount) {
+             setTxResults(r => ({ 
+               ...r, 
+               [msgIndex]: { 
+                 status: 'proposing_swap', 
+                 fromToken: intent.fromToken, 
+                 toToken: intent.toToken, 
+                 amount: intent.amount 
+               } 
+             }))
           }
-          applyPolicyUpdate()
-            .then(() => {
-              setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } }))
-              if (onActionSuccess) onActionSuccess()
+
+          if (intent.action === 'execute_swap') {
+            setTxResults(currentResults => {
+              const lastPropIdx = [...next.keys()].reverse().find(idx => currentResults[idx]?.status.startsWith('proposing_'))
+              if (lastPropIdx !== undefined) {
+                 handleConfirm(lastPropIdx)
+              }
+              return currentResults
             })
-            .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
-        }
+          }
+
+          if (intent.action === 'intent' && intent.intentName) {
+             setTxResults(r => ({ 
+               ...r, 
+               [msgIndex]: { 
+                 status: 'proposing_intent', 
+                 intentName: intent.intentName,
+                 amount: intent.amount, 
+                 to: intent.to, 
+                 reason: intent.reason || 'Atomic Intent'
+               } 
+             }))
+          }
+
+          if (intent.action === 'update_policy' && intent.policyUpdate) {
+            const up = intent.policyUpdate
+            const applyPolicyUpdate = async () => {
+              const serverUrl = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
+              const current = await getPolicy(userAddress)
+              const update: any = {}
+              if (up.field === 'dailyCap') update.dailyCap = up.value
+              if (up.field === 'perTxCap') update.perTxCap = up.value
+              if (up.field === 'maxTxPerHour') update.circuitBreaker = { ...current.circuitBreaker, maxTxPerHour: up.value }
+              if (up.field === 'activeHours') update.activeHours = { start: up.start, end: up.end }
+              if (up.field === 'addWhitelist' && up.address) {
+                update.whitelist = [...new Set([...current.whitelist, up.address])]
+              }
+              if (up.field === 'removeWhitelist' && up.address) {
+                update.whitelist = current.whitelist.filter(a => a.toLowerCase() !== up.address?.toLowerCase())
+              }
+              return await fetch(`${serverUrl}/policy`, { method: "POST", headers: { "Content-Type": "application/json", "x-user-address": userAddress }, body: JSON.stringify(update) }).then(r => r.json())
+            }
+            applyPolicyUpdate()
+              .then(() => {
+                setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } }))
+                if (onActionSuccess) onActionSuccess()
+              })
+              .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+          }
+        }, 0)
 
         return next
       })
@@ -547,33 +492,11 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
 
   return (
     <div className="terminal">
-      <div style={{ 
-        marginBottom: 16, 
-        paddingBottom: 8, 
-        borderBottom: '1px solid var(--border)', 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        fontFamily: 'var(--font-mono)',
-        fontSize: 10,
-        color: 'var(--muted)',
-        letterSpacing: 1
-      }}>
-        <span>TERMINAL_SESSION_01 // AGENTPAY_V2</span>
-        <span style={{ color: 'var(--cyan)' }}>● ONLINE</span>
-      </div>
-
       <div className="messages" ref={scrollRef}>
         {messages.map((msg, i) => (
           <div key={i} className={`message ${msg.role}`}>
             <div className="message-bubble">
-              {msg.role === 'assistant' && (
-                <div style={{ color: 'var(--cyan)', fontWeight: 'bold', marginBottom: 4, fontSize: 11 }}>
-                  🤖 AGENTPAY:
-                </div>
-              )}
-              <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-              
+              {msg.content}
               {msg.role === 'assistant' && msg.intent?.requestId && (
                 <ProofBadge requestId={msg.intent.requestId} />
               )}
@@ -594,12 +517,11 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
               )}
             </div>
             <div style={{
-              fontSize: 9,
+              fontSize: 10,
               color: 'var(--muted)',
               marginTop: 4,
               textAlign: msg.role === 'user' ? 'right' : 'left',
-              fontFamily: 'var(--font-mono)',
-              opacity: 0.6
+              fontFamily: 'var(--font-mono)'
             }}>
               {formatTime(msg.timestamp)}
             </div>
@@ -647,7 +569,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
         <textarea
           ref={inputRef}
           className="chat-input"
-          placeholder="ENTER COMMAND..."
+          placeholder="Type a message..."
           value={input}
           onChange={(e) => {
             setInput(e.target.value)
