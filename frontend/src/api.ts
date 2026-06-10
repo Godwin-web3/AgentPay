@@ -155,7 +155,7 @@ export async function getHealth(): Promise<HealthData> {
 }
 
 export async function getHistory(userAddress: string): Promise<{ items: any[] }> {
-  return request<{ items: any[] }>('/history', {}, userAddress)
+  return request<{ items: any[] }>('/history?t=' + Date.now(), {}, userAddress)
 }
 
 export async function getOnChainSchedules(userAddress: string): Promise<any[]> {
