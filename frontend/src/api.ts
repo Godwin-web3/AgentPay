@@ -208,3 +208,11 @@ export async function getTokenBalances(userAddress: string): Promise<Record<stri
   }
   return balances
 }
+
+export async function logTransaction(data: { userAddress: string; type: string; amount: string; token: string; txHash: string }): Promise<void> {
+  await fetch(WORKER_URL + '/log-transaction', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+}

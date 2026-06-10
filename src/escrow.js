@@ -17,6 +17,7 @@ const factoryDeployment = JSON.parse(
 );
 
 async function findVault(userAddress) {
+  if (process.env.VAULT_ADDRESS) return process.env.VAULT_ADDRESS;
   const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
   const factory = new ethers.Contract(factoryDeployment.address, factoryArtifact.abi, provider);
   const vaultAddr = await factory.getVault(userAddress);

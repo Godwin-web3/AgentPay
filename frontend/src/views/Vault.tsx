@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getVaultAddress } from '../api'
+import { getVaultAddress, logTransaction } from '../api'
 import { ethers } from 'ethers'
 
 import { RPC } from '../api'
@@ -62,6 +62,7 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
       await provider.waitForTransaction(txHash)
 
       setTxStatus('[OK] Deposit confirmed!')
+      await logTransaction({ userAddress, type: 'deposit', amount, token: selectedToken, txHash })
       setMode(null)
       setAmount('')
       if (onActionSuccess) onActionSuccess()
@@ -96,6 +97,7 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
       await provider.waitForTransaction(txHash)
 
       setTxStatus('[OK] Withdrawal confirmed!')
+      await logTransaction({ userAddress, type: 'withdrawal', amount, token: selectedToken, txHash })
       setMode(null)
       setAmount('')
       if (onActionSuccess) onActionSuccess()

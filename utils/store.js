@@ -94,6 +94,7 @@ function getHistory(userAddress, limit) {
   const store = readStore();
   return store.spends
     .filter(s => !userAddress || !s.userAddress || s.userAddress === userAddress)
+    .filter(s => s.type !== 'inference')
     .slice(-limit)
     .reverse();
 }
@@ -128,6 +129,22 @@ function appendInference({ userAddress, message, response, requestId, verifiable
   writeStore(store);
 }
 
+function getActiveUsers() {
+  const store = readStore();
+  return store.activeUsers || [];
+}
+
+function trackUser(userAddress) {
+  if (!userAddress || userAddress === 'anonymous') return;
+  const store = readStore();
+  if (!store.activeUsers) store.activeUsers = [];
+  const addr = userAddress.toLowerCase();
+  if (!store.activeUsers.includes(addr)) {
+    store.activeUsers.push(addr);
+    writeStore(store);
+  }
+}
+
 module.exports = {
   appendSpend,
   appendSwap,
@@ -136,5 +153,7 @@ module.exports = {
   getTodaySpend,
   getLastHourTxCount,
   getConsecutiveFailures,
-  getHistory
+  getHistory,
+  trackUser,
+  getActiveUsers
 };

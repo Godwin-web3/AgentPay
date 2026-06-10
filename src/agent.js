@@ -193,7 +193,7 @@ async function getUnifiedHistory(userAddress, limit = 50) {
     // 1. Fetch On-Chain Events
     try {
       const latestBlock = await provider.getBlockNumber();
-      const fromBlock = Math.max(0, latestBlock - 50000); // Increased range to 50k blocks
+      const fromBlock = Math.max(0, latestBlock - 999); // Somnia max block range
       const onChainTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('On-chain history timeout')), 8000));
       const [execLogs, depLogs, withLogs] = await Promise.race([
         Promise.all([

@@ -319,6 +319,25 @@ async function handleIntent(req, res) {
   }
 }
 
+
+// POST /log-transaction
+async function handleLogTransaction(req, res) {
+  const body = await parseBody(req);
+  const { userAddress, type, amount, token, txHash } = body;
+  if (!type || !txHash) return send(res, 400, { error: 'Missing fields' });
+  const { appendSpend } = require('../utils/store');
+  appendSpend({
+    userAddress: userAddress || 'anonymous',
+    to: userAddress,
+    amount: parseFloat(amount) || 0,
+    token: token || 'STT',
+    reason: type === 'deposit' ? 'Vault Deposit' : 'Vault Withdrawal',
+    txHash,
+    type,
+    failed: false
+  });
+  return send(res, 200, { success: true });
+}
 // ── Main router ───────────────────────────────────────────────────────────────
 const server = http.createServer(async (req, res) => {
   const url    = req.url.split('?')[0];
@@ -343,6 +362,7 @@ const server = http.createServer(async (req, res) => {
   if (method === 'POST' && url === '/schedules')       return await handleCreateSchedule(req, res);
   if (method === 'DELETE' && url.startsWith('/schedules/')) return handleDeleteSchedule(req, res, url.replace('/schedules/', ''));
   if (method === 'GET'  && url.startsWith('/status/')) return handleStatus(req, res, url.replace('/status/', ''));
+  if (method === 'POST' && url === '/log-transaction')  return await handleLogTransaction(req, res);
 
   return send(res, 404, { error: 'Not found' });
 });
