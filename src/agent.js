@@ -6,6 +6,7 @@ const { appendSpend, appendFailure, appendSwap, appendInference, getHistory } = 
 const { executePayment, setPolicy, TOKENS, getVaultContract } = require('./escrow');
 const { estimateSwap, executeSwap } = require('./dex');
 const { parseIntentOnChain } = require('./brain');
+const { fetchContext } = require('./triggers');
 const { getAllJobs, addJob, cancelJob, parseInterval, intervalLabel } = require('./scheduler');
 
 let kit = null;
@@ -159,7 +160,17 @@ async function getSummary(userAddress) {
 }
 
 async function chatOnChain(message, vaultBalance, userAddress) {
-  const intent = await parseIntentOnChain(message, wallet, vaultBalance);
+  let priceContext = '';
+  try {
+    const ctx = await fetchContext(message, wallet);
+    if (ctx && ctx.type === 'price') {
+      priceContext = ` Current ${ctx.coin} price: $${ctx.value} (proof: ${ctx.proof})`;
+    }
+  } catch (e) {
+    console.warn('Price context fetch failed:', e.message);
+  }
+
+  const intent = await parseIntentOnChain(message + priceContext, wallet, vaultBalance);
   if (intent.requestId) {
     appendInference({
       userAddress: userAddress || wallet.address,
