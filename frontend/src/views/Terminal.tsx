@@ -289,7 +289,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
       if (res) {
         setTxResults(r => ({ ...r, [msgIdx]: res }))
         if ((res.status === 'executed' || res.status === 'success') && onActionSuccess) {
-          onActionSuccess()
+          setTimeout(() => onActionSuccess(), 3000)
         }
       }
     } catch (err: any) {

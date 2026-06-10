@@ -85,9 +85,10 @@ export default function App() {
     }
   }, [messages, userAddress])
 
-  const refreshBalances = async () => {
+  const refreshBalances = async (delay = 0) => {
     setRefreshKey(prev => prev + 1)
     if (!userAddress) return
+    if (delay) await new Promise(r => setTimeout(r, delay))
     try {
       const balances = await getTokenBalances(userAddress)
       setTokenBalances(balances)
