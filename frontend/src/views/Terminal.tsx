@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, executeSwap, executeIntent, generateRequestId, getPolicy, getChatHistory, getVaultAddress, RPC, TOKENS } from '../api'
+import { sendChat, executePay, executeSwap, executeIntent, generateRequestId, getPolicy, getChatHistory, clearChatHistory, updatePolicy, getVaultAddress, RPC, TOKENS } from '../api'
 import type { ChatMessage } from '../types'
 import { ethers } from 'ethers'
 
