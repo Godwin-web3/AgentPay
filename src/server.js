@@ -382,17 +382,3 @@ function startServer(wallet) {
 }
 
 module.exports = { startServer };
-= require('./scheduler');
-      startJob(job, pay, job.userAddress);
-    });
-  }
-
-  return new Promise((resolve) => {
-    server.listen(PORT, () => {
-      console.log('🌐 AgentPay API running on http://localhost:' + PORT);
-      resolve();
-    });
-  });
-}
-
-module.exports = { startServer };

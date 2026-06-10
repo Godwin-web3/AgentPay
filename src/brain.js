@@ -16,7 +16,6 @@ async function parseIntentOnChain(userInput, wallet, vaultBalance) {
     const systemWithBalance = shortSystem + ' Agent context: ' + balanceLine;
     console.log('🤖 Sending to Somnia AI with context length:', userInput.length);
     const { result, requestId } = await inferOnChain(userInput, systemWithBalance, wallet);
-...
     let cleaned = result.replace(/```json|```/g, '').trim();
     // Quote unquoted keys: { action: -> { "action":
     cleaned = cleaned.replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
