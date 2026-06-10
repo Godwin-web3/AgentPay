@@ -298,6 +298,19 @@ async function getUnifiedHistory(userAddress, limit = 50) {
         txHash: log.txHash,
         timestamp: log.timestamp
       });
+    } else if (log.type === 'payment' && log.txHash) {
+      history.push({
+        id: log.txHash,
+        type: 'payment',
+        status: 'executed',
+        label: 'Sent ' + (log.token || 'STT') + ' to ' + (log.to ? log.to.slice(0,10) + '...' : 'unknown'),
+        to: log.to,
+        amount: log.amount?.toString(),
+        token: log.token || 'STT',
+        reason: log.reason,
+        txHash: log.txHash,
+        timestamp: log.timestamp
+      });
     } else if (log.type === 'inference') {
       history.push({
         id: log.requestId,

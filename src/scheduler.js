@@ -1,3 +1,4 @@
+const { evaluateTrigger } = require('./triggers');
 const fs = require('fs');
 const path = require('path');
 const { checkConditions } = require('./conditions');
@@ -114,8 +115,13 @@ async function startJob(job, payFn, ownerAddress) {
     }
 
     if (current.trigger) {
-      console.log('\n⛓ Trigger verified on Somnia');
-      console.log('   Type: ' + current.trigger.type + ' | condition met ✓');
+      console.log('\n⛓ Evaluating trigger condition on Somnia...');
+      const triggerResult = await evaluateTrigger(current.trigger, { privateKey: process.env.PRIVATE_KEY });
+      if (!triggerResult.met) {
+        console.log('   ⏳ Trigger condition not met, skipping this run.');
+        return;
+      }
+      console.log('   ✅ Trigger condition met! Proof: ' + (triggerResult.proof || 'n/a'));
     }
 
     console.log('\n🔄 Executing scheduled payment for ' + userAddr + '...');
@@ -131,7 +137,7 @@ async function startJob(job, payFn, ownerAddress) {
     writeSchedules(s2);
 
     if (result && result.success) {
-      console.log('✅ Scheduled payment: ' + current.amount + ' STT to ' + current.to);
+      console.log('✅ Scheduled payment: ' + current.amount + ' STT to ' + current.to + (result && result.txHash ? '\n   🔗 Tx: https://shannon-explorer.somnia.network/tx/' + result.txHash : ''));
     } else {
       console.log('❌ Payment failed: ' + (result && result.reason));
     }
@@ -148,6 +154,17 @@ function stopJob(id) {
   }
 }
 
+function intervalLabel(ms) {
+  const seconds = ms / 1000;
+  const minutes = seconds / 60;
+  const hours = minutes / 60;
+  const days = hours / 24;
+  if (days >= 1) return Math.round(days) + ' day(s)';
+  if (hours >= 1) return Math.round(hours) + ' hour(s)';
+  if (minutes >= 1) return Math.round(minutes) + ' minute(s)';
+  return Math.round(seconds) + ' second(s)';
+}
+
 module.exports = {
   readSchedules,
   writeSchedules,
@@ -158,5 +175,6 @@ module.exports = {
   getActiveJobs,
   stopAllJobs,
   startJob,
-  stopJob
+  stopJob,
+  intervalLabel
 };

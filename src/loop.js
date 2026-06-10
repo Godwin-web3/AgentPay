@@ -5,6 +5,7 @@ const { pay, getSummary, getUnifiedHistory, prepareSwap, confirmSwap, showBalanc
 const { applyUpdate } = require('./policyManager');
 const scheduler = require('./scheduler');
 const { TOKENS } = require('./dex');
+const { fetchContext } = require('./triggers');
 
 function resolveSymbol(sym) {
   if (!sym) return sym;
@@ -101,7 +102,16 @@ function prompt() {
       console.log('🛡️  Somnia Verifiable AI...');
       let vaultBal;
       try { vaultBal = await getVaultBalance(); } catch(e) {}
-      const intent = await parseIntentOnChain(actualInput, null, vaultBal);
+      let priceContext = '';
+      try {
+        const ctx = await fetchContext(actualInput, { privateKey: process.env.PRIVATE_KEY });
+        console.log('🔍 fetchContext result:', ctx);
+        if (ctx && ctx.type === 'price') {
+          priceContext = ' Current ' + ctx.coin + ' price: $' + ctx.value + ' (proof: ' + ctx.proof + ')';
+          console.log('\u26d3  ' + ctx.coin + ' price fetched on-chain: $' + ctx.value);
+        }
+      } catch(e) {}
+      const intent = await parseIntentOnChain(actualInput + priceContext, null, vaultBal);
 
       const _skipMsg = ['history','status','list_schedules','help','cancel_schedule','balance'].includes(intent.action);
         if (!_skipMsg) console.log('\n🤖 AgentPay: ' + intent.message);

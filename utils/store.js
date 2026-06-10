@@ -31,6 +31,7 @@ function appendSpend({ userAddress, to, amount, reason, txHash, agentId, token }
   const store = readStore();
   store.spends.push({
     userAddress,
+    type: 'payment',
     to,
     amount,
     token: token || 'STT',

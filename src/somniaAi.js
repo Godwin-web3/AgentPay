@@ -11,7 +11,7 @@ const publicClient = createPublicClient({ transport: http(RPC_URL) });
 const PLATFORM_ABI = parseAbi([
     'function createRequest(uint256 agentId, address callbackAddress, bytes4 callbackSelector, bytes calldata payload) external payable returns (uint256 requestId)',
     'function getRequestDeposit() external view returns (uint256)',
-    'function getRequest(uint256 requestId) external view returns (uint256 id, address requester, address callbackAddress, bytes4 callbackSelector, uint8 status, bytes result)',
+    'function getRequest(uint256 requestId) external view returns ((uint256 id, address requester, address callbackAddress, bytes4 callbackSelector, address[] subcommittee, (address validator, bytes result, uint8 status, uint256 receipt, uint256 timestamp, uint256 executionCost)[] responses, uint256 responseCount, uint256 failureCount, uint256 threshold, uint256 createdAt, uint256 deadline, uint8 status, uint8 consensusType, uint256 remainingBudget, uint256 perAgentBudget) request)',
     'event RequestCreated(uint256 indexed requestId, uint256 indexed agentId, uint256 perAgentBudget, bytes payload, address[] subcommittee)',
     'event RequestFinalized(uint256 indexed requestId, uint8 status)'
 ]);

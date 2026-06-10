@@ -102,6 +102,101 @@
       "totalRuns": 1,
       "totalSpent": 0.001,
       "active": false
+    },
+    {
+      "id": 1781078524686,
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.1,
+      "reason": "Schedule 0.1 STT to 0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA every minute for testing",
+      "intervalMs": 60000,
+      "intervalLabel": "1 minute(s)",
+      "conditions": null,
+      "trigger": null,
+      "createdAt": "2026-06-10T08:02:04.686Z",
+      "lastRun": "2026-06-10T08:10:51.495Z",
+      "nextRun": "2026-06-10T08:11:51.495Z",
+      "totalRuns": 5,
+      "totalSpent": 0.5,
+      "active": false
+    },
+    {
+      "id": 1781090115137,
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.1,
+      "reason": "Pay 0.1 STT when BTC price is above 200000",
+      "intervalMs": 86400000,
+      "intervalLabel": "1 day(s)",
+      "conditions": null,
+      "trigger": null,
+      "createdAt": "2026-06-10T11:15:15.137Z",
+      "lastRun": null,
+      "nextRun": "2026-06-11T11:15:15.137Z",
+      "totalRuns": 0,
+      "totalSpent": 0,
+      "active": false
+    },
+    {
+      "id": 1781090754297,
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.1,
+      "reason": "Scheduled payment of 0.1 STT to 0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA every 1 minute when BTC price is above 200000",
+      "intervalMs": 60000,
+      "intervalLabel": "1 minute(s)",
+      "conditions": null,
+      "trigger": {
+        "type": "price",
+        "coin": "BTC",
+        "operator": ">",
+        "threshold": 200000
+      },
+      "createdAt": "2026-06-10T11:25:54.297Z",
+      "lastRun": null,
+      "nextRun": "2026-06-10T12:31:27.233Z",
+      "totalRuns": 0,
+      "totalSpent": 0,
+      "active": false
+    },
+    {
+      "id": 1781094926228,
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.01,
+      "reason": "Send 0.01 STT every minute when BTC price is below 200000",
+      "intervalMs": 60000,
+      "intervalLabel": "1 minute(s)",
+      "conditions": null,
+      "trigger": {
+        "type": "price",
+        "coin": "BTC",
+        "operator": "<",
+        "threshold": 200000
+      },
+      "createdAt": "2026-06-10T12:35:26.229Z",
+      "lastRun": "2026-06-10T12:39:09.127Z",
+      "nextRun": "2026-06-10T12:40:09.128Z",
+      "totalRuns": 2,
+      "totalSpent": 0.02,
+      "active": false
+    },
+    {
+      "id": 1781095649850,
+      "to": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
+      "amount": 0.01,
+      "reason": "Send 0.01 STT every minute when SOL price is below 200",
+      "intervalMs": 60000,
+      "intervalLabel": "1 minute(s)",
+      "conditions": null,
+      "trigger": {
+        "type": "price",
+        "coin": "SOL",
+        "operator": "<",
+        "threshold": 200
+      },
+      "createdAt": "2026-06-10T12:47:29.850Z",
+      "lastRun": "2026-06-10T12:48:38.504Z",
+      "nextRun": "2026-06-10T12:49:38.505Z",
+      "totalRuns": 1,
+      "totalSpent": 0.01,
+      "active": false
     }
   ]
 }
