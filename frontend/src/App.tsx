@@ -166,7 +166,7 @@ export default function App() {
         <div className="view-content">
           {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} onActionSuccess={refreshBalances} />}
           {view === 'schedules' && <Schedules userAddress={userAddress} />}
-          {view === 'history' && <History key={historyKey} userAddress={userAddress} />}
+          {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} />}
           {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} />}
           {view === 'policy'   && <Policy userAddress={userAddress} />}
         </div>
@@ -178,7 +178,7 @@ export default function App() {
           <div
             key={item.id}
             className={`mobile-nav-item ${view === item.id ? 'active' : ''}`}
-            onClick={() => setView(item.id as View)}
+            onClick={() => { if (item.id === 'history') setHistoryKey(k => k + 1); setView(item.id as View) }}
           >
             <span className="mobile-nav-icon"><item.icon /></span>
             <span>{item.label}</span>

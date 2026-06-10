@@ -14,7 +14,7 @@ function formatDayOnly(ts: number | string) {
   return d.toLocaleString([], { month: 'short', day: 'numeric' })
 }
 
-export default function History({ userAddress }: { userAddress: string }) {
+export default function History({ userAddress, refreshTrigger = 0 }: { userAddress: string, refreshTrigger?: number }) {
   const [txs, setTxs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -32,7 +32,7 @@ export default function History({ userAddress }: { userAddress: string }) {
       })
       .catch(() => setError('Failed to load history'))
       .finally(() => setLoading(false))
-  }, [userAddress])
+  }, [userAddress, refreshTrigger])
 
   if (loading) return (
     <div className="history-view">
