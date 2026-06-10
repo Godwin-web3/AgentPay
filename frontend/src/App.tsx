@@ -45,6 +45,7 @@ const navItems = [
 ] as const
 
 export default function App() {
+  const [historyKey, setHistoryKey] = useState(0)
   const [view, setView] = useState<View>(() => (localStorage.getItem('agentpay_view') as View) || 'landing')
   const [userAddress, setUserAddress] = useState(() => localStorage.getItem('agentpay_address') || '')
   const [isOnboarded, setIsOnboarded] = useState(false)
@@ -141,7 +142,7 @@ export default function App() {
             <div
               key={item.id}
               className={`nav-item ${view === item.id ? 'active' : ''}`}
-              onClick={() => setView(item.id as View)}
+              onClick={() => { if (item.id === 'history') setHistoryKey(k => k + 1); setView(item.id as View) }}
             >
               <span className="nav-icon"><item.icon /></span>
               <span>{item.label}</span>
@@ -165,7 +166,7 @@ export default function App() {
         <div className="view-content">
           {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} onActionSuccess={refreshBalances} />}
           {view === 'schedules' && <Schedules userAddress={userAddress} />}
-          {view === 'history' && <History key={Date.now()} userAddress={userAddress} />}
+          {view === 'history' && <History key={historyKey} userAddress={userAddress} />}
           {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} />}
           {view === 'policy'   && <Policy userAddress={userAddress} />}
         </div>
