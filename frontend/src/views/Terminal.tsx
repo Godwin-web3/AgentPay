@@ -256,11 +256,11 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
       if (prop.status === 'proposing_pay') {
         const requestId = generateRequestId()
         const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userAddress, prop.token || 'STT')
-        res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'STT' }
+        res = { ...payRes, status: payRes.success ? 'success' : 'failed', type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'STT' }
       }
  else if (prop.status === 'proposing_swap') {
         const swapRes = await executeSwap(prop.fromToken, prop.toToken, prop.amount, true, userAddress)
-        res = { ...swapRes, type: 'swap', fromToken: prop.fromToken, toToken: prop.toToken, amount: prop.amount }
+        res = { ...swapRes, status: swapRes.success ? 'success' : 'failed', type: 'swap', fromToken: prop.fromToken, toToken: prop.toToken, amount: prop.amount }
       } else if (prop.status === 'proposing_intent') {
         const intentRes = await executeIntent(prop.intentName, prop.amount, prop.to, prop.reason || 'Atomic Intent', userAddress)
         res = { ...intentRes, type: 'intent', intentName: prop.intentName }
