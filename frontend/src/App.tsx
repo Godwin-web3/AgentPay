@@ -88,6 +88,7 @@ export default function App() {
 
   const refreshBalances = async (delay = 0) => {
     setRefreshKey(prev => prev + 1)
+    setHistoryKey(k => k + 1)
     if (!userAddress) return
     if (delay) await new Promise(r => setTimeout(r, delay))
     try {
