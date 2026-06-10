@@ -298,7 +298,7 @@ async function getUnifiedHistory(userAddress, limit = 50) {
         txHash: log.txHash,
         timestamp: log.timestamp
       });
-    } else if (log.type === 'payment' && log.txHash) {
+    } else if ((log.type === 'payment' || !log.type) && log.txHash) {
       history.push({
         id: log.txHash,
         type: 'payment',

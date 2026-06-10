@@ -107,7 +107,7 @@ function handleAgents(req, res) {
 async function handleHistory(req, res) {
   const userAddress = req.headers['x-user-address'];
   try {
-    const items = await getUnifiedHistory(userAddress, 50);
+    const items = await getUnifiedHistory(userAddress, 100);
     return send(res, 200, { items, total: items.length });
   } catch (err) {
     return send(res, 500, { error: 'History fetch failed: ' + err.message });

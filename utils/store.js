@@ -93,8 +93,9 @@ function getConsecutiveFailures(userAddress) {
 function getHistory(userAddress, limit) {
   limit = limit || 50;
   const store = readStore();
+  const lowerAddr = userAddress ? userAddress.toLowerCase() : null;
   return store.spends
-    .filter(s => !userAddress || !s.userAddress || s.userAddress === userAddress)
+    .filter(s => !lowerAddr || !s.userAddress || s.userAddress.toLowerCase() === lowerAddr)
     
     .slice(-limit)
     .reverse();
