@@ -165,7 +165,7 @@ export default function App() {
         <div className="view-content">
           {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} onActionSuccess={refreshBalances} />}
           {view === 'schedules' && <Schedules userAddress={userAddress} />}
-          {view === 'history' && <History userAddress={userAddress} />}
+          {view === 'history' && <History key={Date.now()} userAddress={userAddress} />}
           {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} />}
           {view === 'policy'   && <Policy userAddress={userAddress} />}
         </div>
