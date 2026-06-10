@@ -256,7 +256,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
       if (prop.status === 'proposing_pay') {
         const requestId = generateRequestId()
         const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userAddress, prop.token || 'STT')
-        res = { ...payRes, status: payRes.success ? 'success' : 'failed', type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'STT' }
+        res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'STT' }
       }
  else if (prop.status === 'proposing_swap') {
         const swapRes = await executeSwap(prop.fromToken, prop.toToken, prop.amount, true, userAddress)
