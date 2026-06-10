@@ -85,9 +85,11 @@ function getActiveJobs() {
 
 // Note: The loop.js will use these to execute onchain
 function stopAllJobs() {
-  const store = readSchedules();
-  store.jobs.forEach(j => { j.active = false; });
-  writeSchedules(store);
+  Object.keys(activeTimers).forEach(id => {
+    clearInterval(activeTimers[id]);
+    delete activeTimers[id];
+  });
+  console.log('🛑 All in-memory scheduled jobs stopped.');
 }
 
 
@@ -125,7 +127,10 @@ async function startJob(job, payFn, ownerAddress) {
     }
 
     console.log('\n🔄 Executing scheduled payment for ' + userAddr + '...');
-    const result = await payFn(current.to, current.amount, current.reason, 'STT', userAddr);
+    const result = await payFn(current.to, current.amount, current.reason, 'STT', userAddr, {
+      isScheduled: true,
+      triggerProof: current.trigger ? triggerResult.proof : null
+    });
 
     const s2 = readSchedules();
     const j2 = s2.jobs.find(j => j.id === job.id);

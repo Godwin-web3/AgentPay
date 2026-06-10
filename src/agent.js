@@ -165,6 +165,7 @@ async function chatOnChain(message, vaultBalance, userAddress) {
     const ctx = await fetchContext(message, wallet);
     if (ctx && ctx.type === 'price') {
       priceContext = ` Current ${ctx.coin} price: $${ctx.value} (proof: ${ctx.proof})`;
+      console.log('🔍 AI Context Added:', priceContext);
     }
   } catch (e) {
     console.warn('Price context fetch failed:', e.message);
@@ -310,17 +311,22 @@ async function getUnifiedHistory(userAddress, limit = 50) {
         timestamp: log.timestamp
       });
     } else if ((log.type === 'payment' || !log.type) && log.txHash) {
+      const isScheduled = log.isScheduled || (log.reason && log.reason.toLowerCase().includes('schedule'));
+      const triggerInfo = log.triggerProof ? ` (Trigger: ${log.triggerProof.slice(0,10)}...)` : '';
+      
       history.push({
         id: log.txHash,
         type: 'payment',
         status: 'executed',
-        label: 'Sent ' + (log.token || 'STT') + ' to ' + (log.to ? log.to.slice(0,10) + '...' : 'unknown'),
+        label: (isScheduled ? '🕒 Scheduled Payment: ' : '💸 Sent ') + (log.token || 'STT') + ' to ' + (log.to ? log.to.slice(0,10) + '...' : 'unknown') + triggerInfo,
         to: log.to,
         amount: log.amount?.toString(),
         token: log.token || 'STT',
         reason: log.reason,
         txHash: log.txHash,
-        timestamp: log.timestamp
+        timestamp: log.timestamp,
+        isScheduled,
+        triggerProof: log.triggerProof
       });
     } else if (log.type === 'inference') {
       history.push({

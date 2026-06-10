@@ -258,6 +258,10 @@ async function handleCreateSchedule(req, res) {
     userAddress
   });
 
+  const { startJob } = require('./scheduler');
+  const { pay } = require('./agent');
+  startJob(job, pay, userAddress);
+
   return send(res, 200, { success: true, schedule: job });
 }
 
@@ -369,6 +373,20 @@ const server = http.createServer(async (req, res) => {
 
 function startServer(wallet) {
   backendWallet = wallet;
+  return new Promise((resolve) => {
+    server.listen(PORT, () => {
+      console.log('🌐 AgentPay API running on http://localhost:' + PORT);
+      resolve();
+    });
+  });
+}
+
+module.exports = { startServer };
+= require('./scheduler');
+      startJob(job, pay, job.userAddress);
+    });
+  }
+
   return new Promise((resolve) => {
     server.listen(PORT, () => {
       console.log('🌐 AgentPay API running on http://localhost:' + PORT);

@@ -27,7 +27,7 @@ function writeStore(data) {
   fs.writeFileSync(STORE_PATH, stringify(data));
 }
 
-function appendSpend({ userAddress, to, amount, reason, txHash, agentId, token }) {
+function appendSpend({ userAddress, to, amount, reason, txHash, agentId, token, isScheduled, triggerProof }) {
   const store = readStore();
   store.spends.push({
     userAddress,
@@ -38,6 +38,8 @@ function appendSpend({ userAddress, to, amount, reason, txHash, agentId, token }
     reason,
     txHash,
     agentId: agentId ? agentId.toString() : null,
+    isScheduled: !!isScheduled,
+    triggerProof: triggerProof || null,
     timestamp: Date.now(),
     date: new Date().toDateString()
   });
