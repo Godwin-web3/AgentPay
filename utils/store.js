@@ -95,7 +95,7 @@ function getHistory(userAddress, limit) {
   const store = readStore();
   return store.spends
     .filter(s => !userAddress || !s.userAddress || s.userAddress === userAddress)
-    .filter(s => s.type !== 'inference')
+    
     .slice(-limit)
     .reverse();
 }

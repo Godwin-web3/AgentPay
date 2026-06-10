@@ -27,7 +27,7 @@ async function request<T>(path: string, options?: RequestInit, userAddress?: str
     headers
   })
   const data = await res.json()
-  if (!res.ok && res.status !== 200) throw new Error(data.error || 'Request failed')
+  if (!res.ok) throw new Error(data.error || 'Request failed')
   return data as T
 }
 

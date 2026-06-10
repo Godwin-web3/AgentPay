@@ -208,7 +208,7 @@ async function getUnifiedHistory(userAddress, limit = 50) {
       const getBlockTime = async (num) => {
         if (blockTimestamps.has(num)) return blockTimestamps.get(num);
         const block = await provider.getBlock(num);
-        const ts = (block?.timestamp || 0) * 1000;
+        const ts = block ? (block.timestamp * 1000) : Date.now();
         blockTimestamps.set(num, ts);
         return ts;
       };
@@ -341,7 +341,7 @@ async function getUnifiedHistory(userAddress, limit = 50) {
   });
 
   return history
-    .sort((a, b) => b.timestamp - a.timestamp)
+    .sort((a, b) => { if (b.timestamp !== a.timestamp) return b.timestamp - a.timestamp; return (b.id || "").localeCompare(a.id || ""); })
     .slice(0, limit);
 }
 
