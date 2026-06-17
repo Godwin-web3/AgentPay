@@ -17,7 +17,7 @@ function formatTime(ts: number) {
 function ProofBadge({ requestId }: { requestId: string }) {
   return (
     <a 
-      href={`https://shannon-explorer.somnia.network/address/0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776`} 
+      href={`https://testnet.arcscan.arc.network/address/0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776`} 
       target="_blank" 
       rel="noreferrer"
       style={{
@@ -65,16 +65,16 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     let detail = ''
     if (result.status === 'proposing_pay') {
       title = '💸 PAYMENT PROPOSAL'
-      detail = `Send ${result.amount} ${result.token || 'STT'} to ${result.to?.slice(0, 8)}...`
+      detail = `Send ${result.amount} ${result.token || 'USDC'} to ${result.to?.slice(0, 8)}...`
     } else if (result.status === 'proposing_swap') {
       title = '🔄 SWAP PROPOSAL'
       detail = `Swap ${result.amount} ${result.fromToken} → ${result.toToken}`
     } else if (result.status === 'proposing_intent') {
       title = '⚡ ATOMIC INTENT'
-      detail = `${result.intentName?.replace(/_/g, ' ').toUpperCase()}${result.amount ? `: ${result.amount} STT` : ''}`
+      detail = `${result.intentName?.replace(/_/g, ' ').toUpperCase()}${result.amount ? `: ${result.amount} USDC` : ''}`
     } else if (result.status === 'proposing_schedule') {
       title = '⏰ ON-CHAIN SCHEDULE'
-      detail = `Pay ${result.amount} STT to ${result.to?.slice(0, 8)}... every ${result.interval}`
+      detail = `Pay ${result.amount} USDC to ${result.to?.slice(0, 8)}... every ${result.interval}`
     }
 
     return (
@@ -111,8 +111,10 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
 
   if (result.status === 'executed' || result.status === 'success') {
     let feedback = `✓ Executed`
-    if (result.type === 'pay' || result.to) {
-       feedback = `✓ Sent ${result.amount} ${result.token || 'STT'} to ${result.to?.slice(0, 10)}...`
+    if (result.type === 'schedule') {
+       feedback = `✓ Scheduled: ${result.amount} ${result.token || 'USDC'} to ${result.to?.slice(0, 10)}...`
+    } else if (result.type === 'pay' || result.to) {
+       feedback = `✓ Sent ${result.amount} ${result.token || 'USDC'} to ${result.to?.slice(0, 10)}...`
     } else if (result.type === 'swap' || (result.fromToken && result.toToken)) {
        feedback = `✓ Swapped ${result.amount} ${result.fromToken} → ${result.toToken}`
     } else if (result.type === 'intent') {
@@ -173,7 +175,7 @@ function BalanceCard({ data }: { data: any }) {
       {data.vault && (
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, borderTop: '1px solid var(--border)', paddingTop: 6 }}>
           <span style={{ color: 'var(--muted)' }}>VAULT</span>
-          <span style={{ color: 'var(--teal)' }}>{data.vault} STT</span>
+          <span style={{ color: 'var(--teal)' }}>{data.vault} USDC</span>
         </div>
       )}
     </div>
@@ -193,10 +195,10 @@ function PolicyCard({ data }: { data: any }) {
     }}>
       <div style={{ color: 'var(--teal)', marginBottom: 6, letterSpacing: 1 }}>// POLICY</div>
       {[
-        ['PER_TX', `${data.perTxCap} STT`],
-        ['DAILY_CAP', `${data.dailyCap} STT`],
-        ['SPENT_TODAY', `${data.dailySpendSoFar} STT`],
-        ['REMAINING', `${data.dailyRemaining} STT`],
+        ['PER_TX', `${data.perTxCap} USDC`],
+        ['DAILY_CAP', `${data.dailyCap} USDC`],
+        ['SPENT_TODAY', `${data.dailySpendSoFar} USDC`],
+        ['REMAINING', `${data.dailyRemaining} USDC`],
         ['STATUS', data.active ? 'ACTIVE' : 'PAUSED'],
       ].map(([k, v]) => (
         <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
@@ -255,8 +257,8 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
       let res
       if (prop.status === 'proposing_pay') {
         const requestId = generateRequestId()
-        const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userAddress, prop.token || 'STT')
-        res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'STT' }
+        const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userAddress, prop.token || 'USDC')
+        res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'USDC' }
       }
  else if (prop.status === 'proposing_swap') {
         const swapRes = await executeSwap(prop.fromToken, prop.toToken, prop.amount, true, userAddress)
@@ -272,7 +274,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
         const minBalWei = ethers.parseEther((prop.conditions?.minBalance || 0).toString())
         
         const data = iface.encodeFunctionData("createSchedule", [
-          TOKENS.STT, prop.to, amountWei, intervalSec, prop.reason || '', minBalWei
+          TOKENS.USDC, prop.to, amountWei, intervalSec, prop.reason || '', minBalWei
         ])
         
         const txHash = await window.ethereum.request({
@@ -283,7 +285,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
         const provider = new ethers.JsonRpcProvider(RPC)
         await provider.waitForTransaction(txHash)
 
-        res = { status: 'executed', txHash, explorer: 'https://shannon-explorer.somnia.network/tx/' + txHash, type: 'schedule', to: prop.to, amount: prop.amount }
+        res = { status: 'executed', txHash, explorer: 'https://testnet.arcscan.arc.network/tx/' + txHash, type: 'schedule', to: prop.to, amount: prop.amount }
       }
       
       if (res) {
@@ -336,7 +338,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
             const bal = (Number(BigInt(data.result === '0x' || !data.result ? '0x0' : data.result)) / 1e18).toFixed(4)
             setMessages(prev => [...prev, {
               role: 'assistant',
-              content: `Vault balance: ${bal} STT\nWorker: online\nPolicy: active`,
+              content: `Vault balance: ${bal} USDC\nWorker: online\nPolicy: active`,
               timestamp: Date.now()
             }])
           })
@@ -375,7 +377,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
                 status: 'proposing_pay', 
                 to: intent.to, 
                 amount: intent.amount, 
-                token: intent.fromToken || 'STT',
+                token: intent.fromToken || 'USDC',
                 reason: intent.reason
               } 
             }))
@@ -544,8 +546,8 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
             className="quick-btn"
             onClick={() => {
               const prompts: Record<string, string> = {
-                SEND: 'Send 0.5 STT to 0x...',
-                SWAP: 'Swap 10 SUSD to WSTT',
+                SEND: 'Send 0.5 USDC to 0x...',
+                SWAP: 'Swap 10 USDC to WUSDC',
                 BALANCE: 'What is my vault balance?',
                 POLICY: 'Show my current policy'
               }

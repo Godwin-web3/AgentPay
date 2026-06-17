@@ -1,9 +1,9 @@
 require('dotenv').config();
-const { SomniaAgentKit, SOMNIA_NETWORKS } = require('somnia-agent-kit');
+const { ArcAgentKit, SOMNIA_NETWORKS } = require('arc-agent-kit');
 const { ethers } = require('ethers');
 
 async function main() {
-    console.log('🚀 Starting Somnia Agent Registration...');
+    console.log('🚀 Starting Arc Agent Registration...');
 
     // 1. Setup Provider and Wallet
     const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
@@ -12,9 +12,9 @@ async function main() {
 
     console.log(`👛 Owner Address: ${ownerAddress}`);
 
-    // 2. Initialize SomniaAgentKit
+    // 2. Initialize ArcAgentKit
     // These addresses are typically standard on Testnet, but we use env if available
-    const kit = new SomniaAgentKit({
+    const kit = new ArcAgentKit({
         network: SOMNIA_NETWORKS.testnet,
         privateKey: process.env.PRIVATE_KEY,
         contracts: {
@@ -49,7 +49,7 @@ async function main() {
 
     // 4. Register New Agent
     const agentName = process.env.AGENT_NAME || 'AgentPay';
-    const description = 'Policy-enforced autonomous payment agent for Somnia';
+    const description = 'Policy-enforced autonomous payment agent for Arc';
     const metadataUrl = 'ipfs://agentpay-v1'; // Placeholder or actual metadata
     const tags = ['payments', 'defi', 'policy-engine', 'autonomous'];
 

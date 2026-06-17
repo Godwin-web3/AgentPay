@@ -80,17 +80,17 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
         </div>
         <div className="card">
           <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>NETWORK</div>
-          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 13 }}>Somnia Testnet | Chain ID 50312</div>
+          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 13 }}>Arc Testnet | Chain ID 5042002</div>
         </div>
       </div>
     )
   }
 
   const menuItems = [
-    { id: 'vault',   label: 'Vault',   desc: vaultBalance + ' STT in vault' },
+    { id: 'vault',   label: 'Vault',   desc: vaultBalance + ' USDC in vault' },
     { id: 'policy',  label: 'Policy',  desc: 'Spending rules and caps' },
     { id: 'history', label: 'History', desc: 'Transaction log' },
-    { id: 'agent',   label: 'Agent',   desc: 'Agent ID 14 | Somnia Testnet' },
+    { id: 'agent',   label: 'Agent',   desc: 'Agent ID 14 | Arc Testnet' },
   ]
 
   return (

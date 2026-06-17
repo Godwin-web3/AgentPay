@@ -2,7 +2,7 @@ require('dotenv').config();
 const { ethers } = require('ethers');
 
 async function main() {
-    console.log('🧪 Testing Somnia Verifiable LLM Inference (Corrected)...');
+    console.log('🧪 Testing Arc Verifiable LLM Inference (Corrected)...');
 
     const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
@@ -34,8 +34,8 @@ async function main() {
 
     try {
         // Subcommittee size 3, no callback (0x00000000)
-        // Deposit: 0.12 STT should be enough (0.07 per validator * 3 + base)
-        // Let's use 0.3 STT to be safe.
+        // Deposit: 0.12 USDC should be enough (0.07 per validator * 3 + base)
+        // Let's use 0.3 USDC to be safe.
         const tx = await platform.createRequest(
             AGENT_ID, 
             agentData, 
@@ -76,7 +76,7 @@ async function main() {
                 // Decode the string result
                 try {
                     const decoded = ethers.AbiCoder.defaultAbiCoder().decode(["string"], data);
-                    console.log('🤖 Somnia AI Result:');
+                    console.log('🤖 Arc AI Result:');
                     console.log(decoded[0]);
                 } catch (e) {
                     console.log('⚠️ Failed to decode response data:', data);
@@ -88,7 +88,7 @@ async function main() {
         });
 
     } catch (error) {
-        console.error('❌ Error calling Somnia Agent:', error);
+        console.error('❌ Error calling Arc Agent:', error);
     }
 }
 

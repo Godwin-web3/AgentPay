@@ -9,7 +9,7 @@ const VAULT_ABI = [
 ];
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL || 'https://dream-rpc.somnia.network');
+  const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL || 'https://rpc.testnet.arc.network');
   const userAddress = '0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA';
   const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, provider);
 
@@ -20,15 +20,15 @@ async function main() {
 
     console.log('--- Vault Status ---');
     console.log('User Address:', userAddress);
-    console.log('Vault Balance:', ethers.formatEther(balance), 'STT');
+    console.log('Vault Balance:', ethers.formatEther(balance), 'USDC');
     console.log('Policy:');
-    console.log('  Per Tx Cap:', ethers.formatEther(policy.perTxCap), 'STT');
-    console.log('  Daily Cap:', ethers.formatEther(policy.dailyCap), 'STT');
+    console.log('  Per Tx Cap:', ethers.formatEther(policy.perTxCap), 'USDC');
+    console.log('  Daily Cap:', ethers.formatEther(policy.dailyCap), 'USDC');
     console.log('  Max Tx Per Hour:', policy.maxTxPerHour.toString());
     console.log('  Active:', policy.active);
     console.log('  Whitelist:', whitelist.join(', '));
     console.log('Spend Metrics:');
-    console.log('  Today Spent:', ethers.formatEther(todaySpent), 'STT');
+    console.log('  Today Spent:', ethers.formatEther(todaySpent), 'USDC');
     console.log('  Current Hour Tx:', currentHourTx.toString());
   } catch (err) {
     console.error('Error fetching vault status:', err.message);

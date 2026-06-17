@@ -20,17 +20,17 @@ const VAULT_ABI = [
 ]
 
 const TOKENS: Record<string, string> = {
-  STT:  '0x0000000000000000000000000000000000000000',
-  WSTT: '0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7',
+  USDC:  '0x0000000000000000000000000000000000000000',
+  WUSDC: '0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7',
   PING: '0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493',
   PONG: '0x9beaA0016c22B646Ac311Ab171270B0ECf23098F',
-  SUSD: '0x65296738D4E5edB1515e40287B6FDf8320E6eE04',
+  USDC: '0x65296738D4E5edB1515e40287B6FDf8320E6eE04',
 }
 
 export default function Vault({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onBack, onActionSuccess }: Props) {
   const [mode, setMode] = useState<null | 'deposit' | 'withdraw'>(null)
   const [amount, setAmount] = useState('')
-  const [selectedToken, setSelectedToken] = useState('STT')
+  const [selectedToken, setSelectedToken] = useState('USDC')
   const [loading, setLoading] = useState(false)
   const [txStatus, setTxStatus] = useState<string | null>(null)
 
@@ -43,7 +43,7 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
       const tokenAddr = TOKENS[selectedToken]
       
       const data = iface.encodeFunctionData("deposit", [tokenAddr, amtWei])
-      const value = selectedToken === 'STT' ? '0x' + amtWei.toString(16) : '0x0'
+      const value = selectedToken === 'USDC' ? '0x' + amtWei.toString(16) : '0x0'
 
       const { address: vaultAddr } = await getVaultAddress(userAddress)
 
@@ -107,11 +107,11 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
   }
 
   const tokens = [
-    { symbol: 'STT', balance: walletBalance, label: 'Somnia Token' },
-    { symbol: 'WSTT', balance: tokenBalances.WSTT || '0.0000', label: 'Wrapped STT' },
+    { symbol: 'USDC', balance: walletBalance, label: 'Arc Token' },
+    { symbol: 'WUSDC', balance: tokenBalances.WUSDC || '0.0000', label: 'Wrapped USDC' },
     { symbol: 'PING', balance: tokenBalances.PING || '0.0000', label: 'Ping Token' },
     { symbol: 'PONG', balance: tokenBalances.PONG || '0.0000', label: 'Pong Token' },
-    { symbol: 'SUSD', balance: tokenBalances.SUSD || '0.0000', label: 'Somnia USD' },
+    { symbol: 'USDC', balance: tokenBalances.USDC || '0.0000', label: 'Arc USD' },
   ]
 
   return (
@@ -132,7 +132,7 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
           VAULT BALANCE
         </div>
         <div style={{ fontFamily: 'var(--font-head)', fontSize: 40, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
-          {vaultBalance} <span style={{ fontSize: 18, color: 'var(--muted)', fontWeight: 400 }}>STT</span>
+          {vaultBalance} <span style={{ fontSize: 18, color: 'var(--muted)', fontWeight: 400 }}>USDC</span>
         </div>
       </div>
 

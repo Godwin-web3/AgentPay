@@ -3,7 +3,7 @@ import { createPortal } from "react-dom"
 import { getVaultAddress } from "../api"
 import { ethers } from "ethers"
 
-const SOMNIA_CHAIN_ID = '0xc488' // 50312 in hex
+const SOMNIA_CHAIN_ID = '0x4CF4B2' // 5042002 in hex
 const VAULT_ABI = [
   "function balances(address user, address token) external view returns (uint256)",
   "function deposit(address token, uint256 amount) external payable"
@@ -100,10 +100,10 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
             method: 'wallet_addEthereumChain',
             params: [{
               chainId: SOMNIA_CHAIN_ID,
-              chainName: 'Somnia Shannon Testnet',
-              nativeCurrency: { name: 'STT', symbol: 'STT', decimals: 18 },
-              rpcUrls: ['https://dream-rpc.somnia.network'],
-              blockExplorerUrls: ['https://shannon-explorer.somnia.network']
+              chainName: 'Arc Testnet Testnet',
+              nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+              rpcUrls: ['https://rpc.testnet.arc.network'],
+              blockExplorerUrls: ['https://testnet.arcscan.arc.network']
             }]
           })
         }
@@ -188,7 +188,7 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div className="card" style={{ padding: '6px 12px', margin: 0, background: 'rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontSize: 9, color: 'var(--muted)', textTransform: 'uppercase' }}>Vault</span>
-            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 12, fontWeight: 'bold' }}>{balance} STT</span>
+            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 12, fontWeight: 'bold' }}>{balance} USDC</span>
           </div>
           
           <button className="send-btn" onClick={() => setShowModal(true)} style={{ background: 'var(--blue)' }}>
@@ -236,7 +236,7 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
       {showModal && createPortal(
         <div className="modal-overlay">
           <div className="modal-content">
-            <h3 style={{ marginTop: 0, color: 'var(--blue)', fontFamily: 'var(--font-head)' }}>Deposit STT</h3>
+            <h3 style={{ marginTop: 0, color: 'var(--blue)', fontFamily: 'var(--font-head)' }}>Deposit USDC</h3>
             <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5, marginTop: 10 }}>
               Send funds to your personal on-chain vault.
             </p>

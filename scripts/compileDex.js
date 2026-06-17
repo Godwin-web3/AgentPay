@@ -9,9 +9,9 @@ function readContract(name) {
 const input = {
   language: 'Solidity',
   sources: {
-    'SomniaPair.sol': { content: readContract('SomniaPair.sol') },
-    'SomniaFactory.sol': { content: readContract('SomniaFactory.sol') },
-    'SomniaRouter.sol': { content: readContract('SomniaRouter.sol') },
+    'ArcPair.sol': { content: readContract('ArcPair.sol') },
+    'ArcFactory.sol': { content: readContract('ArcFactory.sol') },
+    'ArcRouter.sol': { content: readContract('ArcRouter.sol') },
   },
   settings: {
     optimizer: { enabled: true, runs: 200 },
@@ -33,7 +33,7 @@ if (output.errors) {
 const artifactDir = path.join(__dirname, '../artifacts');
 if (!fs.existsSync(artifactDir)) fs.mkdirSync(artifactDir);
 
-['SomniaPair', 'SomniaFactory', 'SomniaRouter'].forEach(name => {
+['ArcPair', 'ArcFactory', 'ArcRouter'].forEach(name => {
   const contract = output.contracts[name + '.sol'][name];
   fs.writeFileSync(
     path.join(artifactDir, name + '.json'),

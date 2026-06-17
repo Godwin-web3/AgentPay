@@ -8,7 +8,7 @@ services:
       - key: PRIVATE_KEY
         sync: false
       - key: SOMNIA_RPC_URL
-        value: https://dream-rpc.somnia.network
+        value: https://rpc.testnet.arc.network
       - key: VAULT_ADDRESS
         value: 0xaB130f3f915AB9722AC6cd17E0d360f971970817
       - key: PORT

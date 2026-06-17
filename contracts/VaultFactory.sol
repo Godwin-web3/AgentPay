@@ -5,36 +5,28 @@ import "./AgentVault.sol";
 
 /**
  * @title VaultFactory
- * @dev Factory to deploy and manage per-user AgentVault instances.
+ * @dev Deploys per-user AgentVault instances on Arc.
  */
 contract VaultFactory {
     address public agent;
+    address public usdc;
     mapping(address => address) public userVaults;
 
     event VaultCreated(address indexed owner, address indexed vault);
 
-    constructor(address _agent) {
+    constructor(address _agent, address _usdc) {
         agent = _agent;
+        usdc = _usdc;
     }
 
-    /**
-     * @dev Deploys a new AgentVault for a specific owner.
-     */
     function createVault(address owner) external returns (address) {
         require(userVaults[owner] == address(0), "Vault already exists");
-        
-        // Factory deploys the vault with the pre-configured agent
-        AgentVault vault = new AgentVault(agent);
-        
+        AgentVault vault = new AgentVault(agent, usdc);
         userVaults[owner] = address(vault);
         emit VaultCreated(owner, address(vault));
-        
         return address(vault);
     }
 
-    /**
-     * @dev Returns the vault address for a given owner.
-     */
     function getVault(address owner) external view returns (address) {
         return userVaults[owner];
     }

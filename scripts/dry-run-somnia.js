@@ -2,12 +2,12 @@ require('dotenv').config();
 const { createPublicClient, http, parseAbi, formatEther, encodeFunctionData } = require('viem');
 const { privateKeyToAccount } = require('viem/accounts');
 
-// Somnia Platform Constants (from src/somniaAi.js)
+// Arc Platform Constants (from src/arcAi.js)
 const PLATFORM_ADDRESS = '0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776';
 const LLM_AGENT_ID = 12847293847561029384n;
 const PER_AGENT_EXECUTION_COST = 700000000000000000n;
 const SUBCOMMITTEE_SIZE = 3n;
-const RPC_URL = 'https://dream-rpc.somnia.network';
+const RPC_URL = 'https://rpc.testnet.arc.network';
 
 const PLATFORM_ABI = parseAbi([
     'function createRequest(uint256 agentId, address callbackAddress, bytes4 callbackSelector, bytes payload) external payable returns (uint256 requestId)',
@@ -30,7 +30,7 @@ async function dryRun() {
 
     // 1. Check Balance
     const balance = await publicClient.getBalance({ address: account.address });
-    console.log(`💰 Current Balance: ${formatEther(balance)} STT`);
+    console.log(`💰 Current Balance: ${formatEther(balance)} USDC`);
 
     // 2. Calculate Deposit
     const baseDeposit = await publicClient.readContract({
@@ -39,12 +39,12 @@ async function dryRun() {
         functionName: 'getRequestDeposit'
     });
     const totalDeposit = baseDeposit + (PER_AGENT_EXECUTION_COST * SUBCOMMITTEE_SIZE);
-    const totalDepositSTT = formatEther(totalDeposit);
-    console.log(`📊 Calculated Deposit: ${totalDepositSTT} STT (${totalDeposit.toString()} wei)`);
+    const totalDepositUSDC = formatEther(totalDeposit);
+    console.log(`📊 Calculated Deposit: ${totalDepositUSDC} USDC (${totalDeposit.toString()} wei)`);
 
     // 3. Balance Confirmation
     if (balance < totalDeposit) {
-        console.log(`❌ INSUFFICIENT BALANCE: Need ${totalDepositSTT} STT, have ${formatEther(balance)} STT.`);
+        console.log(`❌ INSUFFICIENT BALANCE: Need ${totalDepositUSDC} USDC, have ${formatEther(balance)} USDC.`);
     } else {
         console.log(`✅ Balance sufficient.`);
     }

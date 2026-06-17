@@ -133,7 +133,7 @@ export default function Policy({ userAddress }: { userAddress: string }) {
           <div className="stat">
             <div className="stat-label">Daily Cap</div>
             {!isEditing ? (
-              <div className="stat-value cyan">{policy.dailyCap} <span style={{ fontSize: 12 }}>STT</span></div>
+              <div className="stat-value cyan">{policy.dailyCap} <span style={{ fontSize: 12 }}>USDC</span></div>
             ) : (
               <input 
                 type="number" 
@@ -147,7 +147,7 @@ export default function Policy({ userAddress }: { userAddress: string }) {
           <div className="stat">
             <div className="stat-label">Per-TX Cap</div>
             {!isEditing ? (
-              <div className="stat-value cyan">{policy.perTxCap} <span style={{ fontSize: 12 }}>STT</span></div>
+              <div className="stat-value cyan">{policy.perTxCap} <span style={{ fontSize: 12 }}>USDC</span></div>
             ) : (
               <input 
                 type="number" 
@@ -166,7 +166,7 @@ export default function Policy({ userAddress }: { userAddress: string }) {
         <div style={{ marginBottom: 15 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12 }}>
             <span style={{ color: 'var(--muted)' }}>Daily Allowance Spent</span>
-            <span>{policy.dailySpendSoFar} / {policy.dailyCap} STT</span>
+            <span>{policy.dailySpendSoFar} / {policy.dailyCap} USDC</span>
           </div>
           <div className="progress-bar">
             <div 

@@ -1,18 +1,23 @@
 const { ethers } = require('ethers');
 require('dotenv').config();
 
+/**
+ * Fetches metrics from the on-chain vault to verify if conditions are met.
+ * Note: Arc uses USDC as native gas, typically 18 decimals internally for gas,
+ * but ERC20 USDC is 6 decimals. This engine assumes human-readable units.
+ */
 async function getOnChainMetrics(userAddress) {
   try {
     const { getVaultContract } = require('./escrow');
-    const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
+    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-    const contract = getVaultContract(wallet);
+    const contract = await getVaultContract(wallet, userAddress);
     
     const balance = await contract.getBalance(userAddress, ethers.ZeroAddress);
     const [todaySpent, currentHourTx] = await contract.getSpendMetrics(userAddress);
     
     return {
-      balance: parseFloat(ethers.formatEther(balance)),
+      balance: parseFloat(ethers.formatEther(balance)), // Using 18 decimals for native representation
       todaySpent: parseFloat(ethers.formatEther(todaySpent)),
       currentHourTx: Number(currentHourTx)
     };
@@ -37,11 +42,13 @@ function parseExecuteAt(str) {
   return { hour: parseInt(match[1]), minute: parseInt(match[2]) };
 }
 
-async function checkConditions(conditions, userAddress, job = null, wallet = null) {
+async function checkConditions(conditions, job = null, wallet = null) {
   const results = [];
+  const userAddress = job ? job.userAddress : null;
+  
   if (!conditions && (!job || !job.trigger)) return { passed: true, results: [] };
 
-  const metrics = await getOnChainMetrics(userAddress);
+  const metrics = userAddress ? await getOnChainMetrics(userAddress) : null;
 
   // 1. Balance condition
   if (conditions && conditions.minBalance !== null && conditions.minBalance !== undefined) {
@@ -51,10 +58,10 @@ async function checkConditions(conditions, userAddress, job = null, wallet = nul
       results.push({
         check: 'balance',
         passed: false,
-        reason: 'Balance ' + metrics.balance.toFixed(4) + ' STT is below minimum ' + conditions.minBalance + ' STT'
+        reason: 'Balance ' + metrics.balance.toFixed(4) + ' USDC is below minimum ' + conditions.minBalance + ' USDC'
       });
     } else {
-      results.push({ check: 'balance', passed: true, reason: 'Balance ' + metrics.balance.toFixed(4) + ' STT ✅' });
+      results.push({ check: 'balance', passed: true, reason: 'Balance ' + metrics.balance.toFixed(4) + ' USDC ✅' });
     }
   }
 
@@ -85,23 +92,23 @@ async function checkConditions(conditions, userAddress, job = null, wallet = nul
       results.push({
         check: 'dailySpend',
         passed: false,
-        reason: 'On-chain today spend ' + metrics.todaySpent + ' STT exceeds max ' + conditions.maxDailySpend + ' STT'
+        reason: 'On-chain today spend ' + metrics.todaySpent + ' USDC exceeds max ' + conditions.maxDailySpend + ' USDC'
       });
     } else {
-      results.push({ check: 'dailySpend', passed: true, reason: 'Daily spend ' + metrics.todaySpent + '/' + conditions.maxDailySpend + ' STT ✅' });
+      results.push({ check: 'dailySpend', passed: true, reason: 'Daily spend ' + metrics.todaySpent + '/' + conditions.maxDailySpend + ' USDC ✅' });
     }
   }
 
-  // 4. Trigger condition (NEW)
+  // 4. Trigger condition (Pyth-enabled)
   if (job && job.trigger) {
     try {
       const { evaluateTrigger } = require('./triggers');
-      const result = await evaluateTrigger(job.trigger, wallet);
+      const result = await evaluateTrigger(job.trigger);
       if (result.met) {
         results.push({ 
           check: 'trigger', 
           passed: true, 
-          reason: 'Trigger verified on Somnia ✅', 
+          reason: 'Trigger verified on Arc ✅', 
           proof: result.proof 
         });
       } else {

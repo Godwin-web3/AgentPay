@@ -8,8 +8,8 @@ function ensurePolicy() {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   if (!fs.existsSync(POLICY_PATH)) {
     const defaultPolicy = {
-      perTxCapSTT: 10,
-      dailyCapSTT: 50,
+      maxAmountPerTx: 10,
+      dailyLimit: 50,
       allowedRecipients: [],
       activeHours: { start: 0, end: 24 },
       circuitBreaker: {
@@ -31,8 +31,8 @@ function applyUpdate(update) {
   ensurePolicy();
   const current = readPolicy();
   
-  if (update.perTxCap !== undefined) current.perTxCapSTT = update.perTxCap;
-  if (update.dailyCap !== undefined) current.dailyCapSTT = update.dailyCap;
+  if (update.perTxCap !== undefined) current.maxAmountPerTx = update.perTxCap;
+  if (update.dailyCap !== undefined) current.dailyLimit = update.dailyCap;
   if (update.whitelist !== undefined) current.allowedRecipients = update.whitelist;
   if (update.activeHours !== undefined) current.activeHours = update.activeHours;
   

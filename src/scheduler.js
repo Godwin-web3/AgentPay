@@ -117,7 +117,7 @@ async function startJob(job, payFn, ownerAddress) {
     }
 
     if (current.trigger) {
-      console.log('\n⛓ Evaluating trigger condition on Somnia...');
+      console.log('\n⛓ Evaluating trigger condition on Arc...');
       const triggerResult = await evaluateTrigger(current.trigger, { privateKey: process.env.PRIVATE_KEY });
       if (!triggerResult.met) {
         console.log('   ⏳ Trigger condition not met, skipping this run.');
@@ -127,7 +127,7 @@ async function startJob(job, payFn, ownerAddress) {
     }
 
     console.log('\n🔄 Executing scheduled payment for ' + userAddr + '...');
-    const result = await payFn(current.to, current.amount, current.reason, 'STT', userAddr, {
+    const result = await payFn(current.to, current.amount, current.reason, 'USDC', userAddr, {
       isScheduled: true,
       triggerProof: current.trigger ? triggerResult.proof : null
     });
@@ -142,7 +142,7 @@ async function startJob(job, payFn, ownerAddress) {
     writeSchedules(s2);
 
     if (result && result.success) {
-      console.log('✅ Scheduled payment: ' + current.amount + ' STT to ' + current.to + (result && result.txHash ? '\n   🔗 Tx: https://shannon-explorer.somnia.network/tx/' + result.txHash : ''));
+      console.log('✅ Scheduled payment: ' + current.amount + ' USDC to ' + current.to + (result && result.txHash ? '\n   🔗 Tx: https://testnet.arcscan.app/tx/' + result.txHash : ''));
     } else {
       console.log('❌ Payment failed: ' + (result && result.reason));
     }

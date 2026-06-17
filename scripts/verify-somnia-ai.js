@@ -1,9 +1,9 @@
 require('dotenv').config();
 const { ethers } = require('ethers');
-const { inferOnChain } = require('../src/somniaAi');
+const { inferOnChain } = require('../src/arcAi');
 
 async function main() {
-    console.log('🧪 Verifying Somnia On-Chain AI Integration...');
+    console.log('🧪 Verifying Arc On-Chain AI Integration...');
 
     const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);

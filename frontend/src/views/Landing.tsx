@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 
 const DEMO_LINES = [
-  { role: 'user', text: 'pay 0.5 STT to 0xABC...def for quest reward', delay: 500 },
+  { role: 'user', text: 'pay 0.5 USDC to 0xABC...def for quest reward', delay: 500 },
   { role: 'assistant', text: 'Checking policy...', delay: 1200 },
   { role: 'assistant', text: 'Spending limit OK. Recipient whitelisted.', delay: 2000 },
-  { role: 'assistant', text: 'Executing on Somnia testnet...', delay: 2800 },
+  { role: 'assistant', text: 'Executing on Arc testnet...', delay: 2800 },
   { role: 'assistant', text: '[OK] Block #82910 — TX: 0x92f...a12', delay: 3800 },
 ]
 
@@ -226,7 +226,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
             {[
               '— Policy enforced',
               '— Autonomous execution',
-              '— On-chain, on Somnia',
+              '— On-chain, on Arc',
             ].map((item, i) => (
               <div key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#aaa', letterSpacing: 0.5 }}>
                 {item}
@@ -285,7 +285,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
         {[
           { label: 'AGENTS REGISTERED', value: '1' },
           { label: 'TOTAL TRANSACTIONS', value: '12' },
-          { label: 'STT VOLUME', value: '4.50' },
+          { label: 'USDC VOLUME', value: '4.50' },
         ].map((stat, i) => (
           <div key={i} style={{
             padding: '20px 24px',
@@ -312,7 +312,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
             {
               tag: '01',
               title: 'NATURAL LANGUAGE PAYMENTS',
-              desc: 'Say "send 0.5 STT to 0x..." — the agent handles signing, broadcasting, and confirmation on Somnia.',
+              desc: 'Say "send 0.5 USDC to 0x..." — the agent handles signing, broadcasting, and confirmation on Arc.',
             },
             {
               tag: '02',
@@ -322,7 +322,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
             {
               tag: '03',
               title: 'ON-CHAIN VAULT LOG',
-              desc: 'Every action logged — executed, rejected, or failed — with Somnia Explorer links for full transparency.',
+              desc: 'Every action logged — executed, rejected, or failed — with Arc Explorer links for full transparency.',
             },
           ].map((f, i) => (
             <div key={i} style={{ background: '#0A0A0A', padding: '28px 24px' }}>

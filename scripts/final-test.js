@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { ethers } = require('ethers');
-const { inferOnChain, PLATFORM_ADDRESS } = require('../src/somniaAi');
+const { inferOnChain, PLATFORM_ADDRESS } = require('../src/arcAi');
 
 async function main() {
     const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
@@ -13,7 +13,7 @@ async function main() {
 
     // 1. Check Balances
     const bal = await provider.getBalance(wallet.address);
-    console.log(`💰 Wallet Balance: ${ethers.formatEther(bal)} STT`);
+    console.log(`💰 Wallet Balance: ${ethers.formatEther(bal)} USDC`);
     
     if (bal < ethers.parseEther("0.5")) {
         console.warn('⚠️  Wallet balance is low. Inference might fail.');
@@ -22,7 +22,7 @@ async function main() {
     // 2. Check Vault Config
     const vaultAbi = [
         "function agent() view returns (address)",
-        "function somniaAgentPlatform() view returns (address)",
+        "function arcAgentPlatform() view returns (address)",
         "function owner() view returns (address)",
         "function registerInference(uint256,address) external"
     ];
@@ -31,7 +31,7 @@ async function main() {
     try {
         const [vaultAgent, vaultPlatform, vaultOwner] = await Promise.all([
             vault.agent(),
-            vault.somniaAgentPlatform(),
+            vault.arcAgentPlatform(),
             vault.owner()
         ]);
         console.log('⚙️  Vault Config:');

@@ -32,13 +32,13 @@ async function main() {
   const txHash = contract.deploymentTransaction().hash;
 
   console.log('✅ AgentVault deployed to: ' + address);
-  console.log('🔗 Explorer: https://shannon-explorer.somnia.network/tx/' + txHash);
+  console.log('🔗 Explorer: https://testnet.arcscan.arc.network/tx/' + txHash);
 
   const deployment = {
     address: address,
     deployer: wallet.address,
     agent: agentAddress,
-    network: 'Somnia Shannon Testnet',
+    network: 'Arc Testnet Testnet',
     timestamp: new Date().toISOString(),
     txHash: txHash
   };

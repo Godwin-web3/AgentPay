@@ -32,10 +32,10 @@ const VAULT_ABI = [
 ];
 
 const TOKENS = {
-  WSTT: "0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7",
+  WUSDC: "0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7",
   PING: "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
   PONG: "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
-  SUSD: "0x65296738D4E5edB1515e40287B6FDf8320E6eE04",
+  USDC: "0x65296738D4E5edB1515e40287B6FDf8320E6eE04",
 };
 const ERC20_ABI = [
   "function balanceOf(address) external view returns (uint256)",
@@ -52,15 +52,15 @@ const V2_ROUTER_ABI = [
   "function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline) external returns (uint256[] memory amounts)"
 ];
 
-const GROQ_SYSTEM_PROMPT = `You are AgentPay, a friendly and knowledgeable autonomous payment agent on the Somnia blockchain.
+const GROQ_SYSTEM_PROMPT = `You are AgentPay, a friendly and knowledgeable autonomous payment agent on the Arc blockchain.
 
-Your goal is to help users manage their funds securely in their personal Vault while also being a helpful companion. You can answer questions about Somnia, blockchain, or just chat about anything.
+Your goal is to help users manage their funds securely in their personal Vault while also being a helpful companion. You can answer questions about Arc, blockchain, or just chat about anything.
 
 *** NEW FEATURE: ATOMIC INTENTS ***
 You can now execute complex "Atomic Intents" in a single transaction. 
 Intents currently supported:
-1. "provide_liquidity": Add STT to the PING/SUSD liquidity pool.
-2. "safe_swap_pay": Swap STT to SUSD and then pay a recipient (Atomic Swap+Pay).
+1. "provide_liquidity": Add USDC to the PING/USDC liquidity pool.
+2. "safe_swap_pay": Swap USDC to USDC and then pay a recipient (Atomic Swap+Pay).
 
 You must respond ONLY with a valid JSON object in this exact format:
 {
@@ -68,8 +68,8 @@ You must respond ONLY with a valid JSON object in this exact format:
   "intentName": "provide_liquidity" | "safe_swap_pay" | null,
   "to": "0x address or null",
   "amount": number or null,
-  "fromToken": "STT" | "WSTT" | "PING" | "PONG" | "SUSD" | null,
-  "toToken": "STT" | "WSTT" | "PING" | "PONG" | "SUSD" | null,
+  "fromToken": "USDC" | "WUSDC" | "PING" | "PONG" | "USDC" | null,
+  "toToken": "USDC" | "WUSDC" | "PING" | "PONG" | "USDC" | null,
   "reason": "short description or null",
   "message": "your helpful, conversational response",
   "interval": "number of seconds or null",
@@ -77,14 +77,14 @@ You must respond ONLY with a valid JSON object in this exact format:
 }
 
 Guidelines:
-- For complex requests like "Add my 5 STT to the PING pool" or "Pay 10 SUSD to Bob but use my STT", use action: "intent" and set the intentName.
-- Available tokens on Somnia Shannon Testnet:
-  - STT (Native)
-  - WSTT: 0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7 (Wrapped STT)
+- For complex requests like "Add my 5 USDC to the PING pool" or "Pay 10 USDC to Bob but use my USDC", use action: "intent" and set the intentName.
+- Available tokens on Arc Testnet Testnet:
+  - USDC (Native)
+  - WUSDC: 0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7 (Wrapped USDC)
   - PING: 0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493
   - PONG: 0x9beaA0016c22B646Ac311Ab171270B0ECf23098F
-  - SUSD: 0x65296738D4E5edB1515e40287B6FDf8320E6eE04 (Stable USD)
-- Be helpful and smart. Somnia is the high-performance blockchain for the mass-consumer metaverse.
+  - USDC: 0x65296738D4E5edB1515e40287B6FDf8320E6eE04 (Stable USD)
+- Be helpful and smart. Arc is the high-performance blockchain for the mass-consumer metaverse.
 - Always respond with valid JSON only, no extra text`;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -118,13 +118,13 @@ async function trackUser(env, address) {
   } catch(e) {}
 }
 
-async function executePayment(env, userAddress, to, amount, requestId, reason, tokenSymbol = 'STT') {
-  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
+async function executePayment(env, userAddress, to, amount, requestId, reason, tokenSymbol = 'USDC') {
+  const provider = new ethers.JsonRpcProvider(env.ARC_RPC);
   const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
   const vaultAddr = await getDynamicVaultAddress(env, userAddress);
   const vault = new ethers.Contract(vaultAddr, VAULT_ABI, wallet);
 
-  const tokenAddress = tokenSymbol === 'STT' ? ethers.ZeroAddress : (TOKENS[tokenSymbol.toUpperCase()] || tokenSymbol);
+  const tokenAddress = tokenSymbol === 'USDC' ? ethers.ZeroAddress : (TOKENS[tokenSymbol.toUpperCase()] || tokenSymbol);
 
   try {
     const amountWei = ethers.parseEther(amount.toString());
@@ -133,14 +133,14 @@ async function executePayment(env, userAddress, to, amount, requestId, reason, t
     const tx = await vault.execute(userAddress, tokenAddress, to, amountWei, reason || '', reqIdBytes32, { gasLimit: 800000 });
     const record = { requestId, to, amount: parseFloat(amount), token: tokenSymbol, txHash: tx.hash, status: 'executed', timestamp: new Date().toISOString() };
     await env.AGENTPAY_KV.put(`status_${requestId}`, JSON.stringify(record), { expirationTtl: 86400 });
-    return { success: true, requestId, txHash: tx.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash };
+    return { success: true, requestId, txHash: tx.hash, explorer: 'https://testnet.arcscan.arc.network/tx/' + tx.hash };
   } catch (err) {
     return { success: false, error: err.message };
   }
 }
 
 async function handleIntent(env, userAddress, intentName, amount, to, reason) {
-  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
+  const provider = new ethers.JsonRpcProvider(env.ARC_RPC);
   const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
   const vaultAddr = await getDynamicVaultAddress(env, userAddress);
   const vault = new ethers.Contract(vaultAddr, VAULT_ABI, wallet);
@@ -151,56 +151,56 @@ async function handleIntent(env, userAddress, intentName, amount, to, reason) {
   const values = [];
 
   if (intentName === 'safe_swap_pay') {
-    // 1. Swap STT -> SUSD (V3)
+    // 1. Swap USDC -> USDC (V3)
     const routerIface = new ethers.Interface(V3_ROUTER_ABI);
     const erc20Iface = new ethers.Interface(ERC20_ABI);
     
-    // We swap Native STT -> SUSD. V3 Router accepts native STT if passed as 'value'.
-    // No approval needed for native STT, but SUSD transfer later needs balance.
+    // We swap Native USDC -> USDC. V3 Router accepts native USDC if passed as 'value'.
+    // No approval needed for native USDC, but USDC transfer later needs balance.
     
     datas.push(routerIface.encodeFunctionData("exactInputSingle", [{
-      tokenIn: TOKENS.WSTT, tokenOut: TOKENS.SUSD, fee: 500, recipient: vaultAddr,
+      tokenIn: TOKENS.WUSDC, tokenOut: TOKENS.USDC, fee: 500, recipient: vaultAddr,
       amountIn: amountWei, amountOutMinimum: 0, sqrtPriceLimitX96: 0
     }]));
     targets.push(V3_ROUTER);
     values.push(amountWei);
 
-    // 2. Transfer SUSD to recipient. 
+    // 2. Transfer USDC to recipient. 
     // Note: We don't know exact amountOut, so we use a large balance check or just 
     // assume 1:1 for the demo (hackathon logic).
     datas.push(erc20Iface.encodeFunctionData("transfer", [to, amountWei])); 
-    targets.push(TOKENS.SUSD);
+    targets.push(TOKENS.USDC);
     values.push(0);
 
     const tx = await vault.multicall(userAddress, targets, datas, values, ethers.ZeroAddress, amountWei, reason || "Atomic Swap+Pay", ethers.id(Date.now().toString()));
-    return { success: true, status: 'executed', txHash: tx.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash };
+    return { success: true, status: 'executed', txHash: tx.hash, explorer: 'https://testnet.arcscan.arc.network/tx/' + tx.hash };
   }
 
   if (intentName === 'provide_liquidity') {
-    // 1. Swap HALF of STT to SUSD (V2)
+    // 1. Swap HALF of USDC to USDC (V2)
     const halfAmount = amountWei / 2n;
     const routerIface = new ethers.Interface(V2_ROUTER_ABI);
     const erc20Iface = new ethers.Interface(ERC20_ABI);
     
-    // Path: WSTT -> SUSD
+    // Path: WUSDC -> USDC
     datas.push(routerIface.encodeFunctionData("swapExactTokensForTokens", [
-      halfAmount, 0, [TOKENS.WSTT, TOKENS.SUSD], vaultAddr, Math.floor(Date.now() / 1000) + 600
+      halfAmount, 0, [TOKENS.WUSDC, TOKENS.USDC], vaultAddr, Math.floor(Date.now() / 1000) + 600
     ]));
     targets.push(V2_ROUTER);
     values.push(halfAmount);
 
-    // 2. Add Liquidity STT + SUSD
-    // We assume the other half of STT and the received SUSD are used.
-    // For simplicity in the multicall, we use the same halfAmount for SUSD desired (demo logic)
+    // 2. Add Liquidity USDC + USDC
+    // We assume the other half of USDC and the received USDC are used.
+    // For simplicity in the multicall, we use the same halfAmount for USDC desired (demo logic)
     datas.push(routerIface.encodeFunctionData("addLiquidity", [
-      TOKENS.WSTT, TOKENS.SUSD, halfAmount, halfAmount, 0, 0, vaultAddr, Math.floor(Date.now() / 1000) + 600
+      TOKENS.WUSDC, TOKENS.USDC, halfAmount, halfAmount, 0, 0, vaultAddr, Math.floor(Date.now() / 1000) + 600
     ]));
     targets.push(V2_ROUTER);
     values.push(halfAmount);
 
     try {
       const tx = await vault.multicall(userAddress, targets, datas, values, ethers.ZeroAddress, amountWei, "Provide Liquidity (Atomic)", ethers.id(Date.now().toString()));
-      return { success: true, status: 'executed', txHash: tx.hash, explorer: 'https://shannon-explorer.somnia.network/tx/' + tx.hash };
+      return { success: true, status: 'executed', txHash: tx.hash, explorer: 'https://testnet.arcscan.arc.network/tx/' + tx.hash };
     } catch (err) {
       return { success: false, error: err.message };
     }
@@ -217,22 +217,22 @@ async function handleHealth(env) {
 }
 
 async function handleBalance(request, env, address) {
-  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
+  const provider = new ethers.JsonRpcProvider(env.ARC_RPC);
   const vaultAddr = await getDynamicVaultAddress(env, address);
   const vault = new ethers.Contract(vaultAddr, VAULT_ABI, provider);
   const [sttRaw, vaultRaw, wsttRaw, pingRaw, pongRaw, susdRaw] = await Promise.all([
     provider.getBalance(address),
     vault.getBalance(address, ethers.ZeroAddress),
-    new ethers.Contract(TOKENS.WSTT, ERC20_ABI, provider).balanceOf(address),
+    new ethers.Contract(TOKENS.WUSDC, ERC20_ABI, provider).balanceOf(address),
     new ethers.Contract(TOKENS.PING, ERC20_ABI, provider).balanceOf(address),
     new ethers.Contract(TOKENS.PONG, ERC20_ABI, provider).balanceOf(address),
-    new ethers.Contract(TOKENS.SUSD, ERC20_ABI, provider).balanceOf(address),
+    new ethers.Contract(TOKENS.USDC, ERC20_ABI, provider).balanceOf(address),
   ]);
-  return json({ address, balances: { STT: ethers.formatEther(sttRaw), WSTT: ethers.formatEther(wsttRaw), PING: ethers.formatEther(pingRaw), PONG: ethers.formatEther(pongRaw), SUSD: ethers.formatEther(susdRaw) }, vault: ethers.formatEther(vaultRaw) });
+  return json({ address, balances: { USDC: ethers.formatEther(sttRaw), WUSDC: ethers.formatEther(wsttRaw), PING: ethers.formatEther(pingRaw), PONG: ethers.formatEther(pongRaw), USDC: ethers.formatEther(susdRaw) }, vault: ethers.formatEther(vaultRaw) });
 }
 
 async function handleGetPolicy(request, env, address) {
-  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
+  const provider = new ethers.JsonRpcProvider(env.ARC_RPC);
   const vaultAddr = await getDynamicVaultAddress(env, address);
   const vault = new ethers.Contract(vaultAddr, VAULT_ABI, provider);
   const [policy, whitelist] = await vault.getPolicy(address);
@@ -276,7 +276,7 @@ async function handleChat(request, env) {
 export default {
   async scheduled(event, env) {
     const users = JSON.parse(await env.AGENTPAY_KV.get('active_users') || '[]');
-    const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
+    const provider = new ethers.JsonRpcProvider(env.ARC_RPC);
     const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
     for (const user of users) {
       try {
@@ -325,7 +325,7 @@ export default {
 
 async function handlePay(request, env, address) {
   const { to, amount, requestId, reason, fromToken } = await request.json();
-  return json(await executePayment(env, address, to, amount, requestId, reason, fromToken || 'STT'));
+  return json(await executePayment(env, address, to, amount, requestId, reason, fromToken || 'USDC'));
 }
 
 async function handleSwap(request, env, userAddress) {
@@ -333,14 +333,14 @@ async function handleSwap(request, env, userAddress) {
   if (!execute) {
     return json({ success: true, status: "proposing_swap", fromToken, toToken, amount });
   }
-  const provider = new ethers.JsonRpcProvider(env.SOMNIA_RPC_URL);
+  const provider = new ethers.JsonRpcProvider(env.ARC_RPC);
   const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
   const amountWei = ethers.parseEther(amount.toString());
   const deadline = Math.floor(Date.now() / 1000) + 600;
   const fromAddr = TOKENS[fromToken.toUpperCase()];
   const toAddr = TOKENS[toToken.toUpperCase()];
-  if (!fromAddr || !toAddr) return json({ error: "Unsupported token. Supported: PING, PONG, WSTT, SUSD", success: false }, 400);
-  const isV2Pair = ((fromAddr === TOKENS.WSTT && toAddr === TOKENS.SUSD) || (fromAddr === TOKENS.SUSD && toAddr === TOKENS.WSTT));
+  if (!fromAddr || !toAddr) return json({ error: "Unsupported token. Supported: PING, PONG, WUSDC, USDC", success: false }, 400);
+  const isV2Pair = ((fromAddr === TOKENS.WUSDC && toAddr === TOKENS.USDC) || (fromAddr === TOKENS.USDC && toAddr === TOKENS.WUSDC));
   try {
     const erc20 = new ethers.Contract(fromAddr, ["function allowance(address,address) external view returns (uint256)", "function approve(address,uint256) external returns (bool)"], wallet);
     const routerAddr = isV2Pair ? V2_ROUTER : V3_ROUTER;
@@ -358,7 +358,7 @@ async function handleSwap(request, env, userAddress) {
       tx = await v3.exactInputSingle({ tokenIn: fromAddr, tokenOut: toAddr, fee: 500, recipient: wallet.address, amountIn: amountWei, amountOutMinimum: 0, sqrtPriceLimitX96: 0 }, { gasLimit: 1400000 });
     }
     const receipt = await tx.wait();
-    return json({ success: true, status: "executed", txHash: receipt.hash, explorer: "https://shannon-explorer.somnia.network/tx/" + receipt.hash });
+    return json({ success: true, status: "executed", txHash: receipt.hash, explorer: "https://testnet.arcscan.arc.network/tx/" + receipt.hash });
   } catch (err) {
     return json({ success: false, error: err.message });
   }

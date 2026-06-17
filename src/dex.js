@@ -17,7 +17,7 @@ const ERC20_ABI = [
   "function decimals() external view returns (uint8)"
 ];
 
-// Somnia Shannon Testnet Config
+// Arc Testnet Testnet Config
 const SOMNIA_ROUTER = getAddress("0x6AAC14f090A35EeA150705f72D90E4CDC4a49b2C");
 const SOMNIA_V2_ROUTER = "0xc81501B65A040bF5f1794D0Ca2b953aebb2b1996";
 const V2_ROUTER_ABI = [
@@ -27,14 +27,14 @@ const V2_ROUTER_ABI = [
 const FEE_TIER = 500; // 0.05%
 
 const TOKENS = {
-  WSTT: getAddress("0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7"),
+  WUSDC: getAddress("0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7"),
   PING: getAddress("0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493"),
   PONG: getAddress("0x9beaA0016c22B646Ac311Ab171270B0ECf23098F"),
-  SUSD: getAddress("0x65296738D4E5edB1515e40287B6FDf8320E6eE04"),
+  USDC: getAddress("0x65296738D4E5edB1515e40287B6FDf8320E6eE04"),
 };
 
 function resolveToken(symbol) {
-  if (symbol === 'STT') return TOKENS.WSTT;
+  if (symbol === 'USDC') return TOKENS.WUSDC;
   const addr = TOKENS[symbol.toUpperCase()];
   if (addr) return addr;
   // assume raw address
@@ -73,9 +73,9 @@ async function executeSwap(wallet, tokenIn, tokenOut, amount) {
     const deadline = Math.floor(Date.now() / 1000) + 60 * 10;
     const router = new ethers.Contract(SOMNIA_ROUTER, ROUTER_ABI, wallet);
 
-    const isNativeIn = tokenIn === 'STT';
+    const isNativeIn = tokenIn === 'USDC';
 
-    // Approve if not native STT
+    // Approve if not native USDC
     if (!isNativeIn) {
       const tokenContract = new ethers.Contract(addrIn, ERC20_ABI, wallet);
       const allowance = await tokenContract.allowance(wallet.address, SOMNIA_ROUTER);
@@ -87,10 +87,10 @@ async function executeSwap(wallet, tokenIn, tokenOut, amount) {
       }
     }
 
-    // Use V2 router for WSTT/SUSD pair
+    // Use V2 router for WUSDC/USDC pair
     const isV2Pair = (
-      (addrIn === TOKENS.WSTT && addrOut === TOKENS.SUSD) ||
-      (addrIn === TOKENS.SUSD && addrOut === TOKENS.WSTT)
+      (addrIn === TOKENS.WUSDC && addrOut === TOKENS.USDC) ||
+      (addrIn === TOKENS.USDC && addrOut === TOKENS.WUSDC)
     );
 
     if (isV2Pair) {

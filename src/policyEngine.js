@@ -1,25 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 const { getTodaySpend, getLastHourTxCount, getConsecutiveFailures } = require('../utils/store');
-const { getOnChainPolicy } = require('./escrow');
 
 class PolicyEngine {
-  constructor(wallet) {
-    this.wallet = wallet;
+  constructor() {
     this.policyPath = path.join(__dirname, '../config/policy.json');
     this.localPolicy = JSON.parse(fs.readFileSync(this.policyPath, 'utf8'));
     this.paused = false;
     this.pausedUntil = null;
-  }
-
-  async getOnChainPolicyFor(userAddress) {
-    if (!this.wallet || !userAddress) return null;
-    try {
-      return await getOnChainPolicy(this.wallet, userAddress);
-    } catch (err) {
-      console.error('⚠️ Failed to sync policy for ' + userAddress + ':', err.message);
-      return null;
-    }
   }
 
   isPaused() {
@@ -37,48 +25,31 @@ class PolicyEngine {
 
   triggerCircuitBreaker() {
     this.paused = true;
-    const mins = this.localPolicy.circuitBreaker.pauseDurationMinutes;
-    this.pausedUntil = Date.now() + mins * 60 * 1000;
-    console.log('🔴 Circuit breaker triggered — agent paused for ' + mins + ' minutes');
+    this.pausedUntil = Date.now() + 30 * 60 * 1000;
+    console.log('🔴 Circuit breaker triggered — agent paused for 30 minutes');
   }
 
-  async check(to, amountInSTT, reason, userAddress) {
-    reason = reason || '';
-    const onChainPolicy = await this.getOnChainPolicyFor(userAddress);
-
+  async check(to, amountUSDC) {
     if (this.isPaused()) {
       return { allowed: false, reason: 'Agent paused — circuit breaker active', code: 'CIRCUIT_BREAKER_ACTIVE' };
     }
 
     const consecutiveFails = getConsecutiveFailures();
-    if (consecutiveFails >= this.localPolicy.circuitBreaker.maxConsecutiveFailures) {
+    if (consecutiveFails >= this.localPolicy.circuitBreaker.threshold) {
       this.triggerCircuitBreaker();
       return { allowed: false, reason: 'Too many consecutive failures — agent paused', code: 'CIRCUIT_BREAKER_TRIGGERED' };
     }
 
-    // Use on-chain velocity check if available, fallback to local store
-    const hourlyTx = onChainPolicy ? onChainPolicy.currentHourTx : getLastHourTxCount();
-    const maxTxPerHour = onChainPolicy ? onChainPolicy.maxTxPerHour : this.localPolicy.circuitBreaker.maxTxPerHour;
-
-    if (hourlyTx >= maxTxPerHour) {
-      this.triggerCircuitBreaker();
-      return { allowed: false, reason: 'Tx velocity too high — ' + hourlyTx + ' tx in last hour', code: 'VELOCITY_EXCEEDED' };
-    }
-
-    // Active hours are still local for now (agent-side preference)
     const hour = new Date().getHours();
     if (hour < this.localPolicy.activeHours.start || hour > this.localPolicy.activeHours.end) {
       return { allowed: false, reason: 'Outside active hours (' + this.localPolicy.activeHours.start + ':00 — ' + this.localPolicy.activeHours.end + ':00)', code: 'OUTSIDE_ACTIVE_HOURS' };
     }
 
-    // Use on-chain caps
-    const perTxCap = onChainPolicy ? onChainPolicy.perTxCap : this.localPolicy.perTxCapSTT;
-    if (amountInSTT > perTxCap) {
-      return { allowed: false, reason: 'Amount ' + amountInSTT + ' STT exceeds per-tx cap of ' + perTxCap + ' STT', code: 'PER_TX_CAP_EXCEEDED' };
+    if (amountUSDC > this.localPolicy.maxAmountPerTx) {
+      return { allowed: false, reason: 'Amount ' + amountUSDC + ' USDC exceeds per-tx cap of ' + this.localPolicy.maxAmountPerTx + ' USDC', code: 'PER_TX_CAP_EXCEEDED' };
     }
 
-    // On-chain whitelist
-    const whitelist = onChainPolicy ? onChainPolicy.whitelist : this.localPolicy.allowedRecipients;
+    const whitelist = this.localPolicy.whitelist;
     if (whitelist && whitelist.length > 0) {
       const lowerWhitelist = whitelist.map(a => a.toLowerCase());
       if (!lowerWhitelist.includes(to.toLowerCase())) {
@@ -86,12 +57,9 @@ class PolicyEngine {
       }
     }
 
-    // On-chain daily cap
-    const dailyCap = onChainPolicy ? onChainPolicy.dailyCap : this.localPolicy.dailyCapSTT;
-    const todaySpend = onChainPolicy ? onChainPolicy.todaySpent : getTodaySpend();
-    
-    if (todaySpend + amountInSTT > dailyCap) {
-      return { allowed: false, reason: 'Daily cap reached — spent ' + todaySpend + '/' + dailyCap + ' STT today', code: 'DAILY_CAP_EXCEEDED' };
+    const todaySpend = getTodaySpend();
+    if (todaySpend + amountUSDC > this.localPolicy.dailyLimit) {
+      return { allowed: false, reason: 'Daily cap reached — spent ' + todaySpend + '/' + this.localPolicy.dailyLimit + ' USDC today', code: 'DAILY_CAP_EXCEEDED' };
     }
 
     return {
@@ -99,35 +67,22 @@ class PolicyEngine {
       reason: 'All policy checks passed',
       code: 'APPROVED',
       meta: {
-        todaySpend: todaySpend + amountInSTT,
-        dailyRemaining: dailyCap - todaySpend - amountInSTT,
-        hourlyTxCount: hourlyTx + 1
+        todaySpend: todaySpend + amountUSDC,
+        dailyRemaining: this.localPolicy.dailyLimit - todaySpend - amountUSDC
       }
     };
   }
 
-  async summary(userAddress) {
-    const onChainPolicy = await this.getOnChainPolicyFor(userAddress);
-    const todaySpend = onChainPolicy ? onChainPolicy.todaySpent : getTodaySpend();
-    const dailyCap = onChainPolicy ? onChainPolicy.dailyCap : this.localPolicy.dailyCapSTT;
-    const perTxCap = onChainPolicy ? onChainPolicy.perTxCap : this.localPolicy.perTxCapSTT;
-    const hourlyTx = onChainPolicy ? onChainPolicy.currentHourTx : getLastHourTxCount();
-    const maxTxPerHour = onChainPolicy ? onChainPolicy.maxTxPerHour : this.localPolicy.circuitBreaker.maxTxPerHour;
-    const whitelist = onChainPolicy ? onChainPolicy.whitelist : this.localPolicy.allowedRecipients;
-
+  summary() {
+    const todaySpend = getTodaySpend();
     return {
-      agentName: this.localPolicy.agentName,
-      dailyCapSTT: dailyCap,
+      dailyLimit: this.localPolicy.dailyLimit,
       todaySpent: todaySpend,
-      dailyRemaining: dailyCap - todaySpend,
-      perTxCapSTT: perTxCap,
-      hourlyTxCount: hourlyTx,
-      maxTxPerHour: maxTxPerHour,
+      dailyRemaining: this.localPolicy.dailyLimit - todaySpend,
+      maxAmountPerTx: this.localPolicy.maxAmountPerTx,
       activeHours: this.localPolicy.activeHours.start + ':00 — ' + this.localPolicy.activeHours.end + ':00',
-      whitelistCount: whitelist.length,
-      whitelist: whitelist,
-      isPaused: this.isPaused(),
-      source: onChainPolicy ? 'blockchain' : 'local'
+      whitelist: this.localPolicy.whitelist,
+      isPaused: this.isPaused()
     };
   }
 }

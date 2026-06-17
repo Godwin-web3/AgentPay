@@ -1,16 +1,23 @@
-# 🤖 AgentPay: The Autonomous, Policy-Enforced Payment Layer on Somnia
+# 🤖 AgentPay: The Autonomous, Policy-Enforced Payment Layer on Arc
 
-**AgentPay** is a production-grade, AI-powered autonomous payment agent built for the **Somnia Network**. It bridges the gap between conversational AI and secure on-chain financial execution by moving the "Decision" (AI) off-chain while keeping the "Permission" (Policy) strictly on-chain.
+**AgentPay** is a production-grade, AI-powered autonomous payment agent built for the **Arc Network**. It bridges the gap between conversational AI and secure on-chain financial execution by moving the "Decision" (AI) off-chain while keeping the "Permission" (Policy) strictly on-chain.
 
-Built with ❤️ for the **Somnia Agentathon**.
+Built with ❤️ for the **Arc Agent Hackathon**.
 
 ---
 
-## 🌟 Why AgentPay?
+## ⚡ Arc-Native Innovations
 
-Most AI agents require full private key access, which is a catastrophic security risk. AgentPay solves this using a **Personal Vault** architecture. Users delegate tasks to an agent that operates within strictly defined, on-chain safety parameters. 
+AgentPay is built specifically for the Arc Network, utilizing its unique agentic primitives:
 
-### 🛡️ On-Chain Safety & Guardrails
+- **ERC-8004 Identity**: AgentPay is a registered identity on the Arc Registry (`0x8004...`). This provides on-chain reputation and verifiable agent metadata.
+- **Smart Contract Account (SCA)**: Built on Arc's Account Abstraction, enabling **Gasless Operations**. The agent never needs to hold its own gas; transactions are sponsored via the Circle Gas Station.
+- **ERC-8183 Job Escrow**: Native integration with the Arc Agentic Commerce standard. AgentPay doesn't just "send money"—it hires other agents via secure, on-chain escrow contracts.
+- **X402 (Payment Required)**: Support for autonomous payment of fees and service costs directly between agents.
+
+---
+
+## 🛡️ On-Chain Safety & Guardrails
 - **Daily Spending Caps**: Hard-coded limits the agent cannot bypass.
 - **Velocity Control**: Hourly transaction limits (Circuit Breaker) to prevent "drainer" attacks.
 - **Whitelisting**: Restrict payments only to pre-approved addresses.
@@ -18,16 +25,16 @@ Most AI agents require full private key access, which is a catastrophic security
 
 ---
 
-## 🧠 Core Innovation: The Somnia Agent Integration
+## 🧠 Core Innovation: The Arc Agent Integration
 
-AgentPay leverages the full power of the **Somnia Agent Platform** to ensure every decision is decentralized and verifiable.
+AgentPay leverages the full power of the **Arc Agent Platform** to ensure every decision is decentralized and verifiable.
 
-1. **Verifiable AI Inference**: Uses Somnia Agent ID `12847...` to validate agent logic through decentralized consensus.
-2. **IRL Event Triggers**: Uses the Somnia JSON Agent (ID `13174...`) to trigger payments based on real-world data:
+1. **Verifiable AI Inference**: Uses Arc Agent ID `12847...` to validate agent logic through decentralized consensus.
+2. **IRL Event Triggers**: Uses the Arc JSON Agent (ID `13174...`) to trigger payments based on real-world data:
     - ⛅ **Weather**: "Pay if it rains in London."
     - 🏆 **Sports**: "Pay if LeBron scores 30+."
     - 🐙 **GitHub**: "Release payment when PR #42 is merged."
-    - 📈 **Price**: "Swap to SUSD if ETH hits $2500."
+    - 📈 **Price**: "Swap to USDC if ETH hits $2500."
 
 ---
 
@@ -35,8 +42,8 @@ AgentPay leverages the full power of the **Somnia Agent Platform** to ensure eve
 
 ### 1. Atomic Multi-Step Intents
 Using `multicall`, AgentPay executes complex workflows in a single atomic transaction:
-- **SafeSwapPay**: Swap STT to SUSD and pay a recipient instantly.
-- **Auto-Liquidity**: Swaps half your STT and adds liquidity to the PING/SUSD pool in one click.
+- **SafeSwapPay**: Swap USDC to USDC and pay a recipient instantly.
+- **Auto-Liquidity**: Swaps half your USDC and adds liquidity to the PING/USDC pool in one click.
 
 ### 2. Conversational Banking
 A terminal-inspired frontend powered by **Llama 3.3 (Groq)** that parses natural language into structured intents. No more complex forms—just talk to your money.
@@ -51,8 +58,8 @@ Conditional automation that monitors your vault. Set up recurring payments that 
 AgentPay is built on a robust, high-availability hybrid stack:
 - **Primary Brain**: Node.js backend hosted on **Render** for persistent state and complex intent extraction.
 - **Edge Gateway**: **Cloudflare Workers** for low-latency global request handling and edge logic.
-- **Execution Layer**: **Solidity Smart Contracts** deployed on the Somnia Shannon Testnet.
-- **Data Layer**: Somnia RPC + Groq LLM + Decentralized Subcommittee Verification.
+- **Execution Layer**: **Solidity Smart Contracts** deployed on the Arc Testnet.
+- **Data Layer**: Arc RPC + Groq LLM + Decentralized Subcommittee Verification.
 
 ---
 
@@ -83,9 +90,9 @@ npx wrangler deploy
 
 - **Problem**: Trusting an AI with a private key is dangerous.
 - **Solution**: A "Decision vs. Permission" split architecture.
-- **Somnia Integration**: Deep usage of the Agent Platform for both LLM and JSON-API verification.
+- **Arc Integration**: Deep usage of the Agent Platform for both LLM and JSON-API verification.
 - **Impact**: Provides a safe, "set-and-forget" payment layer for the next billion users in the metaverse.
 
 ---
 
-**Built on Somnia. Powered by AI. Secured by Code.**
+**Built on Arc. Powered by AI. Secured by Code.**

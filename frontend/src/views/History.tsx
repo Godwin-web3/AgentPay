@@ -70,22 +70,22 @@ export default function History({ userAddress, refreshTrigger = 0 }: { userAddre
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
         {txs.map((tx, i) => {
-          const explorerUrl = tx.txHash ? 'https://shannon-explorer.somnia.network/tx/' + tx.txHash : null
+          const explorerUrl = tx.txHash ? 'https://testnet.arcscan.arc.network/tx/' + tx.txHash : null
           
           let actionLabel = tx.label || 'Activity'
           if (tx.status === 'blocked') {
              actionLabel = `Blocked: ${tx.blockedReason || 'Policy violation'}`
           } else if (tx.type === 'schedule') {
-             actionLabel = `Scheduled: ${tx.label || ('Pay ' + tx.amount + ' STT to ' + (tx.to?.slice(0,6) + '...'))}`
+             actionLabel = `Scheduled: ${tx.label || ('Pay ' + tx.amount + ' USDC to ' + (tx.to?.slice(0,6) + '...'))}`
           } else if (tx.type === 'swap') {
              // If label already contains "Swap", use it, otherwise add it
              actionLabel = tx.label?.toLowerCase().startsWith('swap') ? tx.label : `Swap ${tx.label}`
           } else if (tx.type === 'payment') {
              const to = tx.to ? ` → ${tx.to.slice(0, 6)}...` : ''
-             actionLabel = `Sent ${tx.amount} ${tx.token || 'STT'}${to}`
+             actionLabel = `Sent ${tx.amount} ${tx.token || 'USDC'}${to}`
           } else if (tx.type === 'deposit' || tx.type === 'withdrawal') {
              const verb = tx.type === 'deposit' ? 'Deposited' : 'Withdrew'
-             actionLabel = `${verb} ${tx.amount} ${tx.token || 'STT'}`
+             actionLabel = `${verb} ${tx.amount} ${tx.token || 'USDC'}`
           }
 
           return (
@@ -117,7 +117,7 @@ export default function History({ userAddress, refreshTrigger = 0 }: { userAddre
                 <>
                   <span style={{ margin: '0 8px', color: 'var(--muted)' }}>·</span>
                   <span style={{ fontWeight: 'bold', flexShrink: 0 }}>
-                    {tx.amount} {tx.token || 'STT'}
+                    {tx.amount} {tx.token || 'USDC'}
                   </span>
                 </>
               )}

@@ -59,7 +59,7 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
     try {
       const amountWei = ethers.parseEther(depositAmount)
       const iface = new ethers.Interface(["function deposit(address token, uint256 amount) external payable"])
-      const data = iface.encodeFunctionData("deposit", [TOKENS.STT, amountWei])
+      const data = iface.encodeFunctionData("deposit", [TOKENS.USDC, amountWei])
 
       const hash = await activeProvider.request({
         method: 'eth_sendTransaction',
@@ -115,7 +115,7 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
           <div className="step-content">
             <div style={{ fontSize: 40, marginBottom: 20 }}>🔑</div>
             <h2>Step 1: Connect Wallet</h2>
-            <p>Connect your wallet to establish your autonomous agent identity on Somnia.</p>
+            <p>Connect your wallet to establish your autonomous agent identity on Arc.</p>
             
             <div style={{ display: 'flex', justifyContent: 'center', transform: 'scale(1.2)', margin: '40px 0' }}>
               <WalletConnect 
@@ -126,7 +126,7 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
 
             {loading && (
               <div style={{ marginTop: 20, color: 'var(--cyan)', fontSize: 13 }}>
-                <span className="spinner">⚙️</span> {isDeploying ? 'Deploying your vault on Somnia...' : 'Searching for your vault...'}
+                <span className="spinner">⚙️</span> {isDeploying ? 'Deploying your vault on Arc...' : 'Searching for your vault...'}
               </div>
             )}
           </div>
@@ -141,7 +141,7 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
             <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>Your Agent uses these funds to execute your intents.</p>
 
             <div style={{ marginTop: 25, width: '100%' }}>
-              <label style={{ fontSize: 10, display: 'block', marginBottom: 8, color: 'var(--muted)' }}>AMOUNT TO DEPOSIT (STT)</label>
+              <label style={{ fontSize: 10, display: 'block', marginBottom: 8, color: 'var(--muted)' }}>AMOUNT TO DEPOSIT (USDC)</label>
               <input 
                 type="number" 
                 value={depositAmount} 
@@ -160,7 +160,7 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
 
               {txHash && (
                 <div style={{ marginTop: 15, fontSize: 10 }}>
-                  ✅ Sent: <a href={`https://shannon-explorer.somnia.network/tx/${txHash}`} target="_blank" style={{ color: 'var(--blue)' }}>{txHash.slice(0, 20)}...</a>
+                  ✅ Sent: <a href={`https://testnet.arcscan.arc.network/tx/${txHash}`} target="_blank" style={{ color: 'var(--blue)' }}>{txHash.slice(0, 20)}...</a>
                 </div>
               )}
             </div>
@@ -176,12 +176,12 @@ export default function Onboarding({ userAddress, onComplete }: Props) {
 
             <div style={{ marginTop: 25, width: '100%', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 15 }}>
               <div>
-                <label style={{ fontSize: 10, color: 'var(--muted)' }}>MAX PER TRANSACTION (STT)</label>
+                <label style={{ fontSize: 10, color: 'var(--muted)' }}>MAX PER TRANSACTION (USDC)</label>
                 <input type="number" value={perTxCap} onChange={e => setPerTxCap(e.target.value)} style={{ width: '100%', padding: 10, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)' }} />
               </div>
 
               <div>
-                <label style={{ fontSize: 10, color: 'var(--muted)' }}>DAILY SPENDING CAP (STT)</label>
+                <label style={{ fontSize: 10, color: 'var(--muted)' }}>DAILY SPENDING CAP (USDC)</label>
                 <input type="number" value={dailyCap} onChange={e => setDailyCap(e.target.value)} style={{ width: '100%', padding: 10, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)' }} />
               </div>
 

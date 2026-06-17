@@ -2,14 +2,14 @@ import { ethers } from 'ethers'
 import type { ChatResponse, PolicyData, HealthData, PayResponse } from './types'
 
 export const WORKER_URL = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
-export const RPC = import.meta.env.VITE_RPC_URL || 'https://dream-rpc.somnia.network'
+export const RPC = import.meta.env.VITE_RPC_URL || 'https://rpc.testnet.arc.network'
 
 export const TOKENS = {
-  STT:   '0x0000000000000000000000000000000000000000',
-  WSTT:  '0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7',
+  USDC:   '0x0000000000000000000000000000000000000000',
+  WUSDC:  '0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7',
   PING:  '0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493',
   PONG:  '0x9beaA0016c22B646Ac311Ab171270B0ECf23098F',
-  SUSD:  '0x65296738D4E5edB1515e40287B6FDf8320E6eE04',
+  USDC:  '0x65296738D4E5edB1515e40287B6FDf8320E6eE04',
 }
 
 async function request<T>(path: string, options?: RequestInit, userAddress?: string): Promise<T> {
@@ -74,7 +74,7 @@ export async function executePay(
   reason: string,
   requestId: string,
   userAddress: string,
-  fromToken: string = 'STT'
+  fromToken: string = 'USDC'
 ): Promise<PayResponse> {
   return request<PayResponse>('/pay', {
     method: 'POST',
@@ -188,7 +188,7 @@ const ERC20_BALANCEOF = '0x70a08231'
 export async function getTokenBalances(userAddress: string): Promise<Record<string, string>> {
   const padded = userAddress.replace('0x','').toLowerCase().padStart(64, '0')
   const calls = Object.entries(TOKENS).map(([symbol, addr]) => {
-    if (addr === TOKENS.STT) {
+    if (addr === TOKENS.USDC) {
       return fetch(RPC, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

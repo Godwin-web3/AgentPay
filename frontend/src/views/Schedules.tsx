@@ -102,7 +102,7 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
             You can create schedules by asking the Agent in the Terminal. Try saying:
             <br/><br/>
             <code style={{ background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: 4 }}>
-              "Pay 0.1 STT every day"
+              "Pay 0.1 USDC every day"
             </code>
           </p>
         </div>
@@ -111,7 +111,7 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
           {schedules.map((job, _idx) => (
             <div key={`${job.id}-${job.onChain ? 'oc' : 'lc'}`} className={`card ${!job.active ? 'cancelled' : ''}`} style={{ position: 'relative', opacity: job.active ? 1 : 0.6 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                <div style={{ fontWeight: 600, color: job.active ? 'var(--cyan)' : 'var(--muted)' }}>{job.amount} STT</div>
+                <div style={{ fontWeight: 600, color: job.active ? 'var(--cyan)' : 'var(--muted)' }}>{job.amount} USDC</div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <div style={{ 
                     fontSize: 10, 
@@ -167,7 +167,7 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
 
               {job.minBalance > 0 && (
                 <div style={{ marginBottom: 16, fontSize: 12, color: 'var(--cyan)' }}>
-                  <span style={{ color: 'var(--muted)', textTransform: 'uppercase', fontSize: 10 }}>Condition:</span> Bal {'>'} {job.minBalance} STT
+                  <span style={{ color: 'var(--muted)', textTransform: 'uppercase', fontSize: 10 }}>Condition:</span> Bal {'>'} {job.minBalance} USDC
                 </div>
               )}
 

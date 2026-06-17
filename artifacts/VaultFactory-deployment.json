@@ -1,7 +1,9 @@
 {
-  "address": "0xCB11a092F75c6a4B52B5D99BC376b015D1Ed6E46",
-  "agent": "0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA",
-  "network": "Somnia Shannon Testnet",
-  "timestamp": "2026-06-08T13:40:50.017Z",
-  "txHash": "0xa5d8290b97bcea9de38ee844ca35c33cddb45ad427dc50dc1f4b62fb47a1643c"
+  "address": "0x24DD07639faA28c597c1Fb6a32367B1cc933DF60",
+  "agent": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",
+  "usdc": "0x3600000000000000000000000000000000000000",
+  "network": "Arc Testnet",
+  "chainId": 5042002,
+  "timestamp": "2026-06-16T23:07:51.695Z",
+  "txHash": "0x05f3883d8739e79a9bd5eb926b96dd045efea7133797d8c5f11772964aec2bd7"
 }

@@ -18,7 +18,7 @@ const factoryDeployment = JSON.parse(
 
 async function findVault(userAddress) {
   if (process.env.VAULT_ADDRESS) return process.env.VAULT_ADDRESS;
-  const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
   const factory = new ethers.Contract(factoryDeployment.address, factoryArtifact.abi, provider);
   const vaultAddr = await factory.getVault(userAddress);
   return vaultAddr === ethers.ZeroAddress ? null : vaultAddr;
@@ -46,16 +46,12 @@ async function getVaultContract(wallet, userAddress) {
 }
 
 const TOKENS = {
-  STT:  ethers.ZeroAddress,
-  WSTT: "0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7",
-  PING: "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
-  PONG: "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
-  SUSD: "0x65296738D4E5edB1515e40287B6FDf8320E6eE04",
+  USDC: process.env.USDC_CONTRACT || "0x3600000000000000000000000000000000000000",
 };
 
 function resolveTokenAddress(symbolOrAddr) {
   if (!symbolOrAddr) return ethers.ZeroAddress;
-  if (symbolOrAddr.toUpperCase() === 'STT') return ethers.ZeroAddress;
+  if (symbolOrAddr.toUpperCase() === 'USDC') return TOKENS.USDC;
   if (symbolOrAddr.startsWith('0x')) return symbolOrAddr;
   return TOKENS[symbolOrAddr.toUpperCase()] || ethers.ZeroAddress;
 }
@@ -74,6 +70,9 @@ async function setPolicy(wallet, perTxCap, dailyCap, maxTxPerHour, whitelist, us
 async function executePayment(wallet, userAddress, token, to, amount, reason, requestId) {
   const contract = await getVaultContract(wallet, userAddress);
   const tokenAddr = resolveTokenAddress(token);
+  // Note: Native USDC on Arc uses 18 decimals internally for gas representation, 
+  // but if we are calling an ERC20 execute, we should use the correct decimals.
+  // AgentVault.sol likely uses 18 decimals for its internal accounting to match native.
   const amountWei = ethers.parseEther(amount.toString());
   const reqIdBytes32 = requestId ? (requestId.startsWith('0x') ? requestId : ethers.id(requestId)) : ethers.ZeroHash;
 

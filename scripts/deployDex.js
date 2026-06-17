@@ -13,28 +13,28 @@ async function main() {
   console.log('👛 Deployer:', wallet.address);
 
   // Deploy Factory
-  console.log('\n🚀 Deploying SomniaFactory...');
-  const factoryArtifact = loadArtifact('SomniaFactory');
+  console.log('\n🚀 Deploying ArcFactory...');
+  const factoryArtifact = loadArtifact('ArcFactory');
   const factoryFactory = new ethers.ContractFactory(factoryArtifact.abi, factoryArtifact.bytecode, wallet);
   const factory = await factoryFactory.deploy();
   await factory.waitForDeployment();
   const factoryAddress = await factory.getAddress();
-  console.log('✅ SomniaFactory:', factoryAddress);
+  console.log('✅ ArcFactory:', factoryAddress);
 
   // Deploy Router
-  console.log('\n🚀 Deploying SomniaRouter...');
-  const routerArtifact = loadArtifact('SomniaRouter');
+  console.log('\n🚀 Deploying ArcRouter...');
+  const routerArtifact = loadArtifact('ArcRouter');
   const routerFactory = new ethers.ContractFactory(routerArtifact.abi, routerArtifact.bytecode, wallet);
   const router = await routerFactory.deploy(factoryAddress);
   await router.waitForDeployment();
   const routerAddress = await router.getAddress();
-  console.log('✅ SomniaRouter:', routerAddress);
+  console.log('✅ ArcRouter:', routerAddress);
 
   const deployment = { factoryAddress, routerAddress, deployer: wallet.address, timestamp: new Date().toISOString() };
   fs.writeFileSync(path.join(__dirname, '../artifacts/dex-deployment.json'), JSON.stringify(deployment, null, 2));
   console.log('\n📝 Saved to artifacts/dex-deployment.json');
-  console.log('🔗 Factory: https://shannon-explorer.somnia.network/address/' + factoryAddress);
-  console.log('🔗 Router:  https://shannon-explorer.somnia.network/address/' + routerAddress);
+  console.log('🔗 Factory: https://testnet.arcscan.arc.network/address/' + factoryAddress);
+  console.log('🔗 Router:  https://testnet.arcscan.arc.network/address/' + routerAddress);
 }
 
 main().catch(console.error);
