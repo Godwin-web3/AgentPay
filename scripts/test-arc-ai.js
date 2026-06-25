@@ -4,7 +4,7 @@ const { ethers } = require('ethers');
 async function main() {
     console.log('🧪 Testing Arc Verifiable LLM Inference (Corrected)...');
 
-    const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
+    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
     const PLATFORM_ADDRESS = '0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776';

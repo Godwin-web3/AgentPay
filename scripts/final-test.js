@@ -3,7 +3,7 @@ const { ethers } = require('ethers');
 const { inferOnChain, PLATFORM_ADDRESS } = require('../src/arcAi');
 
 async function main() {
-    const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
+    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     const vaultAddr = process.env.VAULT_ADDRESS;
 

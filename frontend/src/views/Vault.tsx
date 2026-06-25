@@ -20,11 +20,7 @@ const VAULT_ABI = [
 ]
 
 const TOKENS: Record<string, string> = {
-  USDC:  '0x0000000000000000000000000000000000000000',
-  WUSDC: '0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7',
-  PING: '0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493',
-  PONG: '0x9beaA0016c22B646Ac311Ab171270B0ECf23098F',
-  USDC: '0x65296738D4E5edB1515e40287B6FDf8320E6eE04',
+  USDC: '0x3600000000000000000000000000000000000000',
 }
 
 export default function Vault({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onBack, onActionSuccess }: Props) {
@@ -107,11 +103,7 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
   }
 
   const tokens = [
-    { symbol: 'USDC', balance: walletBalance, label: 'Arc Token' },
-    { symbol: 'WUSDC', balance: tokenBalances.WUSDC || '0.0000', label: 'Wrapped USDC' },
-    { symbol: 'PING', balance: tokenBalances.PING || '0.0000', label: 'Ping Token' },
-    { symbol: 'PONG', balance: tokenBalances.PONG || '0.0000', label: 'Pong Token' },
-    { symbol: 'USDC', balance: tokenBalances.USDC || '0.0000', label: 'Arc USD' },
+    { symbol: 'USDC', balance: tokenBalances.USDC || walletBalance, label: 'USD Coin' },
   ]
 
   return (
@@ -137,7 +129,7 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
       </div>
 
       {/* Action buttons */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 28 }}>
         <button
           onClick={() => { setMode('deposit'); setAmount(''); setTxStatus(null) }}
           style={{
@@ -168,21 +160,6 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
           }}
         >
           WITHDRAW
-        </button>
-        <button
-          style={{
-            padding: '12px 8px',
-            background: 'transparent',
-            border: '1px solid var(--border)',
-            color: 'var(--muted)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            letterSpacing: 1.5,
-            cursor: 'pointer',
-          }}
-          onClick={() => {}}
-        >
-          SWAP
         </button>
       </div>
 

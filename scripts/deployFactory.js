@@ -37,10 +37,15 @@ async function main() {
   const address = await contract.getAddress();
   const txHash = contract.deploymentTransaction().hash;
 
+  // P2-14: factory operator defaults to the deployer (wallet) above. If the
+  // backend creates vaults via a different Circle SCA, call setOperator(that)
+  // once after deploy.
   console.log('✅ VaultFactory deployed to: ' + address);
   console.log('🔗 Tx: ' + txHash);
+  console.log('👤 Initial operator (can createVault): ' + wallet.address);
   console.log('');
   console.log('👉 Add to .env: VAULT_FACTORY_ADDRESS=' + address);
+  console.log('👉 If backend uses a different Circle SCA as signer, call setOperator(<sca>) on the factory.');
 
   fs.writeFileSync(
     path.join(__dirname, '../artifacts/VaultFactory-deployment.json'),

@@ -3,6 +3,14 @@ const path = require('path');
 
 const STORE_PATH = path.join(__dirname, '../data/spendLog.json');
 
+// P1-6: atomic write — write to a temp file in the same dir, then rename, so a
+// concurrent multi-user crash never leaves a half-written store on disk.
+function atomicWrite(filePath, data) {
+  const tmp = filePath + '.tmp';
+  fs.writeFileSync(tmp, data);
+  fs.renameSync(tmp, filePath);
+}
+
 function stringify(obj) {
   return JSON.stringify(obj, function(key, value) {
     return typeof value === 'bigint' ? value.toString() : value;
@@ -24,7 +32,7 @@ function readStore() {
 
 function writeStore(data) {
   ensureStore();
-  fs.writeFileSync(STORE_PATH, stringify(data));
+  atomicWrite(STORE_PATH, stringify(data));
 }
 
 function appendSpend({ userAddress, to, amount, reason, txHash, agentId, token, isScheduled, triggerProof }) {

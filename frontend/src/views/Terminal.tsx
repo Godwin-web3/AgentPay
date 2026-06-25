@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, executeSwap, executeIntent, generateRequestId, getPolicy, getChatHistory, getVaultAddress, RPC, TOKENS } from '../api'
+import { sendChat, executePay, generateRequestId, getPolicy, getChatHistory, getVaultAddress, RPC, TOKENS } from '../api'
 import type { ChatMessage } from '../types'
 import { ethers } from 'ethers'
 
@@ -58,7 +58,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
   const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
   
-  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_swap' || result.status === 'proposing_intent' || result.status === 'proposing_schedule'
+  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule'
 
   if (isProposal) {
     let title = 'TX PROPOSAL'
@@ -66,12 +66,6 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     if (result.status === 'proposing_pay') {
       title = '💸 PAYMENT PROPOSAL'
       detail = `Send ${result.amount} ${result.token || 'USDC'} to ${result.to?.slice(0, 8)}...`
-    } else if (result.status === 'proposing_swap') {
-      title = '🔄 SWAP PROPOSAL'
-      detail = `Swap ${result.amount} ${result.fromToken} → ${result.toToken}`
-    } else if (result.status === 'proposing_intent') {
-      title = '⚡ ATOMIC INTENT'
-      detail = `${result.intentName?.replace(/_/g, ' ').toUpperCase()}${result.amount ? `: ${result.amount} USDC` : ''}`
     } else if (result.status === 'proposing_schedule') {
       title = '⏰ ON-CHAIN SCHEDULE'
       detail = `Pay ${result.amount} USDC to ${result.to?.slice(0, 8)}... every ${result.interval}`
@@ -115,10 +109,6 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
        feedback = `✓ Scheduled: ${result.amount} ${result.token || 'USDC'} to ${result.to?.slice(0, 10)}...`
     } else if (result.type === 'pay' || result.to) {
        feedback = `✓ Sent ${result.amount} ${result.token || 'USDC'} to ${result.to?.slice(0, 10)}...`
-    } else if (result.type === 'swap' || (result.fromToken && result.toToken)) {
-       feedback = `✓ Swapped ${result.amount} ${result.fromToken} → ${result.toToken}`
-    } else if (result.type === 'intent') {
-       feedback = `✓ Intent executed`
     }
 
     return (
@@ -131,6 +121,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
       >
         <div style={{ fontWeight: 'bold', marginBottom: 2 }}>{feedback}</div>
         <div style={{ opacity: 0.7 }}>Tx: {result.txHash?.slice(0, 16)}... ↗</div>
+        <div style={{ marginTop: 4, fontSize: 8, color: 'rgba(0,0,0,0.5)', letterSpacing: 1 }}>CONFIRMED IN &lt; 1s</div>
       </a>
     )
   }
@@ -259,13 +250,6 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
         const requestId = generateRequestId()
         const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userAddress, prop.token || 'USDC')
         res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'USDC' }
-      }
- else if (prop.status === 'proposing_swap') {
-        const swapRes = await executeSwap(prop.fromToken, prop.toToken, prop.amount, true, userAddress)
-        res = { ...swapRes, status: swapRes.success ? 'success' : 'failed', type: 'swap', fromToken: prop.fromToken, toToken: prop.toToken, amount: prop.amount }
-      } else if (prop.status === 'proposing_intent') {
-        const intentRes = await executeIntent(prop.intentName, prop.amount, prop.to, prop.reason || 'Atomic Intent', userAddress)
-        res = { ...intentRes, type: 'intent', intentName: prop.intentName }
       } else if (prop.status === 'proposing_schedule') {
         const { address: vaultAddr } = await getVaultAddress(userAddress)
         const iface = new ethers.Interface(["function createSchedule(address token, address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external"])
@@ -377,7 +361,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
                 status: 'proposing_pay', 
                 to: intent.to, 
                 amount: intent.amount, 
-                token: intent.fromToken || 'USDC',
+                    token: 'USDC',
                 reason: intent.reason
               } 
             }))
@@ -393,41 +377,6 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
                  interval: intent.interval,
                  reason: intent.reason,
                  conditions: intent.conditions
-               } 
-             }))
-          }
-
-          if (intent.action === 'propose_swap' && intent.fromToken && intent.toToken && intent.amount) {
-             setTxResults(r => ({ 
-               ...r, 
-               [msgIndex]: { 
-                 status: 'proposing_swap', 
-                 fromToken: intent.fromToken, 
-                 toToken: intent.toToken, 
-                 amount: intent.amount 
-               } 
-             }))
-          }
-
-          if (intent.action === 'execute_swap') {
-            setTxResults(currentResults => {
-              const lastPropIdx = [...next.keys()].reverse().find(idx => currentResults[idx]?.status.startsWith('proposing_'))
-              if (lastPropIdx !== undefined) {
-                 handleConfirm(lastPropIdx)
-              }
-              return currentResults
-            })
-          }
-
-          if (intent.action === 'intent' && intent.intentName) {
-             setTxResults(r => ({ 
-               ...r, 
-               [msgIndex]: { 
-                 status: 'proposing_intent', 
-                 intentName: intent.intentName,
-                 amount: intent.amount, 
-                 to: intent.to, 
-                 reason: intent.reason || 'Atomic Intent'
                } 
              }))
           }
@@ -540,17 +489,16 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
       </div>
 
       <div className="quick-actions">
-        {['SEND', 'SWAP', 'BALANCE', 'POLICY'].map(btn => (
-          <button
-            key={btn}
-            className="quick-btn"
-            onClick={() => {
-              const prompts: Record<string, string> = {
-                SEND: 'Send 0.5 USDC to 0x...',
-                SWAP: 'Swap 10 USDC to WUSDC',
-                BALANCE: 'What is my vault balance?',
-                POLICY: 'Show my current policy'
-              }
+        {['SEND', 'BALANCE', 'POLICY'].map(btn => (
+            <button
+              key={btn}
+              className="quick-btn"
+              onClick={() => {
+                const prompts: Record<string, string> = {
+                  SEND: 'Send 0.5 USDC to 0x...',
+                  BALANCE: 'What is my vault balance?',
+                  POLICY: 'Show my current policy'
+                }
               const val = prompts[btn]
               const autoSend = btn === 'BALANCE' || btn === 'POLICY'
               if (autoSend) {

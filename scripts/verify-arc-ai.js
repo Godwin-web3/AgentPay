@@ -5,7 +5,7 @@ const { inferOnChain } = require('../src/arcAi');
 async function main() {
     console.log('🧪 Verifying Arc On-Chain AI Integration...');
 
-    const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
+    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
     const prompt = "What is the capital of Italy?";

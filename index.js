@@ -1,3 +1,5 @@
+const { setGlobalDispatcher, Agent } = require('undici'); setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
+require('dns').setDefaultResultOrder('ipv4first');
 require('dotenv').config();
 const { startServer } = require('./src/server');
 const { startLoop } = require('./src/loop');

@@ -7,7 +7,7 @@ const artifact = JSON.parse(fs.readFileSync(path.join(__dirname, 'artifacts/Agen
 const VAULT = '0x27c9DE593d325EF3C8C7B859b02ec83EEac22602';
 
 (async () => {
-  const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
   const vault = new ethers.Contract(VAULT, artifact.abi, wallet);
 

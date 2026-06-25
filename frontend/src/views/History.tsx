@@ -77,9 +77,6 @@ export default function History({ userAddress, refreshTrigger = 0 }: { userAddre
              actionLabel = `Blocked: ${tx.blockedReason || 'Policy violation'}`
           } else if (tx.type === 'schedule') {
              actionLabel = `Scheduled: ${tx.label || ('Pay ' + tx.amount + ' USDC to ' + (tx.to?.slice(0,6) + '...'))}`
-          } else if (tx.type === 'swap') {
-             // If label already contains "Swap", use it, otherwise add it
-             actionLabel = tx.label?.toLowerCase().startsWith('swap') ? tx.label : `Swap ${tx.label}`
           } else if (tx.type === 'payment') {
              const to = tx.to ? ` → ${tx.to.slice(0, 6)}...` : ''
              actionLabel = `Sent ${tx.amount} ${tx.token || 'USDC'}${to}`

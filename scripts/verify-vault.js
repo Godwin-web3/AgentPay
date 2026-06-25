@@ -7,7 +7,7 @@ const deployment = JSON.parse(fs.readFileSync(path.join(__dirname, '../artifacts
 const artifact = JSON.parse(fs.readFileSync(path.join(__dirname, '../artifacts/AgentVault.json'), 'utf8'));
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
   const contract = new ethers.Contract(deployment.address, artifact.abi, provider);
 
   console.log('🔍 Verifying Contract at:', deployment.address);

@@ -1,7 +1,13 @@
 {
-  "maxAmountPerTx": 0.01,
-  "dailyLimit": 0.50,
+  "maxAmountPerTx": "0.5",
+  "dailyLimit": "5",
   "whitelist": [],
-  "activeHours": { "start": 0, "end": 23 },
-  "circuitBreaker": { "enabled": true, "threshold": 3 }
+  "activeHours": {
+    "start": 0,
+    "end": 23
+  },
+  "circuitBreaker": {
+    "enabled": true,
+    "threshold": 3
+  }
 }

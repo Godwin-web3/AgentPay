@@ -13,7 +13,7 @@ const USERS_TO_MONITOR = [
 ];
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
   const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, wallet);
 

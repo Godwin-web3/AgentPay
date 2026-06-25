@@ -135,7 +135,7 @@ export default function App() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>AGENTPAY</h1>
-          <span>SOMNIA NETWORK</span>
+          <span>ARC TESTNET</span>
         </div>
 
         <nav style={{ flex: 1 }}>

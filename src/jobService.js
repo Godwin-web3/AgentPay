@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { initiateDeveloperControlledWalletsClient } = require('@circle-fin/developer-controlled-wallets');
 const { createPublicClient, http, keccak256, toHex, decodeEventLog } = require('viem');
+const { toUnits, fromUnits } = require('../utils/usdc');
 
 const client = initiateDeveloperControlledWalletsClient({
   apiKey: process.env.CIRCLE_API_KEY,
@@ -10,6 +11,8 @@ const client = initiateDeveloperControlledWalletsClient({
 const AGENTIC_COMMERCE_CONTRACT = '0x0747EEf0706327138c69792bF28Cd525089e4583';
 const USDC_CONTRACT = process.env.USDC_CONTRACT;
 
+const { setGlobalDispatcher, Agent } = require('undici');
+setGlobalDispatcher(new Agent({ connect: { family: 4 } }));
 const publicClient = createPublicClient({
   chain: {
     id: 5042002,
@@ -116,6 +119,7 @@ async function waitForTx(txId, label) {
 }
 
 async function contractCall(walletId, contractAddress, abiFunctionSignature, abiParameters, label) {
+  console.log("CONTRACT_CALL:", label, JSON.stringify({abiFunctionSignature, abiParameters}));
   const res = await client.createContractExecutionTransaction({
     walletId,
     contractAddress,
@@ -152,20 +156,20 @@ async function createJob(clientWalletId, providerAddress, evaluatorAddress, desc
 }
 
 async function setBudget(providerWalletId, jobId, amountUSDC) {
-  const amount6 = Math.floor(parseFloat(amountUSDC) * 1e6).toString();
+  const amountRaw = toUnits(amountUSDC).toString();
   return await contractCall(
     providerWalletId, AGENTIC_COMMERCE_CONTRACT,
     'setBudget(uint256,uint256,bytes)',
-    [jobId, amount6, '0x'], 'set budget'
+    [jobId, amountRaw, '0x'], 'set budget'
   );
 }
 
 async function approveAndFund(clientWalletId, jobId, amountUSDC) {
-  const amount6 = Math.floor(parseFloat(amountUSDC) * 1e6).toString();
+  const amountRaw = toUnits(amountUSDC).toString();
   await contractCall(
     clientWalletId, USDC_CONTRACT,
     'approve(address,uint256)',
-    [AGENTIC_COMMERCE_CONTRACT, amount6], 'approve USDC'
+    [AGENTIC_COMMERCE_CONTRACT, amountRaw], 'approve USDC'
   );
   return await contractCall(
     clientWalletId, AGENTIC_COMMERCE_CONTRACT,
@@ -215,7 +219,7 @@ async function getJob(jobId) {
     provider: job.provider,
     evaluator: job.evaluator,
     description: job.description,
-    budget: (Number(job.budget) / 1e6).toString(),
+    budget: String(fromUnits(job.budget)),
     status: STATUS_NAMES[Number(job.status)],
     expiredAt: job.expiredAt.toString()
   };

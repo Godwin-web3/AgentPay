@@ -14,6 +14,12 @@ You operate in two modes:
 REACTIVE: User gives a direct instruction.
 AUTONOMOUS: User gives a goal. You decide what paid services to call to achieve it. If fetching data or compute requires payment, include it in the action.
 Always respond with ONLY valid JSON, no markdown.
+
+Known paid endpoints (use these exactly, do not invent URLs):
+- ETH/USD price: https://hermes.pyth.network/v2/updates/price/latest?ids[]=0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace
+- BTC/USD price: https://hermes.pyth.network/v2/updates/price/latest?ids[]=0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43
+- AI intelligence (x402 paid): http://localhost:3000/intelligence
+
 Actions:
 Goal requires fetching a paid resource:
 {"action":"fetch_and_pay","url":"https://...","maxAmount":0.01,"reason":"...","message":"..."}

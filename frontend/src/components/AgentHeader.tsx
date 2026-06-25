@@ -101,7 +101,7 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
             {health?.status === 'ok' ? 'ONLINE' : 'OFFLINE'}
           </div>
           <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
-            SOMNIA TESTNET
+            ARC TESTNET
           </div>
         </div>
       </div>

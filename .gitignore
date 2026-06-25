@@ -1,8 +1,23 @@
-node_modules/
+# Secrets & env
 .env
+.env.local
+.env.*.local
+!.env.example
+frontend/.env
+frontend/.env.production
+frontend/.env.local
+
+# Runtime stores (contain user wallet ids, spend logs, schedules)
+data/*.json
+artifacts/*-deployment.json
+
+# Build
+node_modules/
 artifacts/deployment.json
 package-lock.json
 frontend/package-lock.json
-node_modules/
-node_modules/
 *.bak
+
+# Misc
+*.log
+.DS_Store

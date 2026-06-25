@@ -5,11 +5,7 @@ export const WORKER_URL = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c
 export const RPC = import.meta.env.VITE_RPC_URL || 'https://rpc.testnet.arc.network'
 
 export const TOKENS = {
-  USDC:   '0x0000000000000000000000000000000000000000',
-  WUSDC:  '0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7',
-  PING:  '0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493',
-  PONG:  '0x9beaA0016c22B646Ac311Ab171270B0ECf23098F',
-  USDC:  '0x65296738D4E5edB1515e40287B6FDf8320E6eE04',
+  USDC: '0x3600000000000000000000000000000000000000',
 }
 
 async function request<T>(path: string, options?: RequestInit, userAddress?: string): Promise<T> {
@@ -79,32 +75,6 @@ export async function executePay(
   return request<PayResponse>('/pay', {
     method: 'POST',
     body: JSON.stringify({ to, amount, reason, requestId, fromToken })
-  }, userAddress)
-}
-
-export async function executeSwap(
-  fromToken: string,
-  toToken: string,
-  amount: number,
-  execute: boolean,
-  userAddress: string
-): Promise<any> {
-  return request<any>('/swap', {
-    method: 'POST',
-    body: JSON.stringify({ fromToken, toToken, amount, execute })
-  }, userAddress)
-}
-
-export async function executeIntent(
-  intentName: string,
-  amount: number,
-  to: string,
-  reason: string,
-  userAddress: string
-): Promise<any> {
-  return request<any>('/intent', {
-    method: 'POST',
-    body: JSON.stringify({ intentName, amount, to, reason })
   }, userAddress)
 }
 
@@ -188,13 +158,6 @@ const ERC20_BALANCEOF = '0x70a08231'
 export async function getTokenBalances(userAddress: string): Promise<Record<string, string>> {
   const padded = userAddress.replace('0x','').toLowerCase().padStart(64, '0')
   const calls = Object.entries(TOKENS).map(([symbol, addr]) => {
-    if (addr === TOKENS.USDC) {
-      return fetch(RPC, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getBalance', params: [userAddress, 'latest'] })
-      }).then(r => r.json()).then(d => ({ symbol, raw: d.result }))
-    }
     return fetch(RPC, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

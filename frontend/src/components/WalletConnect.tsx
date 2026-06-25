@@ -3,7 +3,7 @@ import { createPortal } from "react-dom"
 import { getVaultAddress } from "../api"
 import { ethers } from "ethers"
 
-const SOMNIA_CHAIN_ID = '0x4CF4B2' // 5042002 in hex
+const ARC_CHAIN_ID = '0x4CF4B2' // 5042002 in hex
 const VAULT_ABI = [
   "function balances(address user, address token) external view returns (uint256)",
   "function deposit(address token, uint256 amount) external payable"
@@ -92,15 +92,15 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
       try {
         await provider.request({
           method: 'wallet_switchEthereumChain',
-          params: [{ chainId: SOMNIA_CHAIN_ID }],
+          params: [{ chainId: ARC_CHAIN_ID }],
         })
       } catch (err: any) {
         if (err.code === 4902) {
           await provider.request({
             method: 'wallet_addEthereumChain',
             params: [{
-              chainId: SOMNIA_CHAIN_ID,
-              chainName: 'Arc Testnet Testnet',
+              chainId: ARC_CHAIN_ID,
+              chainName: 'Arc Testnet',
               nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
               rpcUrls: ['https://rpc.testnet.arc.network'],
               blockExplorerUrls: ['https://testnet.arcscan.arc.network']

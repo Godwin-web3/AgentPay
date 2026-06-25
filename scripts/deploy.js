@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const artifactPath = path.join(__dirname, '../artifacts/AgentVault.json');
@@ -38,7 +38,7 @@ async function main() {
     address: address,
     deployer: wallet.address,
     agent: agentAddress,
-    network: 'Arc Testnet Testnet',
+    network: 'Arc Testnet',
     timestamp: new Date().toISOString(),
     txHash: txHash
   };

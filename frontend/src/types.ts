@@ -16,13 +16,10 @@ export interface ChatMessage {
 }
 
 export interface Intent {
-  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'propose_swap' | 'execute_swap' | 'balance' | 'help' | 'unknown' | 'intent'
+  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown'
   requestId?: string
-  intentName?: string
   to?: string
   amount?: number
-  fromToken?: string
-  toToken?: string
   reason?: string
   message: string
   interval?: string

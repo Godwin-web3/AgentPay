@@ -73,8 +73,9 @@ module.exports = { createUserWallet, getWalletBalance, getWalletAddress, sendUSD
 
 async function approveAndDepositToVault(walletId, vaultAddress, amountUSDC) {
   const usdcAddress = process.env.USDC_CONTRACT;
-  // Amount in 6 decimals for ERC-20 interface
-  const amount6 = Math.floor(parseFloat(amountUSDC) * 1e6).toString();
+  const { toUnits } = require('../utils/usdc');
+  // Use the shared decimal config so deposit and execute agree on unit scale.
+  const amountWei = toUnits(amountUSDC).toString();
 
   // Step 1: Approve vault to spend USDC
   const approveRes = await client.createContractExecutionTransaction({
@@ -82,7 +83,7 @@ async function approveAndDepositToVault(walletId, vaultAddress, amountUSDC) {
     contractAddress: usdcAddress,
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'approve(address,uint256)',
-    abiParameters: [vaultAddress, amount6],
+    abiParameters: [vaultAddress, amountWei],
     fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
   });
 
@@ -102,7 +103,7 @@ async function approveAndDepositToVault(walletId, vaultAddress, amountUSDC) {
     contractAddress: vaultAddress,
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'deposit(uint256)',
-    abiParameters: [amount6],
+    abiParameters: [amountWei],
     fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
   });
 
@@ -118,14 +119,15 @@ async function approveAndDepositToVault(walletId, vaultAddress, amountUSDC) {
 }
 
 async function withdrawFromVault(walletId, vaultAddress, amountUSDC) {
-  const amount6 = Math.floor(parseFloat(amountUSDC) * 1e6).toString();
+  const { toUnits } = require('../utils/usdc');
+  const amountWei = toUnits(amountUSDC).toString();
 
   const res = await client.createContractExecutionTransaction({
     walletId,
     contractAddress: vaultAddress,
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'withdraw(uint256)',
-    abiParameters: [amount6],
+    abiParameters: [amountWei],
     fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
   });
 

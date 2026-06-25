@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react'
 
 const DEMO_LINES = [
   { role: 'user', text: 'pay 0.5 USDC to 0xABC...def for quest reward', delay: 500 },
-  { role: 'assistant', text: 'Checking policy...', delay: 1200 },
-  { role: 'assistant', text: 'Spending limit OK. Recipient whitelisted.', delay: 2000 },
-  { role: 'assistant', text: 'Executing on Arc testnet...', delay: 2800 },
-  { role: 'assistant', text: '[OK] Block #82910 — TX: 0x92f...a12', delay: 3800 },
+  { role: 'assistant', text: 'Checking policy...', delay: 1000 },
+  { role: 'assistant', text: 'Spending limit OK. Recipient whitelisted.', delay: 1600 },
+  { role: 'assistant', text: 'Instant execution on Arc testnet...', delay: 2000 },
+  { role: 'assistant', text: '[OK] TX: 0x92f...a12 — Confirmed in <1s', delay: 2600 },
 ]
 
-const QUICK_BTNS = ['SEND', 'SWAP', 'SCHEDULE', 'BALANCE', 'POLICY']
+const QUICK_BTNS = ['SEND', 'SCHEDULE', 'BALANCE', 'POLICY']
 
 function DemoTerminal() {
   const [visible, setVisible] = useState(0)
@@ -42,7 +42,7 @@ function DemoTerminal() {
         flexShrink: 0,
       }}>
         <span style={{ fontSize: 10, letterSpacing: 2, color: '#4fdbc8' }}>AGENTPAY TERMINAL</span>
-        <span style={{ fontSize: 9, color: '#444', letterSpacing: 1 }}>SOMNIA TESTNET</span>
+        <span style={{ fontSize: 9, color: '#444', letterSpacing: 1 }}>ARC TESTNET</span>
       </div>
 
       {/* Messages */}
@@ -343,7 +343,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
         alignItems: 'center',
       }}>
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: 3, color: '#fff' }}>AGENTPAY</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: 2, color: '#555' }}>BUILT FOR SOMNIA AGENTATHON 2026</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: 2, color: '#555' }}>BUILT FOR ARC AGENT HACKATHON 2026</span>
       </div>
 
     </div>

@@ -18,9 +18,12 @@ function readSchedules() {
   return JSON.parse(fs.readFileSync(SCHEDULES_PATH, 'utf8'));
 }
 
+// P1-6: atomic write to avoid corrupting schedules.json under concurrent writes.
 function writeSchedules(data) {
   ensureStore();
-  fs.writeFileSync(SCHEDULES_PATH, JSON.stringify(data, null, 2));
+  const tmp = SCHEDULES_PATH + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+  fs.renameSync(tmp, SCHEDULES_PATH);
 }
 
 function parseInterval(intervalStr) {

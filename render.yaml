@@ -7,7 +7,7 @@ services:
     envVars:
       - key: PRIVATE_KEY
         sync: false
-      - key: SOMNIA_RPC_URL
+      - key: ARC_RPC
         value: https://rpc.testnet.arc.network
       - key: VAULT_ADDRESS
         value: 0xaB130f3f915AB9722AC6cd17E0d360f971970817

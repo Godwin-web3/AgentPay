@@ -6,7 +6,7 @@ This is the conversational interface for **AgentPay**, an AI-powered, policy-enf
 
 ### 1. Prerequisites
 - Node.js v18+
-- Metamask (configured for Arc Testnet Testnet)
+- Metamask (configured for Arc Testnet)
 - The AgentPay Worker running (locally or deployed)
 
 ### 2. Configuration
@@ -28,7 +28,6 @@ npm run dev
 1. **Onboarding**: Connect your wallet and set your initial spending policy.
 2. **Terminal**: Use the chat interface to:
    - "Send 0.5 USDC to 0x..." (Simple Payment)
-   - "Swap 1 USDC to USDC and pay Bob" (Atomic Intent)
    - "Set a schedule to pay 1 USDC every Friday" (Smart Scheduling)
 3. **Policy**: View and update your on-chain spending limits.
 4. **History**: Track all executed and scheduled transactions.

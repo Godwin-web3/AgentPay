@@ -1,13 +1,14 @@
-// AgentPay Cloudflare Worker v6.4 — Autonomous Atomic Intent Engine
+// AgentPay Cloudflare Worker — Autonomous USDC Payment Agent
 import { ethers } from 'ethers';
 
 async function getDynamicVaultAddress(env, userAddress) {
   if (!userAddress) throw new Error("Could not resolve your vault. Please reconnect your wallet.");
   try {
     const serverUrl = env.NODE_SERVER_URL || 'http://localhost:3000';
-    const res = await fetch(`${serverUrl}/vault-address`, {
-      headers: { 'x-user-address': userAddress }
-    });
+    // P1-9: authenticate Worker↔Render with the shared operator key.
+    const headers = { 'x-user-address': userAddress };
+    if (env.APP_API_KEY) headers['x-api-key'] = env.APP_API_KEY;
+    const res = await fetch(`${serverUrl}/vault-address`, { headers });
     if (!res.ok) throw new Error();
     const data = await res.json();
     if (!data.address) throw new Error();
@@ -20,22 +21,19 @@ async function getDynamicVaultAddress(env, userAddress) {
 const VAULT_ABI = [
   "function getPolicy(address user) external view returns (tuple(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, bool active) policy, address[] memory whitelist)",
   "function getSpendMetrics(address user) external view returns (uint256 todaySpent, uint256 currentHourTx)",
-  "function execute(address user, address token, address to, uint256 amount, string reason, bytes32 requestId) external",
-  "function multicall(address user, address[] calldata targets, bytes[] calldata datas, uint256[] calldata values, address policyToken, uint256 totalAmount, string calldata reason, bytes32 requestId) external",
+  "function execute(address user, address to, uint256 amount, string reason, bytes32 requestId) external",
+  "function multicall(address user, address[] targets, uint256[] amounts, string reason, bytes32 requestId) external",
   "function setPolicy(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, address[] calldata whitelist) external",
-  "function balances(address,address) external view returns (uint256)",
-  "function getBalance(address,address) external view returns (uint256)",
-  "function getSchedules(address user) external view returns (tuple(address token, address to, uint256 amount, uint256 interval, uint256 nextRun, bool active, string reason, uint256 minBalance)[])",
-  "function createSchedule(address token, address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external",
+  "function balances(address) external view returns (uint256)",
+  "function getBalance(address user) external view returns (uint256)",
+  "function getSchedules(address user) external view returns (tuple(address to, uint256 amount, uint256 interval, uint256 nextRun, bool active, string reason, uint256 minBalance)[])",
+  "function createSchedule(address to, uint256 amount, uint256 interval, string reason, uint256 minBalance) external",
   "function cancelSchedule(uint256 index) external",
-  "function executeSchedule(address user, uint256 index) external"
+  "function executeScheduled(address user, uint256 index) external"
 ];
 
 const TOKENS = {
-  WUSDC: "0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7",
-  PING: "0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493",
-  PONG: "0x9beaA0016c22B646Ac311Ab171270B0ECf23098F",
-  USDC: "0x65296738D4E5edB1515e40287B6FDf8320E6eE04",
+  USDC: "0x3600000000000000000000000000000000000000",
 };
 const ERC20_ABI = [
   "function balanceOf(address) external view returns (uint256)",
@@ -43,33 +41,16 @@ const ERC20_ABI = [
   "function approve(address,uint256) external returns (bool)",
   "function transfer(address,uint256) external returns (bool)"
 ];
-const V3_ROUTER = "0x6AAC14f090A35EeA150705f72D90E4CDC4a49b2C";
-const V2_ROUTER = "0xc81501B65A040bF5f1794D0Ca2b953aebb2b1996";
-const V3_ROUTER_ABI = [
-  "function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) params) external payable returns (uint256 amountOut)"
-];
-const V2_ROUTER_ABI = [
-  "function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline) external returns (uint256[] memory amounts)"
-];
 
-const GROQ_SYSTEM_PROMPT = `You are AgentPay, a friendly and knowledgeable autonomous payment agent on the Arc blockchain.
+const GROQ_SYSTEM_PROMPT = `You are AgentPay, a friendly and knowledgeable autonomous USDC payment agent on the Arc blockchain.
 
-Your goal is to help users manage their funds securely in their personal Vault while also being a helpful companion. You can answer questions about Arc, blockchain, or just chat about anything.
-
-*** NEW FEATURE: ATOMIC INTENTS ***
-You can now execute complex "Atomic Intents" in a single transaction. 
-Intents currently supported:
-1. "provide_liquidity": Add USDC to the PING/USDC liquidity pool.
-2. "safe_swap_pay": Swap USDC to USDC and then pay a recipient (Atomic Swap+Pay).
+Your goal is to help users manage their USDC securely in their personal Vault while also being a helpful companion. You can answer questions about Arc, blockchain, or just chat about anything.
 
 You must respond ONLY with a valid JSON object in this exact format:
 {
-  "action": "pay" | "schedule" | "intent" | "status" | "balance" | "history" | "policy" | "update_policy" | "propose_swap" | "execute_swap" | "chat" | "help" | "unknown",
-  "intentName": "provide_liquidity" | "safe_swap_pay" | null,
+  "action": "pay" | "schedule" | "status" | "balance" | "history" | "policy" | "update_policy" | "chat" | "help" | "unknown",
   "to": "0x address or null",
   "amount": number or null,
-  "fromToken": "USDC" | "WUSDC" | "PING" | "PONG" | "USDC" | null,
-  "toToken": "USDC" | "WUSDC" | "PING" | "PONG" | "USDC" | null,
   "reason": "short description or null",
   "message": "your helpful, conversational response",
   "interval": "number of seconds or null",
@@ -77,14 +58,8 @@ You must respond ONLY with a valid JSON object in this exact format:
 }
 
 Guidelines:
-- For complex requests like "Add my 5 USDC to the PING pool" or "Pay 10 USDC to Bob but use my USDC", use action: "intent" and set the intentName.
-- Available tokens on Arc Testnet Testnet:
-  - USDC (Native)
-  - WUSDC: 0x4A3BC48C156384f9564Fd65A53a2f3D534D8f2b7 (Wrapped USDC)
-  - PING: 0x33E7fAB0a8a5da1A923180989bD617c9c2D1C493
-  - PONG: 0x9beaA0016c22B646Ac311Ab171270B0ECf23098F
-  - USDC: 0x65296738D4E5edB1515e40287B6FDf8320E6eE04 (Stable USD)
-- Be helpful and smart. Arc is the high-performance blockchain for the mass-consumer metaverse.
+- The only supported token is USDC. Do not reference other tokens.
+- Arc is the high-performance blockchain for the mass-consumer metaverse.
 - Always respond with valid JSON only, no extra text`;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -124,13 +99,14 @@ async function executePayment(env, userAddress, to, amount, requestId, reason, t
   const vaultAddr = await getDynamicVaultAddress(env, userAddress);
   const vault = new ethers.Contract(vaultAddr, VAULT_ABI, wallet);
 
-  const tokenAddress = tokenSymbol === 'USDC' ? ethers.ZeroAddress : (TOKENS[tokenSymbol.toUpperCase()] || tokenSymbol);
+  const tokenAddress = ethers.ZeroAddress;
 
   try {
     const amountWei = ethers.parseEther(amount.toString());
     let reqIdBytes32 = requestId ? (requestId.startsWith('0x') ? requestId : ethers.id(requestId)) : ethers.ZeroHash;
 
-    const tx = await vault.execute(userAddress, tokenAddress, to, amountWei, reason || '', reqIdBytes32, { gasLimit: 800000 });
+    // Hardened contract: execute(user, to, amount, reason, requestId) — no token arg.
+    const tx = await vault.execute(userAddress, to, amountWei, reason || '', reqIdBytes32, { gasLimit: 800000 });
     const record = { requestId, to, amount: parseFloat(amount), token: tokenSymbol, txHash: tx.hash, status: 'executed', timestamp: new Date().toISOString() };
     await env.AGENTPAY_KV.put(`status_${requestId}`, JSON.stringify(record), { expirationTtl: 86400 });
     return { success: true, requestId, txHash: tx.hash, explorer: 'https://testnet.arcscan.arc.network/tx/' + tx.hash };
@@ -139,96 +115,22 @@ async function executePayment(env, userAddress, to, amount, requestId, reason, t
   }
 }
 
-async function handleIntent(env, userAddress, intentName, amount, to, reason) {
-  const provider = new ethers.JsonRpcProvider(env.ARC_RPC);
-  const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
-  const vaultAddr = await getDynamicVaultAddress(env, userAddress);
-  const vault = new ethers.Contract(vaultAddr, VAULT_ABI, wallet);
-  const amountWei = ethers.parseEther(amount.toString());
-
-  const targets = [];
-  const datas = [];
-  const values = [];
-
-  if (intentName === 'safe_swap_pay') {
-    // 1. Swap USDC -> USDC (V3)
-    const routerIface = new ethers.Interface(V3_ROUTER_ABI);
-    const erc20Iface = new ethers.Interface(ERC20_ABI);
-    
-    // We swap Native USDC -> USDC. V3 Router accepts native USDC if passed as 'value'.
-    // No approval needed for native USDC, but USDC transfer later needs balance.
-    
-    datas.push(routerIface.encodeFunctionData("exactInputSingle", [{
-      tokenIn: TOKENS.WUSDC, tokenOut: TOKENS.USDC, fee: 500, recipient: vaultAddr,
-      amountIn: amountWei, amountOutMinimum: 0, sqrtPriceLimitX96: 0
-    }]));
-    targets.push(V3_ROUTER);
-    values.push(amountWei);
-
-    // 2. Transfer USDC to recipient. 
-    // Note: We don't know exact amountOut, so we use a large balance check or just 
-    // assume 1:1 for the demo (hackathon logic).
-    datas.push(erc20Iface.encodeFunctionData("transfer", [to, amountWei])); 
-    targets.push(TOKENS.USDC);
-    values.push(0);
-
-    const tx = await vault.multicall(userAddress, targets, datas, values, ethers.ZeroAddress, amountWei, reason || "Atomic Swap+Pay", ethers.id(Date.now().toString()));
-    return { success: true, status: 'executed', txHash: tx.hash, explorer: 'https://testnet.arcscan.arc.network/tx/' + tx.hash };
-  }
-
-  if (intentName === 'provide_liquidity') {
-    // 1. Swap HALF of USDC to USDC (V2)
-    const halfAmount = amountWei / 2n;
-    const routerIface = new ethers.Interface(V2_ROUTER_ABI);
-    const erc20Iface = new ethers.Interface(ERC20_ABI);
-    
-    // Path: WUSDC -> USDC
-    datas.push(routerIface.encodeFunctionData("swapExactTokensForTokens", [
-      halfAmount, 0, [TOKENS.WUSDC, TOKENS.USDC], vaultAddr, Math.floor(Date.now() / 1000) + 600
-    ]));
-    targets.push(V2_ROUTER);
-    values.push(halfAmount);
-
-    // 2. Add Liquidity USDC + USDC
-    // We assume the other half of USDC and the received USDC are used.
-    // For simplicity in the multicall, we use the same halfAmount for USDC desired (demo logic)
-    datas.push(routerIface.encodeFunctionData("addLiquidity", [
-      TOKENS.WUSDC, TOKENS.USDC, halfAmount, halfAmount, 0, 0, vaultAddr, Math.floor(Date.now() / 1000) + 600
-    ]));
-    targets.push(V2_ROUTER);
-    values.push(halfAmount);
-
-    try {
-      const tx = await vault.multicall(userAddress, targets, datas, values, ethers.ZeroAddress, amountWei, "Provide Liquidity (Atomic)", ethers.id(Date.now().toString()));
-      return { success: true, status: 'executed', txHash: tx.hash, explorer: 'https://testnet.arcscan.arc.network/tx/' + tx.hash };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  }
-
-  return { error: 'Unknown intent', success: false };
-}
-
 // ── Route handlers ────────────────────────────────────────────────────────────
 
 async function handleHealth(env) {
   const address = await getWalletAddress(env);
-  return json({ status: 'ok', version: '6.4 (Atomic)', address });
+  return json({ status: 'ok', version: '6.5', address });
 }
 
 async function handleBalance(request, env, address) {
   const provider = new ethers.JsonRpcProvider(env.ARC_RPC);
   const vaultAddr = await getDynamicVaultAddress(env, address);
   const vault = new ethers.Contract(vaultAddr, VAULT_ABI, provider);
-  const [sttRaw, vaultRaw, wsttRaw, pingRaw, pongRaw, susdRaw] = await Promise.all([
-    provider.getBalance(address),
-    vault.getBalance(address, ethers.ZeroAddress),
-    new ethers.Contract(TOKENS.WUSDC, ERC20_ABI, provider).balanceOf(address),
-    new ethers.Contract(TOKENS.PING, ERC20_ABI, provider).balanceOf(address),
-    new ethers.Contract(TOKENS.PONG, ERC20_ABI, provider).balanceOf(address),
+  const [usdcRaw, vaultRaw] = await Promise.all([
     new ethers.Contract(TOKENS.USDC, ERC20_ABI, provider).balanceOf(address),
+    vault.getBalance(address),
   ]);
-  return json({ address, balances: { USDC: ethers.formatEther(sttRaw), WUSDC: ethers.formatEther(wsttRaw), PING: ethers.formatEther(pingRaw), PONG: ethers.formatEther(pongRaw), USDC: ethers.formatEther(susdRaw) }, vault: ethers.formatEther(vaultRaw) });
+  return json({ address, balances: { USDC: ethers.formatEther(usdcRaw) }, vault: ethers.formatEther(vaultRaw) });
 }
 
 async function handleGetPolicy(request, env, address) {
@@ -237,7 +139,7 @@ async function handleGetPolicy(request, env, address) {
   const vault = new ethers.Contract(vaultAddr, VAULT_ABI, provider);
   const [policy, whitelist] = await vault.getPolicy(address);
   const [todaySpent, currentHourTx] = await vault.getSpendMetrics(address);
-  const balance = await vault.getBalance(address, ethers.ZeroAddress);
+  const balance = await vault.getBalance(address);
   return json({ perTxCap: ethers.formatEther(policy.perTxCap), dailyCap: ethers.formatEther(policy.dailyCap), dailySpendSoFar: ethers.formatEther(todaySpent), dailyRemaining: ethers.formatEther(policy.dailyCap - todaySpent), whitelist, active: policy.active, vaultBalance: ethers.formatEther(balance), circuitBreaker: { maxTxPerHour: Number(policy.maxTxPerHour) } });
 }
 
@@ -285,7 +187,7 @@ export default {
         const schedules = await vault.getSchedules(user);
         for (let i = 0; i < schedules.length; i++) {
           if (schedules[i].active && Math.floor(Date.now() / 1000) >= Number(schedules[i].nextRun)) {
-            await (await vault.executeSchedule(user, i, { gasLimit: 1000000 })).wait();
+            await (await vault.executeScheduled(user, i, { gasLimit: 1000000 })).wait();
           }
         }
       } catch (e) {
@@ -307,11 +209,6 @@ export default {
       if (path === '/policy') return handleGetPolicy(request, env, userAddress);
       if (path === '/pay') return handlePay(request, env, userAddress);
       if (path === '/balance') return handleBalance(request, env, userAddress);
-      if (path === '/swap') return handleSwap(request, env, userAddress);
-      if (path === '/intent') {
-        const { intentName, amount, to, reason } = await request.json();
-        return json(await handleIntent(env, userAddress, intentName, amount, to, reason));
-      }
     } catch (err) {
       if (err.message.includes("Could not resolve your vault")) {
         return json({ error: err.message }, 400);
@@ -326,40 +223,4 @@ export default {
 async function handlePay(request, env, address) {
   const { to, amount, requestId, reason, fromToken } = await request.json();
   return json(await executePayment(env, address, to, amount, requestId, reason, fromToken || 'USDC'));
-}
-
-async function handleSwap(request, env, userAddress) {
-  const { fromToken, toToken, amount, execute } = await request.json();
-  if (!execute) {
-    return json({ success: true, status: "proposing_swap", fromToken, toToken, amount });
-  }
-  const provider = new ethers.JsonRpcProvider(env.ARC_RPC);
-  const wallet = new ethers.Wallet(env.PRIVATE_KEY, provider);
-  const amountWei = ethers.parseEther(amount.toString());
-  const deadline = Math.floor(Date.now() / 1000) + 600;
-  const fromAddr = TOKENS[fromToken.toUpperCase()];
-  const toAddr = TOKENS[toToken.toUpperCase()];
-  if (!fromAddr || !toAddr) return json({ error: "Unsupported token. Supported: PING, PONG, WUSDC, USDC", success: false }, 400);
-  const isV2Pair = ((fromAddr === TOKENS.WUSDC && toAddr === TOKENS.USDC) || (fromAddr === TOKENS.USDC && toAddr === TOKENS.WUSDC));
-  try {
-    const erc20 = new ethers.Contract(fromAddr, ["function allowance(address,address) external view returns (uint256)", "function approve(address,uint256) external returns (bool)"], wallet);
-    const routerAddr = isV2Pair ? V2_ROUTER : V3_ROUTER;
-    const allowance = await erc20.allowance(wallet.address, routerAddr);
-    if (allowance < amountWei) {
-      const appTx = await erc20.approve(routerAddr, ethers.MaxUint256);
-      await appTx.wait();
-    }
-    let tx;
-    if (isV2Pair) {
-      const v2 = new ethers.Contract(V2_ROUTER, ["function swapExactTokensForTokens(uint256,uint256,address[],address,uint256) external returns (uint256[])"], wallet);
-      tx = await v2.swapExactTokensForTokens(amountWei, 0, [fromAddr, toAddr], wallet.address, deadline, { gasLimit: 2000000 });
-    } else {
-      const v3 = new ethers.Contract(V3_ROUTER, V3_ROUTER_ABI, wallet);
-      tx = await v3.exactInputSingle({ tokenIn: fromAddr, tokenOut: toAddr, fee: 500, recipient: wallet.address, amountIn: amountWei, amountOutMinimum: 0, sqrtPriceLimitX96: 0 }, { gasLimit: 1400000 });
-    }
-    const receipt = await tx.wait();
-    return json({ success: true, status: "executed", txHash: receipt.hash, explorer: "https://testnet.arcscan.arc.network/tx/" + receipt.hash });
-  } catch (err) {
-    return json({ success: false, error: err.message });
-  }
 }

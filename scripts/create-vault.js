@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL);
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const factoryDeployment = JSON.parse(fs.readFileSync(path.join(__dirname, '../artifacts/VaultFactory-deployment.json'), 'utf8'));

@@ -1,7 +1,7 @@
-const { EvmPriceServiceConnection } = require("@pythnetwork/pyth-evm-js");
+const { HermesClient } = require("@pythnetwork/hermes-client");
 require('dotenv').config();
 
-const connection = new EvmPriceServiceConnection("https://hermes.pyth.network");
+const connection = new HermesClient("https://hermes.pyth.network", {});
 
 // Pyth Price IDs for common assets
 const PYTH_PRICE_IDS = {
@@ -45,10 +45,10 @@ async function evaluatePriceTrigger(trigger) {
     }
 
     try {
-        const priceFeeds = await connection.getLatestPriceFeeds([pythId]);
-        if (!priceFeeds || priceFeeds.length === 0) throw new Error("No Pyth data");
+        const priceUpdates = await connection.getLatestPriceUpdates([pythId]);
+        if (!priceUpdates || !priceUpdates.parsed || priceUpdates.parsed.length === 0) throw new Error("No Pyth data");
 
-        const priceData = priceFeeds[0].getPriceUnchecked();
+        const priceData = priceUpdates.parsed[0].price;
         const price = Number(priceData.price) * Math.pow(10, priceData.expo);
         
         console.log(`🔮 Pyth Oracle Price (${coinId.toUpperCase()}): $${price.toFixed(2)}`);
@@ -163,8 +163,8 @@ async function fetchContext(userInput) {
 
     try {
         const pythId = PYTH_PRICE_IDS[found];
-        const priceFeeds = await connection.getLatestPriceFeeds([pythId]);
-        const priceData = priceFeeds[0].getPriceUnchecked();
+        const priceUpdates = await connection.getLatestPriceUpdates([pythId]);
+        const priceData = priceUpdates.parsed[0].price;
         const price = Number(priceData.price) * Math.pow(10, priceData.expo);
         
         return { type: "price", coin: found.toUpperCase(), value: price.toFixed(2), proof: "pyth" };

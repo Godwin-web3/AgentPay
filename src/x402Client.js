@@ -1,37 +1,22 @@
-const { wrapFetchWithPayment } = require('@x402/fetch');
-const walletService = require('./walletService');
+require('dotenv').config();
+const { GatewayClient } = require('@circle-fin/x402-batching/client');
 
-async function fetchWithPayment(url, walletId, options = {}) {
-  const address = await walletService.getWalletAddress(walletId);
-  let actualAmount = 0;
-  let actualPayTo = null;
+let _client = null;
 
-  const signer = async (paymentRequired) => {
-    const accept = paymentRequired.accepts[0];
-    actualAmount = parseFloat(accept.maxAmountRequired);
-    actualPayTo = accept.payTo;
-
-    const txId = await walletService.sendUSDC(walletId, actualPayTo, actualAmount);
-    console.log(`[x402] Paid ${actualAmount} USDC | to: ${actualPayTo} | tx: ${txId}`);
-
-    return {
-      x402Version: 1,
-      scheme: 'exact',
-      network: 'eip155:5042002',
-      payload: { txHash: txId },
-      from: address
-    };
-  };
-
-  const wrappedFetch = wrapFetchWithPayment(fetch, signer);
-  const response = await wrappedFetch(url, { method: 'GET', ...options });
-
-  const contentType = response.headers.get('content-type') || '';
-  const data = contentType.includes('application/json')
-    ? await response.json()
-    : await response.text();
-
-  return { data, actualAmount, actualPayTo };
+function getGatewayClient() {
+  if (!_client) {
+    _client = new GatewayClient({
+      chain: 'arcTestnet',
+      privateKey: process.env.PRIVATE_KEY,
+    });
+  }
+  return _client;
 }
 
-module.exports = { fetchWithPayment };
+async function fetchWithPayment(url, walletId, options = {}, payerAddress = null) {
+  const client = getGatewayClient();
+  const response = await client.pay(url, options);
+  return { data: response.data, actualAmount: response.amount?.toString(), actualPayTo: response.payTo };
+}
+
+module.exports = { fetchWithPayment, getGatewayClient };

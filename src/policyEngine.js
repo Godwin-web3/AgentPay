@@ -29,12 +29,16 @@ class PolicyEngine {
     console.log('🔴 Circuit breaker triggered — agent paused for 30 minutes');
   }
 
-  async check(to, amountUSDC) {
+  // P1-7: advisory only. The on-chain AgentVault policy is authoritative.
+  // This check short-circuits obvious rejections before spending gas. It is
+  // NOT a substitute for the vault's per-tx / daily / hourly / whitelist
+  // enforcement.
+  check(to, amountUSDC, userAddress) {
     if (this.isPaused()) {
       return { allowed: false, reason: 'Agent paused — circuit breaker active', code: 'CIRCUIT_BREAKER_ACTIVE' };
     }
 
-    const consecutiveFails = getConsecutiveFailures();
+    const consecutiveFails = getConsecutiveFailures(userAddress);
     if (consecutiveFails >= this.localPolicy.circuitBreaker.threshold) {
       this.triggerCircuitBreaker();
       return { allowed: false, reason: 'Too many consecutive failures — agent paused', code: 'CIRCUIT_BREAKER_TRIGGERED' };
@@ -57,7 +61,7 @@ class PolicyEngine {
       }
     }
 
-    const todaySpend = getTodaySpend();
+    const todaySpend = getTodaySpend(userAddress);
     if (todaySpend + amountUSDC > this.localPolicy.dailyLimit) {
       return { allowed: false, reason: 'Daily cap reached — spent ' + todaySpend + '/' + this.localPolicy.dailyLimit + ' USDC today', code: 'DAILY_CAP_EXCEEDED' };
     }

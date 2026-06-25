@@ -9,7 +9,7 @@ const VAULT_ABI = [
 ];
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider(process.env.SOMNIA_RPC_URL || 'https://rpc.testnet.arc.network');
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC || 'https://rpc.testnet.arc.network');
   const userAddress = '0x58f871DaA82E9e6755a2Cb14f5f07e948a0BcbeA';
   const vault = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, provider);
 
