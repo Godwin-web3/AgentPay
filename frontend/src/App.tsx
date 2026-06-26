@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
-import Login from './components/Login'
 import ClaimTag from './components/ClaimTag'
 import AgentHeader from './components/AgentHeader'
 import ErrorBoundary from './components/ErrorBoundary'
