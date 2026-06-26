@@ -270,7 +270,7 @@ function AppWithAuth() {
     </div>
   );
   if (!user) return <Landing onLaunch={async () => { try { await signInWithGoogle(); } catch {} }} />;
-  if (tagChecked && !tag) return <ClaimTag onClaimed={(t) => setTag(t || 'skip')} />;
+  if (tagChecked && !tag) return <ClaimTag onClaimed={(t) => { localStorage.setItem('agentpay_view', 'terminal'); setTag(t || 'skip'); }} />;
   return <App />;
 }
 
