@@ -245,14 +245,22 @@ function AppWithAuth() {
   const [tagChecked, setTagChecked] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setTagLoading(false);
+      return;
+    }
     setTagLoading(true);
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
     import('./api').then(({ getMe }) => {
-      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
       Promise.race([getMe(user.uid), timeout]).then((me: any) => {
         setTag(me.tag || null);
         setTagChecked(true);
-      }).catch(() => setTagChecked(true)).finally(() => setTagLoading(false));
+      }).catch(() => {
+        setTagChecked(true);
+      }).finally(() => setTagLoading(false));
+    }).catch(() => {
+      setTagChecked(true);
+      setTagLoading(false);
     });
   }, [user]);
 
