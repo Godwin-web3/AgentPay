@@ -35,26 +35,7 @@ const PORT = process.env.PORT || 3000;
 
 const requestStore = new Map();
 const chatHistories = new Map();
-const userWallets = new Map();
-const WALLETS_FILE = require('path').join(__dirname, '../data/userWallets.json');
-
-function loadWallets() {
-  try {
-    const { readFileSync } = require('fs');
-    const saved = JSON.parse(readFileSync(WALLETS_FILE, 'utf8'));
-    Object.entries(saved).forEach(([k, v]) => userWallets.set(k, v));
-    console.log('Loaded', userWallets.size, 'wallets from disk');
-  } catch(e) {}
-}
-
-function saveWallets() {
-  const { writeFileSync, mkdirSync } = require('fs');
-  const { dirname } = require('path');
-  mkdirSync(dirname(WALLETS_FILE), { recursive: true });
-  writeFileSync(WALLETS_FILE, JSON.stringify(Object.fromEntries(userWallets), null, 2));
-}
-
-loadWallets();
+const walletStore = require('./walletStore');
 
 function send(res, status, data) {
   if (typeof res.status === 'function') {
@@ -114,11 +95,19 @@ function getUserId(req) {
 }
 
 async function getOrCreateWallet(userId) {
-  if (userWallets.has(userId)) return userWallets.get(userId);
+  const existing = await walletStore.getWallet(userId);
+  if (existing) return existing;
   const wallet = await walletService.createUserWallet(userId);
-  userWallets.set(userId, wallet);
-  saveWallets();
-  return wallet;
+  const record = {
+    walletId: wallet.walletId,
+    address: wallet.address,
+    email: null,
+    displayName: null,
+    tag: null,
+    createdAt: new Date().toISOString()
+  };
+  await walletStore.setWallet(userId, record);
+  return record;
 }
 
 // GET /health
@@ -294,13 +283,8 @@ async function handleChat(req, res) {
 
     // Resolve @tags to wallet addresses
     if (intent.to && intent.to.startsWith('@')) {
-      const fs = require('fs');
-      const path = require('path');
-      const walletsPath = path.join(__dirname, '../data/userWallets.json');
-      let wallets = {};
-      try { wallets = JSON.parse(fs.readFileSync(walletsPath, 'utf8')); } catch {}
       const tag = intent.to.toLowerCase().replace('@', '');
-      const entry = Object.values(wallets).find(w => w.tag === tag);
+      const entry = await walletStore.findByTag(tag);
       if (entry) {
         intent.to = entry.address;
         intent.message = intent.message + ' (@' + tag + ' resolved to ' + entry.address.slice(0,8) + '...)';
@@ -853,33 +837,24 @@ app.post('/api/auth/login', async (req, res) => {
     const { uid, email, displayName } = req.body;
     if (!uid) return res.status(400).json({ error: 'uid required' });
 
-    const fs = require('fs');
-    const path = require('path');
-    const walletsPath = path.join(__dirname, '../data/userWallets.json');
-    
-    let wallets = {};
-    try { wallets = JSON.parse(fs.readFileSync(walletsPath, 'utf8')); } catch {}
+    let wallet = await walletStore.getWallet(uid);
 
-    if (!wallets[uid]) {
+    if (!wallet) {
       const walletService = require('./walletService');
-      const wallet = await walletService.createUserWallet(uid);
-      wallets[uid] = {
-        walletId: wallet.walletId,
-        address: wallet.address,
+      const created = await walletService.createUserWallet(uid);
+      wallet = {
+        walletId: created.walletId,
+        address: created.address,
         email,
         displayName,
         tag: null,
         createdAt: new Date().toISOString()
       };
-      fs.mkdirSync(require('path').dirname(walletsPath), { recursive: true });
-      fs.writeFileSync(walletsPath, JSON.stringify(wallets, null, 2));
-      userWallets.set(uid, wallets[uid]);
-      console.log('New user wallet created:', uid, wallet.address);
-    } else {
-      userWallets.set(uid, wallets[uid]);
+      await walletStore.setWallet(uid, wallet);
+      console.log('New user wallet created:', uid, created.address);
     }
 
-    res.json({ wallet: wallets[uid] });
+    res.json({ wallet });
   } catch (err) {
     console.error('Auth login error:', err);
     res.status(500).json({ error: err.message });
@@ -897,22 +872,16 @@ app.post('/api/tag/claim', async (req, res) => {
     const clean = tag.toLowerCase().replace(/[^a-z0-9_]/g, '');
     if (clean.length < 3 || clean.length > 20) return res.status(400).json({ error: 'Tag must be 3-20 characters' });
 
-    const fs = require('fs');
-    const path = require('path');
-    const walletsPath = path.join(__dirname, '../data/userWallets.json');
-    let wallets = {};
-    try { wallets = JSON.parse(fs.readFileSync(walletsPath, 'utf8')); } catch {}
-
-    // Check tag not taken
-    const taken = Object.values(wallets).find(w => w.tag === clean);
+    const taken = await walletStore.findByTag(clean);
     if (taken) return res.status(409).json({ error: 'Tag already taken' });
 
-    if (!wallets[uid]) return res.status(404).json({ error: 'User not found. Sign in first.' });
+    const userWallet = await walletStore.getWallet(uid);
+    if (!userWallet) return res.status(404).json({ error: 'User not found. Sign in first.' });
 
-    wallets[uid].tag = clean;
-    fs.writeFileSync(walletsPath, JSON.stringify(wallets, null, 2));
+    userWallet.tag = clean;
+    await walletStore.setWallet(uid, userWallet);
 
-    res.json({ tag: clean, address: wallets[uid].address });
+    res.json({ tag: clean, address: userWallet.address });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -921,13 +890,7 @@ app.post('/api/tag/claim', async (req, res) => {
 app.get('/api/tag/:tag', async (req, res) => {
   try {
     const tag = req.params.tag.toLowerCase().replace('@', '');
-    const fs = require('fs');
-    const path = require('path');
-    const walletsPath = path.join(__dirname, '../data/userWallets.json');
-    let wallets = {};
-    try { wallets = JSON.parse(fs.readFileSync(walletsPath, 'utf8')); } catch {}
-
-    const entry = Object.values(wallets).find(w => w.tag === tag);
+    const entry = await walletStore.findByTag(tag);
     if (!entry) return res.status(404).json({ error: 'Tag not found' });
 
     res.json({ tag, address: entry.address });
@@ -941,13 +904,7 @@ app.get('/api/me', async (req, res) => {
     const uid = req.headers['x-user-id'];
     if (!uid || uid === 'anonymous') return res.status(401).json({ error: 'Not authenticated' });
 
-    const fs = require('fs');
-    const path = require('path');
-    const walletsPath = path.join(__dirname, '../data/userWallets.json');
-    let wallets = {};
-    try { wallets = JSON.parse(fs.readFileSync(walletsPath, 'utf8')); } catch {}
-
-    const user = wallets[uid];
+    const user = await walletStore.getWallet(uid);
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     res.json({ uid, ...user });
@@ -965,22 +922,23 @@ app.get('/api/stats', (req, res) => {
     let spendLog = [];
     try { spendLog = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/spendLog.json'), 'utf8')); } catch {}
 
-    let wallets = {};
-    try { wallets = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/userWallets.json'), 'utf8')); } catch {}
-
     let schedules = { jobs: [] };
     try { schedules = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/schedules.json'), 'utf8')); } catch {}
 
-    const totalVolume = spendLog.reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
-    const userCount = Object.keys(wallets).length;
-    const txCount = spendLog.length;
-    const activeSchedules = (schedules.jobs || []).filter(j => j.active).length;
+    Promise.resolve(walletStore.getAllWallets()).then(wallets => {
+      const totalVolume = spendLog.reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
+      const userCount = Object.keys(wallets).length;
+      const txCount = spendLog.length;
+      const activeSchedules = (schedules.jobs || []).filter(j => j.active).length;
 
-    res.json({
-      users: userCount,
-      transactions: txCount,
-      volume: totalVolume.toFixed(2),
-      schedules: activeSchedules
+      res.json({
+        users: userCount,
+        transactions: txCount,
+        volume: totalVolume.toFixed(2),
+        schedules: activeSchedules
+      });
+    }).catch(err => {
+      res.status(500).json({ error: err.message });
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

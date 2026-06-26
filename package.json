@@ -23,6 +23,7 @@
     "dotenv": "^17.4.2",
     "ethers": "^6.16.0",
     "express": "^5.2.1",
+    "firebase-admin": "^14.1.0",
     "groq-sdk": "^1.1.2",
     "node-forge": "^1.4.0",
     "solc": "^0.8.35",
