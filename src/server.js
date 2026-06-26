@@ -84,11 +84,9 @@ function send(res, status, data) {
 // Normalize trailing slashes - Express 5 does not auto-strip them
 app.use((req, res, next) => {
   if (req.path !== '/' && req.path.endsWith('/')) {
-    const query = req.url.slice(req.path.length);
-    res.redirect(301, req.path.slice(0, -1) + query);
-  } else {
-    next();
+    req.url = req.path.slice(0, -1) + req.url.slice(req.path.length);
   }
+  next();
 });
 // only "auth". We now require, in addition, a shared secret (`APP_API_KEY`)
 // delivered via `x-api-key` / `Authorization: Bearer`. The frontend should hold
