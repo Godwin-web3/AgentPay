@@ -20,6 +20,7 @@ const googleProvider = new GoogleAuthProvider();
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  walletAddress: string;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -29,13 +30,14 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [walletAddress, setWalletAddress] = useState('');
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
         try {
-          await fetch('https://agentpay-c4o7.onrender.com/api/auth/login', {
+          const loginRes = await fetch('https://agentpay-c4o7.onrender.com/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -44,6 +46,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               displayName: firebaseUser.displayName
             })
           });
+          const loginData = await loginRes.json();
+          if (loginData.wallet?.address) {
+            setWalletAddress(loginData.wallet.address);
+            localStorage.setItem('agentpay_address', loginData.wallet.address);
+          }
         } catch (e) {
           console.error('Backend login sync failed:', e);
         }
@@ -64,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, walletAddress, signInWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

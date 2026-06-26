@@ -48,9 +48,16 @@ const navItems = [
 ] as const
 
 function App() {
+  const { walletAddress: authWalletAddress } = useAuth();
   const [historyKey, setHistoryKey] = useState(0)
   const [view, setView] = useState<View>(() => (localStorage.getItem('agentpay_view') as View) || 'landing')
   const [userAddress, setUserAddress] = useState(() => localStorage.getItem('agentpay_address') || '')
+
+  useEffect(() => {
+    if (authWalletAddress && !userAddress) {
+      setUserAddress(authWalletAddress);
+    }
+  }, [authWalletAddress]);
   const [isOnboarded, setIsOnboarded] = useState(false)
   const [onboardCheckDone, setOnboardCheckDone] = useState(false)
   const [agentWalletAddress, setAgentWalletAddress] = useState('')
