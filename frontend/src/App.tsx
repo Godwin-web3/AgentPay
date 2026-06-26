@@ -240,7 +240,7 @@ function App() {
 }
 
 function AppWithAuth() {
-  const { user, loading } = useAuth();
+  const { user, loading, signInWithGoogle } = useAuth();
   const [tag, setTag] = useState<string | null>(null);
   const [tagLoading, setTagLoading] = useState(false);
   const [tagChecked, setTagChecked] = useState(false);
@@ -261,7 +261,7 @@ function AppWithAuth() {
       <p style={{ color: '#4fdbc8' }}>Loading...</p>
     </div>
   );
-  if (!user) return <Login />;
+  if (!user) return <Landing onLaunch={async () => { try { await signInWithGoogle(); } catch {} }} />;
   if (tagChecked && !tag) return <ClaimTag onClaimed={(t) => setTag(t || 'skip')} />;
   return <App />;
 }

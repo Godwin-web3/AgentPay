@@ -1,65 +1,57 @@
 import { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 
 const DEMO_LINES = [
-  { role: 'user', text: 'pay 0.5 USDC to 0xABC...def for quest reward', delay: 500 },
-  { role: 'assistant', text: 'Checking policy...', delay: 1000 },
-  { role: 'assistant', text: 'Spending limit OK. Recipient whitelisted.', delay: 1600 },
-  { role: 'assistant', text: 'Instant execution on Arc testnet...', delay: 2000 },
-  { role: 'assistant', text: '[OK] TX: 0x92f...a12 — Confirmed in <1s', delay: 2600 },
+  { role: 'user', text: 'send 5 USDC to @sara for design work', delay: 300 },
+  { role: 'agent', text: 'Checking policy...', delay: 900 },
+  { role: 'agent', text: 'Per-tx cap: $10. Recipient whitelisted.', delay: 1400 },
+  { role: 'agent', text: 'Signing off-chain via EIP-712...', delay: 1900 },
+  { role: 'agent', text: '[OK] 0x4a2f...c91e confirmed. Gas sponsored.', delay: 2500 },
+  { role: 'user', text: 'send 500 USDC to @unknown', delay: 3500 },
+  { role: 'agent', text: 'Checking policy...', delay: 4100 },
+  { role: 'agent', text: '[BLOCKED] Exceeds per-tx cap of $10. Vault reverted.', delay: 4700, blocked: true },
 ]
-
-const QUICK_BTNS = ['SEND', 'SCHEDULE', 'BALANCE', 'POLICY']
 
 function DemoTerminal() {
   const [visible, setVisible] = useState(0)
 
   useEffect(() => {
-    DEMO_LINES.forEach((line, i) => {
+    const timers = DEMO_LINES.map((line, i) =>
       setTimeout(() => setVisible(i + 1), line.delay)
-    })
-  }, [])
+    )
+    const reset = setTimeout(() => setVisible(0), 7000)
+    return () => { timers.forEach(clearTimeout); clearTimeout(reset) }
+  }, [visible === 0 ? 0 : undefined])
 
   return (
     <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: 420,
       background: '#0A0A0A',
-      border: '1px solid #262626',
-      fontFamily: 'var(--font-mono)',
-      fontSize: 13,
+      border: '1px solid #222',
+      fontFamily: 'monospace',
+      fontSize: 12,
       width: '100%',
       overflow: 'hidden',
     }}>
-      {/* Terminal header */}
       <div style={{
-        padding: '10px 16px',
-        borderBottom: '1px solid #262626',
-        background: '#141414',
+        padding: '8px 14px',
+        borderBottom: '1px solid #222',
+        background: '#111',
         display: 'flex',
-        alignItems: 'center',
         justifyContent: 'space-between',
-        flexShrink: 0,
+        alignItems: 'center'
       }}>
-        <span style={{ fontSize: 10, letterSpacing: 2, color: '#4fdbc8' }}>AGENTPAY TERMINAL</span>
-        <span style={{ fontSize: 9, color: '#444', letterSpacing: 1 }}>ARC TESTNET</span>
+        <span style={{ color: '#4fdbc8', fontSize: 10, letterSpacing: 2 }}>AGENTPAY TERMINAL</span>
+        <span style={{ color: '#333', fontSize: 9 }}>ARC TESTNET</span>
       </div>
-
-      {/* Messages */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 200 }}>
         {DEMO_LINES.slice(0, visible).map((line, i) => (
-          <div key={i} style={{
-            display: 'flex',
-            justifyContent: line.role === 'user' ? 'flex-end' : 'flex-start',
-            animation: 'slideIn 0.2s ease forwards',
-          }}>
+          <div key={i} style={{ display: 'flex', justifyContent: line.role === 'user' ? 'flex-end' : 'flex-start' }}>
             <div style={{
-              maxWidth: '78%',
-              padding: '8px 12px',
-              background: line.role === 'user' ? '#4fdbc815' : '#141414',
-              border: line.role === 'user' ? '1px solid #4fdbc840' : '1px solid #262626',
-              color: line.role === 'user' ? '#4fdbc8' : '#e8eeff',
-              fontSize: 12,
+              maxWidth: '85%',
+              padding: '7px 11px',
+              background: line.role === 'user' ? '#4fdbc810' : (line.blocked ? '#ff444410' : '#141414'),
+              border: `1px solid ${line.role === 'user' ? '#4fdbc830' : (line.blocked ? '#ff444430' : '#222')}`,
+              color: line.blocked ? '#ff6666' : (line.role === 'user' ? '#4fdbc8' : '#ccc'),
               lineHeight: 1.5,
             }}>
               {line.text}
@@ -67,283 +59,201 @@ function DemoTerminal() {
           </div>
         ))}
         {visible > 0 && visible < DEMO_LINES.length && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-            <div style={{ padding: '8px 12px', border: '1px solid #262626', background: '#141414', display: 'flex', gap: 4, alignItems: 'center' }}>
-              <span style={{ width: 6, height: 6, background: '#4fdbc8', display: 'inline-block', animation: 'pulse 1s infinite' }} />
-              <span style={{ width: 6, height: 6, background: '#4fdbc8', display: 'inline-block', animation: 'pulse 1s infinite 0.2s' }} />
-              <span style={{ width: 6, height: 6, background: '#4fdbc8', display: 'inline-block', animation: 'pulse 1s infinite 0.4s' }} />
-            </div>
+          <div style={{ display: 'flex', gap: 4, padding: '4px 0' }}>
+            {[0,1,2].map(i => (
+              <span key={i} style={{
+                width: 5, height: 5, background: '#4fdbc8', display: 'inline-block',
+                borderRadius: '50%', animation: `pulse 1s infinite ${i * 0.2}s`
+              }} />
+            ))}
           </div>
         )}
-      </div>
-
-      {/* Quick actions */}
-      <div style={{
-        display: 'flex',
-        gap: 6,
-        padding: '8px 12px',
-        borderTop: '1px solid #262626',
-        overflowX: 'auto',
-        flexShrink: 0,
-        scrollbarWidth: 'none',
-      }}>
-        {QUICK_BTNS.map(btn => (
-          <div key={btn} style={{
-            flexShrink: 0,
-            padding: '4px 10px',
-            border: '1px solid #262626',
-            color: '#555',
-            fontSize: 10,
-            letterSpacing: 1.5,
-            whiteSpace: 'nowrap',
-          }}>
-            {btn}
-          </div>
-        ))}
-      </div>
-
-      {/* Input bar */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '10px 12px',
-        borderTop: '1px solid #262626',
-        background: '#141414',
-        flexShrink: 0,
-      }}>
-        <div style={{
-          flex: 1,
-          padding: '8px 12px',
-          border: '1px solid #262626',
-          background: '#0A0A0A',
-          color: '#333',
-          fontSize: 12,
-        }}>
-          Type a message...
-        </div>
-        <div style={{
-          padding: '8px 14px',
-          border: '1px solid #4fdbc840',
-          color: '#4fdbc8',
-          fontSize: 12,
-        }}>
-          &#x27A4;
-        </div>
       </div>
     </div>
   )
 }
 
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ padding: '20px 24px', borderRight: '1px solid #1a1a1a' }}>
+      <div style={{ color: '#444', fontSize: 9, letterSpacing: 3, fontFamily: 'monospace', marginBottom: 8 }}>{label}</div>
+      <div style={{ color: '#4fdbc8', fontSize: 28, fontWeight: 700, fontFamily: 'monospace' }}>{value}</div>
+    </div>
+  )
+}
+
 export default function Landing({ onLaunch }: { onLaunch: () => void }) {
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  const { signInWithGoogle } = useAuth()
+  const [stats, setStats] = useState({ users: 0, transactions: 0, volume: '0.00', schedules: 0 })
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+    fetch('https://agentpay-c4o7.onrender.com/api/stats')
+      .then(r => r.json())
+      .then(data => setStats(data))
+      .catch(() => {})
   }, [])
 
+  const handleStart = async () => {
+    try {
+      await signInWithGoogle()
+    } catch {}
+    onLaunch()
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: '#0A0A0A', overflowY: 'auto', width: '100%' }}>
+    <div style={{ minHeight: '100vh', background: '#0A0A0A', color: '#fff', fontFamily: 'monospace' }}>
 
       {/* Nav */}
       <nav style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: isMobile ? '14px 20px' : '16px 40px',
-        borderBottom: '1px solid #262626',
-        background: '#0A0A0A',
+        padding: '16px 24px',
+        borderBottom: '1px solid #1a1a1a',
         position: 'sticky',
         top: 0,
+        background: '#0A0A0A',
         zIndex: 100,
       }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, letterSpacing: 3, color: '#fff' }}>
-          AGENTPAY
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '4px 10px',
-            border: '1px solid #4fdbc840',
-            fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: 2, color: '#4fdbc8',
-          }}>
-            <span style={{ width: 5, height: 5, background: '#4fdbc8', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-            LIVE
-          </div>
-          <button onClick={onLaunch} style={{
-            padding: '6px 16px',
+        <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: 3 }}>AGENTPAY</span>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <a href="https://github.com/Godwin-web3/AgentPay" target="_blank" rel="noreferrer"
+            style={{ color: '#444', fontSize: 11, textDecoration: 'none', letterSpacing: 1 }}>GITHUB</a>
+          <button onClick={handleStart} style={{
+            padding: '7px 18px',
             background: 'transparent',
             border: '1px solid #4fdbc8',
             color: '#4fdbc8',
-            fontFamily: 'var(--font-mono)',
             fontSize: 10,
             letterSpacing: 2,
             cursor: 'pointer',
-          }}>
-            LAUNCH
-          </button>
+          }}>GET STARTED</button>
         </div>
       </nav>
 
       {/* Hero */}
-      <div style={{
-        display: 'flex',
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: isMobile ? 40 : 60,
-        padding: isMobile ? '40px 20px' : '60px 40px',
-        maxWidth: 1200,
-        margin: '0 auto',
-        alignItems: 'center',
-      }}>
-        {/* Left — headline + spec */}
-        <div style={{ flex: 1 }}>
-          <h1 style={{
-            fontFamily: 'var(--font-head)',
-            fontSize: isMobile ? 36 : 40,
-            fontWeight: 800,
-            lineHeight: 1.08,
-            letterSpacing: -0.5,
-            color: '#fff',
-            margin: 0,
-            marginBottom: 32,
-          }}>
-            YOUR AGENT.<br />
-            YOUR RULES.<br />
-            YOUR CHAIN.
-          </h1>
-
-          <div style={{
-            borderLeft: '2px solid #4fdbc8',
-            paddingLeft: 20,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-            marginBottom: 40,
-          }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: 2, color: '#4fdbc8', marginBottom: 4 }}>AGENTPAY</div>
-            {[
-              '— Policy enforced',
-              '— Autonomous execution',
-              '— On-chain, on Arc',
-            ].map((item, i) => (
-              <div key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: '#aaa', letterSpacing: 0.5 }}>
-                {item}
-              </div>
-            ))}
-          </div>
-
-          <button onClick={onLaunch} style={{
-            padding: '12px 28px',
-            background: 'transparent',
-            border: '1px solid #4fdbc8',
-            color: '#4fdbc8',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 11,
-            letterSpacing: 3,
-            cursor: 'pointer',
-            display: isMobile ? 'none' : 'block',
-          }}>
-            CONNECT + LAUNCH
-          </button>
+      <div style={{ padding: '60px 24px 40px', maxWidth: 600, margin: '0 auto' }}>
+        <div style={{ fontSize: 9, letterSpacing: 4, color: '#4fdbc8', marginBottom: 20 }}>
+          BUILT FOR ARC PROGRAMMABLE MONEY HACKATHON
         </div>
-
-        {/* Right — demo terminal */}
-        <div style={{ flex: 1, width: '100%' }}>
-          <DemoTerminal />
+        <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.1, margin: '0 0 20px', letterSpacing: -0.5 }}>
+          Tell your agent to pay.<br />
+          Your rules stop it<br />
+          from going too far.
+        </h1>
+        <p style={{ color: '#666', fontSize: 14, lineHeight: 1.8, margin: '0 0 32px', fontFamily: 'sans-serif' }}>
+          AgentPay gives an AI agent access to your USDC. A smart contract enforces your spending rules — per-transaction caps, daily limits, whitelists, active hours. The AI physically cannot exceed what you pre-authorized on-chain.
+        </p>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <button onClick={handleStart} style={{
+            padding: '13px 28px',
+            background: '#4fdbc8',
+            border: 'none',
+            color: '#0A0A0A',
+            fontSize: 13,
+            fontWeight: 700,
+            cursor: 'pointer',
+            letterSpacing: 1,
+            fontFamily: 'monospace',
+          }}>
+            START WITH GOOGLE
+          </button>
+          <a href="https://github.com/Godwin-web3/AgentPay" target="_blank" rel="noreferrer" style={{
+            padding: '13px 28px',
+            background: 'transparent',
+            border: '1px solid #333',
+            color: '#888',
+            fontSize: 13,
+            cursor: 'pointer',
+            letterSpacing: 1,
+            fontFamily: 'monospace',
+            textDecoration: 'none',
+            display: 'inline-block',
+          }}>
+            VIEW CODE
+          </a>
         </div>
       </div>
 
-      {/* Mobile CTA */}
-      {isMobile && (
-        <div style={{ padding: '0 20px 40px' }}>
-          <button onClick={onLaunch} style={{
-            width: '100%',
-            padding: '14px',
-            background: 'transparent',
-            border: '1px solid #4fdbc8',
-            color: '#4fdbc8',
-            fontFamily: 'var(--font-mono)',
-            fontSize: 11,
-            letterSpacing: 3,
-            cursor: 'pointer',
-          }}>
-            CONNECT + LAUNCH
-          </button>
-        </div>
-      )}
+      {/* Demo terminal */}
+      <div style={{ padding: '0 24px 60px', maxWidth: 600, margin: '0 auto' }}>
+        <DemoTerminal />
+        <p style={{ color: '#333', fontSize: 11, marginTop: 10, textAlign: 'center' }}>
+          The second payment is blocked by the vault. The AI cannot override it.
+        </p>
+      </div>
 
-      {/* Stats bar */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-        margin: isMobile ? '0 20px' : '0 40px',
-        border: '1px solid #262626',
-        background: '#141414',
-      }}>
-        {[
-          { label: 'AGENTS REGISTERED', value: '1' },
-          { label: 'TOTAL TRANSACTIONS', value: '12' },
-          { label: 'USDC VOLUME', value: '4.50' },
-        ].map((stat, i) => (
-          <div key={i} style={{
-            padding: '20px 24px',
-            borderRight: !isMobile && i < 2 ? '1px solid #262626' : 'none',
-            borderBottom: isMobile && i < 2 ? '1px solid #262626' : 'none',
-          }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: 3, color: '#555', marginBottom: 10 }}>
-              {stat.label}
-            </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 32, fontWeight: 700, color: '#4fdbc8' }}>
-              {stat.value}
-            </div>
-          </div>
-        ))}
+      {/* Live stats */}
+      <div style={{ borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', maxWidth: 600, margin: '0 auto' }}>
+          <StatCard label="USERS" value={String(stats.users)} />
+          <StatCard label="TRANSACTIONS" value={String(stats.transactions)} />
+          <StatCard label="USDC VOLUME" value={'$' + stats.volume} />
+          <StatCard label="ACTIVE SCHEDULES" value={String(stats.schedules)} />
+        </div>
       </div>
 
       {/* Features */}
-      <div style={{ padding: isMobile ? '60px 20px' : '80px 40px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: 4, color: '#555', marginBottom: 32 }}>
-          CAPABILITIES
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 1, background: '#262626' }}>
+      <div style={{ padding: '60px 24px', maxWidth: 600, margin: '0 auto' }}>
+        <div style={{ fontSize: 9, letterSpacing: 4, color: '#444', marginBottom: 32 }}>WHAT YOU GET</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#1a1a1a' }}>
           {[
-            {
-              tag: '01',
-              title: 'NATURAL LANGUAGE PAYMENTS',
-              desc: 'Say "send 0.5 USDC to 0x..." — the agent handles signing, broadcasting, and confirmation on Arc.',
-            },
-            {
-              tag: '02',
-              title: 'POLICY ENFORCEMENT',
-              desc: 'Per-tx caps, daily limits, whitelists, active hours, circuit breakers — all enforced before any transaction fires.',
-            },
-            {
-              tag: '03',
-              title: 'ON-CHAIN VAULT LOG',
-              desc: 'Every action logged — executed, rejected, or failed — with Arc Explorer links for full transparency.',
-            },
+            { tag: '01', title: 'NO WALLET REQUIRED TO START', desc: 'Sign in with Google. A Circle-issued wallet is created automatically. No seed phrases, no gas, no setup.' },
+            { tag: '02', title: 'SEND TO @TAGS NOT ADDRESSES', desc: 'Claim your @tag and receive USDC from anyone. No address copying. Works with any wallet externally.' },
+            { tag: '03', title: 'GASLESS TRANSACTIONS', desc: 'Circle sponsors every transaction on Arc testnet. Your users never touch native tokens.' },
+            { tag: '04', title: 'ON-CHAIN POLICY ENFORCEMENT', desc: 'Per-tx caps, daily limits, whitelist, active hours, circuit breaker. All enforced by the vault contract before any payment fires.' },
+            { tag: '05', title: 'SCHEDULED + CONDITIONAL PAYMENTS', desc: 'Recurring on-chain payments. Trigger on weather, GitHub PRs, price feeds, or any HTTP condition.' },
+            { tag: '06', title: 'AGENT-TO-AGENT PAYMENTS (x402)', desc: 'Your agent pays other agents for data and compute over HTTP 402. Fully autonomous, policy-gated.' },
           ].map((f, i) => (
-            <div key={i} style={{ background: '#0A0A0A', padding: '28px 24px' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#4fdbc8', letterSpacing: 2, marginBottom: 16 }}>{f.tag}</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#fff', letterSpacing: 1, marginBottom: 12 }}>{f.title}</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#555', lineHeight: 1.7 }}>{f.desc}</div>
+            <div key={i} style={{ background: '#0A0A0A', padding: '24px 20px', display: 'flex', gap: 16 }}>
+              <span style={{ color: '#4fdbc8', fontSize: 9, letterSpacing: 2, flexShrink: 0, paddingTop: 2 }}>{f.tag}</span>
+              <div>
+                <div style={{ fontSize: 11, letterSpacing: 1, marginBottom: 8 }}>{f.title}</div>
+                <div style={{ color: '#555', fontSize: 13, lineHeight: 1.7, fontFamily: 'sans-serif' }}>{f.desc}</div>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
+      {/* CTA */}
+      <div style={{ borderTop: '1px solid #1a1a1a', padding: '60px 24px', textAlign: 'center' }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Ready to try it?</h2>
+        <p style={{ color: '#555', fontSize: 13, marginBottom: 32, fontFamily: 'sans-serif' }}>
+          Sign in with Google. Pick your @tag. Your wallet is ready in seconds.
+        </p>
+        <button onClick={handleStart} style={{
+          padding: '14px 36px',
+          background: '#4fdbc8',
+          border: 'none',
+          color: '#0A0A0A',
+          fontSize: 14,
+          fontWeight: 700,
+          cursor: 'pointer',
+          letterSpacing: 1,
+          fontFamily: 'monospace',
+        }}>
+          START WITH GOOGLE
+        </button>
+      </div>
+
       {/* Footer */}
       <div style={{
-        borderTop: '1px solid #262626',
-        padding: '20px 40px',
+        borderTop: '1px solid #1a1a1a',
+        padding: '20px 24px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 8,
       }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: 3, color: '#fff' }}>AGENTPAY</span>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: 2, color: '#555' }}>BUILT FOR ARC AGENT HACKATHON 2026</span>
+        <span style={{ fontSize: 11, letterSpacing: 3 }}>AGENTPAY</span>
+        <div style={{ display: 'flex', gap: 20 }}>
+          <a href="https://github.com/Godwin-web3/AgentPay" target="_blank" rel="noreferrer"
+            style={{ color: '#444', fontSize: 10, textDecoration: 'none', letterSpacing: 1 }}>GITHUB</a>
+          <a href="https://testnet.arcscan.arc.network/address/0x24DD07639faA28c597c1Fb6a32367B1cc933DF60" target="_blank" rel="noreferrer"
+            style={{ color: '#444', fontSize: 10, textDecoration: 'none', letterSpacing: 1 }}>CONTRACT</a>
+        </div>
       </div>
 
     </div>

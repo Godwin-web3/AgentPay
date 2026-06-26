@@ -915,3 +915,34 @@ app.get('/api/me', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Live stats for landing page
+app.get('/api/stats', (req, res) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+
+    let spendLog = [];
+    try { spendLog = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/spendLog.json'), 'utf8')); } catch {}
+
+    let wallets = {};
+    try { wallets = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/userWallets.json'), 'utf8')); } catch {}
+
+    let schedules = { jobs: [] };
+    try { schedules = JSON.parse(fs.readFileSync(path.join(__dirname, '../data/schedules.json'), 'utf8')); } catch {}
+
+    const totalVolume = spendLog.reduce((sum, tx) => sum + parseFloat(tx.amount || 0), 0);
+    const userCount = Object.keys(wallets).length;
+    const txCount = spendLog.length;
+    const activeSchedules = (schedules.jobs || []).filter(j => j.active).length;
+
+    res.json({
+      users: userCount,
+      transactions: txCount,
+      volume: totalVolume.toFixed(2),
+      schedules: activeSchedules
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
