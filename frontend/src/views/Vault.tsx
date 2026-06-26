@@ -27,7 +27,7 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
     try {
       const result = await depositToVault(amount, userId)
       setTxStatus('[OK] Deposit confirmed!')
-      await logTransaction({ userAddress, type: 'deposit', amount, token: selectedToken, txHash: result.txHash })
+      await logTransaction({ userId, type: 'deposit', amount, token: selectedToken, txHash: result.txHash })
       setMode(null)
       setAmount('')
       if (onActionSuccess) onActionSuccess()
@@ -43,7 +43,7 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
     try {
       const result = await withdrawFromVault(amount, userId)
       setTxStatus('[OK] Withdrawal confirmed!')
-      await logTransaction({ userAddress, type: 'withdrawal', amount, token: selectedToken, txHash: result.txHash })
+      await logTransaction({ userId, type: 'withdrawal', amount, token: selectedToken, txHash: result.txHash })
       setMode(null)
       setAmount('')
       if (onActionSuccess) onActionSuccess()

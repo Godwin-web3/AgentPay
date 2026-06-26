@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
 import { getHistory } from '../api'
 
 function formatTime(ts: number | string) {
@@ -16,8 +15,6 @@ function formatDayOnly(ts: number | string) {
 }
 
 export default function History({ userAddress, refreshTrigger = 0 }: { userAddress: string, refreshTrigger?: number }) {
-  const { user } = useAuth();
-  const userId = user?.uid || '';
   const [txs, setTxs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
