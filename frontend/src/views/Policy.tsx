@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
-import { getPolicy, getVaultAddress } from '../api'
+import { useAuth } from '../contexts/AuthContext'
+import { getPolicy, updatePolicy } from '../api'
 import type { PolicyData } from '../types'
-import { ethers } from 'ethers'
 
-export default function Policy({ userAddress }: { userAddress: string }) {
+export default function Policy({
+  const { user } = useAuth();
+  userAddress }: { userAddress: string }) {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const [policy, setPolicy] = useState<PolicyData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -14,6 +18,7 @@ export default function Policy({ userAddress }: { userAddress: string }) {
   // Form state
   const [dailyCap, setDailyCap] = useState('')
   const [perTxCap, setPerTxCap] = useState('')
+  const [maxTxPerHour, setMaxTxPerHour] = useState('')
   const [whitelist, setWhitelist] = useState<string[]>([])
   const [newAddr, setNewAddr] = useState('')
 
@@ -26,11 +31,12 @@ export default function Policy({ userAddress }: { userAddress: string }) {
     setLoading(true)
     setError(null)
     try {
-      const data = await getPolicy(userAddress)
+      const data = await getPolicy(userId)
       setPolicy(data)
       setDailyCap(data.dailyCap.toString())
       setPerTxCap(data.perTxCap.toString())
-      setWhitelist(data.whitelist)
+      setMaxTxPerHour(String(data.maxTxPerHour ?? data.circuitBreaker?.maxTxPerHour ?? 10))
+      setWhitelist(data.whitelist || [])
     } catch (err: any) {
       setError(err.message || 'Failed to fetch policy')
     } finally {
@@ -44,25 +50,17 @@ export default function Policy({ userAddress }: { userAddress: string }) {
     setError(null)
     setSuccess(null)
     try {
-      if (!window.ethereum) throw new Error("No wallet connected")
-      const { address: vaultAddr } = await getVaultAddress(userAddress)
-      const provider = new ethers.BrowserProvider(window.ethereum)
-      const signer = await provider.getSigner()
-      const vault = new ethers.Contract(vaultAddr, [
-        "function setPolicy(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, address[] calldata whitelist) external"
-      ], signer)
-      
-      const pTx = ethers.parseEther(perTxCap)
-      const dCap = ethers.parseEther(dailyCap)
-      const maxH = BigInt(policy?.circuitBreaker.maxTxPerHour || 10)
-      
-      const tx = await vault.setPolicy(pTx, dCap, maxH, whitelist)
-      setSuccess('Transaction submitted! Waiting for confirmation...')
-      
-      await tx.wait()
-      setSuccess('Policy successfully updated on-chain!')
+      // Policy is written on-chain via the Circle agent wallet (POST /policy),
+      // so it keys to the same address the agent spends from.
+      await updatePolicy({
+        perTxCap: Number(perTxCap),
+        dailyCap: Number(dailyCap),
+        maxTxPerHour: Number(maxTxPerHour),
+        whitelist,
+      }, userAddress)
+      setSuccess('Policy updated on-chain!')
       setIsEditing(false)
-      setTimeout(() => fetchPolicy(), 1000) // Wait a bit for nodes to sync
+      setTimeout(() => fetchPolicy(), 1500)
     } catch (err: any) {
       setError(err.message || 'Failed to update policy')
     } finally {
@@ -100,7 +98,7 @@ export default function Policy({ userAddress }: { userAddress: string }) {
     </div>
   )
 
-  const isCircuitBroken = policy.circuitBreaker.paused
+  const isCircuitBroken = policy.active === false
 
   return (
     <div className="policy-view">
@@ -135,9 +133,9 @@ export default function Policy({ userAddress }: { userAddress: string }) {
             {!isEditing ? (
               <div className="stat-value cyan">{policy.dailyCap} <span style={{ fontSize: 12 }}>USDC</span></div>
             ) : (
-              <input 
-                type="number" 
-                className="chat-input" 
+              <input
+                type="number"
+                className="chat-input"
                 style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', width: '100%' }}
                 value={dailyCap}
                 onChange={e => setDailyCap(e.target.value)}
@@ -149,12 +147,26 @@ export default function Policy({ userAddress }: { userAddress: string }) {
             {!isEditing ? (
               <div className="stat-value cyan">{policy.perTxCap} <span style={{ fontSize: 12 }}>USDC</span></div>
             ) : (
-              <input 
-                type="number" 
-                className="chat-input" 
+              <input
+                type="number"
+                className="chat-input"
                 style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', width: '100%' }}
                 value={perTxCap}
                 onChange={e => setPerTxCap(e.target.value)}
+              />
+            )}
+          </div>
+          <div className="stat">
+            <div className="stat-label">Max TX / Hour</div>
+            {!isEditing ? (
+              <div className="stat-value cyan">{policy.maxTxPerHour ?? policy.circuitBreaker.maxTxPerHour}</div>
+            ) : (
+              <input
+                type="number"
+                className="chat-input"
+                style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', width: '100%' }}
+                value={maxTxPerHour}
+                onChange={e => setMaxTxPerHour(e.target.value)}
               />
             )}
           </div>

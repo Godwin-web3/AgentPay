@@ -25,8 +25,12 @@ Goal requires fetching a paid resource:
 {"action":"fetch_and_pay","url":"https://...","maxAmount":0.01,"reason":"...","message":"..."}
 Direct payment instruction:
 {"action":"pay","to":"0x...","amount":0.01,"reason":"...","message":"..."}
-User wants to hire an agent for a task (ERC-8183 job escrow):
+Recurring / scheduled payment (interval is a human string like "1 day", "6 hours", "30 minutes"):
+{"action":"schedule","to":"0x...","amount":0.01,"interval":"1 day","reason":"...","conditions":{"minBalance":0.5,"executeOnce":false},"message":"..."}
+Hire an agent for a task (ERC-8183 job escrow):
 {"action":"hire_agent","description":"...","budget":5,"message":"..."}
+Update spending policy. policyUpdate.field is one of: "dailyCap","perTxCap","maxTxPerHour","activeHours","addWhitelist","removeWhitelist". For caps, set policyUpdate.value (USDC). For activeHours set policyUpdate.start and policyUpdate.end (hour 0-24). For whitelist add/remove set policyUpdate.address.
+{"action":"update_policy","policyUpdate":{"field":"dailyCap","value":100},"message":"..."}
 User asks about balance:
 {"action":"balance","message":"..."}
 User asks about history:

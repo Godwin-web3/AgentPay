@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 import { getHistory } from '../api'
 
 function formatTime(ts: number | string) {
@@ -14,7 +15,11 @@ function formatDayOnly(ts: number | string) {
   return d.toLocaleString([], { month: 'short', day: 'numeric' })
 }
 
-export default function History({ userAddress, refreshTrigger = 0 }: { userAddress: string, refreshTrigger?: number }) {
+export default function History({
+  const { user } = useAuth();
+  userAddress, refreshTrigger = 0 }: { userAddress: string, refreshTrigger?: number }) {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const [txs, setTxs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -73,7 +78,9 @@ export default function History({ userAddress, refreshTrigger = 0 }: { userAddre
           const explorerUrl = tx.txHash ? 'https://testnet.arcscan.arc.network/tx/' + tx.txHash : null
           
           let actionLabel = tx.label || 'Activity'
-          if (tx.status === 'blocked') {
+          if (tx.failed || tx.status === 'blocked') {
+             actionLabel = `Blocked: ${tx.blockedReason || 'Policy violation'}`
+          } else if (tx.status === 'blocked') {
              actionLabel = `Blocked: ${tx.blockedReason || 'Policy violation'}`
           } else if (tx.type === 'schedule') {
              actionLabel = `Scheduled: ${tx.label || ('Pay ' + tx.amount + ' USDC to ' + (tx.to?.slice(0,6) + '...'))}`
@@ -83,6 +90,8 @@ export default function History({ userAddress, refreshTrigger = 0 }: { userAddre
           } else if (tx.type === 'deposit' || tx.type === 'withdrawal') {
              const verb = tx.type === 'deposit' ? 'Deposited' : 'Withdrew'
              actionLabel = `${verb} ${tx.amount} ${tx.token || 'USDC'}`
+          } else if (tx.amount && tx.to) {
+             actionLabel = `Sent ${tx.amount} ${tx.token || 'USDC'} → ${tx.to.slice(0, 6)}...`
           }
 
           return (
@@ -95,7 +104,7 @@ export default function History({ userAddress, refreshTrigger = 0 }: { userAddre
               fontSize: 11,
               whiteSpace: 'nowrap',
               overflow: 'hidden',
-              color: tx.status === 'blocked' ? '#FF3B5C' : 'var(--text)'
+              color: (tx.status === 'blocked' || tx.failed) ? '#FF3B5C' : 'var(--text)'
             }}>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1, minWidth: 0 }}>
                 {actionLabel}

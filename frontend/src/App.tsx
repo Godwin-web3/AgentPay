@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import Login from './components/Login'
+import ClaimTag from './components/ClaimTag'
 import AgentHeader from './components/AgentHeader'
+import ErrorBoundary from './components/ErrorBoundary'
 import Terminal from './views/Terminal'
 import Policy from './views/Policy'
 import Schedules from './views/Schedules'
@@ -8,7 +12,7 @@ import Landing from './views/Landing'
 import Profile from './views/Profile'
 import Onboarding from './views/Onboarding'
 import type { ChatMessage } from './types'
-import { getTokenBalances } from './api'
+import { getTokenBalances, checkVault, getWallet, getVaultAddress, getVaultBalance } from './api'
 
 type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules'
 
@@ -44,11 +48,14 @@ const navItems = [
   { id: 'account',   icon: AccountIcon,  label: 'Account'   },
 ] as const
 
-export default function App() {
+function App() {
   const [historyKey, setHistoryKey] = useState(0)
   const [view, setView] = useState<View>(() => (localStorage.getItem('agentpay_view') as View) || 'landing')
   const [userAddress, setUserAddress] = useState(() => localStorage.getItem('agentpay_address') || '')
   const [isOnboarded, setIsOnboarded] = useState(false)
+  const [onboardCheckDone, setOnboardCheckDone] = useState(false)
+  const [agentWalletAddress, setAgentWalletAddress] = useState('')
+  const [agentWalletBalance, setAgentWalletBalance] = useState('0')
 
   useEffect(() => {
     localStorage.setItem('agentpay_view', view)
@@ -56,12 +63,21 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('agentpay_address', userAddress)
-    if (userAddress) {
-      const onboarded = localStorage.getItem(`agentpay_onboarded_${userAddress}`) === 'true'
-      setIsOnboarded(onboarded)
-    } else {
+    if (!userAddress) {
       setIsOnboarded(false)
+      setOnboardCheckDone(true)
+      return
     }
+    setOnboardCheckDone(false)
+    checkVault(userAddress)
+      .then(result => {
+        setIsOnboarded(!!result.exists)
+      })
+      .catch(e => {
+        console.error('Vault check failed', e)
+        setIsOnboarded(false)
+      })
+      .finally(() => setOnboardCheckDone(true))
   }, [userAddress])
 
   const [vaultBalance, setVaultBalance] = useState('0')
@@ -94,8 +110,27 @@ export default function App() {
     try {
       const balances = await getTokenBalances(userAddress)
       setTokenBalances(balances)
+      setWalletBalance(balances.USDC || '0')
     } catch (e) {
-      console.error('Failed to refresh balances', e)
+      console.error('Failed to refresh real wallet balance', e)
+    }
+    let resolvedAgentWallet = agentWalletAddress
+    try {
+      const wallet = await getWallet(userAddress)
+      resolvedAgentWallet = wallet.address
+      setAgentWalletAddress(wallet.address)
+      setAgentWalletBalance(wallet.balance || '0')
+    } catch (e) {
+      console.error('Failed to refresh agent wallet balance', e)
+    }
+    try {
+      const { address: resolvedVault } = await getVaultAddress(userAddress)
+      if (resolvedVault && resolvedAgentWallet) {
+        const vBal = await getVaultBalance(resolvedVault, resolvedAgentWallet)
+        setVaultBalance(vBal)
+      }
+    } catch (e) {
+      console.error('Failed to refresh vault balance', e)
     }
   }
 
@@ -106,11 +141,8 @@ export default function App() {
   }, [userAddress])
 
   async function handleClearMemory() {
-    const serverUrl = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
-    await fetch(`${serverUrl}/chat`, {
-      method: 'DELETE',
-      headers: { 'x-user-address': userAddress }
-    }).catch(() => {})
+    const { clearChatHistory } = await import('./api')
+    await clearChatHistory(userAddress).catch(() => {})
     setMessages([{ role: 'assistant', content: 'Memory cleared.', timestamp: Date.now() }])
   }
 
@@ -119,11 +151,25 @@ export default function App() {
     return <Landing onLaunch={() => setView('terminal')} />
   }
 
-  if (userAddress && !isOnboarded) {
+  if (userAddress && !onboardCheckDone) {
     return (
       <div className="app">
         <main className="main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-           <Onboarding userAddress={userAddress} onComplete={() => setIsOnboarded(true)} />
+          <div style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Checking vault status...</div>
+        </main>
+      </div>
+    )
+  }
+
+  if (userAddress && onboardCheckDone && !isOnboarded) {
+    return (
+      <div className="app">
+        <main className="main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+           <Onboarding
+             userAddress={userAddress}
+             onProviderChange={setActiveProvider}
+             onComplete={() => { setIsOnboarded(true); refreshBalances() }}
+           />
         </main>
       </div>
     )
@@ -135,7 +181,6 @@ export default function App() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <h1>AGENTPAY</h1>
-          <span>ARC TESTNET</span>
         </div>
 
         <nav style={{ flex: 1 }}>
@@ -162,14 +207,18 @@ export default function App() {
           onNavigate={(v) => setView(v as View)} 
           onClearMemory={handleClearMemory} 
           refreshTrigger={refreshKey}
+          activeProvider={activeProvider}
+          userAddress={userAddress}
         />
         
         <div className="view-content">
-          {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} onActionSuccess={refreshBalances} />}
-          {view === 'schedules' && <Schedules userAddress={userAddress} />}
-          {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} />}
-          {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} />}
-          {view === 'policy'   && <Policy userAddress={userAddress} />}
+          <ErrorBoundary onReset={() => setView('terminal')}>
+            {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} onActionSuccess={refreshBalances} />}
+            {view === 'schedules' && <Schedules userAddress={userAddress} />}
+            {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} />}
+            {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={agentWalletAddress} agentWalletBalance={agentWalletBalance} />}
+            {view === 'policy'   && <Policy userAddress={userAddress} />}
+          </ErrorBoundary>
         </div>
       </main>
 
@@ -188,4 +237,39 @@ export default function App() {
       </nav>
     </div>
   )
+}
+
+function AppWithAuth() {
+  const { user, loading } = useAuth();
+  const [tag, setTag] = useState<string | null>(null);
+  const [tagLoading, setTagLoading] = useState(false);
+  const [tagChecked, setTagChecked] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    setTagLoading(true);
+    import('./api').then(({ getMe }) => {
+      getMe(user.uid).then(me => {
+        setTag(me.tag || null);
+        setTagChecked(true);
+      }).catch(() => setTagChecked(true)).finally(() => setTagLoading(false));
+    });
+  }, [user]);
+
+  if (loading || tagLoading) return (
+    <div style={{ minHeight: '100vh', background: '#0A0A0A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: '#4fdbc8' }}>Loading...</p>
+    </div>
+  );
+  if (!user) return <Login />;
+  if (tagChecked && !tag) return <ClaimTag onClaimed={(t) => setTag(t || 'skip')} />;
+  return <App />;
+}
+
+export default function Root() {
+  return (
+    <AuthProvider>
+      <AppWithAuth />
+    </AuthProvider>
+  );
 }

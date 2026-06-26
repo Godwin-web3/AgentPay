@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { getHealth } from '../api'
+import { useEffect, useState, useCallback } from 'react'
+import { getHealth, getPausedState, pauseAgent, resumeAgent } from '../api'
 import type { HealthData } from '../types'
 import WalletConnect from './WalletConnect'
 
@@ -11,15 +11,50 @@ interface Props {
   onNavigate: (view: string) => void
   onClearMemory?: () => void
   refreshTrigger?: any
+  activeProvider?: any
+  userAddress?: string
 }
 
-export default function AgentHeader({ onAddressChange, onBalanceChange, onProviderChange, currentView, onNavigate, onClearMemory, refreshTrigger }: Props) {
+export default function AgentHeader({ onAddressChange, onBalanceChange, onProviderChange, currentView, onNavigate, onClearMemory, refreshTrigger, userAddress }: Props) {
   const [health, setHealth] = useState<HealthData | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const [pauseLoading, setPauseLoading] = useState(false)
 
   useEffect(() => {
     getHealth().then(setHealth).catch(() => setHealth(null))
   }, [])
+
+  const fetchPausedState = useCallback(async () => {
+    if (!userAddress) return
+    try {
+      // userPaused is keyed to the agent (Circle) wallet address; the backend
+      // resolves it so the frontend doesn't need to know that address.
+      const res = await getPausedState(userAddress)
+      setIsPaused(res.paused)
+    } catch {}
+  }, [userAddress])
+
+  useEffect(() => {
+    fetchPausedState()
+  }, [fetchPausedState, refreshTrigger])
+
+  async function handleTogglePause() {
+    if (!userAddress || pauseLoading) return
+    setPauseLoading(true)
+    try {
+      if (isPaused) {
+        await resumeAgent(userAddress)
+      } else {
+        await pauseAgent(userAddress)
+      }
+      setIsPaused(!isPaused)
+    } catch (err: any) {
+      console.error('Pause toggle failed', err?.message || err)
+    } finally {
+      setPauseLoading(false)
+    }
+  }
 
   const navigate = (view: string) => {
     onNavigate(view)
@@ -46,6 +81,21 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
             <rect x="60" y="55" width="13" height="5" rx="2.5" fill="#3ab8a8" />
           </svg>
           <div className="agent-name">AGENTPAY</div>
+          {userAddress && isPaused && (
+            <div style={{
+              padding: '2px 8px',
+              borderRadius: 3,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: 1.5,
+              background: '#FF3B5C12',
+              border: '1px solid #FF3B5C44',
+              color: 'var(--danger)',
+            }}>
+              PAUSED
+            </div>
+          )}
         </div>
         <button className="hamburger-btn" onClick={() => setDrawerOpen(true)}>
           <span /><span /><span />
@@ -96,9 +146,34 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
           </button>
         </div>
         <div className="drawer-bottom">
-          <div className={`status-pill ${health?.status === 'ok' ? 'online' : 'offline'}`}>
-            <div className="status-dot" />
-            {health?.status === 'ok' ? 'ONLINE' : 'OFFLINE'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className={`status-pill ${health?.status === 'ok' ? 'online' : 'offline'}`}>
+              <div className="status-dot" />
+              {health?.status === 'ok' ? 'ONLINE' : 'OFFLINE'}
+            </div>
+            {userAddress && (
+              <button
+                onClick={handleTogglePause}
+                disabled={pauseLoading}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 4,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                  cursor: pauseLoading ? 'not-allowed' : 'pointer',
+                  border: '1px solid',
+                  borderColor: isPaused ? '#FF3B5C44' : '#00E5CC44',
+                  background: isPaused ? '#FF3B5C12' : '#00E5CC12',
+                  color: isPaused ? 'var(--danger)' : 'var(--cyan)',
+                  opacity: pauseLoading ? 0.5 : 1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {pauseLoading ? '...' : isPaused ? 'RESUME' : 'PAUSE'}
+              </button>
+            )}
           </div>
           <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
             ARC TESTNET

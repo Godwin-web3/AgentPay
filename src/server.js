@@ -1,14 +1,18 @@
 require('dotenv').config();
 const http = require('http');
+const { ethers } = require('ethers');
 const { pay, fetchAndPay, getBalance, getSummary, getUnifiedHistory, chat } = require('./agent');
 const { readPolicy, applyUpdate } = require('./policyManager');
 const { getTodaySpend } = require('../utils/store');
 const { getAllJobs, addJob, cancelJob, parseInterval } = require('./scheduler');
 const { gateway } = require('./gatewayMiddleware');
+const escrow = require('./escrow');
 const express = require('express');
 const app = express();
 app.use(express.json());
 const walletService = require('./walletService');
+
+const EXPLORER = 'https://testnet.arcscan.arc.network/tx/';
 
 const PORT = process.env.PORT || 3000;
 
@@ -43,7 +47,7 @@ function send(res, status, data) {
   res.writeHead(status, {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, x-user-address',
+    'Access-Control-Allow-Headers': 'Content-Type, x-user-id',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, DELETE'
   });
   res.end(body);
@@ -52,7 +56,7 @@ function send(res, status, data) {
 // parseBody() removed — was incompatible with global express.json() middleware,
 // caused requests to hang indefinitely. All routes now use req.body directly.
 
-// P1-9: Authentication. `x-user-address` alone is spoofable and used to be the
+// Auth: x-user-id contains the Firebase uid. Spoofable on testnet but tied to Google Auth session.
 // only "auth". We now require, in addition, a shared secret (`APP_API_KEY`)
 // delivered via `x-api-key` / `Authorization: Bearer`. The frontend should hold
 // a per-user key issued out-of-band; for Worker↔Render the operator key is used.
@@ -81,7 +85,7 @@ function checkAuth(req) {
 function getUserId(req) {
   // Identity is still derived from the header, but can only be trusted once
   // checkAuth() has passed (middleware enforces).
-  return req.headers['x-user-address'] || 'anonymous';
+  return req.headers['x-user-id'] || 'anonymous';
 }
 
 async function getOrCreateWallet(userId) {
@@ -135,17 +139,45 @@ async function handleBalance(req, res) {
 
 // GET /policy
 async function handleGetPolicy(req, res) {
-  const policy = readPolicy();
-  const todaySpend = getTodaySpend();
-  return send(res, 200, {
-    maxAmountPerTx: policy.maxAmountPerTx,
-    dailyLimit: policy.dailyLimit,
-    todaySpent: parseFloat(todaySpend.toFixed(6)),
-    dailyRemaining: parseFloat((policy.dailyLimit - todaySpend).toFixed(6)),
-    whitelist: policy.whitelist,
-    activeHours: policy.activeHours,
-    circuitBreaker: policy.circuitBreaker
-  });
+  const userId = getUserId(req);
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const agentAddress = wallet.address;
+    const offChain = readPolicy();
+
+    // Per-user on-chain policy is keyed to the Circle agent wallet address.
+    const vaultAddr = await escrow.findVault(agentAddress);
+    if (!vaultAddr) {
+      return send(res, 200, {
+        perTxCap: offChain.maxAmountPerTx,
+        dailyCap: offChain.dailyLimit,
+        dailySpendSoFar: 0,
+        dailyRemaining: offChain.dailyLimit,
+        whitelist: [],
+        active: false,
+        activeHours: offChain.activeHours,
+        circuitBreaker: offChain.circuitBreaker,
+        vaultBalance: 0
+      });
+    }
+
+    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+    const onChain = await escrow.getOnChainPolicy(provider, agentAddress);
+    return send(res, 200, {
+      perTxCap: onChain.perTxCap,
+      dailyCap: onChain.dailyCap,
+      dailySpendSoFar: onChain.todaySpent,
+      dailyRemaining: Math.max(0, onChain.dailyCap - onChain.todaySpent),
+      whitelist: onChain.whitelist || [],
+      active: onChain.active,
+      maxTxPerHour: onChain.maxTxPerHour,
+      activeHours: offChain.activeHours,
+      circuitBreaker: offChain.circuitBreaker,
+      vaultBalance: onChain.vaultBalance
+    });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
 }
 
 // POST /policy
@@ -161,7 +193,7 @@ async function handleUpdatePolicy(req, res) {
 
   try {
     const wallet = await getOrCreateWallet(userId);
-    const userAddress = ethers.isAddress(userId) ? userId : wallet.address;
+    const userAddress = wallet.address;
     const vaultAddress = await resolveOrCreateVault(userId);
 
     const { initiateDeveloperControlledWalletsClient } = require('@circle-fin/developer-controlled-wallets');
@@ -235,6 +267,25 @@ async function handleChat(req, res) {
     const wallet = await getOrCreateWallet(userId);
     const intent = await chat(message, wallet.walletId, userId);
 
+    // Resolve @tags to wallet addresses
+    if (intent.to && intent.to.startsWith('@')) {
+      const fs = require('fs');
+      const path = require('path');
+      const walletsPath = path.join(__dirname, '../data/userWallets.json');
+      let wallets = {};
+      try { wallets = JSON.parse(fs.readFileSync(walletsPath, 'utf8')); } catch {}
+      const tag = intent.to.toLowerCase().replace('@', '');
+      const entry = Object.values(wallets).find(w => w.tag === tag);
+      if (entry) {
+        intent.to = entry.address;
+        intent.message = intent.message + ' (@' + tag + ' resolved to ' + entry.address.slice(0,8) + '...)';
+      } else {
+        res.write(JSON.stringify({ type: 'error', error: 'Tag @' + tag + ' not found' }) + '\n');
+        res.end();
+        return;
+      }
+    }
+
     const history = chatHistories.get(userId) || [];
     history.push({ role: 'user', content: message });
     history.push({ role: 'assistant', content: intent.message, intent });
@@ -247,9 +298,9 @@ async function handleChat(req, res) {
         wallet.walletId, intent.url,
         intent.maxAmount, intent.reason, userId
       );
-      res.write(JSON.stringify({ type: 'final', intent, result }) + '\n');
+      res.write(JSON.stringify({ type: 'final', intent, message: intent.message, data: intent.data || null, result }) + '\n');
     } else {
-      res.write(JSON.stringify({ type: 'final', intent }) + '\n');
+      res.write(JSON.stringify({ type: 'final', intent, message: intent.message, data: intent.data || null }) + '\n');
     }
     res.end();
   } catch (err) {
@@ -301,7 +352,7 @@ async function handlePay(req, res) {
     return send(res, 200, {
       requestId, status: 'executed',
       txHash: result.txHash,
-      explorer: 'https://testnet.arcscan.app/tx/' + result.txHash
+      explorer: EXPLORER + result.txHash
     });
   } else {
     record.status = 'rejected';
@@ -312,7 +363,8 @@ async function handlePay(req, res) {
 
 // GET /schedules
 function handleGetSchedules(req, res) {
-  return send(res, 200, { schedules: getAllJobs() });
+  const userId = getUserId(req);
+  return send(res, 200, { schedules: getAllJobs(userId) });
 }
 
 // POST /schedules
@@ -325,17 +377,20 @@ async function handleCreateSchedule(req, res) {
   if (!intervalMs) return send(res, 400, { error: 'Invalid interval' });
 
   const wallet = await getOrCreateWallet(userId);
-  const job = addJob({ to, amount, reason, intervalMs, intervalLabel: interval, userAddress: userId });
+  // Key the job to the userId (browser address) for lookup, but execute payments
+  // with the agent wallet address so vault balances/policies line up.
+  const job = addJob({ to, amount, reason, intervalMs, intervalLabel: interval, userAddress: userId, agentAddress: wallet.address });
 
   const { startJob } = require('./scheduler');
-  startJob(job, (to, amount, reason) => pay(wallet.walletId, to, amount, reason, userId), userId);
+  startJob(job, (to, amount, reason) => pay(wallet.walletId, to, amount, reason, wallet.address), userId);
 
   return send(res, 200, { success: true, schedule: job });
 }
 
 // DELETE /schedules/:id
 function handleDeleteSchedule(req, res, jobId) {
-  const job = cancelJob(jobId);
+  const userId = getUserId(req);
+  const job = cancelJob(jobId, userId);
   if (!job) return send(res, 404, { error: 'Job not found' });
   return send(res, 200, { success: true });
 }
@@ -357,7 +412,7 @@ async function handleVaultDeposit(req, res) {
     const wallet = await getOrCreateWallet(userId);
     const vaultAddress = await resolveOrCreateVault(userId);
     const txHash = await walletService.approveAndDepositToVault(wallet.walletId, vaultAddress, amount);
-    return send(res, 200, { success: true, txHash, explorer: 'https://testnet.arcscan.app/tx/' + txHash });
+    return send(res, 200, { success: true, txHash, explorer: EXPLORER + txHash });
   } catch (err) {
     return send(res, 500, { error: err.message });
   }
@@ -371,7 +426,7 @@ async function handleVaultWithdraw(req, res) {
     const wallet = await getOrCreateWallet(userId);
     const vaultAddress = await resolveOrCreateVault(userId);
     const txHash = await walletService.withdrawFromVault(wallet.walletId, vaultAddress, amount);
-    return send(res, 200, { success: true, txHash, explorer: 'https://testnet.arcscan.app/tx/' + txHash });
+    return send(res, 200, { success: true, txHash, explorer: EXPLORER + txHash });
   } catch (err) {
     return send(res, 500, { error: err.message });
   }
@@ -457,10 +512,136 @@ async function handleCompleteJob(req, res) {
   }
 }
 
+// GET /vault/balance — on-chain vault balance keyed to the agent wallet
+async function handleVaultBalance(req, res) {
+  const userId = getUserId(req);
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const agentAddress = wallet.address;
+    const vaultAddr = await escrow.findVault(agentAddress);
+    if (!vaultAddr) return send(res, 200, { balance: '0.0000', address: null, agentAddress });
+    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+    const onChain = await escrow.getOnChainPolicy(provider, agentAddress);
+    return send(res, 200, {
+      balance: String(onChain.vaultBalance),
+      address: vaultAddr,
+      agentAddress
+    });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// GET /vault/paused — read on-chain userPaused[agentAddress]
+async function handleVaultPaused(req, res) {
+  const userId = getUserId(req);
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const agentAddress = wallet.address;
+    const vaultAddr = await escrow.findVault(agentAddress);
+    if (!vaultAddr) return send(res, 200, { paused: false });
+    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+    const vault = new ethers.Contract(vaultAddr, ['function userPaused(address) view returns (bool)'], provider);
+    const paused = await vault.userPaused(agentAddress);
+    return send(res, 200, { paused: !!paused });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /vault/pause / POST /vault/resume — operator best-effort (onlyOwner).
+// For factory-deployed vaults owner == VaultFactory, so this will fail; for
+// single VAULT_ADDRESS mode owner is the deployer and this succeeds.
+async function handleVaultPause(req, res, action) {
+  const userId = getUserId(req);
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const agentAddress = wallet.address;
+    const vaultAddr = await escrow.findVault(agentAddress);
+    if (!vaultAddr) return send(res, 404, { error: 'No vault found' });
+    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+    const agentKey = process.env.PRIVATE_KEY;
+    if (!agentKey) throw new Error('No operator key configured (PRIVATE_KEY)');
+    const signer = new ethers.Wallet(agentKey, provider);
+    const fn = action === 'resume' ? escrow.resumeUser : escrow.pauseUser;
+    const tx = await fn(signer, agentAddress);
+    return send(res, 200, { success: true, txHash: tx.hash });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// GET /onchain-schedules — schedules keyed to the agent wallet
+async function handleGetOnChainSchedules(req, res) {
+  const userId = getUserId(req);
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const agentAddress = wallet.address;
+    const vaultAddr = await escrow.findVault(agentAddress);
+    if (!vaultAddr) return send(res, 200, { schedules: [] });
+    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+    const schedules = await escrow.getOnChainSchedules(provider, agentAddress);
+    return send(res, 200, { schedules });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /onchain-schedules — Circle-signed createSchedule (keys to agent wallet)
+async function handleCreateOnChainSchedule(req, res) {
+  const userId = getUserId(req);
+  const { to, amount, interval, reason, minBalance } = req.body || {};
+  try {
+    if (!to || !amount || !interval) return send(res, 400, { error: 'to, amount, interval required' });
+    const wallet = await getOrCreateWallet(userId);
+    const vaultAddress = await resolveOrCreateVault(userId);
+    const txHash = await walletService.createVaultSchedule(
+      wallet.walletId, vaultAddress, to, amount, Number(interval), reason || '', minBalance || 0
+    );
+    return send(res, 200, { success: true, txHash, explorer: EXPLORER + txHash });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// DELETE /onchain-schedules/:index — Circle-signed cancelSchedule
+async function handleCancelOnChainSchedule(req, res) {
+  const userId = getUserId(req);
+  const index = Number(req.params.index);
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const vaultAddress = await resolveOrCreateVault(userId);
+    const txHash = await walletService.cancelVaultSchedule(wallet.walletId, vaultAddress, index);
+    return send(res, 200, { success: true, txHash, explorer: EXPLORER + txHash });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /log-transaction — record an off-chain activity entry for the history view
+async function handleLogTransaction(req, res) {
+  const userId = getUserId(req);
+  const { appendSpend } = require('../utils/store');
+  const body = req.body || {};
+  try {
+    appendSpend({
+      userAddress: userId,
+      to: body.to || null,
+      amount: Number(body.amount) || 0,
+      reason: body.reason || '',
+      txHash: body.txHash || '',
+      token: body.token || 'USDC'
+    });
+    return send(res, 200, { success: true });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
 // CORS
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-address, x-api-key, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-id, x-api-key, Authorization');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
@@ -483,22 +664,12 @@ if (!APP_API_KEY) {
 async function handleVaultCheck(req, res) {
   const userId = getUserId(req);
   try {
-    const { ethers } = require('ethers');
-    const escrow = require('./escrow');
+    // Vault on-chain state is keyed to the Circle agent wallet address.
+    // Resolve it (idempotent — creates an empty wallet only if none exists yet).
+    const wallet = await getOrCreateWallet(userId);
+    const agentAddress = wallet.address;
 
-    // Resolve to a real address the same way resolveOrCreateVault does,
-    // but without creating a wallet as a side effect of a read-only check.
-    let userAddress;
-    if (ethers.isAddress(userId)) {
-      userAddress = userId;
-    } else if (userWallets.has(userId)) {
-      userAddress = userWallets.get(userId).address;
-    } else {
-      // No real address and no existing wallet under this label — nothing to check yet.
-      return send(res, 200, { exists: false, address: null });
-    }
-
-    const vaultAddr = await escrow.findVault(userAddress);
+    const vaultAddr = await escrow.findVault(agentAddress);
     return send(res, 200, { exists: !!vaultAddr, address: vaultAddr });
   } catch (err) {
     return send(res, 500, { error: err.message });
@@ -508,20 +679,19 @@ async function handleVaultCheck(req, res) {
 // GET /vault-address (find or create via Circle wallet as signer)
 // Shared: resolve a user's per-vault address, creating it on-chain if missing
 
-async function setDefaultPolicy(client, walletId, vaultAddress, userAddress) {
-  const { ethers } = require('ethers');
-  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
+async function setDefaultPolicy(client, walletId, vaultAddress, agentAddress) {
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
   const vault = new ethers.Contract(
     vaultAddress,
     ['function getPolicy(address user) view returns (tuple(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, bool active) policy, address[] whitelist)'],
     provider
   );
-  const [policy] = await vault.getPolicy(userAddress);
+  const [policy] = await vault.getPolicy(agentAddress);
   if (policy.active) {
-    console.log('Policy already set for', userAddress, '— skipping default');
+    console.log('Policy already set for', agentAddress, '— skipping default');
     return;
   }
-  console.log('Setting default policy for', userAddress);
+  console.log('Setting default policy for', agentAddress);
   const tx = await client.createContractExecutionTransaction({
     walletId,
     contractAddress: vaultAddress,
@@ -542,23 +712,21 @@ async function setDefaultPolicy(client, walletId, vaultAddress, userAddress) {
     txState = status.data?.transaction?.state;
     if (txState === 'FAILED') throw new Error('setPolicy transaction failed');
   }
-  console.log('Default policy set for', userAddress);
+  console.log('Default policy set for', agentAddress);
 }
 
 async function resolveOrCreateVault(userId) {
-  const escrow = require('./escrow');
-  const { ethers } = require('ethers');
-
-  // userId may be a real address (production) or a test label (e.g. 'test-user-1').
-  // Resolve to the wallet's actual on-chain address before any contract call,
-  // since vault ownership must be keyed by a real address either way.
+  // All vault on-chain state (balances, policies, schedules, userPaused) is keyed
+  // to whichever address signs deposit/withdraw/setPolicy/createSchedule — i.e.
+  // the Circle agent wallet. So we both look up AND create the vault under the
+  // agent wallet address, keeping a single consistent key for every user.
   const wallet = await getOrCreateWallet(userId);
-  const userAddress = ethers.isAddress(userId) ? userId : wallet.address;
+  const agentAddress = wallet.address;
 
-  let vaultAddr = await escrow.findVault(userAddress);
+  let vaultAddr = await escrow.findVault(agentAddress);
 
   if (!vaultAddr) {
-    console.log('Creating vault on-chain for', userAddress, '(userId:', userId + ')');
+    console.log('Creating vault on-chain for', agentAddress, '(userId:', userId + ')');
     const client = require('@circle-fin/developer-controlled-wallets').initiateDeveloperControlledWalletsClient({
       apiKey: process.env.CIRCLE_API_KEY,
       entitySecret: process.env.CIRCLE_ENTITY_SECRET
@@ -569,7 +737,7 @@ async function resolveOrCreateVault(userId) {
       walletId: wallet.walletId,
       contractAddress: factoryAddress,
       abiFunctionSignature: 'createVault(address)',
-      abiParameters: [userAddress],
+      abiParameters: [agentAddress],
       fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
     });
 
@@ -582,8 +750,8 @@ async function resolveOrCreateVault(userId) {
       if (txState === 'FAILED') throw new Error('Vault creation transaction failed');
     }
 
-    vaultAddr = await escrow.findVault(userAddress);
-    await setDefaultPolicy(client, wallet.walletId, vaultAddr, userAddress);
+    vaultAddr = await escrow.findVault(agentAddress);
+    await setDefaultPolicy(client, wallet.walletId, vaultAddr, agentAddress);
   }
 
   return vaultAddr;
@@ -617,6 +785,14 @@ app.delete('/schedules/:id', (req, res) => handleDeleteSchedule(req, res, req.pa
 app.get('/status/:id', (req, res) => handleStatus(req, res, req.params.id));
 app.post('/vault/deposit', handleVaultDeposit);
 app.post('/vault/withdraw', handleVaultWithdraw);
+app.get('/vault/balance', handleVaultBalance);
+app.get('/vault/paused', handleVaultPaused);
+app.post('/vault/pause', (req, res) => handleVaultPause(req, res, 'pause'));
+app.post('/vault/resume', (req, res) => handleVaultPause(req, res, 'resume'));
+app.get('/onchain-schedules', handleGetOnChainSchedules);
+app.post('/onchain-schedules', handleCreateOnChainSchedule);
+app.delete('/onchain-schedules/:index', handleCancelOnChainSchedule);
+app.post('/log-transaction', handleLogTransaction);
 app.post('/jobs', handleHireAgent);
 app.get('/jobs/:id', handleGetJob);
 app.post('/jobs/:id/complete', handleCompleteJob);
@@ -634,3 +810,108 @@ function startServer() {
 }
 
 module.exports = { startServer };
+
+// Google Auth login - create Circle wallet for new users
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { uid, email, displayName } = req.body;
+    if (!uid) return res.status(400).json({ error: 'uid required' });
+
+    const fs = require('fs');
+    const path = require('path');
+    const walletsPath = path.join(__dirname, '../data/userWallets.json');
+    
+    let wallets = {};
+    try { wallets = JSON.parse(fs.readFileSync(walletsPath, 'utf8')); } catch {}
+
+    if (!wallets[uid]) {
+      const walletService = require('./walletService');
+      const wallet = await walletService.createUserWallet(uid);
+      wallets[uid] = {
+        walletId: wallet.walletId,
+        address: wallet.address,
+        email,
+        displayName,
+        tag: null,
+        createdAt: new Date().toISOString()
+      };
+      fs.writeFileSync(walletsPath, JSON.stringify(wallets, null, 2));
+      console.log('New user wallet created:', uid, wallet.address);
+    }
+
+    res.json({ wallet: wallets[uid] });
+  } catch (err) {
+    console.error('Auth login error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Tag system
+app.post('/api/tag/claim', async (req, res) => {
+  try {
+    const uid = req.headers['x-user-id'];
+    if (!uid || uid === 'anonymous') return res.status(401).json({ error: 'Not authenticated' });
+    const { tag } = req.body;
+    if (!tag) return res.status(400).json({ error: 'tag required' });
+
+    const clean = tag.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (clean.length < 3 || clean.length > 20) return res.status(400).json({ error: 'Tag must be 3-20 characters' });
+
+    const fs = require('fs');
+    const path = require('path');
+    const walletsPath = path.join(__dirname, '../data/userWallets.json');
+    let wallets = {};
+    try { wallets = JSON.parse(fs.readFileSync(walletsPath, 'utf8')); } catch {}
+
+    // Check tag not taken
+    const taken = Object.values(wallets).find(w => w.tag === clean);
+    if (taken) return res.status(409).json({ error: 'Tag already taken' });
+
+    if (!wallets[uid]) return res.status(404).json({ error: 'User not found. Sign in first.' });
+
+    wallets[uid].tag = clean;
+    fs.writeFileSync(walletsPath, JSON.stringify(wallets, null, 2));
+
+    res.json({ tag: clean, address: wallets[uid].address });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/tag/:tag', async (req, res) => {
+  try {
+    const tag = req.params.tag.toLowerCase().replace('@', '');
+    const fs = require('fs');
+    const path = require('path');
+    const walletsPath = path.join(__dirname, '../data/userWallets.json');
+    let wallets = {};
+    try { wallets = JSON.parse(fs.readFileSync(walletsPath, 'utf8')); } catch {}
+
+    const entry = Object.values(wallets).find(w => w.tag === tag);
+    if (!entry) return res.status(404).json({ error: 'Tag not found' });
+
+    res.json({ tag, address: entry.address });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/me', async (req, res) => {
+  try {
+    const uid = req.headers['x-user-id'];
+    if (!uid || uid === 'anonymous') return res.status(401).json({ error: 'Not authenticated' });
+
+    const fs = require('fs');
+    const path = require('path');
+    const walletsPath = path.join(__dirname, '../data/userWallets.json');
+    let wallets = {};
+    try { wallets = JSON.parse(fs.readFileSync(walletsPath, 'utf8')); } catch {}
+
+    const user = wallets[uid];
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    res.json({ uid, ...user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});

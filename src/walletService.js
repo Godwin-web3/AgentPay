@@ -55,7 +55,7 @@ async function sendUSDC(walletId, toAddress, amountUSDC) {
     destinationAddress: toAddress,
     amounts: [amountUnits],
     blockchain: 'ARC-TESTNET',
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+    gasAbstractionConfig: { sponsorshipPolicyId: process.env.CIRCLE_GAS_POLICY_ID }
   });
   const txId = response.data.id;
   // Poll for onchain hash
@@ -84,7 +84,7 @@ async function approveAndDepositToVault(walletId, vaultAddress, amountUSDC) {
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'approve(address,uint256)',
     abiParameters: [vaultAddress, amountWei],
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+    gasAbstractionConfig: { sponsorshipPolicyId: process.env.CIRCLE_GAS_POLICY_ID }
   });
 
   // Poll for approval confirmation
@@ -104,7 +104,7 @@ async function approveAndDepositToVault(walletId, vaultAddress, amountUSDC) {
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'deposit(uint256)',
     abiParameters: [amountWei],
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+    gasAbstractionConfig: { sponsorshipPolicyId: process.env.CIRCLE_GAS_POLICY_ID }
   });
 
   const depositId = depositRes.data.id;
@@ -128,7 +128,7 @@ async function withdrawFromVault(walletId, vaultAddress, amountUSDC) {
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'withdraw(uint256)',
     abiParameters: [amountWei],
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+    gasAbstractionConfig: { sponsorshipPolicyId: process.env.CIRCLE_GAS_POLICY_ID }
   });
 
   const txId = res.data.id;
@@ -142,4 +142,45 @@ async function withdrawFromVault(walletId, vaultAddress, amountUSDC) {
   return txId;
 }
 
-module.exports = { ...module.exports, approveAndDepositToVault, withdrawFromVault };
+async function createVaultSchedule(walletId, vaultAddress, toAddress, amountUSDC, intervalSec, reason, minBalanceUSDC) {
+  const { toUnits } = require('../utils/usdc');
+  const amountWei = toUnits(amountUSDC).toString();
+  const minBalWei = toUnits(minBalanceUSDC || 0).toString();
+
+  const res = await client.createContractExecutionTransaction({
+    walletId,
+    contractAddress: vaultAddress,
+    blockchain: 'ARC-TESTNET',
+    abiFunctionSignature: 'createSchedule(address,uint256,uint256,string,uint256)',
+    abiParameters: [toAddress, amountWei, String(intervalSec), reason || '', minBalWei],
+    gasAbstractionConfig: { sponsorshipPolicyId: process.env.CIRCLE_GAS_POLICY_ID }
+  });
+
+  return await waitForTxHash(res.data.id, 'createSchedule');
+}
+
+async function cancelVaultSchedule(walletId, vaultAddress, index) {
+  const res = await client.createContractExecutionTransaction({
+    walletId,
+    contractAddress: vaultAddress,
+    blockchain: 'ARC-TESTNET',
+    abiFunctionSignature: 'cancelSchedule(uint256)',
+    abiParameters: [String(index)],
+    gasAbstractionConfig: { sponsorshipPolicyId: process.env.CIRCLE_GAS_POLICY_ID }
+  });
+
+  return await waitForTxHash(res.data.id, 'cancelSchedule');
+}
+
+async function waitForTxHash(txId, label) {
+  for (let i = 0; i < 10; i++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const check = await client.getTransaction({ id: txId });
+    const tx = check.data?.transaction;
+    if (tx?.txHash) return tx.txHash;
+    if (tx?.state === 'FAILED') throw new Error(label + ' failed');
+  }
+  return txId;
+}
+
+module.exports = { ...module.exports, approveAndDepositToVault, withdrawFromVault, createVaultSchedule, cancelVaultSchedule };

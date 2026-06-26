@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react'
-import { getSchedules, getVaultAddress, getOnChainSchedules, cancelSchedule } from '../api'
-import { ethers } from 'ethers'
-
-const VAULT_ABI = [
-  "function cancelSchedule(uint256 index) external"
-]
+import { useAuth } from '../contexts/AuthContext'
+import { getSchedules, getOnChainSchedules, cancelSchedule, cancelOnChainSchedule } from '../api'
 
 function formatInterval(seconds: number) {
   if (seconds < 3600) return `${Math.floor(seconds / 60)} minute(s)`
@@ -12,7 +8,11 @@ function formatInterval(seconds: number) {
   return `${Math.floor(seconds / 86400)} day(s)`
 }
 
-export default function Schedules({ userAddress }: { userAddress: string }) {
+export default function Schedules({
+  const { user } = useAuth();
+  userAddress }: { userAddress: string }) {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const [schedules, setSchedules] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -29,12 +29,12 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
       // Try fetching both local and on-chain
       let all: any[] = []
       try {
-        const res = await getSchedules(userAddress)
+        const res = await getSchedules(userId)
         if (res.schedules) all = [...res.schedules]
       } catch (e) {}
 
       try {
-        const onChain = await getOnChainSchedules(userAddress)
+        const onChain = await getOnChainSchedules(userId)
         // Merge or just append
         onChain.forEach(oc => {
           if (!all.find(a => a.id === oc.id && a.onChain)) {
@@ -44,7 +44,7 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
       } catch (e) {
         console.warn("Failed to fetch on-chain schedules", e)
       }
-      
+
       setSchedules(all)
     } catch (err) {
       setError('Failed to load schedules')
@@ -57,21 +57,16 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
     if (!confirm('Are you sure you want to cancel this automated payment?')) return
     try {
       if (onChain) {
-        if (!window.ethereum) throw new Error("No wallet connected")
-        const { address: vaultAddr } = await getVaultAddress(userAddress)
-        const provider = new ethers.BrowserProvider(window.ethereum)
-        const signer = await provider.getSigner()
-        const vault = new ethers.Contract(vaultAddr, VAULT_ABI, signer)
-        
-        const tx = await vault.cancelSchedule(id)
-        await tx.wait()
+        // On-chain schedules are keyed to the agent wallet — cancel via backend
+        // (Circle-signed) so it targets the right slot.
+        await cancelOnChainSchedule(id, userId)
         alert('On-chain schedule cancelled!')
       } else {
         // Local cancel via helper
         await cancelSchedule(id.toString(), userAddress)
         alert('Local schedule cancelled!')
       }
-      
+
       setSchedules(schedules.map(s => (s.id === id && s.onChain === onChain) ? { ...s, active: false } : s))
       setTimeout(() => fetchSchedules(), 2000)
     } catch (err: any) {

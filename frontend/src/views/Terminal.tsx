@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, getChatHistory, getVaultAddress, RPC, TOKENS } from '../api'
+import { useAuth } from '../contexts/AuthContext'
+import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, hireAgent, decodePolicyError } from '../api'
 import type { ChatMessage } from '../types'
-import { ethers } from 'ethers'
 
 interface Props {
   messages: ChatMessage[]
@@ -16,41 +16,24 @@ function formatTime(ts: number) {
 
 function ProofBadge({ requestId }: { requestId: string }) {
   return (
-    <a 
-      href={`https://testnet.arcscan.arc.network/address/0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776`} 
-      target="_blank" 
-      rel="noreferrer"
-      style={{
-        marginTop: 8,
-        padding: '6px 10px',
-        background: 'rgba(0, 255, 255, 0.05)',
-        border: '1px dashed var(--cyan)',
-        borderRadius: 4,
-        fontSize: 10,
-        fontFamily: 'var(--font-mono)',
-        color: 'var(--cyan)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        textDecoration: 'none'
-      }}
-    >
-      <span style={{ fontSize: 14 }}>🛡️</span>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontWeight: 'bold', marginBottom: 2 }}>DECENTRALIZED PROOF</div>
-        <div style={{ color: 'var(--muted)' }}>Request ID: {requestId.slice(0, 16)}...</div>
+    <div style={{
+      marginTop: 8,
+      padding: '6px 10px',
+      background: 'rgba(0, 255, 255, 0.05)',
+      border: '1px dashed var(--cyan)',
+      fontSize: 10,
+      fontFamily: 'var(--font-mono)',
+      color: 'var(--muted)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+    }}>
+      <span style={{ fontSize: 12 }}>🔗</span>
+      <div>
+        <div style={{ color: 'var(--cyan)', marginBottom: 2 }}>ON-CHAIN REQUEST ID</div>
+        <div>{requestId.slice(0, 20)}...</div>
       </div>
-      <div style={{ 
-        padding: '2px 6px', 
-        background: 'var(--cyan)', 
-        color: 'black', 
-        borderRadius: 2, 
-        fontWeight: 'bold',
-        fontSize: 9
-      }}>
-        VERIFIED
-      </div>
-    </a>
+    </div>
   )
 }
 
@@ -58,7 +41,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
   const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
   
-  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule'
+  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_hire'
 
   if (isProposal) {
     let title = 'TX PROPOSAL'
@@ -69,6 +52,9 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     } else if (result.status === 'proposing_schedule') {
       title = '⏰ ON-CHAIN SCHEDULE'
       detail = `Pay ${result.amount} USDC to ${result.to?.slice(0, 8)}... every ${result.interval}`
+    } else if (result.status === 'proposing_hire') {
+      title = '🤝 HIRE AGENT'
+      detail = `${result.description} (budget: ${result.budget} USDC)`
     }
 
     return (
@@ -202,6 +188,8 @@ function PolicyCard({ data }: { data: any }) {
 }
 
 export default function Terminal({ messages, setMessages, userAddress, onActionSuccess }: Props) {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [txResults, setTxResults] = React.useState<Record<number, any>>({})
@@ -211,7 +199,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
   // Load chat history on mount
   useEffect(() => {
     if (!userAddress) return
-    getChatHistory(userAddress)
+    getChatHistory(userId)
       .then(res => {
         if (res.history?.length > 0) {
           const filtered = res.history.filter((m: any) => {
@@ -251,27 +239,17 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
         const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userAddress, prop.token || 'USDC')
         res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'USDC' }
       } else if (prop.status === 'proposing_schedule') {
-        const { address: vaultAddr } = await getVaultAddress(userAddress)
-        const iface = new ethers.Interface(["function createSchedule(address token, address to, uint256 amount, uint256 interval, string calldata reason, uint256 minBalance) external"])
-        const amountWei = ethers.parseEther(prop.amount.toString())
         const intervalSec = parseInterval(prop.interval)
-        const minBalWei = ethers.parseEther((prop.conditions?.minBalance || 0).toString())
-        
-        const data = iface.encodeFunctionData("createSchedule", [
-          TOKENS.USDC, prop.to, amountWei, intervalSec, prop.reason || '', minBalWei
-        ])
-        
-        const txHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [{ from: userAddress, to: vaultAddr, data }]
-        })
-
-        const provider = new ethers.JsonRpcProvider(RPC)
-        await provider.waitForTransaction(txHash)
-
-        res = { status: 'executed', txHash, explorer: 'https://testnet.arcscan.arc.network/tx/' + txHash, type: 'schedule', to: prop.to, amount: prop.amount }
+        const schedRes = await createOnChainSchedule(
+          prop.to, prop.amount, intervalSec, prop.reason || '', userAddress,
+          prop.conditions?.minBalance || 0
+        )
+        res = { status: 'executed', txHash: schedRes.txHash, explorer: schedRes.explorer, type: 'schedule', to: prop.to, amount: prop.amount }
+      } else if (prop.status === 'proposing_hire') {
+        const hireRes = await hireAgent(prop.description, prop.budget, userId)
+        res = { status: hireRes.success ? 'executed' : 'rejected', txHash: hireRes.fundTxHash || hireRes.createTxHash, explorer: 'https://testnet.arcscan.arc.network/tx/' + (hireRes.fundTxHash || hireRes.createTxHash || ''), type: 'hire', to: prop.to, amount: prop.budget, reason: hireRes.reason || '' }
       }
-      
+
       if (res) {
         setTxResults(r => ({ ...r, [msgIdx]: res }))
         if ((res.status === 'executed' || res.status === 'success') && onActionSuccess) {
@@ -279,7 +257,8 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
         }
       }
     } catch (err: any) {
-      setTxResults(r => ({ ...r, [msgIdx]: { status: 'failed', reason: err.message } }))
+      const decoded = decodePolicyError(err)
+      setTxResults(r => ({ ...r, [msgIdx]: { status: 'failed', reason: decoded || err.message } }))
     }
   }
 
@@ -293,11 +272,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
 
     // Clear command
     if (text.toLowerCase() === 'clear') {
-      const serverUrl = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
-      await fetch(`${serverUrl}/chat`, {
-        method: 'DELETE',
-        headers: { 'x-user-address': userAddress }
-      }).catch(() => {})
+      await clearChatHistory(userId).catch(() => {})
       setMessages([{ role: 'assistant', content: 'Memory cleared.', timestamp: Date.now() }])
       setInput('')
       return
@@ -308,26 +283,15 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
       const userMsg: ChatMessage = { role: 'user', content: text, timestamp: Date.now() }
       setMessages(prev => [...prev, userMsg])
       setInput('')
-      getVaultAddress(userAddress).then(({ address: vaultAddr }) => {
-        fetch(RPC, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            jsonrpc: '2.0', id: 1, method: 'eth_call',
-            params: [{ to: vaultAddr, data: '0xd4fac45d' + userAddress.replace('0x', '').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000' }, 'latest']
-          })
+      getVaultBalanceApi(userAddress)
+        .then(res => {
+          setMessages(prev => [...prev, {
+            role: 'assistant',
+            content: `Vault balance: ${res.balance} USDC\nWorker: online\nPolicy: active`,
+            timestamp: Date.now()
+          }])
         })
-          .then(r => r.json())
-          .then(data => {
-            const bal = (Number(BigInt(data.result === '0x' || !data.result ? '0x0' : data.result)) / 1e18).toFixed(4)
-            setMessages(prev => [...prev, {
-              role: 'assistant',
-              content: `Vault balance: ${bal} USDC\nWorker: online\nPolicy: active`,
-              timestamp: Date.now()
-            }])
-          })
-          .catch(() => setMessages(prev => [...prev, { role: 'assistant', content: 'Failed to fetch status.', timestamp: Date.now() }]))
-      })
+        .catch(() => setMessages(prev => [...prev, { role: 'assistant', content: 'Failed to fetch status.', timestamp: Date.now() }]))
       return
     }
 
@@ -337,7 +301,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
     setLoading(true)
 
     try {
-      const res = await sendChat(text, userAddress)
+      const res = await sendChat(text, userId)
       const intent = res.intent
 
       const assistantMsg: ChatMessage = {
@@ -384,20 +348,19 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
           if (intent.action === 'update_policy' && intent.policyUpdate) {
             const up = intent.policyUpdate
             const applyPolicyUpdate = async () => {
-              const serverUrl = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
-              const current = await getPolicy(userAddress)
+              const current = await getPolicy(userId)
               const update: any = {}
               if (up.field === 'dailyCap') update.dailyCap = up.value
               if (up.field === 'perTxCap') update.perTxCap = up.value
-              if (up.field === 'maxTxPerHour') update.circuitBreaker = { ...current.circuitBreaker, maxTxPerHour: up.value }
+              if (up.field === 'maxTxPerHour') update.maxTxPerHour = up.value
               if (up.field === 'activeHours') update.activeHours = { start: up.start, end: up.end }
               if (up.field === 'addWhitelist' && up.address) {
-                update.whitelist = [...new Set([...current.whitelist, up.address])]
+                update.whitelist = [...new Set([...(current.whitelist || []), up.address])]
               }
               if (up.field === 'removeWhitelist' && up.address) {
-                update.whitelist = current.whitelist.filter(a => a.toLowerCase() !== up.address?.toLowerCase())
+                update.whitelist = (current.whitelist || []).filter((a: string) => a.toLowerCase() !== up.address?.toLowerCase())
               }
-              return await fetch(`${serverUrl}/policy`, { method: "POST", headers: { "Content-Type": "application/json", "x-user-address": userAddress }, body: JSON.stringify(update) }).then(r => r.json())
+              return await updatePolicy(update, userId)
             }
             applyPolicyUpdate()
               .then(() => {
@@ -405,6 +368,31 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
                 if (onActionSuccess) onActionSuccess()
               })
               .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
+          }
+
+          if (intent.action === 'hire_agent' && intent.description) {
+            setTxResults(r => ({
+              ...r,
+              [msgIndex]: {
+                status: 'proposing_hire',
+                description: intent.description,
+                budget: intent.budget || 0,
+                to: intent.to,
+              }
+            }))
+          }
+
+          if (intent.action === 'fetch_and_pay') {
+            // Backend auto-executes paid fetches; show the outcome as a badge.
+            const chatRes: any = res
+            if (chatRes.result) {
+              setTxResults(prev => ({
+                ...prev,
+                [msgIndex]: chatRes.result.success
+                  ? { status: 'executed', type: 'fetch', to: chatRes.result.actualPayTo || intent.url, amount: chatRes.result.actualAmount || intent.maxAmount, txHash: 'x402' }
+                  : { status: 'rejected', reason: chatRes.result.reason || 'fetch failed' }
+              }))
+            }
           }
         }, 0)
 

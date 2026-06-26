@@ -16,7 +16,7 @@ export interface ChatMessage {
 }
 
 export interface Intent {
-  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown'
+  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown' | 'fetch_and_pay' | 'hire_agent'
   requestId?: string
   to?: string
   amount?: number
@@ -24,6 +24,10 @@ export interface Intent {
   message: string
   interval?: string
   jobId?: number
+  url?: string
+  maxAmount?: number
+  description?: string
+  budget?: number
   conditions?: {
     minBalance?: number
     executeAt?: string
@@ -54,6 +58,8 @@ export interface PolicyData {
   dailySpendSoFar: number
   dailyRemaining: number
   whitelist: string[]
+  active: boolean
+  maxTxPerHour?: number
   activeHours: { start: number; end: number }
   circuitBreaker: {
     maxTxPerHour: number
@@ -67,7 +73,8 @@ export interface HealthData {
   status: string
   agent: string
   version: string
-  address: string
+  network?: string
+  chainId?: number
   time: string
 }
 

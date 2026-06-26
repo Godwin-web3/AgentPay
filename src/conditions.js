@@ -1,24 +1,24 @@
 const { ethers } = require('ethers');
 require('dotenv').config();
+const { fromUnits } = require('../utils/usdc');
 
 /**
  * Fetches metrics from the on-chain vault to verify if conditions are met.
- * Note: Arc uses USDC as native gas, typically 18 decimals internally for gas,
- * but ERC20 USDC is 6 decimals. This engine assumes human-readable units.
+ * Vault USDC accounting uses 6 decimals (see utils/usdc.js).
  */
 async function getOnChainMetrics(userAddress) {
   try {
     const { getVaultContract } = require('./escrow');
-    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
+    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     const contract = await getVaultContract(wallet, userAddress);
-    
-    const balance = await contract.getBalance(userAddress, ethers.ZeroAddress);
+
+    const balance = await contract.getBalance(userAddress);
     const [todaySpent, currentHourTx] = await contract.getSpendMetrics(userAddress);
-    
+
     return {
-      balance: parseFloat(ethers.formatEther(balance)), // Using 18 decimals for native representation
-      todaySpent: parseFloat(ethers.formatEther(todaySpent)),
+      balance: fromUnits(balance),
+      todaySpent: fromUnits(todaySpent),
       currentHourTx: Number(currentHourTx)
     };
   } catch (err) {
@@ -44,7 +44,9 @@ function parseExecuteAt(str) {
 
 async function checkConditions(conditions, job = null, wallet = null) {
   const results = [];
-  const userAddress = job ? job.userAddress : null;
+  // Vault on-chain state is keyed to the agent (Circle) wallet address, not the
+  // browser address. Prefer job.agentAddress when present.
+  const userAddress = job ? (job.agentAddress || job.userAddress) : null;
   
   if (!conditions && (!job || !job.trigger)) return { passed: true, results: [] };
 

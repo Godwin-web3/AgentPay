@@ -10,6 +10,8 @@ interface Props {
   tokenBalances: Record<string, string>
   activeProvider: any
   onActionSuccess?: () => void
+  agentWalletAddress?: string
+  agentWalletBalance?: string
 }
 
 type SubView = null | 'vault' | 'policy' | 'history' | 'agent'
@@ -20,7 +22,7 @@ const ChevronRight = () => (
   </svg>
 )
 
-export default function Profile({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onActionSuccess }: Props) {
+export default function Profile({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, agentWalletBalance }: Props) {
   const [subView, setSubView] = useState<SubView>(null)
 
   function shortAddr(addr: string) {
@@ -71,12 +73,13 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>AGENT</span>
         </div>
         <div className="card" style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>AGENT ID</div>
-          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 18, fontWeight: 'bold' }}>14</div>
+          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>YOUR WALLET (browser)</div>
+          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all' }}>{userAddress}</div>
         </div>
         <div className="card" style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>WALLET</div>
-          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all' }}>{userAddress}</div>
+          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>AGENT WALLET (vault signer)</div>
+          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all' }}>{agentWalletAddress || '—'}</div>
+          <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 6 }}>Balance: {agentWalletBalance || '0'} USDC</div>
         </div>
         <div className="card">
           <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>NETWORK</div>
@@ -90,7 +93,7 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
     { id: 'vault',   label: 'Vault',   desc: vaultBalance + ' USDC in vault' },
     { id: 'policy',  label: 'Policy',  desc: 'Spending rules and caps' },
     { id: 'history', label: 'History', desc: 'Transaction log' },
-    { id: 'agent',   label: 'Agent',   desc: 'Agent ID 14 | Arc Testnet' },
+    { id: 'agent',   label: 'Agent',   desc: 'Agent wallet & network' },
   ]
 
   return (

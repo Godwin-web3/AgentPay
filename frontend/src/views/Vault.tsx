@@ -1,8 +1,6 @@
 import { useState } from 'react'
-import { getVaultAddress, logTransaction } from '../api'
-import { ethers } from 'ethers'
-
-import { RPC } from '../api'
+import { useAuth } from '../contexts/AuthContext'
+import { depositToVault, withdrawFromVault, logTransaction, decodePolicyError } from '../api'
 
 interface Props {
   userAddress: string
@@ -14,16 +12,11 @@ interface Props {
   onActionSuccess?: () => void
 }
 
-const VAULT_ABI = [
-  "function deposit(address token, uint256 amount) external payable",
-  "function withdraw(address token, uint256 amount) external"
-]
-
-const TOKENS: Record<string, string> = {
-  USDC: '0x3600000000000000000000000000000000000000',
-}
-
-export default function Vault({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onBack, onActionSuccess }: Props) {
+export default function Vault({
+  const { user } = useAuth();
+  userAddress, vaultBalance, walletBalance, tokenBalances, onBack, onActionSuccess }: Props) {
+  const { user } = useAuth();
+  const userId = user?.uid || '';
   const [mode, setMode] = useState<null | 'deposit' | 'withdraw'>(null)
   const [amount, setAmount] = useState('')
   const [selectedToken, setSelectedToken] = useState('USDC')
@@ -34,36 +27,15 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
     setLoading(true)
     setTxStatus(null)
     try {
-      const iface = new ethers.Interface(VAULT_ABI)
-      const amtWei = ethers.parseEther(amount)
-      const tokenAddr = TOKENS[selectedToken]
-      
-      const data = iface.encodeFunctionData("deposit", [tokenAddr, amtWei])
-      const value = selectedToken === 'USDC' ? '0x' + amtWei.toString(16) : '0x0'
-
-      const { address: vaultAddr } = await getVaultAddress(userAddress)
-
-      const txHash = await activeProvider.request({ 
-        method: 'eth_sendTransaction', 
-        params: [{ 
-          from: userAddress, 
-          to: vaultAddr, 
-          data, 
-          value 
-        }] 
-      })
-      setTxStatus('Waiting for confirmation...')
-      
-      const provider = new ethers.JsonRpcProvider(RPC)
-      await provider.waitForTransaction(txHash)
-
+      const result = await depositToVault(amount, userId)
       setTxStatus('[OK] Deposit confirmed!')
-      await logTransaction({ userAddress, type: 'deposit', amount, token: selectedToken, txHash })
+      await logTransaction({ userAddress, type: 'deposit', amount, token: selectedToken, txHash: result.txHash })
       setMode(null)
       setAmount('')
       if (onActionSuccess) onActionSuccess()
     } catch (err: any) {
-      setTxStatus('[ERROR] ' + (err?.message || 'Transaction failed'))
+      const decoded = decodePolicyError(err)
+      setTxStatus('[ERROR] ' + (decoded || err?.message || 'Transaction failed'))
     } finally { setLoading(false) }
   }
 
@@ -71,34 +43,15 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
     setLoading(true)
     setTxStatus(null)
     try {
-      const iface = new ethers.Interface(VAULT_ABI)
-      const amtWei = ethers.parseEther(amount)
-      const tokenAddr = TOKENS[selectedToken]
-      
-      const data = iface.encodeFunctionData("withdraw", [tokenAddr, amtWei])
-
-      const { address: vaultAddr } = await getVaultAddress(userAddress)
-
-      const txHash = await activeProvider.request({ 
-        method: 'eth_sendTransaction', 
-        params: [{ 
-          from: userAddress, 
-          to: vaultAddr, 
-          data 
-        }] 
-      })
-      setTxStatus('Waiting for confirmation...')
-
-      const provider = new ethers.JsonRpcProvider(RPC)
-      await provider.waitForTransaction(txHash)
-
+      const result = await withdrawFromVault(amount, userId)
       setTxStatus('[OK] Withdrawal confirmed!')
-      await logTransaction({ userAddress, type: 'withdrawal', amount, token: selectedToken, txHash })
+      await logTransaction({ userAddress, type: 'withdrawal', amount, token: selectedToken, txHash: result.txHash })
       setMode(null)
       setAmount('')
       if (onActionSuccess) onActionSuccess()
     } catch (err: any) {
-      setTxStatus('[ERROR] ' + (err?.message || 'Transaction failed'))
+      const decoded = decodePolicyError(err)
+      setTxStatus('[ERROR] ' + (decoded || err?.message || 'Transaction failed'))
     } finally { setLoading(false) }
   }
 
@@ -187,7 +140,7 @@ export default function Vault({ userAddress, vaultBalance, walletBalance, tokenB
               borderRadius: 0,
             }}
           >
-            {Object.keys(TOKENS).map(t => (
+            {['USDC'].map(t => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>

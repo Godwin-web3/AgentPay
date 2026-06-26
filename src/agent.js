@@ -26,13 +26,30 @@ async function pay(walletId, to, amountUSDC, reason, userAddress) {
     // policy and is removed from the payment path. walletService.sendUSDC is
     // retained only for x402 facilitation where no vault exists for the payee.
     const { ethers } = require('ethers');
-    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
+    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
     const agentKey = process.env.PRIVATE_KEY;
     if (!agentKey) throw new Error('No agent key configured (PRIVATE_KEY)');
     const wallet = new ethers.Wallet(agentKey, provider);
 
-    const tx = await escrow.executePayment(wallet, userAddress, 'USDC', to, amountUSDC, reason || '', null);
-    const txHash = tx.hash || tx.transactionHash;
+    // EIP-712 sig-based execution — agent signs off-chain, vault verifies on-chain.
+    // User never exposes a spend key; operator cannot unilaterally move funds.
+    const vaultAddress = await escrow.findVault(userAddress);
+    const sigPayload = await escrow.signExecute(vaultAddress, wallet, {
+      user: userAddress,
+      to,
+      amount: amountUSDC,
+      requestId: null,
+      deadlineSec: 300
+    });
+    const receipt = await escrow.executePaymentWithSig(vaultAddress, wallet, {
+      user: userAddress,
+      to,
+      amount: amountUSDC,
+      requestId: ethers.ZeroHash,
+      deadline: sigPayload.deadline,
+      sig: sigPayload.sig
+    });
+    const txHash = receipt.hash || receipt.transactionHash;
     appendSpend({ userAddress, to, amount: amountUSDC, reason, txHash, token: 'USDC' });
     return { success: true, txHash };
   } catch (err) {
@@ -45,7 +62,7 @@ async function pay(walletId, to, amountUSDC, reason, userAddress) {
     if (/ExceedsDailyCap|ExceedsHourlyVelocity|ExceedsPerTxCap|NotWhitelisted|Too many/i.test(reasonText)) {
       try {
         const { ethers } = require('ethers');
-        const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
+        const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
         const agentWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
         await escrow.pauseUser(agentWallet, userAddress);
       } catch (_) { /* best-effort */ }
@@ -95,9 +112,44 @@ async function chat(message, walletId, userAddress) {
   const address = await walletService.getWalletAddress(walletId);
   const intent = await parseIntent(message, address, balance);
   if (intent.action === "balance") {
-    intent.message = "Your USDC balance is " + balance + " USDC";
+    let vaultBalance = null;
+    try {
+      const escrow = require('./escrow');
+      const { ethers } = require('ethers');
+      const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+      const vaultAddr = await escrow.findVault(address);
+      if (vaultAddr) {
+        const onChain = await escrow.getOnChainPolicy(provider, address);
+        vaultBalance = onChain.vaultBalance;
+      }
+    } catch (_) {}
+    intent.message = "Your USDC balance is " + balance + " USDC" + (vaultBalance != null ? " (vault: " + vaultBalance + " USDC)" : "");
     intent.balance = balance;
     intent.address = address;
+    intent.data = { balances: { USDC: balance }, vault: vaultBalance };
+  }
+  if (intent.action === "policy") {
+    try {
+      const escrow = require('./escrow');
+      const { ethers } = require('ethers');
+      const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+      const vaultAddr = await escrow.findVault(address);
+      if (vaultAddr) {
+        const onChain = await escrow.getOnChainPolicy(provider, address);
+        intent.data = {
+          perTxCap: onChain.perTxCap,
+          dailyCap: onChain.dailyCap,
+          dailySpendSoFar: onChain.todaySpent,
+          dailyRemaining: Math.max(0, onChain.dailyCap - onChain.todaySpent),
+          active: onChain.active
+        };
+        intent.message = "Spending policy: per-tx cap " + onChain.perTxCap + " USDC, daily cap " + onChain.dailyCap + " USDC, spent " + onChain.todaySpent + " USDC today.";
+      } else {
+        intent.message = "No vault policy set yet. Visit the Policy view to configure your caps.";
+      }
+    } catch (e) {
+      intent.message = "Could not read on-chain policy: " + e.message;
+    }
   }
   return intent;
 }

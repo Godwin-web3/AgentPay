@@ -1,13 +1,8 @@
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { getVaultAddress } from "../api"
-import { ethers } from "ethers"
+import { getVaultAddress, getVaultBalanceApi, depositToVault } from "../api"
 
-const ARC_CHAIN_ID = '0x4CF4B2' // 5042002 in hex
-const VAULT_ABI = [
-  "function balances(address user, address token) external view returns (uint256)",
-  "function deposit(address token, uint256 amount) external payable"
-]
+const ARC_CHAIN_ID = '0x4CEF52' // 5042002 in hex
 
 interface EIP6963ProviderDetail {
   info: {
@@ -131,17 +126,12 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
         setVaultAddress(currentVault)
       }
 
-      const iface = new ethers.Interface(VAULT_ABI)
-      const NATIVE_ADDR = '0x0000000000000000000000000000000000000000'
-      const data = iface.encodeFunctionData("balances", [userAddr, NATIVE_ADDR])
-      
-      const res = await provider.request({
-        method: 'eth_call',
-        params: [{ to: currentVault, data }, 'latest']
-      })
-      const wei = BigInt(res === '0x' || !res ? '0' : res)
-      const vaultBal = (Number(wei) / 1e18).toFixed(4)
+      // Vault balance is keyed to the Circle agent wallet — read via backend.
+      const vaultRes = await getVaultBalanceApi(userAddr)
+      const vaultBal = vaultRes.balance || '0'
       setBalance(vaultBal)
+
+      // Browser wallet native balance (for gas) — read directly from the provider.
       const walletRes = await provider.request({ method: "eth_getBalance", params: [userAddr, "latest"] })
       const walletBal = (Number(BigInt(walletRes)) / 1e18).toFixed(4)
       if (onBalanceChange) onBalanceChange(vaultBal, walletBal)
@@ -151,28 +141,17 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
   }
 
   async function handleDeposit() {
-    if (!depositAmount || isNaN(Number(depositAmount)) || !activeProvider || !vaultAddress) return
-    const NATIVE_ADDR = '0x0000000000000000000000000000000000000000'
+    if (!depositAmount || isNaN(Number(depositAmount)) || !activeProvider) return
     setLoading(true)
     try {
-      const amountWei = ethers.parseEther(depositAmount)
-      const iface = new ethers.Interface(VAULT_ABI)
-      const data = iface.encodeFunctionData("deposit", [NATIVE_ADDR, amountWei])
-
-      await activeProvider.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from: address,
-          to: vaultAddress,
-          data,
-          value: '0x' + amountWei.toString(16)
-        }]
-      })
+      // Deposit is signed by the Circle agent wallet via the backend, so it
+      // credits balances[agentWalletAddress] — the slot the agent spends from.
+      await depositToVault(depositAmount, address)
       setShowModal(false)
       setDepositAmount('')
       setTimeout(() => fetchOnChainData(address, activeProvider), 4000)
-    } catch (err) {
-      console.error('Deposit failed', err)
+    } catch (err: any) {
+      console.error('Deposit failed', err?.message || err)
     } finally {
       setLoading(false)
     }

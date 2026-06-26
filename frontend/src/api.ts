@@ -1,4 +1,3 @@
-import { ethers } from 'ethers'
 import type { ChatResponse, PolicyData, HealthData, PayResponse } from './types'
 
 export const WORKER_URL = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
@@ -8,14 +7,29 @@ export const TOKENS = {
   USDC: '0x3600000000000000000000000000000000000000',
 }
 
-async function request<T>(path: string, options?: RequestInit, userAddress?: string): Promise<T> {
+// P1-9: shared operator API key (mirrors APP_API_KEY on the backend). For the
+// demo this is the operator key; per-user keys would be issued out-of-band and
+// stored per-user instead.
+const APP_API_KEY = (import.meta.env.VITE_APP_API_KEY as string) || ''
+
+function authHeaders(): Record<string, string> {
+  const h: Record<string, string> = {}
+  if (APP_API_KEY) {
+    h['x-api-key'] = APP_API_KEY
+    h['Authorization'] = 'Bearer ' + APP_API_KEY
+  }
+  return h
+}
+
+async function request<T>(path: string, options?: RequestInit, userId?: string): Promise<T> {
   const headers: any = {
     'Content-Type': 'application/json',
+    ...authHeaders(),
     ...options?.headers
   }
-  
-  if (userAddress) {
-    headers['x-user-address'] = userAddress
+
+  if (userId) {
+    headers["x-user-id"] = userId
   }
 
   const res = await fetch(WORKER_URL + path, {
@@ -29,39 +43,20 @@ async function request<T>(path: string, options?: RequestInit, userAddress?: str
 
 export async function sendChat(
   message: string,
-  userAddress: string
+  userId: string
 ): Promise<ChatResponse> {
-  let vaultBalance: string | undefined
-  try {
-    const { address: userVaultAddr } = await getVaultAddress(userAddress)
-    const res = await fetch(RPC, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        jsonrpc: '2.0', 
-        id: 1, 
-        method: 'eth_call', 
-        params: [{ 
-          to: userVaultAddr, 
-          data: '0xd4fac45d' + userAddress.replace('0x', '').toLowerCase().padStart(64, '0') + '0000000000000000000000000000000000000000000000000000000000000000' 
-        }, 'latest'] 
-      })
-    })
-    const data = await res.json()
-    vaultBalance = (Number(BigInt(data.result === '0x' || !data.result ? '0x0' : data.result)) / 1e18).toFixed(4)
-  } catch {}
   return request<ChatResponse>('/chat', {
     method: 'POST',
-    body: JSON.stringify({ message, vaultBalance })
-  }, userAddress)
+    body: JSON.stringify({ message })
+  }, userId)
 }
 
-export async function getChatHistory(userAddress: string): Promise<{ history: any[] }> {
-  return request<{ history: any[] }>('/chat', {}, userAddress)
+export async function getChatHistory(userId: string): Promise<{ history: any[] }> {
+  return request<{ history: any[] }>('/chat', {}, userId)
 }
 
-export async function clearChatHistory(userAddress: string): Promise<{ success: boolean }> {
-  return request<{ success: boolean }>('/chat', { method: 'DELETE' }, userAddress)
+export async function clearChatHistory(userId: string): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>('/chat', { method: 'DELETE' }, userId)
 }
 
 export async function executePay(
@@ -69,29 +64,29 @@ export async function executePay(
   amount: number,
   reason: string,
   requestId: string,
-  userAddress: string,
+  userId: string,
   fromToken: string = 'USDC'
 ): Promise<PayResponse> {
   return request<PayResponse>('/pay', {
     method: 'POST',
     body: JSON.stringify({ to, amount, reason, requestId, fromToken })
-  }, userAddress)
+  }, userId)
 }
 
-export async function getPolicy(userAddress: string): Promise<PolicyData> {
-  return request<PolicyData>('/policy', {}, userAddress)
+export async function getPolicy(userId: string): Promise<PolicyData> {
+  return request<PolicyData>('/policy', {}, userId)
 }
 
 
-export async function updatePolicy(update: Partial<PolicyData>, userAddress: string): Promise<PolicyData> {
+export async function updatePolicy(update: Partial<PolicyData>, userId: string): Promise<PolicyData> {
   return request<PolicyData>('/policy', {
     method: 'POST',
     body: JSON.stringify(update)
-  }, userAddress)
+  }, userId)
 }
 
-export async function getSchedules(userAddress: string): Promise<{ schedules: any[] }> {
-  return request<{ schedules: any[] }>('/schedules', {}, userAddress)
+export async function getSchedules(userId: string): Promise<{ schedules: any[] }> {
+  return request<{ schedules: any[] }>('/schedules', {}, userId)
 }
 
 export async function createSchedule(
@@ -99,54 +94,137 @@ export async function createSchedule(
   amount: number,
   interval: string,
   reason: string,
-  userAddress: string,
+  userId: string,
   conditions?: any
 ): Promise<{ success: boolean; schedule: any }> {
   return request<{ success: boolean; schedule: any }>('/schedules', {
     method: 'POST',
     body: JSON.stringify({ to, amount, interval, reason, conditions })
-  }, userAddress)
+  }, userId)
 }
 
-export async function cancelSchedule(jobId: string, userAddress: string): Promise<{ success: boolean }> {
-  return request<{ success: boolean }>('/schedules/' + jobId, { method: 'DELETE' }, userAddress)
+export async function cancelSchedule(jobId: string, userId: string): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>('/schedules/' + jobId, { method: 'DELETE' }, userId)
 }
 
-export async function checkVault(userAddress: string): Promise<{ exists: boolean; address: string | null }> {
-  return request<{ exists: boolean; address: string | null }>('/vault-check', {}, userAddress)
+export async function checkVault(userId: string): Promise<{ exists: boolean; address: string | null }> {
+  return request<{ exists: boolean; address: string | null }>('/vault-check', {}, userId)
 }
 
-export async function getVaultAddress(userAddress: string): Promise<{ address: string }> {
-  return request<{ address: string }>('/vault-address', {}, userAddress)
+export async function getVaultAddress(userId: string): Promise<{ address: string }> {
+  return request<{ address: string }>('/vault-address', {}, userId)
+}
+
+export async function getWallet(userId: string): Promise<{ walletId: string; address: string; balance: string; faucet: string }> {
+  return request<{ walletId: string; address: string; balance: string; faucet: string }>('/wallet', { method: 'POST' }, userId)
+}
+
+export async function getCircleBalance(userId: string): Promise<{ address: string; balance: string; token: string }> {
+  return request<{ address: string; balance: string; token: string }>('/balance', {}, userId)
+}
+
+export async function depositToVault(amount: string, userId: string): Promise<{ success: boolean; txHash: string; explorer: string }> {
+  return request<{ success: boolean; txHash: string; explorer: string }>('/vault/deposit', {
+    method: 'POST',
+    body: JSON.stringify({ amount })
+  }, userId)
+}
+
+export async function withdrawFromVault(amount: string, userId: string): Promise<{ success: boolean; txHash: string; explorer: string }> {
+  return request<{ success: boolean; txHash: string; explorer: string }>('/vault/withdraw', {
+    method: 'POST',
+    body: JSON.stringify({ amount })
+  }, userId)
+}
+
+// Vault balances are recorded under the Agent Wallet's address (the Circle
+// wallet that actually signs deposit/withdraw on-chain), not the user's
+// real connected wallet. Always pass the Agent Wallet address here.
+export async function getVaultBalance(vaultAddress: string, agentWalletAddress: string): Promise<string> {
+  const { ethers } = await import('ethers')
+  const iface = new ethers.Interface([
+    "function balances(address user) external view returns (uint256)"
+  ])
+  const data = iface.encodeFunctionData("balances", [agentWalletAddress])
+  const res = await fetch(RPC, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: vaultAddress, data }, 'latest'] })
+  })
+  const json = await res.json()
+  const raw = json.result
+  const wei = BigInt((!raw || raw === "0x") ? "0x0" : raw)
+  return (Number(wei) / 1e6).toFixed(4)
 }
 
 export async function getHealth(): Promise<HealthData> {
   return request<HealthData>('/health')
 }
 
-export async function getHistory(userAddress: string): Promise<{ items: any[] }> {
-  return request<{ items: any[] }>('/history?t=' + Date.now(), {}, userAddress)
+export async function getHistory(userId: string): Promise<{ items: any[] }> {
+  return request<{ items: any[] }>('/history?t=' + Date.now(), {}, userId)
 }
 
-export async function getOnChainSchedules(userAddress: string): Promise<any[]> {
-  const { address: userVaultAddr } = await getVaultAddress(userAddress)
-  const VAULT_ABI = [
-    "function getSchedules(address user) external view returns (tuple(address token, address to, uint256 amount, uint256 interval, uint256 nextRun, bool active, string reason, uint256 minBalance)[])"
-  ]
-  const provider = new ethers.JsonRpcProvider(RPC)
-  const vault = new ethers.Contract(userVaultAddr, VAULT_ABI, provider)
-  const raw = await vault.getSchedules(userAddress)
-  return raw.map((s: any, i: number) => ({
-    id: i,
-    token: s.token,
-    to: s.to,
-    amount: (Number(s.amount) / 1e18).toFixed(4),
-    interval: Number(s.interval),
-    nextRun: Number(s.nextRun) * 1000,
-    active: s.active,
-    reason: s.reason,
-    minBalance: (Number(s.minBalance) / 1e18).toFixed(4)
-  }))
+export async function getOnChainSchedules(userId: string): Promise<any[]> {
+  const res = await request<{ schedules: any[] }>('/onchain-schedules', {}, userId)
+  return res.schedules || []
+}
+
+export async function createOnChainSchedule(
+  to: string,
+  amount: number,
+  intervalSec: number,
+  reason: string,
+  userId: string,
+  minBalance: number = 0
+): Promise<{ success: boolean; txHash: string; explorer: string }> {
+  return request<{ success: boolean; txHash: string; explorer: string }>('/onchain-schedules', {
+    method: 'POST',
+    body: JSON.stringify({ to, amount, interval: intervalSec, reason, minBalance })
+  }, userId)
+}
+
+export async function cancelOnChainSchedule(index: number, userId: string): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>('/onchain-schedules/' + index, { method: 'DELETE' }, userId)
+}
+
+export async function getVaultBalanceApi(userId: string): Promise<{ balance: string; address: string | null; agentAddress: string }> {
+  return request<{ balance: string; address: string | null; agentAddress: string }>('/vault/balance', {}, userId)
+}
+
+export async function getPausedState(userId: string): Promise<{ paused: boolean }> {
+  return request<{ paused: boolean }>('/vault/paused', {}, userId)
+}
+
+export async function pauseAgent(userId: string): Promise<{ success: boolean; txHash?: string }> {
+  return request<{ success: boolean; txHash: string }>('/vault/pause', { method: 'POST' }, userId)
+}
+
+export async function resumeAgent(userId: string): Promise<{ success: boolean; txHash?: string }> {
+  return request<{ success: boolean; txHash: string }>('/vault/resume', { method: 'POST' }, userId)
+}
+
+export async function hireAgent(
+  description: string,
+  budget: number,
+  userId: string,
+  providerAddress?: string
+): Promise<any> {
+  return request<any>('/jobs', {
+    method: 'POST',
+    body: JSON.stringify({ description, budget, providerAddress })
+  }, userId)
+}
+
+export async function getJob(jobId: string, userId: string): Promise<any> {
+  return request<any>('/jobs/' + jobId, {}, userId)
+}
+
+export async function completeJob(jobId: string, deliverableText: string, userId: string): Promise<any> {
+  return request<any>('/jobs/' + jobId + '/complete', {
+    method: 'POST',
+    body: JSON.stringify({ deliverableText })
+  }, userId)
 }
 
 export function generateRequestId(): string {
@@ -155,8 +233,8 @@ export function generateRequestId(): string {
 
 const ERC20_BALANCEOF = '0x70a08231'
 
-export async function getTokenBalances(userAddress: string): Promise<Record<string, string>> {
-  const padded = userAddress.replace('0x','').toLowerCase().padStart(64, '0')
+export async function getTokenBalances(userId: string): Promise<Record<string, string>> {
+  const padded = userId.replace('0x','').toLowerCase().padStart(64, '0')
   const calls = Object.entries(TOKENS).map(([symbol, addr]) => {
     return fetch(RPC, {
       method: 'POST',
@@ -167,15 +245,47 @@ export async function getTokenBalances(userAddress: string): Promise<Record<stri
   const results = await Promise.all(calls)
   const balances: Record<string, string> = {}
   for (const { symbol, raw } of results) {
-    balances[symbol] = (Number(BigInt((!raw || raw === "0x") ? "0x0" : raw)) / 1e18).toFixed(4)
+    balances[symbol] = (Number(BigInt((!raw || raw === "0x") ? "0x0" : raw)) / 1e6).toFixed(4)
   }
   return balances
 }
 
-export async function logTransaction(data: { userAddress: string; type: string; amount: string; token: string; txHash: string }): Promise<void> {
-  await fetch(WORKER_URL + '/log-transaction', {
+export async function logTransaction(data: { userId: string; type: string; amount: string; token: string; txHash: string }): Promise<void> {
+  await request<{ success: boolean }>('/log-transaction', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
-  });
+  }, data.userId);
+}
+
+const POLICY_ERROR_MAP: Record<string, string> = {
+  'ExceedsPerTxCap': 'Blocked: this exceeds your per-transaction spending cap.',
+  'ExceedsDailyCap': 'Blocked: this exceeds your daily spending cap.',
+  'ExceedsHourlyVelocity': 'Blocked: too many transactions in the last hour.',
+  'NotWhitelisted': 'Blocked: recipient is not on your whitelist.',
+  'UserPausedError': 'Blocked: your agent is currently paused.',
+  'InsufficientBalance': 'Blocked: insufficient vault balance.',
+  'PolicyNotSet': 'Blocked: no spending policy is set for your vault.',
+}
+
+export function decodePolicyError(err: any): string {
+  const msg = typeof err === 'string' ? err : (err?.message || err?.reason || String(err))
+  for (const [code, human] of Object.entries(POLICY_ERROR_MAP)) {
+    if (msg.includes(code)) return human
+  }
+  return ''
+}
+
+export async function claimTag(tag: string, userId: string): Promise<{ tag: string; address: string }> {
+  return request<{ tag: string; address: string }>('/api/tag/claim', {
+    method: 'POST',
+    body: JSON.stringify({ tag })
+  }, userId)
+}
+
+export async function lookupTag(tag: string): Promise<{ tag: string; address: string }> {
+  return request<{ tag: string; address: string }>('/api/tag/' + tag.replace('@', ''))
+}
+
+export async function getMe(userId: string): Promise<{ uid: string; tag: string | null; address: string; walletId: string }> {
+  return request<any>('/api/me', {}, userId)
 }
