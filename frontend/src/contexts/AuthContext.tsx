@@ -6,7 +6,7 @@ import type { User } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyATKTsEopIykqHg99k48OyZPLbdpSLkpyw",
-  authDomain: "agentpay-74270.firebaseapp.com",
+  authDomain: "agent-pay-gray.vercel.app",
   projectId: "agentpay-74270",
   storageBucket: "agentpay-74270.firebasestorage.app",
   messagingSenderId: "743808320286",
