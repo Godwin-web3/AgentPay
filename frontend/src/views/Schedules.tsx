@@ -8,9 +8,7 @@ function formatInterval(seconds: number) {
   return `${Math.floor(seconds / 86400)} day(s)`
 }
 
-export default function Schedules({
-  const { user } = useAuth();
-  userAddress }: { userAddress: string }) {
+export default function Schedules({ userAddress }: { userAddress: string }) {
   const { user } = useAuth();
   const userId = user?.uid || '';
   const [schedules, setSchedules] = useState<any[]>([])

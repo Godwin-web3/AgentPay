@@ -15,9 +15,7 @@ function formatDayOnly(ts: number | string) {
   return d.toLocaleString([], { month: 'short', day: 'numeric' })
 }
 
-export default function History({
-  const { user } = useAuth();
-  userAddress, refreshTrigger = 0 }: { userAddress: string, refreshTrigger?: number }) {
+export default function History({ userAddress, refreshTrigger = 0 }: { userAddress: string, refreshTrigger?: number }) {
   const { user } = useAuth();
   const userId = user?.uid || '';
   const [txs, setTxs] = useState<any[]>([])

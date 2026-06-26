@@ -3,9 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { getPolicy, updatePolicy } from '../api'
 import type { PolicyData } from '../types'
 
-export default function Policy({
-  const { user } = useAuth();
-  userAddress }: { userAddress: string }) {
+export default function Policy({ userAddress }: { userAddress: string }) {
   const { user } = useAuth();
   const userId = user?.uid || '';
   const [policy, setPolicy] = useState<PolicyData | null>(null)

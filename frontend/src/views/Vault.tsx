@@ -12,9 +12,7 @@ interface Props {
   onActionSuccess?: () => void
 }
 
-export default function Vault({
-  const { user } = useAuth();
-  userAddress, vaultBalance, walletBalance, tokenBalances, onBack, onActionSuccess }: Props) {
+export default function Vault({ userAddress, vaultBalance, walletBalance, tokenBalances, onBack, onActionSuccess }: Props) {
   const { user } = useAuth();
   const userId = user?.uid || '';
   const [mode, setMode] = useState<null | 'deposit' | 'withdraw'>(null)

@@ -9,9 +9,7 @@ interface Props {
   onComplete: () => void
 }
 
-export default function Onboarding({
-  const { user } = useAuth();
-  userAddress, onProviderChange, onComplete }: Props) {
+export default function Onboarding({ userAddress, onProviderChange, onComplete }: Props) {
   const { user } = useAuth();
   const userId = user?.uid || '';
   const [step, setStep] = useState(1)
