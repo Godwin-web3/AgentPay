@@ -14,13 +14,7 @@ const app = express();
 // trailing slash that Express 4 treated as optional. Normalize incoming
 // paths once, here, so both our exempt-list check and Express's router
 // see the same consistent path shape.
-app.use((req, res, next) => {
-  if (!req.path.endsWith('/')) {
-    const query = req.url.slice(req.path.length);
-    req.url = req.path + '/' + query;
-  }
-  next();
-});
+
 
 // Request logging — method, path, status, duration. Helps debug silent
 // failures on Render's cold-start-prone free tier where errors otherwise
@@ -877,6 +871,7 @@ app.post('/api/auth/login', async (req, res) => {
         tag: null,
         createdAt: new Date().toISOString()
       };
+      fs.mkdirSync(require('path').dirname(walletsPath), { recursive: true });
       fs.writeFileSync(walletsPath, JSON.stringify(wallets, null, 2));
       userWallets.set(uid, wallets[uid]);
       console.log('New user wallet created:', uid, wallet.address);
