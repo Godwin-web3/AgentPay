@@ -649,7 +649,17 @@ app.use((req, res, next) => {
 
 // P1-9: require API key on all routes except /health and OPTIONS.
 app.use((req, res, next) => {
-  if (req.path === '/health' || req.path === '/api/stats') return next();
+  // Public/health routes, plus user-facing routes already protected by
+  // Firebase-backed x-user-id auth. APP_API_KEY is reserved for genuinely
+  // privileged/internal calls (e.g. Worker -> Render), not browser clients.
+  const exempt = [
+    '/health',
+    '/api/stats',
+    '/api/auth/login',
+    '/api/me',
+    '/api/tag/claim',
+  ];
+  if (exempt.includes(req.path) || req.path.startsWith('/api/tag/')) return next();
   const { ok } = checkAuth(req);
   if (!ok) return res.status(401).json({ error: 'Unauthorized: invalid or missing API key' });
   next();
