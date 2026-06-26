@@ -1,3 +1,4 @@
+import { useAuth } from '../contexts/AuthContext'
 import { useEffect, useState, useCallback } from 'react'
 import { getHealth, getPausedState, pauseAgent, resumeAgent } from '../api'
 import type { HealthData } from '../types'
