@@ -18,6 +18,7 @@ interface Props {
 export default function AgentHeader({ onAddressChange, onBalanceChange, onProviderChange, currentView, onNavigate, onClearMemory, refreshTrigger, userAddress }: Props) {
   const [health, setHealth] = useState<HealthData | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const { logout } = useAuth()
   const [isPaused, setIsPaused] = useState(false)
   const [pauseLoading, setPauseLoading] = useState(false)
 
@@ -145,6 +146,18 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
             CLEAR MEMORY
           </button>
         </div>
+        <div className="drawer-divider" />
+        <div className="drawer-section-label">ACCOUNT</div>
+        <div style={{ padding: "0 16px 12px" }}>
+          <button
+            className="quick-btn"
+            style={{ width: "100%", color: "#ff4444", borderColor: "#ff4444" }}
+            onClick={() => { logout(); setDrawerOpen(false); }}
+          >
+            SIGN OUT
+          </button>
+        </div>
+
         <div className="drawer-bottom">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div className={`status-pill ${health?.status === 'ok' ? 'online' : 'offline'}`}>
