@@ -80,6 +80,16 @@ function send(res, status, data) {
 // caused requests to hang indefinitely. All routes now use req.body directly.
 
 // Auth: x-user-id contains the Firebase uid. Spoofable on testnet but tied to Google Auth session.
+
+// Normalize trailing slashes - Express 5 does not auto-strip them
+app.use((req, res, next) => {
+  if (req.path !== '/' && req.path.endsWith('/')) {
+    const query = req.url.slice(req.path.length);
+    res.redirect(301, req.path.slice(0, -1) + query);
+  } else {
+    next();
+  }
+});
 // only "auth". We now require, in addition, a shared secret (`APP_API_KEY`)
 // delivered via `x-api-key` / `Authorization: Bearer`. The frontend should hold
 // a per-user key issued out-of-band; for Worker↔Render the operator key is used.
