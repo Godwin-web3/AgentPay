@@ -248,7 +248,8 @@ function AppWithAuth() {
     if (!user) return;
     setTagLoading(true);
     import('./api').then(({ getMe }) => {
-      getMe(user.uid).then(me => {
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
+      Promise.race([getMe(user.uid), timeout]).then((me: any) => {
         setTag(me.tag || null);
         setTagChecked(true);
       }).catch(() => setTagChecked(true)).finally(() => setTagLoading(false));
