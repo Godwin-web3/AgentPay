@@ -649,7 +649,7 @@ app.use((req, res, next) => {
 
 // P1-9: require API key on all routes except /health and OPTIONS.
 app.use((req, res, next) => {
-  if (req.path === '/health') return next();
+  if (req.path === '/health' || req.path === '/api/stats') return next();
   const { ok } = checkAuth(req);
   if (!ok) return res.status(401).json({ error: 'Unauthorized: invalid or missing API key' });
   next();
