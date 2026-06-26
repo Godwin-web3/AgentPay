@@ -10,6 +10,18 @@ const escrow = require('./escrow');
 const express = require('express');
 const app = express();
 
+// Express 5 (path-to-regexp v8) requires routes here to be matched with a
+// trailing slash that Express 4 treated as optional. Normalize incoming
+// paths once, here, so both our exempt-list check and Express's router
+// see the same consistent path shape.
+app.use((req, res, next) => {
+  if (!req.path.endsWith('/')) {
+    const query = req.url.slice(req.path.length);
+    req.url = req.path + '/' + query;
+  }
+  next();
+});
+
 // Request logging — method, path, status, duration. Helps debug silent
 // failures on Render's cold-start-prone free tier where errors otherwise
 // vanish into gaps between deploy logs.
@@ -670,7 +682,8 @@ app.use((req, res, next) => {
     '/api/me',
     '/api/tag/claim',
   ];
-  if (exempt.includes(req.path) || req.path.startsWith('/api/tag/')) return next();
+  const normalizedPath = req.path.endsWith('/') ? req.path.slice(0, -1) : req.path;
+  if (exempt.includes(normalizedPath) || normalizedPath.startsWith('/api/tag/')) return next();
   const { ok } = checkAuth(req);
   if (!ok) return res.status(401).json({ error: 'Unauthorized: invalid or missing API key' });
   next();
@@ -857,7 +870,10 @@ app.post('/api/auth/login', async (req, res) => {
         createdAt: new Date().toISOString()
       };
       fs.writeFileSync(walletsPath, JSON.stringify(wallets, null, 2));
+      userWallets.set(uid, wallets[uid]);
       console.log('New user wallet created:', uid, wallet.address);
+    } else {
+      userWallets.set(uid, wallets[uid]);
     }
 
     res.json({ wallet: wallets[uid] });
