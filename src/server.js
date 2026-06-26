@@ -9,6 +9,17 @@ const { gateway } = require('./gatewayMiddleware');
 const escrow = require('./escrow');
 const express = require('express');
 const app = express();
+
+// Request logging — method, path, status, duration. Helps debug silent
+// failures on Render's cold-start-prone free tier where errors otherwise
+// vanish into gaps between deploy logs.
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    console.log(`${req.method} ${req.path} -> ${res.statusCode} (${Date.now() - start}ms)`);
+  });
+  next();
+});
 app.use(express.json());
 const walletService = require('./walletService');
 
