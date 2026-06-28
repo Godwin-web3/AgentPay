@@ -47,7 +47,7 @@ const navItems = [
   { id: 'account',   icon: AccountIcon,  label: 'Account'   },
 ] as const
 
-function App() {
+function App({ tag }: { tag: string | null }) {
   const { walletAddress: authWalletAddress } = useAuth();
   const [historyKey, setHistoryKey] = useState(0)
   const [view, setView] = useState<View>(() => (localStorage.getItem('agentpay_view') as View) || 'landing')
@@ -222,7 +222,7 @@ function App() {
             {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} onActionSuccess={refreshBalances} />}
             {view === 'schedules' && <Schedules userAddress={userAddress} />}
             {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} />}
-            {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={agentWalletAddress} agentWalletBalance={agentWalletBalance} />}
+            {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={agentWalletAddress} agentWalletBalance={agentWalletBalance} tag={tag} />}
             {view === 'policy'   && <Policy userAddress={userAddress} />}
           </ErrorBoundary>
         </div>
@@ -281,7 +281,7 @@ function AppWithAuth() {
   );
   if (!user) return <Landing onLaunch={async () => { try { await signInWithGoogle(); } catch {} }} />;
   if (tagChecked && !tag) return <ClaimTag onClaimed={(t) => { localStorage.setItem('agentpay_view', 'terminal'); setTag(t || 'skip'); }} />;
-  return <App />;
+  return <App tag={tag} />;
 }
 
 export default function Root() {

@@ -5,6 +5,7 @@ import Policy from './Policy'
 
 interface Props {
   userAddress: string
+  tag?: string | null
   vaultBalance: string
   walletBalance: string
   tokenBalances: Record<string, string>
@@ -22,7 +23,7 @@ const ChevronRight = () => (
   </svg>
 )
 
-export default function Profile({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, agentWalletBalance }: Props) {
+export default function Profile({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, agentWalletBalance, tag }: Props) {
   const [subView, setSubView] = useState<SubView>(null)
 
   function shortAddr(addr: string) {
@@ -72,18 +73,30 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
           <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Back</button>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>AGENT</span>
         </div>
-        <div className="card" style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>YOUR WALLET (browser)</div>
+        <div className="card" style={{ marginBottom: 12, padding: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.05em' }}>YOUR WALLET</span>
+            <span style={{ fontSize: 9, color: 'var(--cyan)', border: '1px solid var(--cyan)', borderRadius: 3, padding: '1px 6px' }}>CIRCLE</span>
+          </div>
           <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all' }}>{userAddress}</div>
         </div>
-        <div className="card" style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>AGENT WALLET (vault signer)</div>
+        <div className="card" style={{ marginBottom: 12, padding: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.05em' }}>AGENT WALLET</span>
+            <span style={{ fontSize: 9, color: 'var(--muted)', border: '1px solid var(--border)', borderRadius: 3, padding: '1px 6px' }}>VAULT SIGNER</span>
+          </div>
           <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all' }}>{agentWalletAddress || '—'}</div>
-          <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 6 }}>Balance: {agentWalletBalance || '0'} USDC</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+            Balance: <span style={{ color: 'var(--text)' }}>{agentWalletBalance || '0'} USDC</span>
+          </div>
         </div>
-        <div className="card">
-          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>NETWORK</div>
-          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 13 }}>Arc Testnet | Chain ID 5042002</div>
+        <div className="card" style={{ padding: '16px' }}>
+          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 8, letterSpacing: '0.05em' }}>NETWORK</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--cyan)', display: 'inline-block' }} />
+            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 13 }}>Arc Testnet</span>
+            <span style={{ color: 'var(--muted)', fontSize: 12 }}>· Chain ID 5042002</span>
+          </div>
         </div>
       </div>
     )
@@ -99,8 +112,17 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
   return (
     <div style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
       <div className="card" style={{ marginBottom: 24, padding: '12px 16px' }}>
-        <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>CONNECTED</div>
-        <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 14 }}>{shortAddr(userAddress)}</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>CONNECTED</div>
+            <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 14 }}>{shortAddr(userAddress)}</div>
+          </div>
+          {tag && tag !== 'skip' && (
+            <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 14, background: 'var(--bg)', border: '1px solid var(--cyan)', borderRadius: 4, padding: '4px 10px' }}>
+              @{tag}
+            </div>
+          )}
+        </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {menuItems.map(item => (
