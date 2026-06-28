@@ -83,8 +83,8 @@ export default function Profile({ userAddress, userId, vaultBalance, walletBalan
         </div>
         <div className="card" style={{ marginBottom: 12, padding: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.05em' }}>AGENT WALLET</span>
-            <span style={{ fontSize: 9, color: 'var(--muted)', border: '1px solid var(--border)', borderRadius: 3, padding: '1px 6px' }}>VAULT SIGNER</span>
+            <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.05em' }}>YOUR VAULT</span>
+            <span style={{ fontSize: 9, color: 'var(--muted)', border: '1px solid var(--border)', borderRadius: 3, padding: '1px 6px' }}>VAULT</span>
           </div>
           <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all' }}>{agentWalletAddress || '—'}</div>
           <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
