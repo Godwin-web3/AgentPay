@@ -7,6 +7,7 @@ interface Props {
   messages: ChatMessage[]
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
   userAddress: string
+  userId: string
   onActionSuccess?: () => void
 }
 
@@ -187,9 +188,8 @@ function PolicyCard({ data }: { data: any }) {
   )
 }
 
-export default function Terminal({ messages, setMessages, userAddress, onActionSuccess }: Props) {
+export default function Terminal({ messages, setMessages, userAddress, userId, onActionSuccess }: Props) {
   const { user } = useAuth();
-  const userId = user?.uid || '';
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [txResults, setTxResults] = React.useState<Record<number, any>>({})
@@ -236,12 +236,12 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
       let res
       if (prop.status === 'proposing_pay') {
         const requestId = generateRequestId()
-        const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userAddress, prop.token || 'USDC')
+        const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userId, prop.token || 'USDC')
         res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'USDC' }
       } else if (prop.status === 'proposing_schedule') {
         const intervalSec = parseInterval(prop.interval)
         const schedRes = await createOnChainSchedule(
-          prop.to, prop.amount, intervalSec, prop.reason || '', userAddress,
+          prop.to, prop.amount, intervalSec, prop.reason || '', userId,
           prop.conditions?.minBalance || 0
         )
         res = { status: 'executed', txHash: schedRes.txHash, explorer: schedRes.explorer, type: 'schedule', to: prop.to, amount: prop.amount }
@@ -283,7 +283,7 @@ export default function Terminal({ messages, setMessages, userAddress, onActionS
       const userMsg: ChatMessage = { role: 'user', content: text, timestamp: Date.now() }
       setMessages(prev => [...prev, userMsg])
       setInput('')
-      getVaultBalanceApi(userAddress)
+      getVaultBalanceApi(userId)
         .then(res => {
           setMessages(prev => [...prev, {
             role: 'assistant',

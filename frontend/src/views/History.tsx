@@ -14,7 +14,7 @@ function formatDayOnly(ts: number | string) {
   return d.toLocaleString([], { month: 'short', day: 'numeric' })
 }
 
-export default function History({ userAddress, refreshTrigger = 0 }: { userAddress: string, refreshTrigger?: number }) {
+export default function History({ userAddress, userId, refreshTrigger = 0 }: { userAddress: string, userId: string, refreshTrigger?: number }) {
   const [txs, setTxs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -23,7 +23,7 @@ export default function History({ userAddress, refreshTrigger = 0 }: { userAddre
     if (!userAddress) return
     setLoading(true)
     setError('')
-    getHistory(userAddress)
+    getHistory(userId)
       .then(res => {
         const items = res.items || []
         // Filter out non-financial items (like pure inferences/chat)

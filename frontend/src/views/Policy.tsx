@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { getPolicy, updatePolicy } from '../api'
 import type { PolicyData } from '../types'
 
-export default function Policy({ userAddress }: { userAddress: string }) {
+export default function Policy({ userAddress, userId }: { userAddress: string, userId: string }) {
   const { user } = useAuth();
   const userId = user?.uid || '';
   const [policy, setPolicy] = useState<PolicyData | null>(null)
@@ -55,7 +55,7 @@ export default function Policy({ userAddress }: { userAddress: string }) {
         dailyCap: Number(dailyCap),
         maxTxPerHour: Number(maxTxPerHour),
         whitelist,
-      }, userAddress)
+      }, userId)
       setSuccess('Policy updated on-chain!')
       setIsEditing(false)
       setTimeout(() => fetchPolicy(), 1500)

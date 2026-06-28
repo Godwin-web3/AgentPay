@@ -8,7 +8,7 @@ function formatInterval(seconds: number) {
   return `${Math.floor(seconds / 86400)} day(s)`
 }
 
-export default function Schedules({ userAddress }: { userAddress: string }) {
+export default function Schedules({ userAddress, userId }: { userAddress: string, userId: string }) {
   const { user } = useAuth();
   const userId = user?.uid || '';
   const [schedules, setSchedules] = useState<any[]>([])
@@ -61,7 +61,7 @@ export default function Schedules({ userAddress }: { userAddress: string }) {
         alert('On-chain schedule cancelled!')
       } else {
         // Local cancel via helper
-        await cancelSchedule(id.toString(), userAddress)
+        await cancelSchedule(id.toString(), userId)
         alert('Local schedule cancelled!')
       }
 

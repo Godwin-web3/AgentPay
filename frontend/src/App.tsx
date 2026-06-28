@@ -48,10 +48,12 @@ const navItems = [
 ] as const
 
 function App({ tag }: { tag: string | null }) {
-  const { walletAddress: authWalletAddress } = useAuth();
+  const { walletAddress: authWalletAddress, uid: authUid } = useAuth();
   const [historyKey, setHistoryKey] = useState(0)
   const [view, setView] = useState<View>(() => (localStorage.getItem('agentpay_view') as View) || 'landing')
   const [userAddress, setUserAddress] = useState(() => localStorage.getItem('agentpay_address') || '')
+
+  const [userId, setUserId] = useState(() => localStorage.getItem('agentpay_uid') || '')
 
   useEffect(() => {
     if (authWalletAddress) {
@@ -59,6 +61,13 @@ function App({ tag }: { tag: string | null }) {
       if (view === 'landing') setView('terminal');
     }
   }, [authWalletAddress]);
+
+  useEffect(() => {
+    if (authUid) {
+      setUserId(authUid);
+      localStorage.setItem('agentpay_uid', authUid);
+    }
+  }, [authUid]);
   const [isOnboarded, setIsOnboarded] = useState(false)
   const [onboardCheckDone, setOnboardCheckDone] = useState(false)
   const [agentWalletAddress, setAgentWalletAddress] = useState('')
@@ -77,7 +86,7 @@ function App({ tag }: { tag: string | null }) {
       return
     }
     setOnboardCheckDone(false)
-    checkVault(userAddress)
+    checkVault(userId)
       .then(result => {
         setIsOnboarded(!!result.exists)
       })
@@ -124,7 +133,7 @@ function App({ tag }: { tag: string | null }) {
     }
     let resolvedAgentWallet = agentWalletAddress
     try {
-      const wallet = await getWallet(userAddress)
+      const wallet = await getWallet(userId)
       resolvedAgentWallet = wallet.address
       setAgentWalletAddress(wallet.address)
       setAgentWalletBalance(wallet.balance || '0')
@@ -132,7 +141,7 @@ function App({ tag }: { tag: string | null }) {
       console.error('Failed to refresh agent wallet balance', e)
     }
     try {
-      const { address: resolvedVault } = await getVaultAddress(userAddress)
+      const { address: resolvedVault } = await getVaultAddress(userId)
       if (resolvedVault) setVaultAddress(resolvedVault)
       if (resolvedVault && resolvedAgentWallet) {
         const vBal = await getVaultBalance(resolvedVault, resolvedAgentWallet)
@@ -151,7 +160,7 @@ function App({ tag }: { tag: string | null }) {
 
   async function handleClearMemory() {
     const { clearChatHistory } = await import('./api')
-    await clearChatHistory(userAddress).catch(() => {})
+    await clearChatHistory(userId).catch(() => {})
     setMessages([{ role: 'assistant', content: 'Memory cleared.', timestamp: Date.now() }])
   }
 
@@ -222,11 +231,11 @@ function App({ tag }: { tag: string | null }) {
         
         <div className="view-content">
           <ErrorBoundary onReset={() => setView('terminal')}>
-            {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} onActionSuccess={refreshBalances} />}
-            {view === 'schedules' && <Schedules userAddress={userAddress} />}
-            {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} />}
+            {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} userId={userId} onActionSuccess={refreshBalances} />}
+            {view === 'schedules' && <Schedules userAddress={userAddress} userId={userId} />}
+            {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} userId={userId} />}
             {view === 'account'  && <Profile userAddress={userAddress} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={vaultAddress || agentWalletAddress} agentWalletBalance={agentWalletBalance} tag={tag} />}
-            {view === 'policy'   && <Policy userAddress={userAddress} />}
+            {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
           </ErrorBoundary>
         </div>
       </main>

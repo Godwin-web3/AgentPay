@@ -21,6 +21,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   walletAddress: string;
+  uid: string;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -31,11 +32,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [walletAddress, setWalletAddress] = useState('');
+  const [uid, setUid] = useState('');
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
+        setUid(firebaseUser.uid);
         try {
           const loginRes = await fetch('https://agentpay-c4o7.onrender.com/api/auth/login', {
             method: 'POST',
@@ -71,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, walletAddress, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, walletAddress, uid, signInWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );
