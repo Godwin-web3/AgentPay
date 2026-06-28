@@ -254,7 +254,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         res = { status: 'executed', txHash: schedRes.txHash, explorer: schedRes.explorer, type: 'schedule', to: prop.to, amount: prop.amount }
       } else if (prop.status === 'proposing_hire') {
         const hireRes = await hireAgent(prop.description, prop.budget, userId)
-        res = { status: hireRes.success ? 'executed' : 'rejected', txHash: hireRes.fundTxHash || hireRes.createTxHash, explorer: 'https://testnet.arcscan.arc.network/tx/' + (hireRes.fundTxHash || hireRes.createTxHash || ''), type: 'hire', to: prop.to, amount: prop.budget, reason: hireRes.reason || '' }
+        res = { status: hireRes.success ? 'executed' : 'rejected', txHash: hireRes.fundTxHash || hireRes.createTxHash, explorer: 'https://testnet.arcscan.app/tx/' + (hireRes.fundTxHash || hireRes.createTxHash || ''), type: 'hire', to: prop.to, amount: prop.budget, reason: hireRes.reason || '' }
       }
 
       if (res) {

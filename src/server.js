@@ -29,7 +29,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 const walletService = require('./walletService');
 
-const EXPLORER = 'https://testnet.arcscan.arc.network/tx/';
+const EXPLORER = 'https://testnet.arcscan.app/tx/';
 
 const PORT = process.env.PORT || 3000;
 

@@ -251,7 +251,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
         <div style={{ display: 'flex', gap: 20 }}>
           <a href="https://github.com/Godwin-web3/AgentPay" target="_blank" rel="noreferrer"
             style={{ color: '#444', fontSize: 10, textDecoration: 'none', letterSpacing: 1 }}>GITHUB</a>
-          <a href="https://testnet.arcscan.arc.network/address/0x24DD07639faA28c597c1Fb6a32367B1cc933DF60" target="_blank" rel="noreferrer"
+          <a href="https://testnet.arcscan.app/address/0x24DD07639faA28c597c1Fb6a32367B1cc933DF60" target="_blank" rel="noreferrer"
             style={{ color: '#444', fontSize: 10, textDecoration: 'none', letterSpacing: 1 }}>CONTRACT</a>
         </div>
       </div>

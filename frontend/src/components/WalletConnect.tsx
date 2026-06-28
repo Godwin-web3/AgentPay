@@ -98,7 +98,7 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
               chainName: 'Arc Testnet',
               nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
               rpcUrls: ['https://rpc.testnet.arc.network'],
-              blockExplorerUrls: ['https://testnet.arcscan.arc.network']
+              blockExplorerUrls: ['https://testnet.arcscan.app']
             }]
           })
         }

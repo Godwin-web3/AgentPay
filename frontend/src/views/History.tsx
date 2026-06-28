@@ -70,7 +70,7 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
         {txs.map((tx, i) => {
-          const explorerUrl = tx.txHash ? 'https://testnet.arcscan.arc.network/tx/' + tx.txHash : null
+          const explorerUrl = tx.txHash ? 'https://testnet.arcscan.app/tx/' + tx.txHash : null
           
           let actionLabel = tx.label || 'Activity'
           if (tx.failed || tx.status === 'blocked') {
