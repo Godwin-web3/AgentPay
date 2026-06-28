@@ -98,6 +98,8 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
        feedback = `✓ Scheduled: ${result.amount} ${result.token || 'USDC'} to ${result.to?.slice(0, 10)}...`
     } else if (result.type === 'pay' || result.to) {
        feedback = `✓ Sent ${result.amount} ${result.token || 'USDC'} to ${result.to?.slice(0, 10)}...`
+    } else if (result.type === 'deposit') {
+      feedback = `✓ Deposited ${result.amount} USDC to vault`
     }
 
     return (
@@ -242,7 +244,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'USDC' }
     } else if (prop.status === 'proposing_deposit') {
       const depRes = await depositToVault(String(prop.amount), userId)
-      res = { ...depRes, type: 'deposit', amount: prop.amount }
+      res = { status: depRes.success ? 'executed' : 'failed', txHash: depRes.txHash, explorer: depRes.explorer, type: 'deposit', amount: prop.amount }
       } else if (prop.status === 'proposing_schedule') {
         const intervalSec = parseInterval(prop.interval)
         const schedRes = await createOnChainSchedule(
