@@ -35,11 +35,11 @@ function writeStore(data) {
   atomicWrite(STORE_PATH, stringify(data));
 }
 
-function appendSpend({ userAddress, to, amount, reason, txHash, agentId, token, isScheduled, triggerProof }) {
+function appendSpend({ userAddress, to, amount, reason, txHash, agentId, token, isScheduled, triggerProof, type }) {
   const store = readStore();
   store.spends.push({
     userAddress,
-    type: 'payment',
+    type: type || 'payment',
     to,
     amount,
     token: token || 'USDC',

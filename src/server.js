@@ -423,6 +423,8 @@ async function handleVaultDeposit(req, res) {
     const wallet = await getOrCreateWallet(userId);
     const vaultAddress = await resolveOrCreateVault(userId);
     const txHash = await walletService.approveAndDepositToVault(wallet.walletId, vaultAddress, amount);
+    const { appendSpend } = require('../utils/store');
+    appendSpend({ userAddress: userId, to: vaultAddress, amount: Number(amount), reason: 'Vault deposit', txHash, token: 'USDC', type: 'deposit' });
     return send(res, 200, { success: true, txHash, explorer: EXPLORER + txHash });
   } catch (err) {
     return send(res, 500, { error: err.message });
@@ -437,6 +439,8 @@ async function handleVaultWithdraw(req, res) {
     const wallet = await getOrCreateWallet(userId);
     const vaultAddress = await resolveOrCreateVault(userId);
     const txHash = await walletService.withdrawFromVault(wallet.walletId, vaultAddress, amount);
+    const { appendSpend } = require('../utils/store');
+    appendSpend({ userAddress: userId, to: vaultAddress, amount: Number(amount), reason: 'Vault withdraw', txHash, token: 'USDC', type: 'withdrawal' });
     return send(res, 200, { success: true, txHash, explorer: EXPLORER + txHash });
   } catch (err) {
     return send(res, 500, { error: err.message });
