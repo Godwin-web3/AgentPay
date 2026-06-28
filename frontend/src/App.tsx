@@ -54,8 +54,9 @@ function App({ tag }: { tag: string | null }) {
   const [userAddress, setUserAddress] = useState(() => localStorage.getItem('agentpay_address') || '')
 
   useEffect(() => {
-    if (authWalletAddress && !userAddress) {
+    if (authWalletAddress) {
       setUserAddress(authWalletAddress);
+      if (view === 'landing') setView('terminal');
     }
   }, [authWalletAddress]);
   const [isOnboarded, setIsOnboarded] = useState(false)
