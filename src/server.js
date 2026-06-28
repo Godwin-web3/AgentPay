@@ -769,7 +769,6 @@ async function resolveOrCreateVault(userId) {
       walletId: wallet.walletId,
       contractAddress: factoryAddress,
       abiFunctionSignature: 'createVault()',
-      abiParameters: [],
       fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
     });
 
