@@ -196,7 +196,31 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
 
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
-  const [txResults, setTxResults] = React.useState<Record<number, any>>({})
+  const [txResults, setTxResultsRaw] = React.useState<Record<number, any>>({})
+
+  // Wraps setTxResults so every update also persists onto the matching
+  // message's `result` field via setMessages. This survives Terminal
+  // remounts (tab navigation) since `messages` is the Firestore/localStorage-
+  // backed source of truth, while plain txResults state is not.
+  const setTxResults = React.useCallback((updater: any) => {
+    setTxResultsRaw(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      const changedIndices = Object.keys(next).filter(k => next[Number(k)] !== prev[Number(k)])
+      if (changedIndices.length > 0) {
+        setMessages(prevMsgs => {
+          const updated = [...prevMsgs]
+          changedIndices.forEach(k => {
+            const idx = Number(k)
+            if (updated[idx]) {
+              updated[idx] = { ...updated[idx], result: next[idx] }
+            }
+          })
+          return updated
+        })
+      }
+      return next
+    })
+  }, [setMessages])
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -462,10 +486,10 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
               {msg.role === 'assistant' && (msg as any).data && (msg as any).intent?.action === 'policy' && (
                 <PolicyCard data={(msg as any).data} />
               )}
-              {msg.role === 'assistant' && txResults[i] && (
+              {msg.role === 'assistant' && (txResults[i] || (msg as any).result) && (
                 <div style={{ marginTop: 10 }}>
                   <TxBadge 
-                    result={txResults[i]} 
+                    result={txResults[i] || (msg as any).result} 
                     onConfirm={() => handleConfirm(i)} 
                     onCancel={() => handleCancel(i)}
                   />

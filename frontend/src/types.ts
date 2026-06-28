@@ -13,6 +13,7 @@ export interface ChatMessage {
   explorer?: string
   intent?: Intent
   data?: any  // Rich data from brain (balance, policy, etc.)
+  result?: any  // Tx proposal/outcome state (deposit, pay, schedule, etc.) — persisted so it survives remounts
 }
 
 export interface Intent {
