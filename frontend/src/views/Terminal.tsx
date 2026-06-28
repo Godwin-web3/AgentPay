@@ -202,7 +202,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
   // message's `result` field via setMessages. This survives Terminal
   // remounts (tab navigation) since `messages` is the Firestore/localStorage-
   // backed source of truth, while plain txResults state is not.
-  const setTxResults = React.useCallback((updater: any) => {
+  const setTxResults = React.useCallback((updater: Record<number, any> | ((prev: Record<number, any>) => Record<number, any>)) => {
     setTxResultsRaw(prev => {
       const next = typeof updater === 'function' ? updater(prev) : updater
       const changedIndices = Object.keys(next).filter(k => next[Number(k)] !== prev[Number(k)])
