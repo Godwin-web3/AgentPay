@@ -34,7 +34,7 @@ const EXPLORER = 'https://testnet.arcscan.app/tx/';
 const PORT = process.env.PORT || 3000;
 
 const requestStore = new Map();
-const chatHistories = new Map();
+const chatStore = require('./chatStore');
 const walletStore = require('./walletStore');
 
 function send(res, status, data) {
@@ -297,11 +297,11 @@ async function handleChat(req, res) {
       }
     }
 
-    const history = chatHistories.get(userId) || [];
+    const history = await chatStore.getChatHistory(userId);
     history.push({ role: 'user', content: message });
     history.push({ role: 'assistant', content: intent.message, intent });
     if (history.length > 20) history.splice(0, 2);
-    chatHistories.set(userId, history);
+    await chatStore.setChatHistory(userId, history);
 
     // Auto-execute safe actions
     if (intent.action === 'fetch_and_pay') {
@@ -321,15 +321,16 @@ async function handleChat(req, res) {
 }
 
 // GET /chat
-function handleGetChatHistory(req, res) {
+async function handleGetChatHistory(req, res) {
   const userId = getUserId(req);
-  return send(res, 200, { history: chatHistories.get(userId) || [] });
+  const history = await chatStore.getChatHistory(userId);
+  return send(res, 200, { history });
 }
 
 // DELETE /chat
-function handleDeleteChat(req, res) {
+async function handleDeleteChat(req, res) {
   const userId = getUserId(req);
-  chatHistories.delete(userId);
+  await chatStore.deleteChatHistory(userId);
   return send(res, 200, { success: true });
 }
 
