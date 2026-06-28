@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, hireAgent, decodePolicyError } from '../api'
+import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, hireAgent, decodePolicyError, depositToVault } from '../api'
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -41,7 +41,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
   const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
   
-  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_hire'
+  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_hire' || result.status === 'proposing_deposit'
 
   if (isProposal) {
     let title = 'TX PROPOSAL'
@@ -55,6 +55,9 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     } else if (result.status === 'proposing_hire') {
       title = '🤝 HIRE AGENT'
       detail = `${result.description} (budget: ${result.budget} USDC)`
+    } else if (result.status === 'proposing_deposit') {
+      title = '💰 VAULT DEPOSIT'
+      detail = `Deposit ${result.amount} USDC into your vault`
     }
 
     return (
@@ -237,6 +240,9 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         const requestId = generateRequestId()
         const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userId, prop.token || 'USDC')
         res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'USDC' }
+    } else if (prop.status === 'proposing_deposit') {
+      const depRes = await depositToVault(String(prop.amount), userId)
+      res = { ...depRes, type: 'deposit', amount: prop.amount }
       } else if (prop.status === 'proposing_schedule') {
         const intervalSec = parseInterval(prop.interval)
         const schedRes = await createOnChainSchedule(
@@ -330,6 +336,16 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
             }))
           }
 
+
+          if (intent.action === 'deposit' && intent.amount) {
+            setTxResults(r => ({
+              ...r,
+              [msgIndex]: {
+                status: 'proposing_deposit',
+                amount: intent.amount
+              }
+            }))
+          }
           if (intent.action === 'schedule' && intent.to && intent.amount && intent.interval) {
              setTxResults(r => ({ 
                ...r, 

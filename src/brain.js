@@ -25,6 +25,8 @@ Goal requires fetching a paid resource:
 {"action":"fetch_and_pay","url":"https://...","maxAmount":0.01,"reason":"...","message":"..."}
 Direct payment instruction:
 {"action":"pay","to":"0x...","amount":0.01,"reason":"...","message":"..."}
+Deposit own funds into own vault (NOT a payment, no spend policy applies):
+{"action":"deposit","amount":0.01,"message":"..."}
 Recurring / scheduled payment (interval is a human string like "1 day", "6 hours", "30 minutes"):
 {"action":"schedule","to":"0x...","amount":0.01,"interval":"1 day","reason":"...","conditions":{"minBalance":0.5,"executeOnce":false},"message":"..."}
 Hire an agent for a task (ERC-8183 job escrow):

@@ -55,7 +55,7 @@ async function sendUSDC(walletId, toAddress, amountUSDC) {
     destinationAddress: toAddress,
     amounts: [amountUnits],
     blockchain: 'ARC-TESTNET',
-    gasAbstractionConfig: { sponsorshipPolicyId: process.env.CIRCLE_GAS_POLICY_ID }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
   });
   const txId = response.data.id;
   // Poll for onchain hash
@@ -84,7 +84,7 @@ async function approveAndDepositToVault(walletId, vaultAddress, amountUSDC) {
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'approve(address,uint256)',
     abiParameters: [vaultAddress, amountWei],
-    gasAbstractionConfig: { sponsorshipPolicyId: process.env.CIRCLE_GAS_POLICY_ID }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
   });
 
   // Poll for approval confirmation
@@ -104,7 +104,7 @@ async function approveAndDepositToVault(walletId, vaultAddress, amountUSDC) {
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'deposit(uint256)',
     abiParameters: [amountWei],
-    gasAbstractionConfig: { sponsorshipPolicyId: process.env.CIRCLE_GAS_POLICY_ID }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
   });
 
   const depositId = depositRes.data.id;
@@ -128,7 +128,7 @@ async function withdrawFromVault(walletId, vaultAddress, amountUSDC) {
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'withdraw(uint256)',
     abiParameters: [amountWei],
-    gasAbstractionConfig: { sponsorshipPolicyId: process.env.CIRCLE_GAS_POLICY_ID }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
   });
 
   const txId = res.data.id;
@@ -153,7 +153,7 @@ async function createVaultSchedule(walletId, vaultAddress, toAddress, amountUSDC
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'createSchedule(address,uint256,uint256,string,uint256)',
     abiParameters: [toAddress, amountWei, String(intervalSec), reason || '', minBalWei],
-    gasAbstractionConfig: { sponsorshipPolicyId: process.env.CIRCLE_GAS_POLICY_ID }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
   });
 
   return await waitForTxHash(res.data.id, 'createSchedule');
@@ -166,7 +166,7 @@ async function cancelVaultSchedule(walletId, vaultAddress, index) {
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'cancelSchedule(uint256)',
     abiParameters: [String(index)],
-    gasAbstractionConfig: { sponsorshipPolicyId: process.env.CIRCLE_GAS_POLICY_ID }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
   });
 
   return await waitForTxHash(res.data.id, 'cancelSchedule');
