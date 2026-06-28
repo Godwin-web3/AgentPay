@@ -5,9 +5,16 @@ const { getTodaySpend, getLastHourTxCount, getConsecutiveFailures } = require('.
 class PolicyEngine {
   constructor() {
     this.policyPath = path.join(__dirname, '../config/policy.json');
-    this.localPolicy = JSON.parse(fs.readFileSync(this.policyPath, 'utf8'));
     this.paused = false;
     this.pausedUntil = null;
+  }
+
+  // Reads fresh from disk on every access instead of caching once at
+  // construction time, so changes made via policyManager.applyUpdate()
+  // (e.g. after a successful on-chain /policy update) take effect
+  // immediately without needing a server restart.
+  get localPolicy() {
+    return JSON.parse(fs.readFileSync(this.policyPath, 'utf8'));
   }
 
   isPaused() {

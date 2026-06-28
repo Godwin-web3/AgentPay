@@ -65,7 +65,7 @@ async function getVaultContract(wallet, userAddress) {
 
   if (vaultAddr === ethers.ZeroAddress) {
     console.log(`🏭 Creating new AgentVault for ${userAddress}...`);
-    const tx = await factory.createVault(userAddress);
+    const tx = await factory.createVault();
     await tx.wait();
     vaultAddr = await factory.getVault(userAddress);
     console.log(`✅ Vault created at ${vaultAddr}`);

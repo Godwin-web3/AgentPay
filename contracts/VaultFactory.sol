@@ -45,12 +45,11 @@ contract VaultFactory {
         emit OperatorUpdated(_operator);
     }
 
-    function createVault(address owner) external onlyOperator returns (address) {
-        if (owner == address(0)) revert ZeroAddress();
-        if (userVaults[owner] != address(0)) revert VaultExists();
+    function createVault() external returns (address) {
+        if (userVaults[msg.sender] != address(0)) revert VaultExists();
         AgentVault vault = new AgentVault(agent, usdc);
-        userVaults[owner] = address(vault);
-        emit VaultCreated(owner, address(vault));
+        userVaults[msg.sender] = address(vault);
+        emit VaultCreated(msg.sender, address(vault));
         return address(vault);
     }
 

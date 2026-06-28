@@ -240,6 +240,11 @@ async function handleUpdatePolicy(req, res) {
       if (txState === 'FAILED') throw new Error('setPolicy transaction failed');
     }
 
+    // Keep the local advisory-check cache (config/policy.json) in sync with
+    // the on-chain policy that was just set, so PolicyEngine's fast local
+    // pre-check never drifts from reality again.
+    applyUpdate({ perTxCap, dailyCap, whitelist });
+
     return send(res, 200, {
       status: 'updated',
       userAddress,
@@ -763,8 +768,8 @@ async function resolveOrCreateVault(userId) {
     const tx = await client.createContractExecutionTransaction({
       walletId: wallet.walletId,
       contractAddress: factoryAddress,
-      abiFunctionSignature: 'createVault(address)',
-      abiParameters: [agentAddress],
+      abiFunctionSignature: 'createVault()',
+      abiParameters: [],
       fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
     });
 

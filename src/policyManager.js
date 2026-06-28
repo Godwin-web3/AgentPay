@@ -10,11 +10,11 @@ function ensurePolicy() {
     const defaultPolicy = {
       maxAmountPerTx: 10,
       dailyLimit: 50,
-      allowedRecipients: [],
+      whitelist: [],
       activeHours: { start: 0, end: 24 },
       circuitBreaker: {
         maxTxPerHour: 10,
-        maxConsecutiveFailures: 3,
+        threshold: 3,
         pauseDurationMinutes: 15
       }
     };
@@ -33,17 +33,17 @@ function applyUpdate(update) {
   
   if (update.perTxCap !== undefined) current.maxAmountPerTx = update.perTxCap;
   if (update.dailyCap !== undefined) current.dailyLimit = update.dailyCap;
-  if (update.whitelist !== undefined) current.allowedRecipients = update.whitelist;
+  if (update.whitelist !== undefined) current.whitelist = update.whitelist;
   if (update.activeHours !== undefined) current.activeHours = update.activeHours;
   
   if (update.field === 'addWhitelist' && update.address) {
-    if (!current.allowedRecipients.includes(update.address)) {
-      current.allowedRecipients.push(update.address);
+    if (!current.whitelist.includes(update.address)) {
+      current.whitelist.push(update.address);
     }
   }
   
   if (update.field === 'removeWhitelist' && update.address) {
-    current.allowedRecipients = current.allowedRecipients.filter(a => a !== update.address);
+    current.whitelist = current.whitelist.filter(a => a !== update.address);
   }
 
   fs.writeFileSync(POLICY_PATH, JSON.stringify(current, null, 2));

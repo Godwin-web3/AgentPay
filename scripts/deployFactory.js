@@ -5,7 +5,8 @@ const path = require('path');
 
 async function main() {
   const rpc = process.env.ARC_RPC_URL || 'https://rpc.testnet.arc.network';
-  const provider = new ethers.JsonRpcProvider(rpc);
+  const provider = new ethers.JsonRpcProvider(rpc, { chainId: 5042002, name: 'arc-testnet' });
+  await provider.getBlockNumber();
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const artifactPath = path.join(__dirname, '../artifacts/VaultFactory.json');
