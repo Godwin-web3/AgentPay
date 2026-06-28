@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
 import { getPolicy, updatePolicy } from '../api'
 import type { PolicyData } from '../types'
 

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
 import { getSchedules, getOnChainSchedules, cancelSchedule, cancelOnChainSchedule } from '../api'
 
 function formatInterval(seconds: number) {
