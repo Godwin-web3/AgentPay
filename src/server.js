@@ -778,7 +778,10 @@ async function resolveOrCreateVault(userId) {
       await new Promise(r => setTimeout(r, 2000));
       const status = await client.getTransaction({ id: txId });
       txState = status.data?.transaction?.state;
-      if (txState === 'FAILED') throw new Error('Vault creation transaction failed');
+      if (txState === 'FAILED') {
+        console.error('Vault creation FAILED, full transaction object:', JSON.stringify(status.data?.transaction, null, 2));
+        throw new Error('Vault creation transaction failed: ' + (status.data?.transaction?.errorReason || status.data?.transaction?.errorDetails || 'unknown reason'));
+      }
     }
 
     vaultAddr = await escrow.findVault(agentAddress);
