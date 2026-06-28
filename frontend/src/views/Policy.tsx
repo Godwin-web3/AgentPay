@@ -5,7 +5,6 @@ import type { PolicyData } from '../types'
 
 export default function Policy({ userAddress, userId }: { userAddress: string, userId: string }) {
   const { user } = useAuth();
-  const userId = user?.uid || '';
   const [policy, setPolicy] = useState<PolicyData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

@@ -13,6 +13,7 @@ interface Props {
   onActionSuccess?: () => void
   agentWalletAddress?: string
   agentWalletBalance?: string
+  userId: string
 }
 
 type SubView = null | 'vault' | 'policy' | 'history' | 'agent'
@@ -23,7 +24,7 @@ const ChevronRight = () => (
   </svg>
 )
 
-export default function Profile({ userAddress, vaultBalance, walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, agentWalletBalance, tag }: Props) {
+export default function Profile({ userAddress, userId, vaultBalance, walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, agentWalletBalance, tag }: Props) {
   const [subView, setSubView] = useState<SubView>(null)
 
   function shortAddr(addr: string) {
@@ -49,7 +50,7 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
           <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Back</button>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>POLICY</span>
         </div>
-        <Policy userAddress={userAddress} />
+        <Policy userAddress={userAddress} userId={userId} />
       </div>
     )
   }
@@ -61,7 +62,7 @@ export default function Profile({ userAddress, vaultBalance, walletBalance, toke
           <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Back</button>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>HISTORY</span>
         </div>
-        <History userAddress={userAddress} />
+        <History userAddress={userAddress} userId={userId} />
       </div>
     )
   }

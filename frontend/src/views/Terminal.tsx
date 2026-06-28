@@ -189,7 +189,7 @@ function PolicyCard({ data }: { data: any }) {
 }
 
 export default function Terminal({ messages, setMessages, userAddress, userId, onActionSuccess }: Props) {
-  const { user } = useAuth();
+
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [txResults, setTxResults] = React.useState<Record<number, any>>({})
