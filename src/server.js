@@ -424,8 +424,8 @@ async function handleVaultDeposit(req, res) {
     const wallet = await getOrCreateWallet(userId);
     const vaultAddress = await resolveOrCreateVault(userId);
     const txHash = await walletService.approveAndDepositToVault(wallet.walletId, vaultAddress, amount);
-    const { appendSpend } = require('../utils/store');
-    appendSpend({ userAddress: userId, to: vaultAddress, amount: Number(amount), reason: 'Vault deposit', txHash, token: 'USDC', type: 'deposit' });
+    const { appendSpend } = require('./spendStore');
+    await appendSpend({ userAddress: userId, to: vaultAddress, amount: Number(amount), reason: 'Vault deposit', txHash, token: 'USDC', type: 'deposit' });
     return send(res, 200, { success: true, txHash, explorer: EXPLORER + txHash });
   } catch (err) {
     return send(res, 500, { error: err.message });
@@ -440,8 +440,8 @@ async function handleVaultWithdraw(req, res) {
     const wallet = await getOrCreateWallet(userId);
     const vaultAddress = await resolveOrCreateVault(userId);
     const txHash = await walletService.withdrawFromVault(wallet.walletId, vaultAddress, amount);
-    const { appendSpend } = require('../utils/store');
-    appendSpend({ userAddress: userId, to: vaultAddress, amount: Number(amount), reason: 'Vault withdraw', txHash, token: 'USDC', type: 'withdrawal' });
+    const { appendSpend } = require('./spendStore');
+    await appendSpend({ userAddress: userId, to: vaultAddress, amount: Number(amount), reason: 'Vault withdraw', txHash, token: 'USDC', type: 'withdrawal' });
     return send(res, 200, { success: true, txHash, explorer: EXPLORER + txHash });
   } catch (err) {
     return send(res, 500, { error: err.message });
@@ -637,10 +637,10 @@ async function handleCancelOnChainSchedule(req, res) {
 // POST /log-transaction — record an off-chain activity entry for the history view
 async function handleLogTransaction(req, res) {
   const userId = getUserId(req);
-  const { appendSpend } = require('../utils/store');
+  const { appendSpend } = require('./spendStore');
   const body = req.body || {};
   try {
-    appendSpend({
+    await appendSpend({
       userAddress: userId,
       to: body.to || null,
       amount: Number(body.amount) || 0,

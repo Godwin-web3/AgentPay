@@ -3,7 +3,7 @@ const PolicyEngine = require('./policyEngine');
 const walletService = require('./walletService');
 const x402Client = require('./x402Client');
 const escrow = require('./escrow');
-const { appendSpend, appendFailure, getHistory } = require('../utils/store');
+const { appendSpend, appendFailure, getHistory } = require('./spendStore');
 const { parseIntent } = require('./brain');
 const jobService = require('./jobService');
 
@@ -17,7 +17,7 @@ const engine = new PolicyEngine();
 async function pay(walletId, to, amountUSDC, reason, userAddress) {
   const advisory = engine.check(to, amountUSDC, userAddress);
   if (!advisory.allowed) {
-    appendFailure({ userAddress, to, amount: amountUSDC, reason, blockedReason: advisory.reason });
+    await appendFailure({ userAddress, to, amount: amountUSDC, reason, blockedReason: advisory.reason });
     return { success: false, reason: advisory.reason, code: advisory.code };
   }
 
@@ -50,11 +50,11 @@ async function pay(walletId, to, amountUSDC, reason, userAddress) {
       sig: sigPayload.sig
     });
     const txHash = receipt.hash || receipt.transactionHash;
-    appendSpend({ userAddress, to, amount: amountUSDC, reason, txHash, token: 'USDC' });
+    await appendSpend({ userAddress, to, amount: amountUSDC, reason, txHash, token: 'USDC' });
     return { success: true, txHash };
   } catch (err) {
     const reasonText = err.reason || err.shortMessage || err.message || 'unknown error';
-    appendFailure({ userAddress, to, amount: amountUSDC, reason, blockedReason: reasonText });
+    await appendFailure({ userAddress, to, amount: amountUSDC, reason, blockedReason: reasonText });
 
     // P2-12: if the vault reverted with a cap/whitelist violation, mirror it
     // into an on-chain emergency pause for this user to stop further attempts
@@ -74,7 +74,7 @@ async function pay(walletId, to, amountUSDC, reason, userAddress) {
 async function fetchAndPay(walletId, url, maxAmount, reason, userAddress) {
   const advisory = engine.check(url, maxAmount, userAddress);
   if (!advisory.allowed) {
-    appendFailure({ userAddress, to: url, amount: maxAmount, reason, blockedReason: advisory.reason });
+    await appendFailure({ userAddress, to: url, amount: maxAmount, reason, blockedReason: advisory.reason });
     return { success: false, reason: advisory.reason, code: advisory.code };
   }
 
@@ -87,10 +87,10 @@ async function fetchAndPay(walletId, url, maxAmount, reason, userAddress) {
       body: JSON.stringify({ query: reason })
     } : {};
     const { data, actualAmount, actualPayTo } = await x402Client.fetchWithPayment(url, walletId, fetchOptions, userAddress);
-    appendSpend({ userAddress, to: actualPayTo || url, amount: actualAmount || maxAmount, reason, txHash: 'x402', token: 'USDC' });
+    await appendSpend({ userAddress, to: actualPayTo || url, amount: actualAmount || maxAmount, reason, txHash: 'x402', token: 'USDC' });
     return { success: true, data, actualAmount };
   } catch (err) {
-    appendFailure({ userAddress, to: url, amount: maxAmount, reason, blockedReason: err.message });
+    await appendFailure({ userAddress, to: url, amount: maxAmount, reason, blockedReason: err.message });
     return { success: false, reason: err.message };
   }
 }
@@ -104,7 +104,7 @@ async function getSummary() {
 }
 
 async function getUnifiedHistory(userAddress, limit = 50) {
-  return getHistory(userAddress, limit);
+  return await getHistory(userAddress, limit);
 }
 
 async function chat(message, walletId, userAddress) {
@@ -161,11 +161,11 @@ async function hireAgent(clientWalletId, providerWalletId, evaluatorWalletId, pr
     await jobService.setBudget(providerWalletId, jobId, budget);
     const fundTxHash = await jobService.approveAndFund(clientWalletId, jobId, budget);
 
-    appendSpend({ userAddress, to: providerAddress, amount: budget, reason: description, txHash: fundTxHash, token: 'USDC' });
+    await appendSpend({ userAddress, to: providerAddress, amount: budget, reason: description, txHash: fundTxHash, token: 'USDC' });
 
     return { success: true, jobId, status: 'Funded', createTxHash, fundTxHash };
   } catch (err) {
-    appendFailure({ userAddress, to: providerAddress, amount: budget, reason: description, blockedReason: err.message });
+    await appendFailure({ userAddress, to: providerAddress, amount: budget, reason: description, blockedReason: err.message });
     return { success: false, reason: err.message };
   }
 }
