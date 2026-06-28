@@ -300,7 +300,7 @@ async function handleChat(req, res) {
     const history = await chatStore.getChatHistory(userId);
     history.push({ role: 'user', content: message });
     history.push({ role: 'assistant', content: intent.message, intent });
-    if (history.length > 20) history.splice(0, 2);
+    // No cap — Firestore document size limit (1MiB) is the only practical bound.
     await chatStore.setChatHistory(userId, history);
 
     // Auto-execute safe actions

@@ -227,6 +227,12 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
   // Load chat history on mount
   useEffect(() => {
     if (!userAddress) return
+    // Only hydrate from the backend if local state is empty (e.g. fresh
+    // device/browser with no localStorage history yet). Never overwrite an
+    // existing local conversation — localStorage is the fuller source of
+    // truth; Firestore is a capped backup (see history.length > 20 cap
+    // server-side), so it must never clobber a longer local conversation.
+    if (messages.length > 1) return
     getChatHistory(userId)
       .then(res => {
         if (res.history?.length > 0) {
@@ -238,7 +244,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         }
       })
       .catch(() => {})
-  }, [userAddress, setMessages])
+  }, [userAddress])
 
   useEffect(() => {
     if (scrollRef.current) {
