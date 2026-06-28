@@ -91,7 +91,9 @@ function checkAuth(req) {
 function getUserId(req) {
   // Identity is still derived from the header, but can only be trusted once
   // checkAuth() has passed (middleware enforces).
-  return req.headers['x-user-id'] || 'anonymous';
+  const uid = req.headers['x-user-id'];
+  if (!uid || uid === 'anonymous') throw new Error('Missing user identity');
+  return uid;
 }
 
 async function getOrCreateWallet(userId) {
