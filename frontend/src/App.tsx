@@ -85,6 +85,7 @@ function App({ tag }: { tag: string | null }) {
       setOnboardCheckDone(true)
       return
     }
+    if (!userId) return
     setOnboardCheckDone(false)
     checkVault(userId)
       .then(result => {
@@ -95,7 +96,7 @@ function App({ tag }: { tag: string | null }) {
         setIsOnboarded(false)
       })
       .finally(() => setOnboardCheckDone(true))
-  }, [userAddress])
+  }, [userAddress, userId])
 
   const [vaultBalance, setVaultBalance] = useState('0')
   const [activeProvider, setActiveProvider] = useState<any>(null)
