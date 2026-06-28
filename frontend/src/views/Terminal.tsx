@@ -1,5 +1,4 @@
 import React, { useRef, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
 import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, hireAgent, decodePolicyError } from '../api'
 import type { ChatMessage } from '../types'
 

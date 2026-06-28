@@ -9,7 +9,6 @@ function formatInterval(seconds: number) {
 }
 
 export default function Schedules({ userAddress, userId }: { userAddress: string, userId: string }) {
-  const { user } = useAuth();
   const [schedules, setSchedules] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
