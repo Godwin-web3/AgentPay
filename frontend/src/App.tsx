@@ -71,7 +71,6 @@ function App({ tag }: { tag: string | null }) {
   const [isOnboarded, setIsOnboarded] = useState(false)
   const [onboardCheckDone, setOnboardCheckDone] = useState(false)
   const [agentWalletAddress, setAgentWalletAddress] = useState('')
-  const [agentWalletBalance, setAgentWalletBalance] = useState('0')
   const [vaultAddress, setVaultAddress] = useState('')
 
   useEffect(() => {
@@ -137,7 +136,6 @@ function App({ tag }: { tag: string | null }) {
       const wallet = await getWallet(userId)
       resolvedAgentWallet = wallet.address
       setAgentWalletAddress(wallet.address)
-      setAgentWalletBalance(wallet.balance || '0')
     } catch (e) {
       console.error('Failed to refresh agent wallet balance', e)
     }
