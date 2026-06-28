@@ -257,18 +257,21 @@ function AppWithAuth() {
       return;
     }
     setTagLoading(true);
-    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
-    import('./api').then(({ getMe }) => {
-      Promise.race([getMe(user.uid), timeout]).then((me: any) => {
+    const fetchWithTimeout = (ms: number) => {
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
+      return import('./api').then(({ getMe }) => Promise.race([getMe(user.uid), timeout]));
+    };
+
+    fetchWithTimeout(8000)
+      .catch(() => fetchWithTimeout(15000))
+      .then((me: any) => {
         setTag(me.tag || null);
         setTagChecked(true);
-      }).catch(() => {
-        setTagChecked(true);
-      }).finally(() => setTagLoading(false));
-    }).catch(() => {
-      setTagChecked(true);
-      setTagLoading(false);
-    });
+      })
+      .catch(() => {
+        setTagChecked(false);
+      })
+      .finally(() => setTagLoading(false));
   }, [user]);
 
   if (loading || tagLoading) return (
