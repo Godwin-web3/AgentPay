@@ -16,7 +16,7 @@ export interface ChatMessage {
 }
 
 export interface Intent {
-  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown' | 'fetch_and_pay' | 'hire_agent'
+  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown' | 'fetch_and_pay' | 'hire_agent' | 'deposit'
   requestId?: string
   to?: string
   amount?: number
