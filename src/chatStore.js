@@ -4,11 +4,23 @@
 // This removes the volatility problem where chat history was wiped on
 // every backend restart/redeploy (same root cause the wallet migration fixed).
 
+const { initializeApp, getApps, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 
-// Reuses the firebase-admin app already initialized by walletStore.js
-// (initializeApp can only run once per process; walletStore.js is always
-// required before this in server.js, so getApps().length > 0 by this point).
+// Self-contained init — does not assume walletStore.js has already run
+// initializeApp(). Require order across files isn't guaranteed, so each
+// store module must be able to initialize Firebase on its own, guarded so
+// it only runs once per process.
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    }),
+  });
+}
+
 const db = getFirestore();
 const COLLECTION = 'chatHistories';
 
