@@ -347,7 +347,7 @@ contract AgentVault is ReentrancyGuard {
     ) external nonReentrant notPaused(user) {
         if (block.timestamp > deadline) revert SignatureExpired();
         bytes32 digest = _sigDigest(user, to, amount, requestId, nonces[user], deadline);
-        if (!_verify(digest, user, sig)) revert InvalidSignature();
+        if (!_verify(digest, agent, sig)) revert InvalidSignature();
         nonces[user] = nonces[user] + 1;
         _execute(user, to, amount, "", requestId);
     }
