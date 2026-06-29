@@ -5,10 +5,10 @@ const connection = new HermesClient("https://hermes.pyth.network", {});
 
 // Pyth Price IDs for common assets
 const PYTH_PRICE_IDS = {
-  bitcoin: '0xe62df6c8b4a27e1629851a99528d73b22305a9d1621593922c3919c00b00569f',
-  ethereum: '0xff61491a993047a25590983a826477e3c15394e35003c233157e8412643a60f9',
-  solana: '0xef0d8b6fda2ce4d9777d49721c2847d307f033a1e38ea307abc26335478498f3',
-  usdc: '0xeaa020c61cc479712813421ce6d7e008581694096d4d7b6b64d1f5e2722b5e2a',
+  bitcoin: '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43',
+  ethereum: '0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace',
+  solana: '0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d',
+  usdc: '0xeaa020c61cc479712813461ce153894a96a6c00b21ed0cfc2798d1f9a9e9c94a',
 };
 
 /**
@@ -64,7 +64,7 @@ async function evaluatePriceTrigger(trigger) {
             default: met = false;
         }
 
-        return { met, proof: `pyth:${priceData.publishTime}:${price}` };
+        return { met, proof: `pyth:${priceData.publish_time}:${price}` };
     } catch (err) {
         console.error(`❌ Pyth Error: ${err.message}. Falling back...`);
         return await evaluatePriceFallback(trigger);
