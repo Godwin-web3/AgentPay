@@ -1,29 +1,37 @@
+// src/scheduler.js
+// Firestore-backed replacement for data/schedules.json
+// Each job is its own document in the `schedules` collection.
+// Timer/execution logic is unchanged — only the read/write layer moved.
+
+const { initializeApp, getApps, cert } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
 const { evaluateTrigger } = require('./triggers');
-const fs = require('fs');
-const path = require('path');
 const { checkConditions } = require('./conditions');
 
-const SCHEDULES_PATH = path.join(__dirname, '../data/schedules.json');
-
-function ensureStore() {
-  const dir = path.join(__dirname, '../data');
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  if (!fs.existsSync(SCHEDULES_PATH)) {
-    fs.writeFileSync(SCHEDULES_PATH, JSON.stringify({ jobs: [] }, null, 2));
-  }
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    }),
+  });
 }
 
-function readSchedules() {
-  ensureStore();
-  return JSON.parse(fs.readFileSync(SCHEDULES_PATH, 'utf8'));
+const db = getFirestore();
+const COLLECTION = 'schedules';
+
+async function readSchedules() {
+  const snapshot = await db.collection(COLLECTION).get();
+  return snapshot.docs.map(doc => doc.data());
 }
 
-// P1-6: atomic write to avoid corrupting schedules.json under concurrent writes.
-function writeSchedules(data) {
-  ensureStore();
-  const tmp = SCHEDULES_PATH + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
-  fs.renameSync(tmp, SCHEDULES_PATH);
+async function writeJob(job) {
+  await db.collection(COLLECTION).doc(job.id.toString()).set(job);
+}
+
+async function patchJob(id, updates) {
+  await db.collection(COLLECTION).doc(id.toString()).update(updates);
 }
 
 function parseInterval(intervalStr) {
@@ -31,17 +39,16 @@ function parseInterval(intervalStr) {
   const str = intervalStr.toLowerCase().trim();
   if (str.includes('second')) return (parseInt(str) || 30) * 1000;
   if (str.includes('minute')) return (parseInt(str) || 1) * 60 * 1000;
-  if (str.includes('hour')) return (parseInt(str) || 1) * 60 * 60 * 1000;
-  if (str.includes('day')) return (parseInt(str) || 1) * 24 * 60 * 60 * 1000;
+  if (str.includes('hour'))   return (parseInt(str) || 1) * 60 * 60 * 1000;
+  if (str.includes('day'))    return (parseInt(str) || 1) * 24 * 60 * 60 * 1000;
   return null;
 }
 
-function addJob({ to, amount, reason, intervalMs, intervalLabel: label, conditions, trigger, userAddress }) {
-  const store = readSchedules();
+async function addJob({ to, amount, reason, intervalMs, intervalLabel: label, conditions, trigger, userAddress }) {
   const id = Date.now();
   const job = {
     id,
-    userAddress, // Added userAddress
+    userAddress: userAddress || null,
     to,
     amount,
     reason,
@@ -56,45 +63,35 @@ function addJob({ to, amount, reason, intervalMs, intervalLabel: label, conditio
     totalSpent: 0,
     active: true
   };
-  store.jobs.push(job);
-  writeSchedules(store);
+  await writeJob(job);
   return job;
 }
 
-function cancelJob(id, userAddress) {
-  const store = readSchedules();
-  const job = store.jobs.find(j => j.id.toString() === id.toString());
-  if (!job) return null;
-  
-  // Security check: only owner can cancel
-  if (userAddress && job.userAddress && job.userAddress !== userAddress) {
-    return null;
-  }
-
-  job.active = false;
-  writeSchedules(store);
-  return job;
+async function cancelJob(id, userAddress) {
+  const ref = db.collection(COLLECTION).doc(id.toString());
+  const doc = await ref.get();
+  if (!doc.exists) return null;
+  const job = doc.data();
+  if (userAddress && job.userAddress && job.userAddress !== userAddress) return null;
+  await ref.update({ active: false });
+  return { ...job, active: false };
 }
 
-function getAllJobs(userAddress) {
-  const jobs = readSchedules().jobs;
-  if (!userAddress) return jobs;
-  return jobs.filter(j => !j.userAddress || j.userAddress === userAddress);
+async function getAllJobs(userAddress) {
+  let query = db.collection(COLLECTION).orderBy('createdAt', 'desc');
+  if (userAddress) query = db.collection(COLLECTION)
+    .where('userAddress', '==', userAddress)
+    .orderBy('createdAt', 'desc');
+  const snapshot = await query.get();
+  return snapshot.docs.map(doc => doc.data());
 }
 
-function getActiveJobs() {
-  return readSchedules().jobs.filter(j => j.active);
+async function getActiveJobs() {
+  const snapshot = await db.collection(COLLECTION)
+    .where('active', '==', true)
+    .get();
+  return snapshot.docs.map(doc => doc.data());
 }
-
-// Note: The loop.js will use these to execute onchain
-function stopAllJobs() {
-  Object.keys(activeTimers).forEach(id => {
-    clearInterval(activeTimers[id]);
-    delete activeTimers[id];
-  });
-  console.log('🛑 All in-memory scheduled jobs stopped.');
-}
-
 
 const activeTimers = {};
 
@@ -103,9 +100,10 @@ async function startJob(job, payFn, ownerAddress) {
   const userAddr = ownerAddress || job.userAddress;
 
   async function tick() {
-    const store = readSchedules();
-    const current = store.jobs.find(j => j.id === job.id);
-    if (!current || !current.active) {
+    const doc = await db.collection(COLLECTION).doc(job.id.toString()).get();
+    if (!doc.exists) return;
+    const current = doc.data();
+    if (!current.active) {
       clearInterval(activeTimers[job.id]);
       delete activeTimers[job.id];
       return;
@@ -119,14 +117,15 @@ async function startJob(job, payFn, ownerAddress) {
       return;
     }
 
+    let triggerResult = null;
     if (current.trigger) {
       console.log('\n⛓ Evaluating trigger condition on Arc...');
-      const triggerResult = await evaluateTrigger(current.trigger, { privateKey: process.env.PRIVATE_KEY });
+      triggerResult = await evaluateTrigger(current.trigger, { privateKey: process.env.PRIVATE_KEY });
       if (!triggerResult.met) {
-        console.log('   ⏳ Trigger condition not met, skipping this run.');
+        console.log('   ⏳ Trigger not met, skipping.');
         return;
       }
-      console.log('   ✅ Trigger condition met! Proof: ' + (triggerResult.proof || 'n/a'));
+      console.log('   ✅ Trigger met. Proof: ' + (triggerResult.proof || 'n/a'));
     }
 
     console.log('\n🔄 Executing scheduled payment for ' + userAddr + '...');
@@ -135,17 +134,19 @@ async function startJob(job, payFn, ownerAddress) {
       triggerProof: current.trigger ? triggerResult.proof : null
     });
 
-    const s2 = readSchedules();
-    const j2 = s2.jobs.find(j => j.id === job.id);
-    j2.lastRun = new Date().toISOString();
-    j2.nextRun = new Date(Date.now() + j2.intervalMs).toISOString();
-    j2.totalRuns = (j2.totalRuns || 0) + 1;
-    j2.totalSpent = (j2.totalSpent || 0) + j2.amount;
-    if (j2.conditions && j2.conditions.executeOnce) j2.active = false;
-    writeSchedules(s2);
+    const now = new Date().toISOString();
+    const updates = {
+      lastRun: now,
+      nextRun: new Date(Date.now() + current.intervalMs).toISOString(),
+      totalRuns: (current.totalRuns || 0) + 1,
+      totalSpent: (current.totalSpent || 0) + current.amount,
+    };
+    if (current.conditions && current.conditions.executeOnce) updates.active = false;
+    await patchJob(job.id, updates);
 
     if (result && result.success) {
-      console.log('✅ Scheduled payment: ' + current.amount + ' USDC to ' + current.to + (result && result.txHash ? '\n   🔗 Tx: https://testnet.arcscan.app/tx/' + result.txHash : ''));
+      console.log('✅ Scheduled payment: ' + current.amount + ' USDC to ' + current.to +
+        (result.txHash ? '\n   🔗 Tx: https://testnet.arcscan.app/tx/' + result.txHash : ''));
     } else {
       console.log('❌ Payment failed: ' + (result && result.reason));
     }
@@ -162,20 +163,27 @@ function stopJob(id) {
   }
 }
 
+function stopAllJobs() {
+  Object.keys(activeTimers).forEach(id => {
+    clearInterval(activeTimers[id]);
+    delete activeTimers[id];
+  });
+  console.log('🛑 All scheduled jobs stopped.');
+}
+
 function intervalLabel(ms) {
   const seconds = ms / 1000;
   const minutes = seconds / 60;
   const hours = minutes / 60;
   const days = hours / 24;
-  if (days >= 1) return Math.round(days) + ' day(s)';
-  if (hours >= 1) return Math.round(hours) + ' hour(s)';
+  if (days >= 1)    return Math.round(days) + ' day(s)';
+  if (hours >= 1)   return Math.round(hours) + ' hour(s)';
   if (minutes >= 1) return Math.round(minutes) + ' minute(s)';
   return Math.round(seconds) + ' second(s)';
 }
 
 module.exports = {
   readSchedules,
-  writeSchedules,
   parseInterval,
   addJob,
   cancelJob,

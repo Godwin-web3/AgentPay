@@ -379,16 +379,17 @@ async function handlePay(req, res) {
 }
 
 // GET /schedules
-function handleGetSchedules(req, res) {
+async function handleGetSchedules(req, res) {
   const userId = getUserId(req);
-  return send(res, 200, { schedules: getAllJobs(userId) });
+  const schedules = await getAllJobs(userId);
+  return send(res, 200, { schedules });
 }
 
 // POST /schedules
 async function handleCreateSchedule(req, res) {
   const userId = getUserId(req);
   const body = req.body || {};
-  const { to, amount, interval, reason } = body;
+  const { to, amount, interval, reason, trigger } = body;
 
   const intervalMs = parseInterval(interval);
   if (!intervalMs) return send(res, 400, { error: 'Invalid interval' });
@@ -396,18 +397,18 @@ async function handleCreateSchedule(req, res) {
   const wallet = await getOrCreateWallet(userId);
   // Key the job to the userId (browser address) for lookup, but execute payments
   // with the agent wallet address so vault balances/policies line up.
-  const job = addJob({ to, amount, reason, intervalMs, intervalLabel: interval, userAddress: userId, agentAddress: wallet.address });
+  const job = await addJob({ to, amount, reason, intervalMs, intervalLabel: interval, trigger, userAddress: userId, agentAddress: wallet.address });
 
   const { startJob } = require('./scheduler');
-  startJob(job, (to, amount, reason) => pay(wallet.walletId, to, amount, reason, wallet.address), userId);
+  await startJob(job, (to, amount, reason) => pay(wallet.walletId, to, amount, reason, wallet.address), userId);
 
   return send(res, 200, { success: true, schedule: job });
 }
 
 // DELETE /schedules/:id
-function handleDeleteSchedule(req, res, jobId) {
+async function handleDeleteSchedule(req, res, jobId) {
   const userId = getUserId(req);
-  const job = cancelJob(jobId, userId);
+  const job = await cancelJob(jobId, userId);
   if (!job) return send(res, 404, { error: 'Job not found' });
   return send(res, 200, { success: true });
 }
