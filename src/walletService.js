@@ -183,4 +183,16 @@ async function waitForTxHash(txId, label) {
   return txId;
 }
 
-module.exports = { ...module.exports, approveAndDepositToVault, withdrawFromVault, createVaultSchedule, cancelVaultSchedule };
+async function executeOnChainSchedule(walletId, vaultAddress, userAddress, index) {
+  const res = await client.createContractExecutionTransaction({
+    walletId,
+    contractAddress: vaultAddress,
+    blockchain: 'ARC-TESTNET',
+    abiFunctionSignature: 'executeScheduled(address,uint256)',
+    abiParameters: [userAddress, String(index)],
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+  });
+  return await waitForTxHash(res.data.id, 'executeScheduled');
+}
+
+module.exports = { ...module.exports, approveAndDepositToVault, withdrawFromVault, createVaultSchedule, cancelVaultSchedule, executeOnChainSchedule };

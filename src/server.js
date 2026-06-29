@@ -952,6 +952,43 @@ module.exports = { startServer };
   }
 })();
 
+// Keeper: execute on-chain schedules when nextRun has passed
+(async () => {
+  async function runKeeper() {
+    try {
+      const { getActiveJobs } = require('./scheduler');
+      const activeJobs = await getActiveJobs();
+      const users = [...new Set(activeJobs.map(j => j.userAddress).filter(Boolean))];
+      for (const userAddress of users) {
+        try {
+          const wallet = await getOrCreateWallet(userAddress);
+          const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+          const vaultAddr = await escrow.findVault(wallet.address);
+          if (!vaultAddr) continue;
+          const schedules = await escrow.getOnChainSchedules(provider, wallet.address);
+          for (const s of schedules) {
+            if (!s.active) continue;
+            if (new Date() < new Date(s.nextRun)) continue;
+            console.log('⏰ Keeper executing on-chain schedule ' + s.id + ' for ' + userAddress);
+            try {
+              await walletService.executeOnChainSchedule(wallet.walletId, vaultAddr, wallet.address, s.id);
+              console.log('✅ On-chain schedule ' + s.id + ' executed');
+            } catch (err) {
+              console.error('❌ Schedule ' + s.id + ' failed:', err.message);
+            }
+          }
+        } catch (err) {
+          console.error('Keeper user error:', err.message);
+        }
+      }
+    } catch (err) {
+      console.error('Keeper error:', err.message);
+    }
+  }
+  setInterval(runKeeper, 60000);
+  console.log('⏰ On-chain schedule keeper started (60s interval)');
+})();
+
 // Google Auth login - create Circle wallet for new users
 app.post('/api/auth/login', async (req, res) => {
   try {
