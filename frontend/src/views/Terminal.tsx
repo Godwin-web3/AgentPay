@@ -262,7 +262,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
       setInput('')
       setLoading(true)
       try {
-        const apiBase = import.meta.env.VITE_API_URL || ''
+        const apiBase = import.meta.env.VITE_API_URL || 'https://agentpay-c4o7.onrender.com'
         setMessages(prev => [...prev, { role: 'assistant', content: 'Fetching Arc job market...\nEndpoint requires 0.001 USDC — agent paying via x402...', timestamp: Date.now() }])
         const marketRes = await fetch(`${apiBase}/market-intel`, {
           headers: { 'x-user-id': userId, 'x-api-key': import.meta.env.VITE_APP_API_KEY || '' }
