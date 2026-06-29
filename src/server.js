@@ -935,6 +935,23 @@ function startServer() {
 
 module.exports = { startServer };
 
+// Boot: restart timers for all active scheduled jobs
+(async () => {
+  try {
+    const { getActiveJobs, startJob } = require('./scheduler');
+    const activeJobs = await getActiveJobs();
+    if (activeJobs.length) {
+      console.log('⏰ Restarting ' + activeJobs.length + ' active scheduled job(s)...');
+      for (const job of activeJobs) {
+        const wallet = await getOrCreateWallet(job.userAddress);
+        await startJob(job, (to, amount, reason) => pay(wallet.walletId, to, amount, reason, wallet.address), job.userAddress);
+      }
+    }
+  } catch (err) {
+    console.error('Boot scheduler error:', err.message);
+  }
+})();
+
 // Google Auth login - create Circle wallet for new users
 app.post('/api/auth/login', async (req, res) => {
   try {
