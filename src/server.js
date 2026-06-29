@@ -486,6 +486,51 @@ async function handleIntelligence(req, res) {
 
 
 
+// Shared market data fetcher — used by both x402 route and internal proxy
+async function fetchMarketData() {
+  const { createPublicClient, http } = require('viem');
+  const arcClient = createPublicClient({
+    chain: { id: 5042002, name: 'Arc Testnet', nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 6 }, rpcUrls: { default: { http: [process.env.ARC_RPC] } } },
+    transport: http(process.env.ARC_RPC)
+  });
+  const CONTRACT = '0x0747EEf0706327138c69792bF28Cd525089e4583';
+  const STATUS = ['Open', 'Funded', 'Submitted', 'Completed', 'Rejected', 'Expired'];
+  const abi = [{ type: 'function', name: 'getJob', stateMutability: 'view', inputs: [{ name: 'jobId', type: 'uint256' }], outputs: [{ type: 'tuple', components: [{ name: 'id', type: 'uint256' }, { name: 'client', type: 'address' }, { name: 'provider', type: 'address' }, { name: 'evaluator', type: 'address' }, { name: 'description', type: 'string' }, { name: 'budget', type: 'uint256' }, { name: 'expiredAt', type: 'uint256' }, { name: 'status', type: 'uint8' }, { name: 'hook', type: 'address' }] }] }];
+  const scanIds = [];
+  for (let i = 137000; i <= 137050; i++) scanIds.push(i);
+  for (let i = 1; i <= 20; i++) scanIds.push(i);
+  const jobs = [];
+  await Promise.all(scanIds.map(async (id) => {
+    try {
+      const job = await arcClient.readContract({ address: CONTRACT, abi, functionName: 'getJob', args: [BigInt(id)] });
+      if (job.client !== '0x0000000000000000000000000000000000000000') {
+        jobs.push({ id: Number(job.id), client: job.client, provider: job.provider, description: job.description.slice(0, 80), budget: (Number(job.budget) / 1e6).toFixed(2), status: STATUS[Number(job.status)], expiredAt: Number(job.expiredAt) });
+      }
+    } catch { }
+  }));
+  jobs.sort((a, b) => b.id - a.id);
+  const funded = jobs.filter(j => j.status !== 'Open' && Number(j.budget) > 0);
+  const totalBudget = funded.reduce((sum, j) => sum + Number(j.budget), 0);
+  const avgBudget = funded.length ? (totalBudget / funded.length).toFixed(2) : '0.00';
+  const statusCounts = {};
+  STATUS.forEach(s => statusCounts[s] = 0);
+  jobs.forEach(j => statusCounts[j.status]++);
+  const providerCounts = {};
+  jobs.forEach(j => { if (j.provider !== '0x0000000000000000000000000000000000000000') providerCounts[j.provider] = (providerCounts[j.provider] || 0) + 1; });
+  const topProviders = Object.entries(providerCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([address, jobCount]) => ({ address, jobCount }));
+  return { market: { totalJobs: jobs.length, statusBreakdown: statusCounts, averageBudget: avgBudget + ' USDC', totalVolumeUSDC: totalBudget.toFixed(2), topProviders, lastUpdated: new Date().toISOString() }, recentJobs: jobs.slice(0, 10) };
+}
+
+// GET /market-intel — internal proxy, frontend calls this, backend fetches and returns market data
+async function handleMarketIntel(req, res) {
+  try {
+    const data = await fetchMarketData();
+    return send(res, 200, data);
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
 // GET /api/market/jobs — live Arc job market intelligence (x402 gated)
 async function handleMarketJobs(req, res) {
   try {
@@ -720,6 +765,7 @@ app.use((req, res, next) => {
     '/api/me',
     '/api/tag/claim',
     '/api/market/jobs',
+    '/market-intel',
   ];
   const normalizedPath = req.path.endsWith('/') ? req.path.slice(0, -1) : req.path;
   if (exempt.includes(normalizedPath) || normalizedPath.startsWith('/api/tag/')) return next();
@@ -873,6 +919,7 @@ app.get('/jobs/:id', handleGetJob);
 app.post('/jobs/:id/complete', handleCompleteJob);
 app.post('/intelligence', gateway.require('$0.001'), handleIntelligence);
 app.get('/api/market/jobs', gateway.require('$0.001'), handleMarketJobs);
+app.get('/market-intel', handleMarketIntel);
 
 const server = require('http').createServer(app);
 
