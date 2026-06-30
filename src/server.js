@@ -705,6 +705,8 @@ async function handleCreateOnChainSchedule(req, res) {
     const txHash = await walletService.createVaultSchedule(
       wallet.walletId, vaultAddress, to, amount, Number(interval), reason || '', minBalance || 0
     );
+    const { trackUser } = require('./spendStore');
+    await trackUser(userId);
     return send(res, 200, { success: true, txHash, explorer: EXPLORER + txHash });
   } catch (err) {
     return send(res, 500, { error: err.message });
@@ -956,9 +958,8 @@ module.exports = { startServer };
 (async () => {
   async function runKeeper() {
     try {
-      const { getActiveJobs } = require('./scheduler');
-      const activeJobs = await getActiveJobs();
-      const users = [...new Set(activeJobs.map(j => j.userAddress).filter(Boolean))];
+      const { getActiveUsers } = require('./spendStore');
+      const users = await getActiveUsers();
       for (const userAddress of users) {
         try {
           const wallet = await getOrCreateWallet(userAddress);
