@@ -9,9 +9,51 @@ function formatTime(ts: number | string) {
   return `${month} ${day}, ${time}`
 }
 
-function formatDayOnly(ts: number | string) {
-  const d = new Date(ts)
-  return d.toLocaleString([], { month: 'short', day: 'numeric' })
+function shortAddr(addr?: string) {
+  if (!addr) return ''
+  return addr.slice(0, 6) + '...' + addr.slice(-4)
+}
+
+function describeEntry(tx: any) {
+  const amount = tx.amount != null ? `${tx.amount} ${tx.token || 'USDC'}` : null
+
+  if (tx.failed || tx.status === 'blocked') {
+    return {
+      title: 'Blocked',
+      sub: tx.blockedReason || 'Policy violation',
+      amount,
+      tone: 'danger' as const
+    }
+  }
+
+  switch (tx.type) {
+    case 'schedule':
+      return { title: 'Scheduled payment', sub: `to ${shortAddr(tx.to)}`, amount, tone: 'seal' as const }
+    case 'payment':
+      return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, tone: 'seal' as const }
+    case 'deposit':
+      return { title: 'Deposited', sub: 'into vault', amount, tone: 'seal' as const }
+    case 'withdrawal':
+      return { title: 'Withdrew', sub: 'from vault', amount, tone: 'wire' as const }
+    case 'job_hire':
+      return { title: 'Hired agent', sub: tx.reason || `to ${shortAddr(tx.to)}`, amount, tone: 'wire' as const }
+    case 'job_fulfilled':
+      return { title: 'Job fulfilled', sub: tx.reason || 'Deliverable submitted', amount, tone: 'seal' as const }
+    case 'swap':
+      return { title: 'Swapped', sub: `${tx.fromToken || ''} → ${tx.toToken || ''}`, amount, tone: 'wire' as const }
+    default:
+      if (tx.amount && tx.to) {
+        return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, tone: 'seal' as const }
+      }
+      return { title: tx.label || 'Activity', sub: '', amount, tone: 'muted' as const }
+  }
+}
+
+const toneColor: Record<string, string> = {
+  seal: 'var(--seal)',
+  wire: 'var(--wire)',
+  danger: 'var(--danger)',
+  muted: 'var(--muted)'
 }
 
 export default function History({ userAddress, userId, refreshTrigger = 0 }: { userAddress: string, userId: string, refreshTrigger?: number }) {
@@ -26,7 +68,6 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
     getHistory(userId)
       .then(res => {
         const items = res.items || []
-        // Filter out non-financial items (like pure inferences/chat)
         const financial = items.filter((tx: any) => tx.type !== 'inference' && tx.type !== 'chat')
         setTxs(financial)
       })
@@ -65,68 +106,53 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
     <div className="history-view" style={{ paddingBottom: 80 }}>
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 6, fontFamily: 'var(--font-mono)', letterSpacing: 2 }}>FINANCIAL LOG</div>
-        <div style={{ fontSize: 11, color: 'var(--cyan)', fontFamily: 'var(--font-mono)', opacity: 0.8 }}>{userAddress}</div>
+        <div style={{ fontSize: 11, color: 'var(--seal)', fontFamily: 'var(--font-mono)', opacity: 0.8 }}>{userAddress}</div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {txs.map((tx, i) => {
           const explorerUrl = tx.txHash ? 'https://testnet.arcscan.app/tx/' + tx.txHash : null
-          
-          let actionLabel = tx.label || 'Activity'
-          if (tx.failed || tx.status === 'blocked') {
-             actionLabel = `Blocked: ${tx.blockedReason || 'Policy violation'}`
-          } else if (tx.status === 'blocked') {
-             actionLabel = `Blocked: ${tx.blockedReason || 'Policy violation'}`
-          } else if (tx.type === 'schedule') {
-             actionLabel = `Scheduled: ${tx.label || ('Pay ' + tx.amount + ' USDC to ' + (tx.to?.slice(0,6) + '...'))}`
-          } else if (tx.type === 'payment') {
-             const to = tx.to ? ` → ${tx.to.slice(0, 6)}...` : ''
-             actionLabel = `Sent ${tx.amount} ${tx.token || 'USDC'}${to}`
-          } else if (tx.type === 'deposit' || tx.type === 'withdrawal') {
-             const verb = tx.type === 'deposit' ? 'Deposited' : 'Withdrew'
-             actionLabel = `${verb} ${tx.amount} ${tx.token || 'USDC'}`
-          } else if (tx.amount && tx.to) {
-             actionLabel = `Sent ${tx.amount} ${tx.token || 'USDC'} → ${tx.to.slice(0, 6)}...`
-          }
+          const entry = describeEntry(tx)
+          const color = toneColor[entry.tone]
 
           return (
-            <div key={tx.id || i} style={{ 
-              display: 'flex',
-              alignItems: 'center',
-              padding: '12px 0',
-              borderBottom: '1px solid var(--border)',
-              fontFamily: 'var(--font-mono)',
-              fontSize: 11,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              color: (tx.status === 'blocked' || tx.failed) ? '#FF3B5C' : 'var(--text)'
-            }}>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1, minWidth: 0 }}>
-                {actionLabel}
-              </span>
+            <div key={tx.id || i} className="card" style={{ padding: '14px 16px', margin: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, minWidth: 0 }}>
+                  <span style={{
+                    width: 8, height: 8, borderRadius: '50%', background: color,
+                    marginTop: 5, flexShrink: 0,
+                    boxShadow: entry.tone === 'seal' ? `0 0 6px ${color}88` : 'none'
+                  }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: entry.tone === 'danger' ? color : 'var(--text)' }}>
+                      {entry.title}
+                    </div>
+                    {entry.sub && (
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', marginTop: 2, wordBreak: 'break-word' }}>
+                        {entry.sub}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {entry.amount && (
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    {entry.amount}
+                  </div>
+                )}
+              </div>
 
-              {tx.txHash && (
-                <>
-                  <span style={{ margin: '0 8px', color: 'var(--muted)' }}>·</span>
-                  <a href={explorerUrl!} target="_blank" rel="noreferrer" style={{ color: 'var(--blue)', textDecoration: 'none', flexShrink: 0 }}>
-                    Tx: {tx.txHash.slice(0, 6)}... ↗
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                {explorerUrl && (
+                  <a href={explorerUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--wire)', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: 10 }}>
+                    Tx: {tx.txHash.slice(0, 8)}... ↗
                   </a>
-                </>
-              )}
-
-              {tx.amount && tx.type !== 'payment' && tx.type !== 'deposit' && tx.type !== 'withdrawal' && (
-                <>
-                  <span style={{ margin: '0 8px', color: 'var(--muted)' }}>·</span>
-                  <span style={{ fontWeight: 'bold', flexShrink: 0 }}>
-                    {tx.amount} {tx.token || 'USDC'}
-                  </span>
-                </>
-              )}
-
-              <span style={{ margin: '0 8px', color: 'var(--muted)' }}>·</span>
-              <span style={{ color: 'var(--muted)', flexShrink: 0 }}>
-                {tx.type === 'schedule' ? formatDayOnly(tx.timestamp) : formatTime(tx.timestamp)}
-              </span>
+                )}
+                <span style={{ flex: 1 }} />
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)' }}>
+                  {formatTime(tx.timestamp)}
+                </span>
+              </div>
             </div>
           )
         })}
