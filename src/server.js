@@ -979,7 +979,7 @@ module.exports = { startServer };
               console.log('[Keeper] executing with agentWalletId=' + agentWalletId + ' vault=' + vaultAddr + ' user=' + wallet.address + ' index=' + s.id);
               const txHash = await walletService.executeOnChainSchedule(agentWalletId, vaultAddr, wallet.address, s.id);
               await appendSpend({
-                userAddress: wallet.address,
+                userAddress: userAddress,
                 to: s.to,
                 amount: s.amount,
                 reason: s.reason,
