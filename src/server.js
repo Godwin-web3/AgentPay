@@ -487,6 +487,43 @@ async function handleIntelligence(req, res) {
 
 
 
+// Check for jobs where AgentPay is the hired provider (Funded, not yet submitted)
+async function checkHiredJobs() {
+  const { market, recentJobs } = await fetchMarketData();
+  const agentAddress = (process.env.AGENT_ADDRESS || '').toLowerCase();
+  if (!agentAddress) return { checked: 0, submitted: [] };
+
+  const myFundedJobs = recentJobs.filter(j =>
+    j.provider && j.provider.toLowerCase() === agentAddress && j.status === 'Funded'
+  );
+
+  const submitted = [];
+  for (const job of myFundedJobs) {
+    try {
+      console.log('[HiredCheck] Found job ' + job.id + ' hiring AgentPay, submitting deliverable...');
+      const deliverableText = await require('./agent').performTask(job.description);
+      const providerWalletId = process.env.AGENT_WALLET_ID;
+      const result = await require('./jobService').submitDeliverable(providerWalletId, job.id, deliverableText);
+      submitted.push({ jobId: job.id, txHash: result.txHash });
+      console.log('[HiredCheck] ✅ Submitted deliverable for job ' + job.id);
+    } catch (err) {
+      console.error('[HiredCheck] ❌ Job ' + job.id + ' submission failed:', err.message);
+    }
+  }
+
+  return { checked: myFundedJobs.length, submitted };
+}
+
+// GET /jobs/check-hired — manual trigger to check + auto-fulfill jobs hiring AgentPay
+async function handleCheckHiredJobs(req, res) {
+  try {
+    const result = await checkHiredJobs();
+    return send(res, 200, result);
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
 // Shared market data fetcher — used by both x402 route and internal proxy
 async function fetchMarketData() {
   const { createPublicClient, http } = require('viem');
@@ -922,8 +959,45 @@ app.post('/jobs', handleHireAgent);
 app.get('/jobs/:id', handleGetJob);
 app.post('/jobs/:id/complete', handleCompleteJob);
 app.post('/intelligence', gateway.require('$0.001'), handleIntelligence);
+app.get('/api/jobs/mine', async (req, res) => {
+  try {
+    const uid = req.headers['x-user-id'];
+    if (!uid) return res.status(401).json({ error: 'Not authenticated' });
+
+    const createdSnap = await db.collection('spendStore')
+      .where('userAddress', '==', uid)
+      .where('type', '==', 'job_hire')
+      .get();
+    const createdIds = createdSnap.docs
+      .map(doc => doc.data().jobId)
+      .filter(Boolean);
+
+    const created = [];
+    for (const jobId of createdIds) {
+      try {
+        const job = await jobService.getJob(jobId);
+        created.push({ jobId, role: 'client', ...job });
+      } catch (e) {
+        console.error('[jobs/mine] failed to fetch job', jobId, e.message);
+      }
+    }
+
+    const agentAddress = (process.env.AGENT_ADDRESS || '').toLowerCase();
+    const marketData = await fetchMarketData();
+    const hiredJobs = marketData.recentJobs.filter(j =>
+      j.provider && j.provider.toLowerCase() === agentAddress
+    );
+
+    res.status(200).json({ created, hired: hiredJobs });
+  } catch (err) {
+    console.error('[jobs/mine] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/market/jobs', gateway.require('$0.001'), handleMarketJobs);
 app.get('/market-intel', handleMarketIntel);
+app.get('/jobs/check-hired', handleCheckHiredJobs);
 
 const server = require('http').createServer(app);
 
@@ -998,6 +1072,15 @@ module.exports = { startServer };
       }
     } catch (err) {
       console.error('Keeper error:', err.message);
+    }
+
+    try {
+      const hiredResult = await checkHiredJobs();
+      if (hiredResult.submitted.length > 0) {
+        console.log('[HiredCheck] Auto-submitted ' + hiredResult.submitted.length + ' deliverable(s)');
+      }
+    } catch (err) {
+      console.error('[HiredCheck] error:', err.message);
     }
   }
   setInterval(runKeeper, 60000);
