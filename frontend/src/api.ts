@@ -107,6 +107,14 @@ export async function cancelSchedule(jobId: string, userId: string): Promise<{ s
   return request<{ success: boolean }>('/schedules/' + jobId, { method: 'DELETE' }, userId)
 }
 
+export async function getMyJobs(userId: string): Promise<{ created: any[]; hired: any[] }> {
+  return request<{ created: any[]; hired: any[] }>('/api/jobs/mine', {}, userId)
+}
+
+export async function getMarketJobs(userId: string): Promise<any> {
+  return request<any>('/market-intel', {}, userId)
+}
+
 export async function checkVault(userId: string): Promise<{ exists: boolean; address: string | null }> {
   return request<{ exists: boolean; address: string | null }>('/vault-check', {}, userId)
 }
