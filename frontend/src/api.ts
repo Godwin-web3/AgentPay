@@ -85,6 +85,10 @@ export async function updatePolicy(update: Partial<PolicyData>, userId: string):
   }, userId)
 }
 
+export async function getScheduleStats(userId: string): Promise<Record<string, { success: number; failed: number; lastRun: number }>> {
+  return request<Record<string, { success: number; failed: number; lastRun: number }>>('/schedules/stats', {}, userId)
+}
+
 export async function getSchedules(userId: string): Promise<{ schedules: any[] }> {
   return request<{ schedules: any[] }>('/schedules', {}, userId)
 }
