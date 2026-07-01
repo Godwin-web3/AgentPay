@@ -6,6 +6,8 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Terminal from './views/Terminal'
 import Policy from './views/Policy'
 import Schedules from './views/Schedules'
+import Jobs from './views/Jobs'
+import Marketplace from './views/Marketplace'
 import History from './views/History'
 import Landing from './views/Landing'
 import Profile from './views/Profile'
@@ -13,7 +15,7 @@ import Onboarding from './views/Onboarding'
 import type { ChatMessage } from './types'
 import { getTokenBalances, checkVault, getWallet, getVaultAddress, getVaultBalance } from './api'
 
-type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules'
+type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules' | 'jobs' | 'marketplace' | 'agent'
 
 const TerminalIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -40,9 +42,33 @@ const HistoryIcon = () => (
     <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
   </svg>
 )
+const MarketplaceIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9l1.5-5h15L21 9"/>
+    <path d="M3 9h18v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+    <line x1="9" y1="13" x2="15" y2="13"/>
+  </svg>
+)
+const JobsIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="7" width="18" height="13" rx="2" ry="2"/>
+    <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/>
+  </svg>
+)
+const AgentIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="8" width="16" height="12" rx="2" ry="2"/>
+    <line x1="12" y1="2" x2="12" y2="8"/>
+    <circle cx="9" cy="14" r="1"/>
+    <circle cx="15" cy="14" r="1"/>
+  </svg>
+)
 const navItems = [
   { id: 'terminal', icon: TerminalIcon, label: 'Terminal' },
+  { id: 'marketplace', icon: MarketplaceIcon, label: 'Marketplace' },
+  { id: 'jobs', icon: JobsIcon, label: 'Jobs' },
   { id: 'schedules', icon: ScheduleIcon, label: 'Schedules' },
+  { id: 'agent', icon: AgentIcon, label: 'Agent' },
   { id: 'history',   icon: HistoryIcon,  label: 'History'   },
   { id: 'account',   icon: AccountIcon,  label: 'Account'   },
 ] as const
@@ -243,6 +269,8 @@ function App({ tag }: { tag: string | null }) {
             {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} userId={userId} />}
             {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={vaultAddress || agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
+            {view === 'jobs' && <Jobs userAddress={userAddress} userId={userId} />}
+            {view === 'marketplace' && <Marketplace userAddress={userAddress} userId={userId} />}
           </ErrorBoundary>
         </div>
       </main>
