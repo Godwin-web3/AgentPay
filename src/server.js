@@ -959,7 +959,7 @@ module.exports = { startServer };
 (async () => {
   async function runKeeper() {
     try {
-      const { getActiveUsers } = require('./spendStore');
+      const { getActiveUsers, appendSpend } = require('./spendStore');
       const users = await getActiveUsers();
       console.log('[Keeper] checking ' + users.length + ' users:', users);
       for (const userAddress of users) {
@@ -977,7 +977,16 @@ module.exports = { startServer };
             try {
               const agentWalletId = process.env.AGENT_WALLET_ID || wallet.walletId;
               console.log('[Keeper] executing with agentWalletId=' + agentWalletId + ' vault=' + vaultAddr + ' user=' + wallet.address + ' index=' + s.id);
-              await walletService.executeOnChainSchedule(agentWalletId, vaultAddr, wallet.address, s.id);
+              const txHash = await walletService.executeOnChainSchedule(agentWalletId, vaultAddr, wallet.address, s.id);
+              await appendSpend({
+                userAddress: wallet.address,
+                to: s.to,
+                amount: s.amount,
+                reason: s.reason,
+                txHash,
+                isScheduled: true,
+                type: 'payment'
+              });
               console.log('✅ On-chain schedule ' + s.id + ' executed');
             } catch (err) {
               console.error('❌ Schedule ' + s.id + ' failed:', err.message);

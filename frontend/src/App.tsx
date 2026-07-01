@@ -157,6 +157,14 @@ function App({ tag }: { tag: string | null }) {
     }
   }, [userAddress])
 
+  useEffect(() => {
+    if (!userAddress) return
+    const interval = setInterval(() => {
+      refreshBalances()
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [userAddress])
+
   async function handleClearMemory() {
     const { clearChatHistory } = await import('./api')
     await clearChatHistory(userId).catch(() => {})
