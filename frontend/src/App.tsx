@@ -8,6 +8,7 @@ import Policy from './views/Policy'
 import Schedules from './views/Schedules'
 import Jobs from './views/Jobs'
 import Marketplace from './views/Marketplace'
+import Agent from './views/Agent'
 import History from './views/History'
 import Landing from './views/Landing'
 import Profile from './views/Profile'
@@ -271,6 +272,7 @@ function App({ tag }: { tag: string | null }) {
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
             {view === 'jobs' && <Jobs userAddress={userAddress} userId={userId} />}
             {view === 'marketplace' && <Marketplace userAddress={userAddress} userId={userId} />}
+            {view === 'agent' && <Agent />}
           </ErrorBoundary>
         </div>
       </main>
