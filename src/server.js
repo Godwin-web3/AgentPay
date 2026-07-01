@@ -975,7 +975,9 @@ module.exports = { startServer };
             if (new Date() < new Date(s.nextRun)) continue;
             console.log('⏰ Keeper executing on-chain schedule ' + s.id + ' for ' + userAddress);
             try {
-              await walletService.executeOnChainSchedule(wallet.walletId, vaultAddr, wallet.address, s.id);
+              const agentWalletId = process.env.AGENT_WALLET_ID || wallet.walletId;
+              console.log('[Keeper] executing with agentWalletId=' + agentWalletId + ' vault=' + vaultAddr + ' user=' + wallet.address + ' index=' + s.id);
+              await walletService.executeOnChainSchedule(agentWalletId, vaultAddr, wallet.address, s.id);
               console.log('✅ On-chain schedule ' + s.id + ' executed');
             } catch (err) {
               console.error('❌ Schedule ' + s.id + ' failed:', err.message);
