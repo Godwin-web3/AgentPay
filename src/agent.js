@@ -155,13 +155,36 @@ async function chat(message, walletId, userAddress) {
 }
 
 
+const Groq = require('groq-sdk');
+const groqCompound = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+// Uses Groq's compound-mini model (built-in web search + code execution,
+// server-side tool calls, no custom tool wiring needed) to actually perform
+// a job's task and produce real deliverable text, instead of a placeholder.
+async function performTask(description) {
+  try {
+    const completion = await groqCompound.chat.completions.create({
+      messages: [
+        { role: 'system', content: 'You are an autonomous agent completing a paid job. Research and answer concisely and factually. Your answer becomes the on-chain deliverable record for this job, so be accurate and brief.' },
+        { role: 'user', content: description },
+      ],
+      model: 'groq/compound-mini',
+      temperature: 0.2,
+      max_tokens: 512,
+    });
+    return completion.choices[0]?.message?.content || 'Task completed — no content returned.';
+  } catch (err) {
+    return 'Task execution failed: ' + err.message;
+  }
+}
+
 async function hireAgent(clientWalletId, providerWalletId, evaluatorWalletId, providerAddress, evaluatorAddress, description, budget, userAddress) {
   try {
     const { jobId, txHash: createTxHash } = await jobService.createJob(clientWalletId, providerAddress, evaluatorAddress, description);
     await jobService.setBudget(providerWalletId, jobId, budget);
     const fundTxHash = await jobService.approveAndFund(clientWalletId, jobId, budget);
 
-    await appendSpend({ userAddress, to: providerAddress, amount: budget, reason: description, txHash: fundTxHash, token: 'USDC' });
+    await appendSpend({ userAddress, to: providerAddress, amount: budget, reason: description, txHash: fundTxHash, token: 'USDC', jobId, type: 'job_hire' });
 
     return { success: true, jobId, status: 'Funded', createTxHash, fundTxHash };
   } catch (err) {
@@ -171,10 +194,14 @@ async function hireAgent(clientWalletId, providerWalletId, evaluatorWalletId, pr
 }
 
 async function completeHiredJob(evaluatorWalletId, jobId, providerWalletId, deliverableText) {
+  if (!deliverableText || deliverableText === 'work completed') {
+    const job = await jobService.getJob(jobId);
+    deliverableText = await performTask(job.description);
+  }
   const { txHash: submitTxHash } = await jobService.submitDeliverable(providerWalletId, jobId, deliverableText);
   const completeTxHash = await jobService.completeJob(evaluatorWalletId, jobId);
   const job = await jobService.getJob(jobId);
-  return { success: true, submitTxHash, completeTxHash, job };
+  return { success: true, submitTxHash, completeTxHash, job, deliverableText };
 }
 
-module.exports = { pay, fetchAndPay, getBalance, getSummary, getUnifiedHistory, chat, hireAgent, completeHiredJob };
+module.exports = { pay, fetchAndPay, getBalance, getSummary, getUnifiedHistory, chat, hireAgent, completeHiredJob, performTask };
