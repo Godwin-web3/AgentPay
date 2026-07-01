@@ -995,6 +995,17 @@ app.get('/api/market/jobs', gateway.require('$0.001'), handleMarketJobs);
 app.get('/market-intel', handleMarketIntel);
 app.get('/jobs/check-hired', handleCheckHiredJobs);
 
+async function handleScheduleStats(req, res) {
+  try {
+    const userId = getUserId(req);
+    const stats = await require('./spendStore').getScheduleStats(userId);
+    return send(res, 200, stats);
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+app.get('/schedules/stats', handleScheduleStats);
+
 const server = require('http').createServer(app);
 
 function startServer() {
@@ -1029,7 +1040,7 @@ module.exports = { startServer };
 (async () => {
   async function runKeeper() {
     try {
-      const { getActiveUsers, appendSpend } = require('./spendStore');
+      const { getActiveUsers, appendSpend, appendFailure } = require('./spendStore');
       const users = await getActiveUsers();
       console.log('[Keeper] checking ' + users.length + ' users:', users);
       for (const userAddress of users) {
@@ -1055,11 +1066,24 @@ module.exports = { startServer };
                 reason: s.reason,
                 txHash,
                 isScheduled: true,
+                scheduleId: s.id,
                 type: 'payment'
               });
               console.log('✅ On-chain schedule ' + s.id + ' executed');
             } catch (err) {
               console.error('❌ Schedule ' + s.id + ' failed:', err.message);
+              try {
+                await appendFailure({
+                  userAddress: userAddress,
+                  to: s.to,
+                  amount: s.amount,
+                  reason: s.reason,
+                  blockedReason: err.message,
+                  scheduleId: s.id
+                });
+              } catch (logErr) {
+                console.error('❌ Failed to log schedule failure:', logErr.message);
+              }
             }
           }
         } catch (err) {

@@ -26,7 +26,7 @@ const db = getFirestore();
 const COLLECTION = 'spends';
 const USERS_COLLECTION = 'activeUsers';
 
-async function appendSpend({ userAddress, to, amount, reason, txHash, agentId, jobId, token, isScheduled, triggerProof, type }) {
+async function appendSpend({ userAddress, to, amount, reason, txHash, agentId, jobId, scheduleId, token, isScheduled, triggerProof, type }) {
   await db.collection(COLLECTION).add({
     userAddress,
     type: type || 'payment',
@@ -37,6 +37,7 @@ async function appendSpend({ userAddress, to, amount, reason, txHash, agentId, j
     txHash,
     agentId: agentId ? agentId.toString() : null,
     jobId: jobId !== undefined && jobId !== null ? jobId.toString() : null,
+    scheduleId: scheduleId !== undefined && scheduleId !== null ? scheduleId.toString() : null,
     isScheduled: !!isScheduled,
     triggerProof: triggerProof || null,
     timestamp: Date.now(),
@@ -44,7 +45,7 @@ async function appendSpend({ userAddress, to, amount, reason, txHash, agentId, j
   });
 }
 
-async function appendFailure({ userAddress, to, amount, reason, blockedReason, agentId }) {
+async function appendFailure({ userAddress, to, amount, reason, blockedReason, agentId, scheduleId }) {
   await db.collection(COLLECTION).add({
     userAddress,
     to,
@@ -52,6 +53,8 @@ async function appendFailure({ userAddress, to, amount, reason, blockedReason, a
     reason,
     blockedReason: blockedReason ? blockedReason.slice(0, 100) : '',
     agentId: agentId ? agentId.toString() : null,
+    scheduleId: scheduleId !== undefined && scheduleId !== null ? scheduleId.toString() : null,
+    isScheduled: scheduleId !== undefined && scheduleId !== null,
     failed: true,
     timestamp: Date.now(),
     date: new Date().toDateString()
@@ -152,6 +155,22 @@ async function getJobsCreatedBy(userAddress) {
   return snap.docs.map(doc => doc.data().jobId).filter(Boolean);
 }
 
+async function getScheduleStats(userAddress) {
+  let query = db.collection(COLLECTION).where('isScheduled', '==', true);
+  if (userAddress) query = query.where('userAddress', '==', userAddress);
+  const snapshot = await query.get();
+  const stats = {};
+  snapshot.forEach(doc => {
+    const s = doc.data();
+    if (!s.scheduleId) return;
+    if (!stats[s.scheduleId]) stats[s.scheduleId] = { success: 0, failed: 0, lastRun: 0 };
+    if (s.failed) stats[s.scheduleId].failed++;
+    else stats[s.scheduleId].success++;
+    if (s.timestamp > stats[s.scheduleId].lastRun) stats[s.scheduleId].lastRun = s.timestamp;
+  });
+  return stats;
+}
+
 module.exports = {
   appendSpend,
   appendSwap,
@@ -162,6 +181,7 @@ module.exports = {
   getLastHourTxCount,
   getConsecutiveFailures,
   getHistory,
+  getScheduleStats,
   trackUser,
   getActiveUsers
 };
