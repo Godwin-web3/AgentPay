@@ -15,7 +15,7 @@ export default function Marketplace({ userAddress, userId }: { userAddress: stri
     setError('')
     try {
       const res = await getMarketJobs(userId)
-      setMarket(res.market || res)
+      setMarket({ ...res.market, recentJobs: res.recentJobs || [] })
     } catch (err) {
       setError('Failed to load market data')
     } finally {
@@ -48,7 +48,7 @@ export default function Marketplace({ userAddress, userId }: { userAddress: stri
           </div>
           <div className="card" style={{ padding: 12, textAlign: 'center' }}>
             <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Avg Budget</div>
-            <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--cyan)' }}>{market.averageBudget} USDC</div>
+            <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--cyan)' }}>{market.averageBudget}</div>
           </div>
           <div className="card" style={{ padding: 12, textAlign: 'center' }}>
             <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>Volume</div>
