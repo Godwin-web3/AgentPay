@@ -806,6 +806,7 @@ app.use((req, res, next) => {
     '/api/tag/claim',
     '/api/market/jobs',
     '/market-intel',
+    '/api/jobs/mine',
   ];
   const normalizedPath = req.path.endsWith('/') ? req.path.slice(0, -1) : req.path;
   if (exempt.includes(normalizedPath) || normalizedPath.startsWith('/api/tag/')) return next();
