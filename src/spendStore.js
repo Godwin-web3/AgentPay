@@ -135,8 +135,7 @@ async function getHistory(userAddress, limit) {
 
 async function trackUser(userAddress) {
   if (!userAddress || userAddress === 'anonymous') return;
-  const addr = userAddress.toLowerCase();
-  await db.collection(USERS_COLLECTION).doc(addr).set({ address: addr, lastSeen: Date.now() }, { merge: true });
+  await db.collection(USERS_COLLECTION).doc(userAddress).set({ address: userAddress, lastSeen: Date.now() }, { merge: true });
 }
 
 async function getActiveUsers() {
