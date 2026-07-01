@@ -960,6 +960,7 @@ module.exports = { startServer };
     try {
       const { getActiveUsers } = require('./spendStore');
       const users = await getActiveUsers();
+      console.log('[Keeper] checking ' + users.length + ' users:', users);
       for (const userAddress of users) {
         try {
           const wallet = await getOrCreateWallet(userAddress);
