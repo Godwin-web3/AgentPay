@@ -144,11 +144,20 @@ async function getActiveUsers() {
   return snapshot.docs.map(doc => doc.data().address);
 }
 
+async function getJobsCreatedBy(userAddress) {
+  const snap = await db.collection(COLLECTION)
+    .where('userAddress', '==', userAddress)
+    .where('type', '==', 'job_hire')
+    .get();
+  return snap.docs.map(doc => doc.data().jobId).filter(Boolean);
+}
+
 module.exports = {
   appendSpend,
   appendSwap,
   appendFailure,
   appendInference,
+  getJobsCreatedBy,
   getTodaySpend,
   getLastHourTxCount,
   getConsecutiveFailures,

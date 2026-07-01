@@ -965,13 +965,8 @@ app.get('/api/jobs/mine', async (req, res) => {
     const uid = req.headers['x-user-id'];
     if (!uid) return res.status(401).json({ error: 'Not authenticated' });
 
-    const createdSnap = await db.collection('spendStore')
-      .where('userAddress', '==', uid)
-      .where('type', '==', 'job_hire')
-      .get();
-    const createdIds = createdSnap.docs
-      .map(doc => doc.data().jobId)
-      .filter(Boolean);
+    const { getJobsCreatedBy } = require('./spendStore');
+    const createdIds = await getJobsCreatedBy(uid);
 
     const created = [];
     for (const jobId of createdIds) {
