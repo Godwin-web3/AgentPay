@@ -965,7 +965,7 @@ module.exports = { startServer };
         try {
           const wallet = await getOrCreateWallet(userAddress);
           const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
-          const vaultAddr = await escrow.findVault(wallet.address);
+          const vaultAddr = await resolveOrCreateVault(userAddress);
           console.log('[Keeper] user=' + userAddress + ' vault=' + vaultAddr);
           if (!vaultAddr) { console.log('[Keeper] no vault, skipping'); continue; }
           const schedules = await escrow.getOnChainSchedules(provider, wallet.address);
