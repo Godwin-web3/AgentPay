@@ -184,15 +184,14 @@ async function waitForTxHash(txId, label) {
 }
 
 async function executeOnChainSchedule(walletId, vaultAddress, userAddress, index) {
-  const res = await client.createContractExecutionTransaction({
-    walletId,
-    contractAddress: vaultAddress,
-    blockchain: 'ARC-TESTNET',
-    abiFunctionSignature: 'executeScheduled(address,uint256)',
-    abiParameters: [userAddress, String(index)],
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
-  });
-  return await waitForTxHash(res.data.id, 'executeScheduled');
+  const { ethers } = require('ethers');
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
+  const agentWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  const abi = ['function executeScheduled(address user, uint256 index) external'];
+  const contract = new ethers.Contract(vaultAddress, abi, agentWallet);
+  const tx = await contract.executeScheduled(userAddress, index);
+  const receipt = await tx.wait();
+  return receipt.hash;
 }
 
 module.exports = { ...module.exports, approveAndDepositToVault, withdrawFromVault, createVaultSchedule, cancelVaultSchedule, executeOnChainSchedule };
