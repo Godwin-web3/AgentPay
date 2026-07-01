@@ -846,6 +846,7 @@ async function resolveOrCreateVault(userId) {
   const agentAddress = wallet.address;
 
   let vaultAddr = await escrow.findVault(agentAddress);
+  console.log('[resolveOrCreateVault] userId=' + userId + ' agentAddress=' + agentAddress + ' vaultAddr=' + vaultAddr);
 
   if (!vaultAddr) {
     console.log('Creating vault on-chain for', agentAddress, '(userId:', userId + ')');
