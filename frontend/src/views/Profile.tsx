@@ -16,7 +16,7 @@ interface Props {
   userId: string
 }
 
-type SubView = null | 'vault' | 'policy' | 'history' | 'agent'
+type SubView = null | 'vault' | 'policy' | 'history'
 
 const ChevronRight = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -67,79 +67,84 @@ export default function Profile({ userAddress, userId, vaultBalance, walletBalan
     )
   }
 
-  if (subView === 'agent') {
-    return (
-      <div style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-          <button onClick={() => setSubView(null)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Back</button>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text)' }}>AGENT</span>
-        </div>
-        <div className="card" style={{ marginBottom: 12, padding: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.05em' }}>YOUR WALLET</span>
-            <span style={{ fontSize: 9, color: 'var(--cyan)', border: '1px solid var(--cyan)', borderRadius: 3, padding: '1px 6px' }}>CIRCLE</span>
-          </div>
-          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all' }}>{userAddress}</div>
-        </div>
-        <div className="card" style={{ marginBottom: 12, padding: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.05em' }}>YOUR VAULT</span>
-            <span style={{ fontSize: 9, color: 'var(--muted)', border: '1px solid var(--border)', borderRadius: 3, padding: '1px 6px' }}>VAULT</span>
-          </div>
-          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all' }}>{agentWalletAddress || '—'}</div>
-          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-            Balance: <span style={{ color: 'var(--text)' }}>{agentWalletBalance || '0'} USDC</span>
-          </div>
-        </div>
-        <div className="card" style={{ padding: '16px' }}>
-          <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 8, letterSpacing: '0.05em' }}>NETWORK</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--cyan)', display: 'inline-block' }} />
-            <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 13 }}>Arc Testnet</span>
-            <span style={{ color: 'var(--muted)', fontSize: 12 }}>· Chain ID 5042002</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const menuItems = [
-    { id: 'vault',   label: 'Vault',   desc: vaultBalance + ' USDC in vault' },
-    { id: 'policy',  label: 'Policy',  desc: 'Spending rules and caps' },
-    { id: 'history', label: 'History', desc: 'Transaction log' },
-    { id: 'agent',   label: 'Agent',   desc: 'Agent wallet & network' },
-  ]
-
   return (
     <div style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
-      <div className="card" style={{ marginBottom: 24, padding: '12px 16px' }}>
+
+      {/* Identity strip */}
+      <div className="card" style={{ marginBottom: 16, padding: '12px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>CONNECTED</div>
-            <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--cyan)', fontSize: 14 }}>{shortAddr(userAddress)}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--seal)', fontSize: 14 }}>{shortAddr(userAddress)}</div>
           </div>
           {tag && tag !== 'skip' && (
-            <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 14, background: 'var(--bg)', border: '1px solid var(--cyan)', borderRadius: 4, padding: '4px 10px' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 14, background: 'var(--bg)', border: '1px solid var(--seal)', borderRadius: 4, padding: '4px 10px' }}>
               @{tag}
             </div>
           )}
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {menuItems.map(item => (
+
+      {/* Vault — the primary stat, with quick actions right here */}
+      <div className="card" style={{ marginBottom: 16, padding: '20px' }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 3, color: 'var(--muted)', marginBottom: 8 }}>
+          VAULT BALANCE
+        </div>
+        <div style={{ fontFamily: 'var(--font-head)', fontSize: 36, fontWeight: 700, color: 'var(--text)', lineHeight: 1, marginBottom: 16 }}>
+          {vaultBalance} <span style={{ fontSize: 16, color: 'var(--muted)', fontWeight: 400 }}>USDC</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
           <button
-            key={item.id}
-            onClick={() => setSubView(item.id as SubView)}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+            onClick={() => setSubView('vault')}
+            style={{ padding: '10px 8px', background: 'var(--seal)', border: '1px solid var(--seal)', color: '#0B0D10', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 1.5, fontWeight: 700, cursor: 'pointer' }}
           >
-            <div>
-              <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, marginBottom: 2 }}>{item.label}</div>
-              <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--muted)', fontSize: 11 }}>{item.desc}</div>
-            </div>
-            <span style={{ color: 'var(--muted)' }}><ChevronRight /></span>
+            DEPOSIT
           </button>
-        ))}
+          <button
+            onClick={() => setSubView('vault')}
+            style={{ padding: '10px 8px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 1.5, cursor: 'pointer' }}
+          >
+            WITHDRAW
+          </button>
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', wordBreak: 'break-all', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+          {agentWalletAddress || '—'}
+        </div>
       </div>
+
+      {/* Wallet — secondary stat */}
+      <div className="card" style={{ marginBottom: 16, padding: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.05em' }}>YOUR WALLET</span>
+          <span style={{ fontSize: 9, color: 'var(--wire)', border: '1px solid var(--wire)', borderRadius: 3, padding: '1px 6px' }}>CIRCLE</span>
+        </div>
+        <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all', marginBottom: 8 }}>{userAddress}</div>
+        <div style={{ fontSize: 11, color: 'var(--muted)', borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+          Balance: <span style={{ color: 'var(--text)' }}>{walletBalance || '0'} USDC</span>
+        </div>
+      </div>
+
+      {/* Network */}
+      <div className="card" style={{ marginBottom: 16, padding: '14px 16px' }}>
+        <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 8, letterSpacing: '0.05em' }}>NETWORK</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--seal)', display: 'inline-block' }} />
+          <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--seal)', fontSize: 13 }}>Arc Testnet</span>
+          <span style={{ color: 'var(--muted)', fontSize: 12 }}>· Chain ID 5042002</span>
+        </div>
+      </div>
+
+      {/* Policy — the one menu item that's genuinely unique to Account */}
+      <button
+        onClick={() => setSubView('policy')}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+      >
+        <div>
+          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, marginBottom: 2 }}>Policy</div>
+          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--muted)', fontSize: 11 }}>Spending rules and caps</div>
+        </div>
+        <span style={{ color: 'var(--muted)' }}><ChevronRight /></span>
+      </button>
     </div>
   )
 }
