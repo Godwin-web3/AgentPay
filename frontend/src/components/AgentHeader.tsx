@@ -86,16 +86,23 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
           <div className="agent-name">AGENTPAY</div>
           {tag && tag !== 'skip' && (
             <div style={{
-              padding: '2px 8px',
-              borderRadius: 3,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
               fontFamily: 'var(--font-mono)',
               fontSize: 10,
               fontWeight: 700,
               letterSpacing: 0.5,
-              background: 'rgba(217,164,65,0.08)',
-              border: '1px solid var(--seal)',
               color: 'var(--seal)',
             }}>
+              <span style={{
+                width: 5,
+                height: 5,
+                borderRadius: '50%',
+                background: 'var(--seal)',
+                display: 'inline-block',
+                boxShadow: '0 0 4px var(--seal)',
+              }} />
               @{tag}
             </div>
           )}

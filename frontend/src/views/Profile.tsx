@@ -78,7 +78,8 @@ export default function Profile({ userAddress, userId, vaultBalance, walletBalan
             <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--seal)', fontSize: 14 }}>{shortAddr(userAddress)}</div>
           </div>
           {tag && tag !== 'skip' && (
-            <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 14, background: 'var(--bg)', border: '1px solid var(--seal)', borderRadius: 4, padding: '4px 10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', color: 'var(--seal)', fontSize: 13, fontWeight: 700 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--seal)', display: 'inline-block', boxShadow: '0 0 4px var(--seal)' }} />
               @{tag}
             </div>
           )}
@@ -118,7 +119,16 @@ export default function Profile({ userAddress, userId, vaultBalance, walletBalan
           <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.05em' }}>YOUR WALLET</span>
           <span style={{ fontSize: 9, color: 'var(--wire)', border: '1px solid var(--wire)', borderRadius: 3, padding: '1px 6px' }}>CIRCLE</span>
         </div>
-        <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, wordBreak: 'break-all', marginBottom: 8 }}>{userAddress}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13 }}>{shortAddr(userAddress)}</span>
+          <button
+            onClick={() => navigator.clipboard.writeText(userAddress)}
+            style={{ background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--font-mono)', padding: 0 }}
+            title="Copy full address"
+          >
+            copy
+          </button>
+        </div>
         <div style={{ fontSize: 11, color: 'var(--muted)', borderTop: '1px solid var(--border)', paddingTop: 8 }}>
           Balance: <span style={{ color: 'var(--text)' }}>{walletBalance || '0'} USDC</span>
         </div>
