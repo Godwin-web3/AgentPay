@@ -278,6 +278,7 @@ function App({ tag }: { tag: string | null }) {
           refreshTrigger={refreshKey}
           activeProvider={activeProvider}
           userAddress={userAddress}
+          tag={tag}
         />
         
         <div className="view-content">
