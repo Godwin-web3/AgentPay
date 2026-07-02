@@ -79,15 +79,12 @@ function App({ tag }: { tag: string | null }) {
   const [historyKey, setHistoryKey] = useState(0)
   const [view, setView] = useState<View>(() => (localStorage.getItem('agentpay_view') as View) || 'landing')
 
-  const [debugInfo, setDebugInfo] = useState('')
-
   useEffect(() => {
     function setAppHeight() {
       const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight
       document.documentElement.style.setProperty('--app-height', vh + 'px')
       const keyboardOpen = window.innerHeight - vh > 150
       document.documentElement.classList.toggle('keyboard-open', keyboardOpen)
-      setDebugInfo(`inner=${window.innerHeight} vv=${Math.round(vh)} kb=${keyboardOpen} hasVV=${!!window.visualViewport}`)
     }
     setAppHeight()
     if (window.visualViewport) {
