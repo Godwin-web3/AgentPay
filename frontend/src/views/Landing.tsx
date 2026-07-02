@@ -49,8 +49,8 @@ function DemoTerminal() {
             <div style={{
               maxWidth: '85%',
               padding: '7px 11px',
-              background: line.role === 'user' ? '#4fdbc810' : (line.blocked ? '#ff444410' : '#141414'),
-              border: `1px solid ${line.role === 'user' ? '#4fdbc830' : (line.blocked ? '#ff444430' : '#222')}`,
+              background: line.role === 'user' ? '#D9A44110' : (line.blocked ? '#ff444410' : '#141414'),
+              border: `1px solid ${line.role === 'user' ? '#D9A44130' : (line.blocked ? '#ff444430' : '#222')}`,
               color: line.blocked ? '#ff6666' : (line.role === 'user' ? 'var(--seal)' : '#ccc'),
               lineHeight: 1.5,
             }}>
@@ -122,7 +122,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
           <button onClick={handleStart} style={{
             padding: '7px 18px',
             background: 'transparent',
-            border: '1px solid #4fdbc8',
+            border: '1px solid var(--seal)',
             color: 'var(--seal)',
             fontSize: 10,
             letterSpacing: 2,
@@ -132,7 +132,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
       </nav>
 
       {/* Hero */}
-      <div style={{ padding: '60px 24px 40px', maxWidth: 600, margin: '0 auto' }}>
+      <div style={{ padding: '60px 24px 40px', maxWidth: 720, width: '100%', margin: '0 auto' }}>
         <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--seal)', marginBottom: 20 }}>
           BUILT FOR ARC PROGRAMMABLE MONEY HACKATHON
         </div>
@@ -176,7 +176,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
       </div>
 
       {/* Demo terminal */}
-      <div style={{ padding: '0 24px 60px', maxWidth: 600, margin: '0 auto' }}>
+      <div style={{ padding: '0 24px 60px', maxWidth: 720, width: '100%', margin: '0 auto' }}>
         <DemoTerminal />
         <p style={{ color: '#333', fontSize: 11, marginTop: 10, textAlign: 'center' }}>
           The second payment is blocked by the vault. The AI cannot override it.
@@ -185,7 +185,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
 
       {/* Live stats */}
       <div style={{ borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', maxWidth: 600, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', maxWidth: 720, width: '100%', margin: '0 auto' }}>
           <StatCard label="USERS" value={String(stats.users)} />
           <StatCard label="TRANSACTIONS" value={String(stats.transactions)} />
           <StatCard label="USDC VOLUME" value={'$' + stats.volume} />
@@ -194,7 +194,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
       </div>
 
       {/* Features */}
-      <div style={{ padding: '60px 24px', maxWidth: 600, margin: '0 auto' }}>
+      <div style={{ padding: '60px 24px', maxWidth: 720, width: '100%', margin: '0 auto' }}>
         <div style={{ fontSize: 9, letterSpacing: 4, color: '#444', marginBottom: 32 }}>WHAT YOU GET</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#1a1a1a' }}>
           {[
