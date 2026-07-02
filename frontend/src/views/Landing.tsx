@@ -76,7 +76,7 @@ function DemoTerminal() {
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ padding: '20px 24px', borderRight: '1px solid #1a1a1a' }}>
-      <div style={{ color: '#444', fontSize: 9, letterSpacing: 3, fontFamily: 'var(--font-mono)', marginBottom: 8, overflowWrap: 'break-word' }}>{label}</div>
+      <div style={{ color: '#444', fontSize: 9, letterSpacing: 1, fontFamily: 'var(--font-mono)', marginBottom: 8, whiteSpace: 'nowrap' }}>{label}</div>
       <div style={{ color: 'var(--seal)', fontSize: 28, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{value}</div>
     </div>
   )
@@ -185,7 +185,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
 
       {/* Live stats */}
       <div style={{ borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', maxWidth: 720, width: '100%', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 500 ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))', maxWidth: 720, width: '100%', margin: '0 auto' }}>
           <StatCard label="USERS" value={String(stats.users)} />
           <StatCard label="TRANSACTIONS" value={String(stats.transactions)} />
           <StatCard label="USDC VOLUME" value={'$' + stats.volume} />
