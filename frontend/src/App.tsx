@@ -249,7 +249,6 @@ function App({ tag }: { tag: string | null }) {
 
   return (
     <div className="app">
-      <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 99999, background: 'red', color: 'white', fontSize: 10, padding: 4, fontFamily: 'monospace' }}>{debugInfo}</div>
       {/* Desktop Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-logo">
