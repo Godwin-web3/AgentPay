@@ -83,6 +83,8 @@ function App({ tag }: { tag: string | null }) {
     function setAppHeight() {
       const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight
       document.documentElement.style.setProperty('--app-height', vh + 'px')
+      const keyboardOpen = window.innerHeight - vh > 150
+      document.documentElement.classList.toggle('keyboard-open', keyboardOpen)
     }
     setAppHeight()
     if (window.visualViewport) {

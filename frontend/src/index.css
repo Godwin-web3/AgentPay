@@ -429,6 +429,19 @@ body::after {
   border-left: 3px solid var(--blue);
 }
 
+/* When the on-screen keyboard is open, the fixed nav bar sits behind it —
+   collapse the padding that was reserving space for it, and hide the nav
+   entirely so nothing floats in dead space above the keyboard. */
+.keyboard-open .view-content {
+  padding-bottom: 16px !important;
+}
+.keyboard-open .terminal {
+  padding-bottom: 16px !important;
+}
+.keyboard-open .mobile-nav {
+  display: none !important;
+}
+
 /* Mobile Bottom Nav */
 .mobile-nav {
   display: none;
