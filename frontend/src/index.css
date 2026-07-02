@@ -206,7 +206,7 @@ body::after {
   flex-direction: column;
   width: 100%;
   position: relative;
-  padding-bottom: calc(var(--bottom-nav-height) + 16px);
+  padding-bottom: calc(var(--bottom-nav-height) + 4px);
 }
 
 /* Terminal / Chat System */
