@@ -206,7 +206,13 @@ body::after {
   flex-direction: column;
   width: 100%;
   position: relative;
-  padding-bottom: calc(var(--bottom-nav-height) + 4px);
+  padding-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .view-content {
+    padding-bottom: calc(var(--bottom-nav-height) + 16px);
+  }
 }
 
 /* Terminal / Chat System */
@@ -222,7 +228,6 @@ body::after {
 @media (max-width: 768px) {
   .terminal {
     padding: 16px;
-    padding-bottom: calc(var(--bottom-nav-height) + 16px);
   }
 }
 
