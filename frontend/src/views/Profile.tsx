@@ -24,7 +24,7 @@ const ChevronRight = () => (
   </svg>
 )
 
-export default function Profile({ userAddress, userId, vaultBalance, walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, agentWalletBalance, tag }: Props) {
+export default function Profile({ userAddress, userId, vaultBalance, walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, tag }: Props) {
   const [subView, setSubView] = useState<SubView>(null)
 
   function shortAddr(addr: string) {
