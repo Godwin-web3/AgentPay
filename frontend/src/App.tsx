@@ -78,6 +78,21 @@ function App({ tag }: { tag: string | null }) {
   const { walletAddress: authWalletAddress, uid: authUid } = useAuth();
   const [historyKey, setHistoryKey] = useState(0)
   const [view, setView] = useState<View>(() => (localStorage.getItem('agentpay_view') as View) || 'landing')
+
+  useEffect(() => {
+    function setAppHeight() {
+      const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight
+      document.documentElement.style.setProperty('--app-height', vh + 'px')
+    }
+    setAppHeight()
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', setAppHeight)
+      return () => window.visualViewport?.removeEventListener('resize', setAppHeight)
+    } else {
+      window.addEventListener('resize', setAppHeight)
+      return () => window.removeEventListener('resize', setAppHeight)
+    }
+  }, [])
   const [userAddress, setUserAddress] = useState(() => localStorage.getItem('agentpay_address') || '')
 
   const [userId, setUserId] = useState(() => localStorage.getItem('agentpay_uid') || '')
