@@ -1015,10 +1015,22 @@ app.get('/api/jobs/mine', async (req, res) => {
     });
 
     const agentAddress = (process.env.AGENT_ADDRESS || '').toLowerCase();
-    const marketData = await fetchMarketData();
-    const hiredJobs = marketData.recentJobs.filter(j =>
-      j.provider && j.provider.toLowerCase() === agentAddress
+    const { getActiveUsers } = require('./spendStore');
+    const activeUsers = await getActiveUsers();
+    const allJobIdsSet = new Set();
+    for (const activeUid of activeUsers) {
+      const ids = await getJobsCreatedBy(activeUid);
+      ids.forEach(id => allJobIdsSet.add(id));
+    }
+    const hiredResults = await Promise.allSettled(
+      [...allJobIdsSet].map(jobId => withTimeout(jobService.getJob(jobId), 8000).then(job => ({ jobId, job })))
     );
+    const hiredJobs = [];
+    hiredResults.forEach(r => {
+      if (r.status === 'fulfilled' && r.value.job.provider && r.value.job.provider.toLowerCase() === agentAddress) {
+        hiredJobs.push({ jobId: r.value.jobId, ...r.value.job });
+      }
+    });
 
     res.status(200).json({ created, hired: hiredJobs });
   } catch (err) {
