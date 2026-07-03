@@ -314,7 +314,7 @@ function App({ tag }: { tag: string | null }) {
 }
 
 function AppWithAuth() {
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading } = useAuth();
   const [tag, setTag] = useState<string | null>(null);
   const [authView, setAuthView] = useState<'landing' | 'login'>('landing');
   const [tagLoading, setTagLoading] = useState(false);

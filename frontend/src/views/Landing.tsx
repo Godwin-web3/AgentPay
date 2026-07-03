@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
 
 const DEMO_LINES = [
   { role: 'user', text: 'send 5 USDC to @sara for design work', delay: 300 },
