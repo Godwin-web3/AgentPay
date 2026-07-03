@@ -225,20 +225,32 @@ async function getJob(jobId) {
   };
 }
 
+let recentJobsCache = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 60000;
+
 async function getRecentJobs() {
+  const now = Date.now();
+  if (recentJobsCache && now - cacheTimestamp < CACHE_TTL) {
+    return recentJobsCache;
+  }
+
   const CHUNK = 10000n;
   const event = agenticCommerceAbi.find(a => a.type === 'event' && a.name === 'JobCreated');
   const latest = await publicClient.getBlockNumber();
+  const START_BLOCK = latest > 100000n ? latest - 100000n : 0n;
   let allLogs = [];
-  for (let from = 0n; from <= latest; from += CHUNK + 1n) {
+  for (let from = START_BLOCK; from <= latest; from += CHUNK + 1n) {
     const to = from + CHUNK > latest ? latest : from + CHUNK;
-    const logs = await publicClient.getLogs({
-      address: AGENTIC_COMMERCE_CONTRACT,
-      event,
-      fromBlock: from,
-      toBlock: to
-    });
-    allLogs = allLogs.concat(logs);
+    try {
+      const logs = await publicClient.getLogs({
+        address: AGENTIC_COMMERCE_CONTRACT,
+        event,
+        fromBlock: from,
+        toBlock: to
+      });
+      allLogs = allLogs.concat(logs);
+    } catch { }
   }
   const jobIds = [...new Set(allLogs.map(l => l.args.jobId))];
   const jobs = [];
@@ -255,6 +267,8 @@ async function getRecentJobs() {
     } catch { }
   }
   jobs.sort((a, b) => Number(b.id) - Number(a.id));
+  recentJobsCache = jobs;
+  cacheTimestamp = Date.now();
   return jobs;
 }
 

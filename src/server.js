@@ -550,7 +550,8 @@ async function handleCheckHiredJobs(req, res) {
 
 async function fetchMarketData() {
   const jobService = require('./jobService');
-  const jobs = await jobService.getRecentJobs();
+  const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Market data fetch timeout')), 25000));
+  const jobs = await Promise.race([jobService.getRecentJobs(), timeout]);
   const STATUS = ['Open', 'Funded', 'Submitted', 'Completed', 'Rejected', 'Expired'];
   const funded = jobs.filter(j => j.status !== 'Open' && Number(j.budget) > 0);
   const totalBudget = funded.reduce((sum, j) => sum + Number(j.budget), 0);
