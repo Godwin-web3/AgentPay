@@ -17,13 +17,13 @@ export default function Marketplace({ userAddress, userId }: { userAddress: stri
       const res = await getMarketJobs(userId)
       setMarket({ ...res.market, recentJobs: res.recentJobs || [] })
     } catch (err) {
-      setError('Failed to load market data')
+      setError(err.message || 'Failed to load market data. Check connection or try again.')
     } finally {
       setLoading(false)
     }
   }
 
-  if (loading && !market) return (
+  if (loading) return (
     <div className="view-container">
       <div className="empty-state">Loading market...</div>
     </div>
