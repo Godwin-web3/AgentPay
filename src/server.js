@@ -501,10 +501,23 @@ async function checkHiredJobs() {
   for (const job of myFundedJobs) {
     try {
       console.log('[HiredCheck] Found job ' + job.id + ' hiring AgentPay, submitting deliverable...');
-      const deliverableText = await require('./agent').performTask(job.description);
       const providerWalletId = process.env.AGENT_WALLET_ID;
-      const result = await require('./jobService').submitDeliverable(providerWalletId, job.id, deliverableText);
-      submitted.push({ jobId: job.id, txHash: result.txHash });
+
+      const jobDetail = await require('./jobService').getJob(job.id);
+      const wallets = await walletStore.getAllWallets();
+      const evaluatorEntry = Object.values(wallets).find(
+        w => w.address && w.address.toLowerCase() === jobDetail.evaluator.toLowerCase()
+      );
+
+      if (!evaluatorEntry) {
+        console.error('[HiredCheck] Could not resolve evaluator walletId for job ' + job.id);
+        continue;
+      }
+
+      const result = await require('./agent').completeHiredJob(
+        evaluatorEntry.walletId, job.id, providerWalletId, 'work completed'
+      );
+      submitted.push({ jobId: job.id, txHash: result.completeTxHash });
       console.log('[HiredCheck] ✅ Submitted deliverable for job ' + job.id);
     } catch (err) {
       console.error('[HiredCheck] ❌ Job ' + job.id + ' submission failed:', err.message);
