@@ -26,7 +26,7 @@ const db = getFirestore();
 const COLLECTION = 'spends';
 const USERS_COLLECTION = 'activeUsers';
 
-async function appendSpend({ userAddress, to, amount, reason, txHash, agentId, jobId, scheduleId, token, isScheduled, triggerProof, type }) {
+async function appendSpend({ userAddress, to, amount, reason, txHash, agentId, jobId, scheduleId, token, isScheduled, triggerProof, type, deliverableText }) {
   await db.collection(COLLECTION).add({
     userAddress,
     type: type || 'payment',
@@ -40,6 +40,7 @@ async function appendSpend({ userAddress, to, amount, reason, txHash, agentId, j
     scheduleId: scheduleId !== undefined && scheduleId !== null ? scheduleId.toString() : null,
     isScheduled: !!isScheduled,
     triggerProof: triggerProof || null,
+    deliverableText: deliverableText || null,
     timestamp: Date.now(),
     date: new Date().toDateString()
   });

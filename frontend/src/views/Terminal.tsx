@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, hireAgent, decodePolicyError, depositToVault } from '../api'
+import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, hireAgent, decodePolicyError, depositToVault, getJob } from '../api'
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -57,11 +57,23 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     else if (result.type === 'pay' || result.to) label = `SENT — ${result.amount} ${result.token || 'USDC'} to ${result.to?.slice(0, 10)}...`
     else if (result.type === 'deposit') label = `DEPOSITED — ${result.amount} USDC`
     return (
-      <a href={result.explorer} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: 10, textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: 11, padding: '10px 14px', border: '1px solid rgba(79,219,200,0.3)', background: 'rgba(79,219,200,0.04)', color: 'var(--cyan)' }}>
-        <div style={{ letterSpacing: 1, marginBottom: 4 }}>+ {label}</div>
-        {result.txHash && <div style={{ fontSize: 10, color: 'var(--muted)' }}>TX {result.txHash.slice(0, 18)}... -&gt;</div>}
-        <div style={{ marginTop: 4, fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>FINALIZED IN &lt; 1s — ARC TESTNET</div>
-      </a>
+      <div style={{ marginTop: 10 }}>
+        <a href={result.explorer} target="_blank" rel="noreferrer" style={{ display: 'block', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: 11, padding: '10px 14px', border: '1px solid rgba(79,219,200,0.3)', background: 'rgba(79,219,200,0.04)', color: 'var(--cyan)' }}>
+          <div style={{ letterSpacing: 1, marginBottom: 4 }}>+ {label}</div>
+          {result.txHash && <div style={{ fontSize: 10, color: 'var(--muted)' }}>TX {result.txHash.slice(0, 18)}... -&gt;</div>}
+          <div style={{ marginTop: 4, fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>FINALIZED IN &lt; 1s — ARC TESTNET</div>
+        </a>
+        {result.type === 'hire' && !result.deliverableText && (
+          <div style={{ marginTop: 6, fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-mono)', padding: '8px 14px' }}>
+            Waiting for delivery...
+          </div>
+        )}
+        {result.deliverableText && (
+          <div style={{ marginTop: 6, fontSize: 12, color: 'var(--text)', fontFamily: 'var(--font-body)', padding: '10px 14px', border: '1px solid var(--border)', background: 'var(--bg-card)', whiteSpace: 'pre-wrap' }}>
+            {result.deliverableText}
+          </div>
+        )}
+      </div>
     )
   }
   if (result.status === 'cancelled') return <div style={{ marginTop: 10, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', padding: '8px 0' }}>CANCELLED</div>
@@ -222,7 +234,21 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         res = { status: 'executed', txHash: schedRes.txHash, explorer: schedRes.explorer, type: 'schedule', to: prop.to, amount: prop.amount }
       } else if (prop.status === 'proposing_hire') {
         const hireRes = await hireAgent(prop.description, prop.budget, userId)
-        res = { status: hireRes.success ? 'executed' : 'rejected', txHash: hireRes.fundTxHash || hireRes.createTxHash, explorer: 'https://testnet.arcscan.app/tx/' + (hireRes.fundTxHash || hireRes.createTxHash || ''), type: 'hire', to: prop.to, amount: prop.budget, reason: hireRes.reason || '' }
+        res = { status: hireRes.success ? 'executed' : 'rejected', txHash: hireRes.fundTxHash || hireRes.createTxHash, explorer: 'https://testnet.arcscan.app/tx/' + (hireRes.fundTxHash || hireRes.createTxHash || ''), type: 'hire', to: prop.to, amount: prop.budget, reason: hireRes.reason || '', jobId: hireRes.jobId }
+        if (hireRes.success && hireRes.jobId) {
+          const poll = async (attempt: number) => {
+            if (attempt > 20) return
+            try {
+              const job = await getJob(hireRes.jobId, userId)
+              if (job.deliverableText) {
+                setTxResults(r => ({ ...r, [msgIdx]: { ...r[msgIdx], deliverableText: job.deliverableText } }))
+                return
+              }
+            } catch {}
+            setTimeout(() => poll(attempt + 1), 4000)
+          }
+          setTimeout(() => poll(0), 4000)
+        }
       }
       if (res) {
         setTxResults(r => ({ ...r, [msgIdx]: res }))

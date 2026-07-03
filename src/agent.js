@@ -201,6 +201,22 @@ async function completeHiredJob(evaluatorWalletId, jobId, providerWalletId, deli
   const { txHash: submitTxHash } = await jobService.submitDeliverable(providerWalletId, jobId, deliverableText);
   const completeTxHash = await jobService.completeJob(evaluatorWalletId, jobId);
   const job = await jobService.getJob(jobId);
+
+  try {
+    await appendSpend({
+      userAddress: job.client,
+      to: job.provider,
+      amount: job.budget,
+      reason: job.description,
+      txHash: completeTxHash,
+      jobId,
+      type: 'job_deliverable',
+      deliverableText
+    });
+  } catch (err) {
+    console.error('[completeHiredJob] Failed to persist deliverable text:', err.message);
+  }
+
   return { success: true, submitTxHash, completeTxHash, job, deliverableText };
 }
 

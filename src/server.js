@@ -634,6 +634,10 @@ async function handleHireAgent(req, res) {
 async function handleGetJob(req, res) {
   try {
     const job = await require('./jobService').getJob(req.params.id);
+    const { getHistory } = require('./spendStore');
+    const history = await getHistory(null, 500);
+    const deliverable = history.find(tx => tx.jobId === req.params.id && tx.type === 'job_deliverable');
+    if (deliverable) job.deliverableText = deliverable.deliverableText;
     return send(res, 200, job);
   } catch (err) {
     return send(res, 500, { error: err.message });
