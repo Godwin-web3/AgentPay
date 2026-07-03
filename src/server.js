@@ -988,7 +988,7 @@ app.get('/api/jobs/mine', async (req, res) => {
     const created = [];
     for (const jobId of createdIds) {
       try {
-        const job = await jobService.getJob(jobId);
+        const job = await require('./jobService').getJob(jobId);
         created.push({ jobId, role: 'client', ...job });
       } catch (e) {
         console.error('[jobs/mine] failed to fetch job', jobId, e.message);
