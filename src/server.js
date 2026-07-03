@@ -1,6 +1,7 @@
 require('dotenv').config();
 const http = require('http');
 const { ethers } = require('ethers');
+const sharedProvider = require('./provider');
 const { pay, fetchAndPay, getBalance, getSummary, getUnifiedHistory, chat } = require('./agent');
 const { readPolicy, applyUpdate } = require('./policyManager');
 const { getTodaySpend } = require('../utils/store');
@@ -177,7 +178,7 @@ async function handleGetPolicy(req, res) {
       });
     }
 
-    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+    const provider = sharedProvider;
     const onChain = await escrow.getOnChainPolicy(provider, agentAddress);
     return send(res, 200, {
       perTxCap: onChain.perTxCap,
@@ -691,7 +692,7 @@ async function handleVaultBalance(req, res) {
     const agentAddress = wallet.address;
     const vaultAddr = await escrow.findVault(agentAddress);
     if (!vaultAddr) return send(res, 200, { balance: '0.0000', address: null, agentAddress });
-    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+    const provider = sharedProvider;
     const onChain = await escrow.getOnChainPolicy(provider, agentAddress);
     return send(res, 200, {
       balance: String(onChain.vaultBalance),
@@ -711,7 +712,7 @@ async function handleVaultPaused(req, res) {
     const agentAddress = wallet.address;
     const vaultAddr = await escrow.findVault(agentAddress);
     if (!vaultAddr) return send(res, 200, { paused: false });
-    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+    const provider = sharedProvider;
     const vault = new ethers.Contract(vaultAddr, ['function userPaused(address) view returns (bool)'], provider);
     const paused = await vault.userPaused(agentAddress);
     return send(res, 200, { paused: !!paused });
@@ -730,7 +731,7 @@ async function handleVaultPause(req, res, action) {
     const agentAddress = wallet.address;
     const vaultAddr = await escrow.findVault(agentAddress);
     if (!vaultAddr) return send(res, 404, { error: 'No vault found' });
-    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+    const provider = sharedProvider;
     const agentKey = process.env.PRIVATE_KEY;
     if (!agentKey) throw new Error('No operator key configured (PRIVATE_KEY)');
     const signer = new ethers.Wallet(agentKey, provider);
@@ -750,7 +751,7 @@ async function handleGetOnChainSchedules(req, res) {
     const agentAddress = wallet.address;
     const vaultAddr = await escrow.findVault(agentAddress);
     if (!vaultAddr) return send(res, 200, { schedules: [] });
-    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+    const provider = sharedProvider;
     const schedules = await escrow.getOnChainSchedules(provider, agentAddress);
     return send(res, 200, { schedules });
   } catch (err) {
@@ -867,7 +868,7 @@ async function handleVaultCheck(req, res) {
 // Shared: resolve a user's per-vault address, creating it on-chain if missing
 
 async function setDefaultPolicy(client, walletId, vaultAddress, agentAddress) {
-  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+  const provider = sharedProvider;
   const vault = new ethers.Contract(
     vaultAddress,
     ['function getPolicy(address user) view returns (tuple(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, bool active) policy, address[] whitelist)'],
@@ -1094,7 +1095,7 @@ module.exports = { startServer };
       for (const userAddress of users) {
         try {
           const wallet = await getOrCreateWallet(userAddress);
-          const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+          const provider = sharedProvider;
           const vaultAddr = await resolveOrCreateVault(userAddress);
           console.log('[Keeper] user=' + userAddress + ' vault=' + vaultAddr);
           if (!vaultAddr) { console.log('[Keeper] no vault, skipping'); continue; }
