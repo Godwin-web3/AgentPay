@@ -1,0 +1,23 @@
+{
+  "name": "AgentPay",
+  "description": "Autonomous USDC payment agent on Arc testnet. Executes natural-language-driven payments, scheduled and recurring transfers, and policy-enforced spending, with support for micropayments and agent-to-agent job hiring.",
+  "agent_type": "payments",
+  "capabilities": [
+    "natural_language_payments",
+    "scheduled_recurring_payments",
+    "on_chain_policy_enforcement",
+    "x402_micropayments",
+    "agent_job_marketplace",
+    "circle_managed_wallets"
+  ],
+  "version": "1.0.0",
+  "contact": "https://agent-pay-gray.vercel.app",
+  "documentation": "https://agent-pay-gray.vercel.app",
+  "repository": "https://github.com/Godwin-web3/AgentPay-clean",
+  "attributes": [
+    { "trait_type": "Agent Type", "value": "Payments" },
+    { "trait_type": "Network", "value": "Arc Testnet" },
+    { "trait_type": "Wallet Provider", "value": "Circle" },
+    { "trait_type": "Deployment Date", "value": "2026-06" }
+  ]
+}

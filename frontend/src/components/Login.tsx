@@ -1,23 +1,40 @@
 import { useAuth } from '../contexts/AuthContext';
 
-export default function Login() {
+export default function Login({ onBack }: { onBack?: () => void }) {
   const { signInWithGoogle } = useAuth();
 
   return (
     <div style={{
+      position: 'relative',
       minHeight: '100vh',
-      background: '#0A0A0A',
+      background: '#0B0D10',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       gap: '32px',
-      padding: '24px'
+      padding: '24px',
+      fontFamily: 'var(--font-mono)',
     }}>
+      {onBack && (
+        <button onClick={onBack} style={{
+          position: 'absolute',
+          top: 20,
+          left: 20,
+          background: 'transparent',
+          border: 'none',
+          color: '#444',
+          fontSize: 11,
+          letterSpacing: 1,
+          cursor: 'pointer',
+        }}>
+          ← BACK
+        </button>
+      )}
+
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '48px', marginBottom: '8px' }}>⚡</div>
-        <h1 style={{ color: '#4fdbc8', fontSize: '28px', fontWeight: 700, margin: 0 }}>AgentPay</h1>
-        <p style={{ color: '#666', marginTop: '8px', fontSize: '14px' }}>
+        <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: 3, color: 'var(--text)' }}>AGENTPAY</span>
+        <p style={{ color: '#666', marginTop: '10px', fontSize: '13px' }}>
           Autonomous USDC payments powered by AI
         </p>
       </div>
@@ -25,43 +42,60 @@ export default function Login() {
       <div style={{
         background: '#141414',
         border: '1px solid #222',
-        borderRadius: '4px',
         padding: '32px',
         width: '100%',
         maxWidth: '360px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px'
+        gap: '14px'
       }}>
-        <p style={{ color: '#fff', fontSize: '16px', fontWeight: 600, margin: 0 }}>
-          Sign in to get started
-        </p>
-        <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>
-          A Circle wallet is created for you automatically. No seed phrases.
+        <p style={{ color: '#fff', fontSize: '15px', fontWeight: 600, margin: 0 }}>Sign in</p>
+        <p style={{ color: '#666', fontSize: '12px', margin: 0, lineHeight: 1.6 }}>
+          Returning user. Your Circle wallet loads automatically.
         </p>
         <button
           onClick={signInWithGoogle}
           style={{
-            background: '#4fdbc8',
-            color: '#0A0A0A',
+            background: 'var(--seal)',
+            color: '#0B0D10',
             border: 'none',
-            borderRadius: '4px',
-            padding: '14px',
-            fontSize: '15px',
+            padding: '13px',
+            fontSize: '13px',
             fontWeight: 700,
+            letterSpacing: 1,
             cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px'
+            fontFamily: 'var(--font-mono)',
           }}
         >
-          <span>G</span> Continue with Google
+          CONTINUE WITH GOOGLE
+        </button>
+
+        <div style={{ height: 1, background: '#222', margin: '4px 0' }} />
+
+        <p style={{ color: '#fff', fontSize: '15px', fontWeight: 600, margin: 0 }}>New here</p>
+        <p style={{ color: '#666', fontSize: '12px', margin: 0, lineHeight: 1.6 }}>
+          A wallet is created for you on sign up. No seed phrases, no gas.
+        </p>
+        <button
+          onClick={signInWithGoogle}
+          style={{
+            background: 'transparent',
+            color: 'var(--seal)',
+            border: '1px solid var(--seal)',
+            padding: '13px',
+            fontSize: '13px',
+            fontWeight: 700,
+            letterSpacing: 1,
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+          }}
+        >
+          SIGN UP WITH GOOGLE
         </button>
       </div>
 
-      <p style={{ color: '#444', fontSize: '12px', textAlign: 'center' }}>
-        Your wallet is tied to your Google account. Pick a tag after sign in.
+      <p style={{ color: '#444', fontSize: '11px', textAlign: 'center' }}>
+        Your wallet is tied to your Google account.
       </p>
     </div>
   );

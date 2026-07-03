@@ -83,7 +83,6 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 
 export default function Landing({ onLaunch }: { onLaunch: () => void }) {
-  const { signInWithGoogle } = useAuth()
   const [stats, setStats] = useState({ users: 0, transactions: 0, volume: '0.00', schedules: 0 })
 
   useEffect(() => {
@@ -93,10 +92,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
       .catch(() => {})
   }, [])
 
-  const handleStart = async () => {
-    try {
-      await signInWithGoogle()
-    } catch {}
+  const handleStart = () => {
     onLaunch()
   }
 

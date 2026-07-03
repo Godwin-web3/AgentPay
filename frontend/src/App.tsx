@@ -13,6 +13,7 @@ import History from './views/History'
 import Landing from './views/Landing'
 import Profile from './views/Profile'
 import Onboarding from './views/Onboarding'
+import Login from './components/Login'
 import type { ChatMessage } from './types'
 import { getTokenBalances, checkVault, getWallet, getVaultAddress, getVaultBalance } from './api'
 
@@ -315,6 +316,7 @@ function App({ tag }: { tag: string | null }) {
 function AppWithAuth() {
   const { user, loading, signInWithGoogle } = useAuth();
   const [tag, setTag] = useState<string | null>(null);
+  const [authView, setAuthView] = useState<'landing' | 'login'>('landing');
   const [tagLoading, setTagLoading] = useState(false);
   const [tagChecked, setTagChecked] = useState(false);
 
@@ -346,7 +348,9 @@ function AppWithAuth() {
       <p style={{ color: '#4fdbc8' }}>Loading...</p>
     </div>
   );
-  if (!user) return <Landing onLaunch={async () => { try { await signInWithGoogle(); } catch {} }} />;
+  if (!user) return authView === 'landing'
+    ? <Landing onLaunch={() => setAuthView('login')} />
+    : <Login onBack={() => setAuthView('landing')} />;
   if (tagChecked && !tag) return <ClaimTag onClaimed={(t) => { localStorage.setItem('agentpay_view', 'terminal'); setTag(t || 'skip'); }} />;
   return <App tag={tag} />;
 }
