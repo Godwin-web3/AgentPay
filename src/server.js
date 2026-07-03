@@ -995,15 +995,24 @@ app.get('/api/jobs/mine', async (req, res) => {
     const { getJobsCreatedBy } = require('./spendStore');
     const createdIds = await getJobsCreatedBy(uid);
 
+    const jobService = require('./jobService');
+    const withTimeout = (promise, ms) => Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+    ]);
+
+    const jobResults = await Promise.allSettled(
+      createdIds.map(jobId => withTimeout(jobService.getJob(jobId), 8000).then(job => ({ jobId, job })))
+    );
+
     const created = [];
-    for (const jobId of createdIds) {
-      try {
-        const job = await require('./jobService').getJob(jobId);
-        created.push({ jobId, role: 'client', ...job });
-      } catch (e) {
-        console.error('[jobs/mine] failed to fetch job', jobId, e.message);
+    jobResults.forEach((r, i) => {
+      if (r.status === 'fulfilled') {
+        created.push({ jobId: r.value.jobId, role: 'client', ...r.value.job });
+      } else {
+        console.error('[jobs/mine] failed to fetch job', createdIds[i], r.reason.message);
       }
-    }
+    });
 
     const agentAddress = (process.env.AGENT_ADDRESS || '').toLowerCase();
     const marketData = await fetchMarketData();
