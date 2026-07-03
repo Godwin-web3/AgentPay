@@ -14,7 +14,7 @@ export default function Marketplace({ userAddress, userId }: { userAddress: stri
     setLoading(true)
     setError('')
     try {
-      const res = await getMarketJobs(userId)
+      const res = await getMarketJobs(userId || 'demo'); console.log('Market data:', res);
       setMarket({ ...res.market, recentJobs: res.recentJobs || [] })
     } catch (err) {
       setError(err.message || 'Failed to load market data. Check connection or try again.')
