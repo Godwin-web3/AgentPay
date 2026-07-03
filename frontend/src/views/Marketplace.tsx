@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getMarketJobs } from '../api'
 
-export default function Marketplace({ userAddress, userId }: { userAddress: string, userId: string }) {
+export default function Marketplace({ userId }: { userAddress: string, userId: string }) {
   const [market, setMarket] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -17,8 +17,8 @@ export default function Marketplace({ userAddress, userId }: { userAddress: stri
       const res = await getMarketJobs(userId || 'demo'); console.log('Market data:', res);
       if (!res?.market) throw new Error('Invalid market data received');
       setMarket({ ...res.market, recentJobs: res.recentJobs || [] })
-    } catch (err) {
-      setError(err.message || 'Failed to load market data. Check connection or try again.')
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load market data. Check connection or try again.')
     } finally {
       setLoading(false)
     }
