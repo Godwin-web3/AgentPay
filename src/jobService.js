@@ -226,13 +226,21 @@ async function getJob(jobId) {
 }
 
 async function getRecentJobs() {
-  const logs = await publicClient.getLogs({
-    address: AGENTIC_COMMERCE_CONTRACT,
-    event: agenticCommerceAbi.find(a => a.type === 'event' && a.name === 'JobCreated'),
-    fromBlock: 0n,
-    toBlock: 'latest'
-  });
-  const jobIds = [...new Set(logs.map(l => l.args.jobId))];
+  const CHUNK = 10000n;
+  const event = agenticCommerceAbi.find(a => a.type === 'event' && a.name === 'JobCreated');
+  const latest = await publicClient.getBlockNumber();
+  let allLogs = [];
+  for (let from = 0n; from <= latest; from += CHUNK + 1n) {
+    const to = from + CHUNK > latest ? latest : from + CHUNK;
+    const logs = await publicClient.getLogs({
+      address: AGENTIC_COMMERCE_CONTRACT,
+      event,
+      fromBlock: from,
+      toBlock: to
+    });
+    allLogs = allLogs.concat(logs);
+  }
+  const jobIds = [...new Set(allLogs.map(l => l.args.jobId))];
   const jobs = [];
   for (const id of jobIds) {
     try {
