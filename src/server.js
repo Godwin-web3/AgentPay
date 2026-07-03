@@ -489,42 +489,52 @@ async function handleIntelligence(req, res) {
 
 // Check for jobs where AgentPay is the hired provider (Funded, not yet submitted)
 async function checkHiredJobs() {
-  const { market, recentJobs } = await fetchMarketData();
   const agentAddress = (process.env.AGENT_ADDRESS || '').toLowerCase();
   if (!agentAddress) return { checked: 0, submitted: [] };
 
-  const myFundedJobs = recentJobs.filter(j =>
-    j.provider && j.provider.toLowerCase() === agentAddress && j.status === 'Funded'
-  );
+  const { getActiveUsers, getJobsCreatedBy } = require('./spendStore');
+  const jobService = require('./jobService');
+  const wallets = await walletStore.getAllWallets();
+  const users = await getActiveUsers();
+
+  const allJobIds = new Set();
+  for (const uid of users) {
+    const jobIds = await getJobsCreatedBy(uid);
+    jobIds.forEach(id => allJobIds.add(id));
+  }
 
   const submitted = [];
-  for (const job of myFundedJobs) {
+  let checked = 0;
+
+  for (const jobId of allJobIds) {
     try {
-      console.log('[HiredCheck] Found job ' + job.id + ' hiring AgentPay, submitting deliverable...');
+      const job = await jobService.getJob(jobId);
+      if (!job.provider || job.provider.toLowerCase() !== agentAddress || job.status !== 'Funded') continue;
+      checked++;
+
+      console.log('[HiredCheck] Found job ' + jobId + ' hiring AgentPay, submitting deliverable...');
       const providerWalletId = process.env.AGENT_WALLET_ID;
 
-      const jobDetail = await require('./jobService').getJob(job.id);
-      const wallets = await walletStore.getAllWallets();
       const evaluatorEntry = Object.values(wallets).find(
-        w => w.address && w.address.toLowerCase() === jobDetail.evaluator.toLowerCase()
+        w => w.address && w.address.toLowerCase() === job.evaluator.toLowerCase()
       );
 
       if (!evaluatorEntry) {
-        console.error('[HiredCheck] Could not resolve evaluator walletId for job ' + job.id);
+        console.error('[HiredCheck] Could not resolve evaluator walletId for job ' + jobId);
         continue;
       }
 
       const result = await require('./agent').completeHiredJob(
-        evaluatorEntry.walletId, job.id, providerWalletId, 'work completed'
+        evaluatorEntry.walletId, jobId, providerWalletId, 'work completed'
       );
-      submitted.push({ jobId: job.id, txHash: result.completeTxHash });
-      console.log('[HiredCheck] ✅ Submitted deliverable for job ' + job.id);
+      submitted.push({ jobId, txHash: result.completeTxHash });
+      console.log('[HiredCheck] Submitted deliverable for job ' + jobId);
     } catch (err) {
-      console.error('[HiredCheck] ❌ Job ' + job.id + ' submission failed:', err.message);
+      console.error('[HiredCheck] Job ' + jobId + ' submission failed:', err.message);
     }
   }
 
-  return { checked: myFundedJobs.length, submitted };
+  return { checked, submitted };
 }
 
 // GET /jobs/check-hired — manual trigger to check + auto-fulfill jobs hiring AgentPay
@@ -548,7 +558,7 @@ async function fetchMarketData() {
   const STATUS = ['Open', 'Funded', 'Submitted', 'Completed', 'Rejected', 'Expired'];
   const abi = [{ type: 'function', name: 'getJob', stateMutability: 'view', inputs: [{ name: 'jobId', type: 'uint256' }], outputs: [{ type: 'tuple', components: [{ name: 'id', type: 'uint256' }, { name: 'client', type: 'address' }, { name: 'provider', type: 'address' }, { name: 'evaluator', type: 'address' }, { name: 'description', type: 'string' }, { name: 'budget', type: 'uint256' }, { name: 'expiredAt', type: 'uint256' }, { name: 'status', type: 'uint8' }, { name: 'hook', type: 'address' }] }] }];
   const scanIds = [];
-  for (let i = 137000; i <= 137050; i++) scanIds.push(i);
+  for (let i = 146500; i <= 147200; i++) scanIds.push(i);
   for (let i = 1; i <= 20; i++) scanIds.push(i);
   const jobs = [];
   await Promise.all(scanIds.map(async (id) => {
