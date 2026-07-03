@@ -225,6 +225,31 @@ async function getJob(jobId) {
   };
 }
 
+async function getRecentJobs() {
+  const logs = await publicClient.getLogs({
+    address: AGENTIC_COMMERCE_CONTRACT,
+    event: agenticCommerceAbi.find(a => a.type === 'event' && a.name === 'JobCreated'),
+    fromBlock: 0n,
+    toBlock: 'latest'
+  });
+  const jobIds = [...new Set(logs.map(l => l.args.jobId))];
+  const jobs = [];
+  for (const id of jobIds) {
+    try {
+      const job = await getJob(id);
+      if (job.client !== '0x0000000000000000000000000000000000000000') {
+        jobs.push({
+          ...job,
+          budget: Number(job.budget).toFixed(2),
+          description: job.description.slice(0, 80)
+        });
+      }
+    } catch { }
+  }
+  jobs.sort((a, b) => Number(b.id) - Number(a.id));
+  return jobs;
+}
+
 module.exports = {
-  createJob, setBudget, approveAndFund, submitDeliverable, completeJob, rejectJob, getJob
+  createJob, setBudget, approveAndFund, submitDeliverable, completeJob, rejectJob, getJob, getRecentJobs
 };

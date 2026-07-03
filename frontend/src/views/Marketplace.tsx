@@ -8,13 +8,14 @@ export default function Marketplace({ userAddress, userId }: { userAddress: stri
 
   useEffect(() => {
     fetchMarket()
-  }, [userAddress])
+  }, [userId])
 
   async function fetchMarket() {
     setLoading(true)
     setError('')
     try {
       const res = await getMarketJobs(userId || 'demo'); console.log('Market data:', res);
+      if (!res?.market) throw new Error('Invalid market data received');
       setMarket({ ...res.market, recentJobs: res.recentJobs || [] })
     } catch (err) {
       setError(err.message || 'Failed to load market data. Check connection or try again.')
