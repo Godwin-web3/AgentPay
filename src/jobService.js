@@ -238,25 +238,27 @@ async function getRecentJobs() {
   const CHUNK = 10000n;
   const event = agenticCommerceAbi.find(a => a.type === 'event' && a.name === 'JobCreated');
   const latest = await publicClient.getBlockNumber();
-  const START_BLOCK = latest > 100000n ? latest - 100000n : 0n;
+  const START_BLOCK = latest > 20000n ? latest - 20000n : 0n;
   let allLogs = [];
   for (let from = START_BLOCK; from <= latest; from += CHUNK + 1n) {
     const to = from + CHUNK > latest ? latest : from + CHUNK;
     try {
-      const logs = await publicClient.getLogs({
-        address: AGENTIC_COMMERCE_CONTRACT,
-        event,
-        fromBlock: from,
-        toBlock: to
-      });
+      const logTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('getLogs timeout')), 8000));
+      const logs = await Promise.race([
+        publicClient.getLogs({ address: AGENTIC_COMMERCE_CONTRACT, event, fromBlock: from, toBlock: to }),
+        logTimeout
+      ]);
       allLogs = allLogs.concat(logs);
-    } catch { }
+    } catch (e) {
+      console.error('[getRecentJobs] chunk failed', from.toString(), '-', to.toString(), e.message);
+    }
   }
   const jobIds = [...new Set(allLogs.map(l => l.args.jobId))];
   const jobs = [];
   for (const id of jobIds) {
     try {
-      const job = await getJob(id);
+      const jobTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('getJob timeout')), 5000));
+      const job = await Promise.race([getJob(id), jobTimeout]);
       if (job.client !== '0x0000000000000000000000000000000000000000') {
         jobs.push({
           ...job,
@@ -264,7 +266,9 @@ async function getRecentJobs() {
           description: job.description.slice(0, 80)
         });
       }
-    } catch { }
+    } catch (e) {
+      console.error('[getRecentJobs] job fetch failed', id.toString(), e.message);
+    }
   }
   jobs.sort((a, b) => Number(b.id) - Number(a.id));
   recentJobsCache = jobs;
