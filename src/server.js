@@ -562,7 +562,7 @@ async function fetchMarketData() {
   const providerCounts = {};
   jobs.forEach(j => { if (j.provider !== '0x0000000000000000000000000000000000000000') providerCounts[j.provider] = (providerCounts[j.provider] || 0) + 1; });
   const topProviders = Object.entries(providerCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([address, jobCount]) => ({ address, jobCount }));
-  return { market: { totalJobs: jobs.length, statusBreakdown: statusCounts, averageBudget: avgBudget + ' USDC', totalVolumeUSDC: totalBudget.toFixed(2), topProviders, lastUpdated: new Date().toISOString() }, recentJobs: jobs.slice(0, 10) };
+  return { market: { totalJobs: jobs.length, statusBreakdown: statusCounts, averageBudget: avgBudget + ' USDC', totalVolumeUSDC: totalBudget.toFixed(2), topProviders, lastUpdated: new Date().toISOString() }, recentJobs: jobs.slice(0, 30) };
 }
 
 // GET /market-intel — internal proxy, frontend calls this, backend fetches and returns market data
