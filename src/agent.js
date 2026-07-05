@@ -215,14 +215,14 @@ async function performTask(description, walletId, userAddress) {
         const keryxTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Keryx call timeout')), 15000));
         const res = await Promise.race([
           x402Client.fetchWithPayment(
-            `${KERYX_BASE}${tool.route}`,
+            `${KERYX_BASE}/api/call`,
             walletId,
-            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: description }) },
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ toolId: tool.id, args: tool.sampleArgs || {} }) },
             userAddress
           ),
           keryxTimeout
         ]);
-        return `${JSON.stringify(res.data)} (sourced live via Keryx tool "${tool.name}", paid ${res.actualAmount || tool.price} USDC)`;
+        return `${JSON.stringify(res.data)} (sourced live via Keryx tool "${tool.name}", paid ${res.actualAmount || tool.priceUsd} USDC)`;
       } catch (e) {
         console.error('[performTask] Keryx call failed, falling back to Groq:', e.message);
       }
