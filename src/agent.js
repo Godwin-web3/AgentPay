@@ -161,8 +161,38 @@ const groqCompound = new Groq({ apiKey: process.env.GROQ_API_KEY });
 // Uses Groq's compound-mini model (built-in web search + code execution,
 // server-side tool calls, no custom tool wiring needed) to actually perform
 // a job's task and produce real deliverable text, instead of a placeholder.
-async function performTask(description) {
+const KERYX_BASE = 'https://keryxhq.xyz';
+
+async function findKeryxTool(description) {
   try {
+    const res = await fetch(`${KERYX_BASE}/api/tools`, { signal: AbortSignal.timeout(5000) });
+    const { tools } = await res.json();
+    const lower = description.toLowerCase();
+    return tools.find(t =>
+      lower.includes(t.name.toLowerCase()) ||
+      (t.description && lower.split(' ').some(w => w.length > 4 && t.description.toLowerCase().includes(w)))
+    ) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function performTask(description, walletId, userAddress) {
+  try {
+    const tool = walletId ? await findKeryxTool(description) : null;
+    if (tool) {
+      try {
+        const res = await x402Client.fetchWithPayment(
+          `${KERYX_BASE}${tool.route}`,
+          walletId,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: description }) },
+          userAddress
+        );
+        return `${JSON.stringify(res.data)} (sourced live via Keryx tool "${tool.name}", paid ${res.actualAmount || tool.price} USDC)`;
+      } catch (e) {
+        console.error('[performTask] Keryx call failed, falling back to Groq:', e.message);
+      }
+    }
     const completion = await groqCompound.chat.completions.create({
       messages: [
         { role: 'system', content: 'You are an autonomous agent completing a paid job. Research and answer concisely and factually. Your answer becomes the on-chain deliverable record for this job, so be accurate and brief.' },
@@ -194,13 +224,12 @@ async function hireAgent(clientWalletId, providerWalletId, evaluatorWalletId, pr
 }
 
 async function completeHiredJob(evaluatorWalletId, jobId, providerWalletId, deliverableText) {
+  const job = await jobService.getJob(jobId);
   if (!deliverableText || deliverableText === 'work completed') {
-    const job = await jobService.getJob(jobId);
-    deliverableText = await performTask(job.description);
+    deliverableText = await performTask(job.description, providerWalletId, job.client);
   }
   const { txHash: submitTxHash } = await jobService.submitDeliverable(providerWalletId, jobId, deliverableText);
   const completeTxHash = await jobService.completeJob(evaluatorWalletId, jobId);
-  const job = await jobService.getJob(jobId);
 
   try {
     await appendSpend({
