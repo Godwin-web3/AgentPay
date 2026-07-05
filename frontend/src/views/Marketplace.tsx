@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react'
 import { getMarketJobs } from '../api'
 
+type StatusFilter = 'All' | 'Open' | 'Funded' | 'Submitted' | 'Completed' | 'Rejected' | 'Expired'
+type SortMode = 'newest' | 'budget'
+
 export default function Marketplace({ userId }: { userAddress: string, userId: string }) {
   const [market, setMarket] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('Open')
+  const [sortMode, setSortMode] = useState<SortMode>('newest')
 
   useEffect(() => {
     fetchMarket()
@@ -14,8 +19,8 @@ export default function Marketplace({ userId }: { userAddress: string, userId: s
     setLoading(true)
     setError('')
     try {
-      const res = await getMarketJobs(userId || 'demo'); console.log('Market data:', res);
-      if (!res?.market) throw new Error('Invalid market data received');
+      const res = await getMarketJobs(userId || 'demo')
+      if (!res?.market) throw new Error('Invalid market data received')
       setMarket({ ...res.market, recentJobs: res.recentJobs || [] })
     } catch (err: any) {
       setError(err?.message || 'Failed to load market data. Check connection or try again.')
@@ -30,7 +35,24 @@ export default function Marketplace({ userId }: { userAddress: string, userId: s
     </div>
   )
 
-  const jobs = market?.recentJobs || []
+  const allJobs = market?.recentJobs || []
+
+  const jobs = allJobs
+    .filter((j: any) => statusFilter === 'All' || j.status === statusFilter)
+    .sort((a: any, b: any) => {
+      if (sortMode === 'budget') return Number(b.budget) - Number(a.budget)
+      return Number(b.id) - Number(a.id)
+    })
+
+  const selectStyle = {
+    background: 'rgba(255,255,255,0.05)',
+    color: 'var(--cyan)',
+    border: '1px solid var(--border)',
+    borderRadius: 4,
+    padding: '6px 10px',
+    fontSize: 12,
+    fontFamily: 'var(--font-mono)'
+  }
 
   return (
     <div className="view-container" style={{ padding: 20 }}>
@@ -58,9 +80,25 @@ export default function Marketplace({ userId }: { userAddress: string, userId: s
         </div>
       )}
 
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        <select style={selectStyle} value={statusFilter} onChange={e => setStatusFilter(e.target.value as StatusFilter)}>
+          <option value="All">All statuses</option>
+          <option value="Open">Open</option>
+          <option value="Funded">Funded</option>
+          <option value="Submitted">Submitted</option>
+          <option value="Completed">Completed</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Expired">Expired</option>
+        </select>
+        <select style={selectStyle} value={sortMode} onChange={e => setSortMode(e.target.value as SortMode)}>
+          <option value="newest">Newest first</option>
+          <option value="budget">Highest budget first</option>
+        </select>
+      </div>
+
       {jobs.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ color: 'var(--muted)' }}>No open jobs right now.</div>
+          <div style={{ color: 'var(--muted)' }}>No jobs match this filter.</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
