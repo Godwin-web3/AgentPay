@@ -1,0 +1,926 @@
+[
+  {
+    "address": "0xd867647b431Cc6Fd354E1C261A9c05d6cc999999",
+    "jobCount": 117,
+    "completed": 114,
+    "completionRate": "97%"
+  },
+  {
+    "address": "0x3ae3e4AF970b427bEb581824050E3eE48493C28a",
+    "jobCount": 55,
+    "completed": 33,
+    "completionRate": "60%"
+  },
+  {
+    "address": "0xB5Fa6C635B6B437A975C5a8749cd41625E4Ae931",
+    "jobCount": 32,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x4640629414DD89EF6758854413f571117D525D3b",
+    "jobCount": 32,
+    "completed": 32,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x27eB73B5Ee1Adcd89122c71ce2A0f1881299Fdb5",
+    "jobCount": 20,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x14e09A86Aac0Eb5F5DBBBb7BeA2c1002624093b4",
+    "jobCount": 18,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xF8C3e41400d09b49fec37bbd7880191191c284AA",
+    "jobCount": 18,
+    "completed": 12,
+    "completionRate": "67%"
+  },
+  {
+    "address": "0xE94A73AEB28C452fb62677184960bb831b759333",
+    "jobCount": 17,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x90960038761b58787522Bbe64F7b355c13b2b58a",
+    "jobCount": 16,
+    "completed": 13,
+    "completionRate": "81%"
+  },
+  {
+    "address": "0x59704CF5c08A3d69159d21c5B11231282D2f58A9",
+    "jobCount": 16,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xa2e598b60826aD8026c008E9815457e40E6D331F",
+    "jobCount": 15,
+    "completed": 15,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x46A893F7506E98c2c88A85e06bC6A7e08BF02525",
+    "jobCount": 14,
+    "completed": 14,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x4911E51C3E1243aCA1d313c75C31A322E7E494DC",
+    "jobCount": 14,
+    "completed": 14,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xb3e7d84e5740c725a1e239AeeF29CC8a79D835F1",
+    "jobCount": 14,
+    "completed": 4,
+    "completionRate": "29%"
+  },
+  {
+    "address": "0x7c82a8da3c180e8DF2f8E6568bA589FCE2377887",
+    "jobCount": 13,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x88d9038c61B46d041FC21FF92a7Be51906c6C6cc",
+    "jobCount": 13,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xD82C90bd1141a23Ea7921f40782e6DB076CE6966",
+    "jobCount": 13,
+    "completed": 7,
+    "completionRate": "54%"
+  },
+  {
+    "address": "0xa284Ec59340f6B6da14c099c6284DCEf3395482C",
+    "jobCount": 12,
+    "completed": 12,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x84a60087a271D9db0cd496e741ceda7FdB5DA7ef",
+    "jobCount": 12,
+    "completed": 7,
+    "completionRate": "58%"
+  },
+  {
+    "address": "0xA8f01f7B35d2Bd389f209cf25564aeAAfb25d852",
+    "jobCount": 12,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xA24689956Ea3Ae5E4ccEc37337B8B81Cf466ed43",
+    "jobCount": 11,
+    "completed": 8,
+    "completionRate": "73%"
+  },
+  {
+    "address": "0xB2e814e2C5DcB3Db3d2425E6621c870B7a163010",
+    "jobCount": 10,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x4e02C4291B74Fd989dB87D17026F77293F9CC6f2",
+    "jobCount": 10,
+    "completed": 6,
+    "completionRate": "60%"
+  },
+  {
+    "address": "0xafe6DD950Dc2CF561e8daBA1725e0e6840f70549",
+    "jobCount": 9,
+    "completed": 3,
+    "completionRate": "33%"
+  },
+  {
+    "address": "0x1453141466d37193E27d5B82EB64B719290cD030",
+    "jobCount": 9,
+    "completed": 2,
+    "completionRate": "22%"
+  },
+  {
+    "address": "0x5B09fc1d4A519B4591217fb5d06247159b9fcF44",
+    "jobCount": 9,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x18C5265A1039d34aF5DC0841859D56e502c0434F",
+    "jobCount": 8,
+    "completed": 1,
+    "completionRate": "13%"
+  },
+  {
+    "address": "0x981f86eC118dc954fD1b22567e52aA9293Bac784",
+    "jobCount": 8,
+    "completed": 4,
+    "completionRate": "50%"
+  },
+  {
+    "address": "0x09bc28e3DEE226fB432554911a9Ce89eeef02D1A",
+    "jobCount": 8,
+    "completed": 8,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x922703CA9F9DaD17367b5dC48254D80Ce3E27930",
+    "jobCount": 7,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x41dD064c20Cfec06F22D49eE89c062EBF0da5017",
+    "jobCount": 7,
+    "completed": 3,
+    "completionRate": "43%"
+  },
+  {
+    "address": "0x36e05c31972787098e841F018eCd97df2494fE36",
+    "jobCount": 7,
+    "completed": 4,
+    "completionRate": "57%"
+  },
+  {
+    "address": "0x4805452DbDdf0cDa1b250C3B126011DE247176E1",
+    "jobCount": 6,
+    "completed": 6,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x1dDdea7735459AC23B8e22939b27cF4109F482B9",
+    "jobCount": 5,
+    "completed": 5,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xC029036574B75F0F551D783419d5E1098D493321",
+    "jobCount": 5,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x98e0E972fE74D9A1C22fC47670bE81A0B65D63b7",
+    "jobCount": 5,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x78D6b416bE6D45Dc01768895e8A0a20e6fD2e0f0",
+    "jobCount": 5,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x6899BF38FA3C7d751b0e2C9cEe25d1E2390dA6c9",
+    "jobCount": 4,
+    "completed": 4,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xAd28062b28Bc7D17A956CDfCaAd6d85912d654aa",
+    "jobCount": 4,
+    "completed": 4,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xA2C9eD02733d21f36a7f6CBfc324705b695fB259",
+    "jobCount": 4,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x1dD8fA0a0d73c7Ed8473E8F45bb76D1eDA695065",
+    "jobCount": 3,
+    "completed": 3,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xc38E8f6ae9DC8c60cC99795deDa57D9EB4572b72",
+    "jobCount": 3,
+    "completed": 2,
+    "completionRate": "67%"
+  },
+  {
+    "address": "0xC4D70CbB652dec72cCc847b22B9a9bF53045Ea51",
+    "jobCount": 3,
+    "completed": 1,
+    "completionRate": "33%"
+  },
+  {
+    "address": "0x54194067D5B67d9addA48992515B8DCe10772972",
+    "jobCount": 3,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xD564945dDdA981dD69245225775ABbdeF8cA3683",
+    "jobCount": 3,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xc54D47211997aCA90Ef4fCfBc742a3b511B4e621",
+    "jobCount": 2,
+    "completed": 1,
+    "completionRate": "50%"
+  },
+  {
+    "address": "0x8aBcDdc74F9E114A819941199a75929Cf689b5f9",
+    "jobCount": 2,
+    "completed": 2,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x17F6c38b9AC1176d84C03f610cecCa3f00A58Aa8",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x1E7E0C9239A4a89F86E77FE9b50e7038B0839659",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x91e11760a431d970BaBc1f60B27F1e3Dfb635D34",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x5e8465ed3C615d8c95c63A62076eF27894C9E18F",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x871bF9E2A99DE1bD47a2a0c4D1056349eB4AB8a8",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x376BACC1D8ce6D659A25881A7f8E95af8B4D26EC",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x7AE200168865D8eA7c277C28F7b39cD2348aF396",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x34e20D873994ddE2e918b2ddCF88815Fae46FF93",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x94c3B4B10b17bB914fCCdBc11712693aa9c28618",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xEc2E93EE759a8c77C37aefCF48d2771BF5AD730c",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xAc20B6de8E1ab477783732530452fb51398B5fcb",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x8C7F85C8541f91518645924d5A477021dCc04361",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x7f06904b6341894EdcC874d90C803A88C4398b98",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x8b541706f0766A09CD7a9fbFd02e30458BA4091D",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xe5A3e43FD9b4Aced65BcA8e0DfdE2A98eB791F45",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x06D095E2B0Ed52B64cC8d03c345A4164c1737601",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x6e3F18Ea60E8c77754C449C3654727E7e58722c9",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xBF2D80BE832A183c77da0565f0bd26B4082AEFEA",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x03AC0A976EE90Fd0240618d2C92d9A1Ae6048a9c",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x366C3352daEE2b4b0117e6bDd1FF291BEaFCC8ad",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x9F50195b110D65737e82D089Da0Cd32590820Ad5",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xDf927B801c55cf4fF0732E5f5F0319FF15d72Ce4",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xa2E02f09BCA06fBA233B35572b4Ec9601339A17B",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xB347cA50f089275592871491bb3e2A3f69D8f5F3",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x61f13440E56d155c69557344432933a70bc0A7B0",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x94967767B4F6E0B3826E44daAA3cEFD778d108E7",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x9Af6008445876Fddf4D97cE5b03d122E2e6C6aB4",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x0c56EDeAde7a68b93C36cBB4466ED114E9fC84DD",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x0A50993Fd46C8ec7e371B5a7522a263Be5CAcF0B",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xb60f905B7FE6f59D1A639B418A14ae5927EE90dc",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xEa6758b84976908EA81dDD279D0a514e65193770",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xaAe9012548A200336Eae76cf2a0c466425CC421d",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xC43724b006ff4876c303CcD0692A0fc99330a911",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xb43Bb7B95E33d709504a56b0c433d2A551f7CED1",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xE28942BEc911af31dC9e1f683f37b1302c2eCC12",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xb697886C9b65489d6A327C23d0E479a0e844dEE1",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x498dAb20D3cc30f9B20199cCFb31Efd8e198C801",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x28749a5C056d11d5e8b2164Ba962D3659b2996f9",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xB33e109b09E6b15E8F256248cFc990F322404b6b",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x612e34Fd82e913eA0f5030964F86Aa4b1940E409",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xAD7b778b8Bce809fd6243E7faAe312a77334F7a9",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x0B2F78F0cFf0Ab6d3ac679046f4E7Aa4fAf45DEB",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xb9b6adCe93F1dC37d55f8dD95e83DC22552E180B",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x6135463dafe78E9Befb870E4dB11441562636134",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x436266b39b8b72455308a1B2725774DF810D1c48",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x80132804ba0B6Df78b85f8e221061309379B029e",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xdBD1dE61a5E7C541ac7cF39332CC5772E1C85B12",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x58d98540D056445ed93821934a32aDfFa937fc05",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x009Be17a05Fe945A43750A8F0d8c77f01ec58036",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xcFf0142931FE81864b97c91a706B7bd4d5966BF1",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x9DB89382D91b41fDc60DD4867B3cB945B886244D",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x39381Bfded848f5c9cA3fE2c7682d87010a32082",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xc0000Da0DB1B2B4627722A85a4963aE792650107",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xec010aB7B9db008D59b9Cc8Fd61483f3c7c858E5",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xd24e07Cd74f36B9a8509D64C2789C006f31FAB7D",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x4E31E365e06b2A0C15909e44f3C9dBA69701664A",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xc3493EA2A6492B2EB51EaFF2E2d00db8c9C930EB",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xa288d8E998bF96eAf74a92A8741a5897B31d0d40",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x2Aa45e3a40a957294F9b29eeC3B112AA516B15Ab",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xf4FEdEf28baD0BEEf79F141857aae6f5Be3d1A1c",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xAed0a3350A8A59A33EB4a9aC87D85719C59bB198",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xd60e02e5F4e85F22cAE209588051fEB7FE359Eb3",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x8c926946786B8743cD8A8d65491efCd209a60E50",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xec04f4d8FD498eb47B756000f889358aCa9028E9",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xd4B57A5922F4f73Bc1384157f33E80A9E6Ddc57E",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x5c51f2aD5FB59EBAeCA6f51B3A1B2A15f0c5A516",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xad4972214b427392B52bCB57A9a65D59D5BAaF9d",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x3c46624b62Fa4Cf3d63e6bdD60dC1b79a43Ceb22",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xdD21b63b7db0b3D4fB2eFBeED7e16176b33225Fc",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x415B7341B802334209e568928818dFA01d035Fdd",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x450e142d91961d05d2c6652b574601aD4A0F97D0",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x93F8c161da175790caA113D165a87eccE5CaDb4D",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x73f878dA6Eed9CfDd9cF5DCcc7ADDc827969F141",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xe37a1AE32F73A972Df38120B10fE7970Abb30300",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x6A952439fd257a5d88ACbE356254868392b7Dc4b",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xba1451D0dF0653828f93657C826e8f5Cd4A22E6D",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x1132A8b5d98Ab9EE314557a2a924Ef2040B25e6e",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xB1f2f107E47B8F083eB0a5D2bF4099043d1d14DE",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x49A45080399E6e56fB7ca9a5D8A7d17f84015D35",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x6c77b7271703e3Eef01C221DC21632d319687725",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x069d5Cd0373E9C76AD5E0452A7c02E694E89483f",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x22397F8E1c2951D961cdEdaABe58ce62cc5ef319",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xF2667E746c7dd433Fdd3d0840FDF956F9b25ccf5",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x53f827E327105ae4dCaADB27Dd3688ABD43F80C3",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x7C969a23BB6F3D2E46b5bB57D0e68d7a7CA95617",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x1C05046B3894bE64453b565227b12Ac646a3bf81",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xC875c3180A89D20cF1Bc450efdE0E6BCE1e7E921",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x7b19c2044cE25Bc0A457bd6837880a025b101b31",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x64fE9e0c80114519534Cb4D62621e0abF3224194",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xab3c3e586E167963CFB2F40ebD09de491552EF4E",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x203241a0A756Ac03917ba002DEc9A6667548c4f6",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xbc89F73e4b8419388104Bea773F07c9085f94928",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xAa9227E78E05B368B907f42798bEF11262298BCf",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x87381B02166BD192EDCe4697C83f4558B2020e91",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x490cD2bb0Ab7A1b3251127507F87D679322f0C3B",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x8c7A2783834edEA05899e65e0FD8068FAcb31dED",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xe4ae1D834c13e9626Bd3e754540F58d088626761",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0x5dCdd223233335B9769C60832830467e58ab24B7",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xa2c7844a7eF5D07eA8f55e2c7937B960A77B7774",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x5ecbb154a11F3bb4CcbA0243592386c34cb1Eb71",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xFc7d163E164b7060e93A4e0217872a458c85FC8e",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x77d9B830E1Eaf93566a863a6Df03394C022848Da",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xB152c3B6436318aD340153f1d30C9BBb8634681A",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0xeeaE3976476c5335d3654516D35D3A7b013184e3",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x6A00f9C423A58243Da42f06afa07C3C641bA90c1",
+    "jobCount": 1,
+    "completed": 0,
+    "completionRate": "0%"
+  },
+  {
+    "address": "0xB9Bb159B60CD5DA4c6cb0A3526242E76160c7fb2",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  },
+  {
+    "address": "0x9AC6869F641d49023Da150094519BB16ae3E0B80",
+    "jobCount": 1,
+    "completed": 1,
+    "completionRate": "100%"
+  }
+]

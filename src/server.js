@@ -788,6 +788,7 @@ app.use((req, res, next) => {
     '/api/market/jobs',
     '/market-intel',
     '/api/jobs/mine',
+    '/api/agent-stats',
   ];
   const normalizedPath = req.path.endsWith('/') ? req.path.slice(0, -1) : req.path;
   if (exempt.includes(normalizedPath) || normalizedPath.startsWith('/api/tag/')) return next();
@@ -990,6 +991,25 @@ app.get('/api/jobs/mine', async (req, res) => {
   } catch (err) {
     console.error('[jobs/mine] error:', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/agent-stats', (req, res) => {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const agents = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'registered_agents.json')));
+    const providers = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'top_providers.json')));
+    const ownerSet = new Set(agents.map(a => a.owner.toLowerCase()));
+    const overlap = providers.filter(p => ownerSet.has(p.address.toLowerCase()));
+    return send(res, 200, {
+      registeredCount: agents.length,
+      activeProviderCount: providers.length,
+      overlapCount: overlap.length,
+      overlap
+    });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
   }
 });
 
