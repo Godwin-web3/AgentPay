@@ -297,7 +297,7 @@ async function performTask(description, walletId, userAddress) {
         { role: 'system', content: 'You are an autonomous agent completing a paid job. Research and answer concisely and factually. Your answer becomes the on-chain deliverable record for this job, so be accurate and brief.' },
         { role: 'user', content: description },
       ],
-      model: 'groq/compound-mini',
+      model: 'llama-3.3-70b-versatile',
       temperature: 0.2,
       max_tokens: 512,
     });
