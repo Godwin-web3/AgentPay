@@ -7,7 +7,6 @@ import Terminal from './views/Terminal'
 import Policy from './views/Policy'
 import Schedules from './views/Schedules'
 import Jobs from './views/Jobs'
-import Marketplace from './views/Marketplace'
 import Agent from './views/Agent'
 import History from './views/History'
 import Landing from './views/Landing'
@@ -17,7 +16,7 @@ import Login from './components/Login'
 import type { ChatMessage } from './types'
 import { getTokenBalances, checkVault, getWallet, getVaultAddress, getVaultBalance } from './api'
 
-type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules' | 'jobs' | 'marketplace' | 'agent'
+type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules' | 'jobs' | 'agent'
 
 const TerminalIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -67,7 +66,6 @@ const AgentIcon = () => (
 )
 const navItems = [
   { id: 'terminal', icon: TerminalIcon, label: 'Terminal' },
-  { id: 'marketplace', icon: MarketplaceIcon, label: 'Marketplace' },
   { id: 'jobs', icon: JobsIcon, label: 'Jobs' },
   { id: 'schedules', icon: ScheduleIcon, label: 'Schedules' },
   { id: 'agent', icon: AgentIcon, label: 'Agent' },
@@ -290,7 +288,6 @@ function App({ tag }: { tag: string | null }) {
             {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={vaultAddress || agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
             {view === 'jobs' && <Jobs userAddress={userAddress} userId={userId} />}
-            {view === 'marketplace' && <Marketplace userAddress={userAddress} userId={userId} />}
             {view === 'agent' && <Agent />}
           </ErrorBoundary>
         </div>
