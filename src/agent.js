@@ -184,7 +184,7 @@ async function payKeryx(toolId, args) {
   const validBefore = Math.floor(Date.now() / 1000) + (accept.maxTimeoutSeconds || 60);
 
   const domain = {
-    name: 'USD Coin',
+    name: 'USDC',
     version: '2',
     chainId: 5042002,
     verifyingContract: accept.asset
