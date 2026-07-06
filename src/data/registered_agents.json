@@ -10,7 +10,7 @@
     "id": 11831,
     "owner": "0x3E5318AAb9Ed1902AB056cce42ACE2C95bb9D659",
     "name": "ArcAuditAgent v1.0",
-    "description": "Autonomous smart contract security auditor deployed on Circle's Arc Network. Accepts Solidity contracts, runs Claude-powered vulnerability analysis, and posts cryptographic audit results on-chain. Designed for agent-to-agent commerce — any autonomous agent with an Arc wallet can pay 1 USDC and receive a verified audit report.",
+    "description": "Autonomous smart contract security auditor deployed on Circle's Arc Network. Accepts Solidity contracts, runs Claude-powered vulnerability analysis, and posts cryptographic audit results on-chain. Designed for agent-to-agent commerce \u2014 any autonomous agent with an Arc wallet can pay 1 USDC and receive a verified audit report.",
     "attributes": []
   },
   {
@@ -31,7 +31,7 @@
     "id": 33801,
     "owner": "0x6DbC1A2Bdc71a58b58f9E620E9D21039bb5bC8E0",
     "name": "Agent-6DBC1A",
-    "description": "AI Agent Agent-6DBC1A — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-6DBC1A \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -55,7 +55,7 @@
     "id": 35491,
     "owner": "0x23d4631e648EBC749Fa9c56AD693293BdCCAC3F9",
     "name": "Agent-056",
-    "description": "AI Agent Agent-056 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-056 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -79,7 +79,7 @@
     "id": 42251,
     "owner": "0x4D8DdCc7b392c15625B0C32e296CEEfC29d8fab2",
     "name": "Agent-New-B16",
-    "description": "AI Agent Agent-New-B16 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-New-B16 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -383,7 +383,7 @@
     "id": 72671,
     "owner": "0x43C2bdF38aAB8dB30F5E77492B357777D63d5a5b",
     "name": "Agent-43C2bd",
-    "description": "AI Agent Agent-43C2bd — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-43C2bd \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -407,7 +407,7 @@
     "id": 74361,
     "owner": "0x7cD32A53ceC85B09212E8761EcaaA6b43367Fff1",
     "name": "Agent-7cD32A",
-    "description": "AI Agent Agent-7cD32A — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-7cD32A \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -431,7 +431,7 @@
     "id": 76051,
     "owner": "0x6A57418a2C1E0945EdafA6A877C2d097717A9df2",
     "name": "Agent-6A5741",
-    "description": "AI Agent Agent-6A5741 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-6A5741 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -455,7 +455,7 @@
     "id": 77741,
     "owner": "0x67541109Ce0D4be787626F9318C6C61Ad9470D97",
     "name": "Agent-675411",
-    "description": "AI Agent Agent-675411 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-675411 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -479,7 +479,7 @@
     "id": 79431,
     "owner": "0x847c1c709B538360d48994878e7D5A3b1BA30F30",
     "name": "Agent-847C1C",
-    "description": "AI Agent Agent-847C1C — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-847C1C \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -499,7 +499,7 @@
     "id": 81121,
     "owner": "0x077D8631117aB4bb6629923718BDae3dC740a90a",
     "name": "Agent-077D86",
-    "description": "AI Agent Agent-077D86 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-077D86 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -523,7 +523,7 @@
     "id": 82811,
     "owner": "0xb96263F8544A59b8bAD4d01c352623c643CA9Aa6",
     "name": "Agent-b96263",
-    "description": "AI Agent Agent-b96263 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-b96263 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -547,7 +547,7 @@
     "id": 84501,
     "owner": "0x0743141819a09894308d4A166f57f55E46f81909",
     "name": "Agent-074314",
-    "description": "AI Agent Agent-074314 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-074314 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -571,7 +571,7 @@
     "id": 86191,
     "owner": "0x0e4baB3C36842E625E6E64740B54B5DcE1180869",
     "name": "Agent-0E4BAB",
-    "description": "AI Agent Agent-0E4BAB — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-0E4BAB \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -591,7 +591,7 @@
     "id": 87881,
     "owner": "0xC9422581140a008E542b8d9B6164E62414cc89F3",
     "name": "Agent-C94225",
-    "description": "AI Agent Agent-C94225 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-C94225 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -615,7 +615,7 @@
     "id": 89571,
     "owner": "0x00be5df90eFDBBE639C359702bee5c487cE66011",
     "name": "Agent-00be5d",
-    "description": "AI Agent Agent-00be5d — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-00be5d \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -639,7 +639,7 @@
     "id": 91261,
     "owner": "0x07e82C47BeeEA54CaAe4f372441e426316eDe7FC",
     "name": "Agent-07E82C",
-    "description": "AI Agent Agent-07E82C — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-07E82C \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -659,7 +659,7 @@
     "id": 92951,
     "owner": "0x98e6aB6451ab077C69Eda8cA16ef5C8E63FE36F8",
     "name": "Agent-98e6aB",
-    "description": "AI Agent Agent-98e6aB — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-98e6aB \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -683,7 +683,7 @@
     "id": 94641,
     "owner": "0x9E94DA4832bAe42a344570102d8977ae12ede83e",
     "name": "Agent-9E94DA",
-    "description": "AI Agent Agent-9E94DA — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-9E94DA \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -707,7 +707,7 @@
     "id": 96331,
     "owner": "0x9b547563Af5163339436100B0Ee5801038EdFfFa",
     "name": "Agent-9b5475",
-    "description": "AI Agent Agent-9b5475 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-9b5475 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -731,7 +731,7 @@
     "id": 98021,
     "owner": "0x8C771204c08e3838128e79923C1b16DD5De7aBF2",
     "name": "Agent-8C7712",
-    "description": "AI Agent Agent-8C7712 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-8C7712 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -755,7 +755,7 @@
     "id": 99711,
     "owner": "0xFF0D49876d18B3ED2C41A10FBEA374ce3D1A3204",
     "name": "Agent-FF0D49",
-    "description": "AI Agent Agent-FF0D49 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-FF0D49 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -779,7 +779,7 @@
     "id": 101401,
     "owner": "0xC72FB6519e04861d3096262A21f3C27f47CBD77D",
     "name": "BridgeAgent-C72FB6",
-    "description": "Bridge Agent BridgeAgent-C72FB6 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Agent BridgeAgent-C72FB6 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -803,7 +803,7 @@
     "id": 103091,
     "owner": "0x41b065db23aE00A90E1DB17368D8b1b95d285677",
     "name": "Agent-41b065",
-    "description": "AI Agent Agent-41b065 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-41b065 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -827,7 +827,7 @@
     "id": 104781,
     "owner": "0x35B8d34a727C83F0Cd7eE815575C374E41BFacb5",
     "name": "Agent-35B8d3",
-    "description": "AI Agent Agent-35B8d3 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-35B8d3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -851,7 +851,7 @@
     "id": 106471,
     "owner": "0xc8326CB96980698988c908e1F49Be46C1bD1D4d3",
     "name": "Agent-c8326C",
-    "description": "AI Agent Agent-c8326C — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-c8326C \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -875,7 +875,7 @@
     "id": 108161,
     "owner": "0x8c9e707041c1f2Fb7A9caf69BE713D39960575cE",
     "name": "Agent-8c9e70",
-    "description": "AI Agent Agent-8c9e70 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-8c9e70 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -899,7 +899,7 @@
     "id": 109851,
     "owner": "0x2BA9387502CF5f154C2fcc0907E15cc0Fafe7BFc",
     "name": "Agent-2BA938",
-    "description": "AI Agent Agent-2BA938 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-2BA938 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -923,7 +923,7 @@
     "id": 111541,
     "owner": "0x3B577eA41269Fff048E122AE19BF3F634ceDb8D7",
     "name": "Agent-3B577e",
-    "description": "AI Agent Agent-3B577e — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-3B577e \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -947,7 +947,7 @@
     "id": 113231,
     "owner": "0x4b86Ed0E9BC3D924A5Da06120014C222C66EE4E8",
     "name": "Agent-4b86Ed",
-    "description": "AI Agent Agent-4b86Ed — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-4b86Ed \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -971,7 +971,7 @@
     "id": 114921,
     "owner": "0x62F2c1377E7c0e58D0beeEc795DebA0D205f5a29",
     "name": "BridgeAgent-62F2c1",
-    "description": "Bridge Agent BridgeAgent-62F2c1 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Agent BridgeAgent-62F2c1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -995,7 +995,7 @@
     "id": 116611,
     "owner": "0x3E818A624D7081a539f0C9dB1f4bB390F4AAa92F",
     "name": "Agent-3E818A",
-    "description": "AI Agent Agent-3E818A — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-3E818A \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1019,7 +1019,7 @@
     "id": 118301,
     "owner": "0x990C3aB0F191A4530927247E7C43E93189FBEca9",
     "name": "Agent-990C3a",
-    "description": "AI Agent Agent-990C3a — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-990C3a \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1043,7 +1043,7 @@
     "id": 119991,
     "owner": "0x0c0286d46B4842Fe0b70bab5fAc420941f27868c",
     "name": "Agent-0c0286",
-    "description": "AI Agent Agent-0c0286 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-0c0286 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1067,7 +1067,7 @@
     "id": 121681,
     "owner": "0x53C1FeEd313b840C949e235F3270210Cde34b17C",
     "name": "Agent-53C1Fe",
-    "description": "AI Agent Agent-53C1Fe — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-53C1Fe \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1091,7 +1091,7 @@
     "id": 123371,
     "owner": "0xd3798e0148ec68abbdaDA03D908B63aa55d49317",
     "name": "Agent-d3798e",
-    "description": "AI Agent Agent-d3798e — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-d3798e \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1115,7 +1115,7 @@
     "id": 125061,
     "owner": "0x5E809fF6d9608f884028A9C0e6e07eFdb42Fb592",
     "name": "Agent-5E809f",
-    "description": "AI Agent Agent-5E809f — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-5E809f \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1139,7 +1139,7 @@
     "id": 126751,
     "owner": "0x421FfA1198b618eA8C925486894019F072255D5C",
     "name": "Agent-421FfA",
-    "description": "AI Agent Agent-421FfA — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-421FfA \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1163,7 +1163,7 @@
     "id": 128441,
     "owner": "0x11c5497902BfB16eabdA1a03BD617Ff95Fb6E84F",
     "name": "BridgeAgent-11c549",
-    "description": "Bridge Agent BridgeAgent-11c549 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Agent BridgeAgent-11c549 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1187,7 +1187,7 @@
     "id": 130131,
     "owner": "0x3CC72261967FFf8575d4D03daF1F449E441d2c12",
     "name": "BridgeAgent-3CC722",
-    "description": "Bridge Agent BridgeAgent-3CC722 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Agent BridgeAgent-3CC722 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1211,7 +1211,7 @@
     "id": 131821,
     "owner": "0x127980470432185a67696ee8a34ba8AB09341287",
     "name": "Agent-127980",
-    "description": "AI Agent Agent-127980 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-127980 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1235,7 +1235,7 @@
     "id": 133511,
     "owner": "0xf0A0CA1c392749e60C57ECAe32CF92EE188086BE",
     "name": "Agent-f0A0CA",
-    "description": "AI Agent Agent-f0A0CA — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-f0A0CA \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1259,7 +1259,7 @@
     "id": 135201,
     "owner": "0x3CC72261967FFf8575d4D03daF1F449E441d2c12",
     "name": "Agent-3CC722",
-    "description": "AI Agent Agent-3CC722 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-3CC722 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1283,7 +1283,7 @@
     "id": 136891,
     "owner": "0x8048450F80A6Db1D3689151dFae81907755c8949",
     "name": "Agent-804845",
-    "description": "AI Agent Agent-804845 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-804845 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1307,7 +1307,7 @@
     "id": 138581,
     "owner": "0xa6A3369be9701c951CAB0D9cF5b6cDC10171Be19",
     "name": "Agent-a6A336",
-    "description": "AI Agent Agent-a6A336 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-a6A336 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1331,7 +1331,7 @@
     "id": 140271,
     "owner": "0x4Cf6ecFf0ea0D1C96bE76e8439249B6E61630268",
     "name": "Agent-4Cf6ec",
-    "description": "AI Agent Agent-4Cf6ec — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-4Cf6ec \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1355,7 +1355,7 @@
     "id": 141961,
     "owner": "0x0fA45957316acd33809399Ec78c2Fe24dCCFC304",
     "name": "Agent-0fA459",
-    "description": "AI Agent Agent-0fA459 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-0fA459 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1379,7 +1379,7 @@
     "id": 143651,
     "owner": "0x5b47362fC5d42aB441c55F45F72726E40AC1f27B",
     "name": "Agent-5b4736",
-    "description": "AI Agent Agent-5b4736 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-5b4736 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1403,7 +1403,7 @@
     "id": 145341,
     "owner": "0xf384eC0E96AB23e0F102048cDd3Ba3cCBC64Fdc6",
     "name": "VAgent-f384eC",
-    "description": "Validator Agent VAgent-f384eC — ERC-8004 on Arc Testnet",
+    "description": "Validator Agent VAgent-f384eC \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1431,7 +1431,7 @@
     "id": 147031,
     "owner": "0xeB2ba7885707C07c798b6f46A633CB0139E486F1",
     "name": "Agent-eB2ba7",
-    "description": "AI Agent Agent-eB2ba7 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-eB2ba7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1455,7 +1455,7 @@
     "id": 148721,
     "owner": "0x0a8f57A5724B56171350f14E34EDaD5b93B6474A",
     "name": "Agent-0a8f57",
-    "description": "AI Agent Agent-0a8f57 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-0a8f57 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1479,7 +1479,7 @@
     "id": 150411,
     "owner": "0x843164c174E6E09076E4CbFA73B3d2d0A9b27BAb",
     "name": "Agent-843164",
-    "description": "AI Agent Agent-843164 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-843164 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1503,7 +1503,7 @@
     "id": 152101,
     "owner": "0x9b093ee7aC015fE0d9c2C231baAa453A3b7823E1",
     "name": "Agent-9b093e",
-    "description": "AI Agent Agent-9b093e — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-9b093e \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1527,7 +1527,7 @@
     "id": 153791,
     "owner": "0x4cf28f344b59114ceDa1169A4523B68A6a27576a",
     "name": "Agent-4cf28f",
-    "description": "AI Agent Agent-4cf28f — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-4cf28f \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1551,7 +1551,7 @@
     "id": 155481,
     "owner": "0x90918e002431317CBd2E0Fe5dee3888De0B9f9EE",
     "name": "Agent-90918e",
-    "description": "AI Agent Agent-90918e — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-90918e \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1575,7 +1575,7 @@
     "id": 157171,
     "owner": "0xdE7B295bA4af7c2d6fc27146D21D76EB7521EcbA",
     "name": "Agent-dE7B29",
-    "description": "AI Agent Agent-dE7B29 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-dE7B29 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1599,7 +1599,7 @@
     "id": 158861,
     "owner": "0xDa35C7cB0D8707FdB3eDb46E7df2519968Fd87F0",
     "name": "SwapAgent-Da35C7",
-    "description": "Swap Agent SwapAgent-Da35C7 — ERC-8004 on Arc Testnet",
+    "description": "Swap Agent SwapAgent-Da35C7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1623,7 +1623,7 @@
     "id": 160551,
     "owner": "0xD84aDFFCafe732F33B45294f1E444Fa4d9DA59f5",
     "name": "Agent-D84aDF",
-    "description": "AI Agent Agent-D84aDF — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-D84aDF \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1647,7 +1647,7 @@
     "id": 162241,
     "owner": "0xD55f19FE0A8e88142dFBDdeC70dC51a2e68DA1b7",
     "name": "Agent-D55f19",
-    "description": "AI Agent Agent-D55f19 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-D55f19 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1671,7 +1671,7 @@
     "id": 163931,
     "owner": "0x536F8AB77E01b48A8579341a5F2d12020399D62b",
     "name": "Agent-536F8A",
-    "description": "AI Agent Agent-536F8A — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-536F8A \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1695,7 +1695,7 @@
     "id": 165621,
     "owner": "0xE46e67962623Cbb11cF2Dd67f5d0A1dDE7Db2884",
     "name": "Agent-E46e67",
-    "description": "AI Agent Agent-E46e67 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-E46e67 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1719,7 +1719,7 @@
     "id": 167311,
     "owner": "0x41F0E3C445166EB6F92fA3EdAF9AF6E4BF9417aE",
     "name": "Agent-41F0E3",
-    "description": "AI Agent Agent-41F0E3 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-41F0E3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1743,7 +1743,7 @@
     "id": 169001,
     "owner": "0x921e4e7F325FCc26a3E5f6e0A36f8862A7E46A36",
     "name": "Agent-921e4e",
-    "description": "AI Agent Agent-921e4e — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-921e4e \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1767,7 +1767,7 @@
     "id": 170691,
     "owner": "0xe35A223f016615AC6f7bFC84CD62DBd35dbb2cED",
     "name": "Agent-e35A22",
-    "description": "AI Agent Agent-e35A22 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-e35A22 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1791,7 +1791,7 @@
     "id": 172381,
     "owner": "0x59612A01e5f76757Be68fA5B71eE20A2D6b31abE",
     "name": "Agent-59612A",
-    "description": "AI Agent Agent-59612A — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-59612A \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1815,7 +1815,7 @@
     "id": 174071,
     "owner": "0x0e21165BEc3D5C28cb0Ab86965ea868f5A9099DC",
     "name": "Agent-0e2116",
-    "description": "AI Agent Agent-0e2116 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-0e2116 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1839,7 +1839,7 @@
     "id": 175761,
     "owner": "0xAd82Ea3a4Ca1016D237b642F40E580E1a5DC85dB",
     "name": "Agent-Ad82Ea",
-    "description": "AI Agent Agent-Ad82Ea — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-Ad82Ea \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1863,7 +1863,7 @@
     "id": 177451,
     "owner": "0x884BA3b0FB91CB2f964EB3C35640A005272AC0B5",
     "name": "Agent-884BA3",
-    "description": "AI Agent Agent-884BA3 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-884BA3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1887,7 +1887,7 @@
     "id": 179141,
     "owner": "0xd1B5822a2a361C92109e037a19724CDE1722429f",
     "name": "Agent-d1B582",
-    "description": "AI Agent Agent-d1B582 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-d1B582 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1911,7 +1911,7 @@
     "id": 180831,
     "owner": "0x09cD21F04013cdeEa0390F1ec9C0c605d3F8bB6d",
     "name": "Agent-09cD21",
-    "description": "AI Agent Agent-09cD21 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-09cD21 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1935,7 +1935,7 @@
     "id": 182521,
     "owner": "0xa4686D591bA107cf71229C2C9a06653c65477a29",
     "name": "Agent-a4686D",
-    "description": "AI Agent Agent-a4686D — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-a4686D \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1959,7 +1959,7 @@
     "id": 184211,
     "owner": "0x0c1d9011396807d77FbC0ea89D4bB14C43Dd9f0b",
     "name": "Agent-0c1d90",
-    "description": "AI Agent Agent-0c1d90 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-0c1d90 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -1983,7 +1983,7 @@
     "id": 185901,
     "owner": "0x2802bFb36726c74eF6B1C821834c46393C86c02E",
     "name": "Agent-2802bF",
-    "description": "AI Agent Agent-2802bF — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-2802bF \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2007,7 +2007,7 @@
     "id": 187591,
     "owner": "0xc00D40548Ef2e9B0032F5F0Dc45CfEE57A3acbbA",
     "name": "Agent-c00D40",
-    "description": "AI Agent Agent-c00D40 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-c00D40 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2031,7 +2031,7 @@
     "id": 189281,
     "owner": "0x8d48C3645dAf42713AF9cd277Cb3A832159D92b7",
     "name": "Agent-8d48C3",
-    "description": "AI Agent Agent-8d48C3 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-8d48C3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2055,7 +2055,7 @@
     "id": 190971,
     "owner": "0x7bd22512B14a1Bdbc741072891c75586F0154bAC",
     "name": "Agent-7bd225",
-    "description": "AI Agent Agent-7bd225 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-7bd225 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2079,7 +2079,7 @@
     "id": 192661,
     "owner": "0x7a17386115D20dB708A364C822914eD2E2544407",
     "name": "Agent-7a1738",
-    "description": "AI Agent Agent-7a1738 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-7a1738 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2103,7 +2103,7 @@
     "id": 194351,
     "owner": "0x619d066853448bcAB67c335356d7e591E35dFf5A",
     "name": "Agent-619d06",
-    "description": "AI Agent Agent-619d06 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-619d06 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2127,7 +2127,7 @@
     "id": 196041,
     "owner": "0xa4534cB546A500387f95830549Fde14012753ACE",
     "name": "Agent-a4534c",
-    "description": "AI Agent Agent-a4534c — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-a4534c \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2151,7 +2151,7 @@
     "id": 197731,
     "owner": "0x8C38c7A2671Aa61A907014FFb97793E4A4c72690",
     "name": "Agent-8C38c7",
-    "description": "AI Agent Agent-8C38c7 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-8C38c7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2175,7 +2175,7 @@
     "id": 199421,
     "owner": "0x67B1Bb3DA43219d01d86B5926078218Ed49f3f81",
     "name": "Agent-67B1Bb",
-    "description": "AI Agent Agent-67B1Bb — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-67B1Bb \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2199,7 +2199,7 @@
     "id": 201111,
     "owner": "0xf9cBb799f42A29f2DFc1A13c354540ac86F81F19",
     "name": "Agent-f9cBb7",
-    "description": "AI Agent Agent-f9cBb7 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-f9cBb7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2223,7 +2223,7 @@
     "id": 202801,
     "owner": "0xfD59E21d513677225a0dbd4BD820A4b1332e155A",
     "name": "Bridge-fD59E2",
-    "description": "Bridge Operator Bridge-fD59E2 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-fD59E2 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2247,7 +2247,7 @@
     "id": 204491,
     "owner": "0x2a1d12E9Ad70084D803715B85DF18597eB5435cA",
     "name": "Trader-2a1d12",
-    "description": "Swap Trader Trader-2a1d12 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-2a1d12 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2271,7 +2271,7 @@
     "id": 206181,
     "owner": "0x55b3686Ff09062863a0225BAe5Cd501D9a67E77a",
     "name": "Bridge-55b368",
-    "description": "Bridge Operator Bridge-55b368 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-55b368 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2295,7 +2295,7 @@
     "id": 207871,
     "owner": "0x3b00D3eA7A433D738c91F7364e8CAF8Fbfd07E39",
     "name": "Trader-3b00D3",
-    "description": "Swap Trader Trader-3b00D3 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-3b00D3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2319,7 +2319,7 @@
     "id": 209561,
     "owner": "0x8f95D2164e5aE374f47CB6BBB45E963B19D4AA77",
     "name": "Bridge-8f95D2",
-    "description": "Bridge Operator Bridge-8f95D2 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-8f95D2 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2343,7 +2343,7 @@
     "id": 211251,
     "owner": "0x516eBF7580195aE5eF5f628d459F64ed31FaC45a",
     "name": "Bridge-516eBF",
-    "description": "Bridge Operator Bridge-516eBF — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-516eBF \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2367,7 +2367,7 @@
     "id": 212941,
     "owner": "0x080E261fca10E11Ec855683dbD90044EC300e872",
     "name": "Agent-080E26",
-    "description": "AI Agent Agent-080E26 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-080E26 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2391,7 +2391,7 @@
     "id": 214631,
     "owner": "0x4832Ff90e2061F2cF6091B30e8C00b125986E268",
     "name": "Agent-4832Ff",
-    "description": "AI Agent Agent-4832Ff — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-4832Ff \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2415,7 +2415,7 @@
     "id": 216321,
     "owner": "0xf8e1A1FBf14E5322bCFcd750c7C3dbDd874eF82D",
     "name": "Trader-f8e1A1",
-    "description": "Swap Trader Trader-f8e1A1 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-f8e1A1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2439,7 +2439,7 @@
     "id": 218011,
     "owner": "0xCfA092CB5251df535B6aa0f5de4D722A5b08f2B7",
     "name": "Bridge-CfA092",
-    "description": "Bridge Operator Bridge-CfA092 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-CfA092 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2463,7 +2463,7 @@
     "id": 219701,
     "owner": "0x770BD31CC8DC302489A48fbB574256237b2CA8D0",
     "name": "Bridge-770BD3",
-    "description": "Bridge Operator Bridge-770BD3 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-770BD3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2487,7 +2487,7 @@
     "id": 221391,
     "owner": "0x363a99C2cDa93dac5E6202c4291864647837Bb46",
     "name": "Agent-363a99",
-    "description": "AI Agent Agent-363a99 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-363a99 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2511,7 +2511,7 @@
     "id": 223081,
     "owner": "0x2802bFb36726c74eF6B1C821834c46393C86c02E",
     "name": "Bridge-2802bF",
-    "description": "Bridge Operator Bridge-2802bF — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-2802bF \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2535,7 +2535,7 @@
     "id": 224771,
     "owner": "0xf847ae6F91CBc0c970e5F26F702C430141E96CEa",
     "name": "Agent-f847ae",
-    "description": "AI Agent Agent-f847ae — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-f847ae \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2559,7 +2559,7 @@
     "id": 226461,
     "owner": "0x4C1bEC618fd0942a0988A05D0324132faD6D1191",
     "name": "Agent-4C1bEC",
-    "description": "AI Agent Agent-4C1bEC — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-4C1bEC \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2583,7 +2583,7 @@
     "id": 228151,
     "owner": "0x5BDF5461E8A65AF4cC9e47c7A8e599E43A84EE25",
     "name": "Trader-5BDF54",
-    "description": "Swap Trader Trader-5BDF54 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-5BDF54 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2607,7 +2607,7 @@
     "id": 229841,
     "owner": "0x1Dffa59a20595f8B38B1409CaBda97D3aD57e192",
     "name": "Trader-1Dffa5",
-    "description": "Swap Trader Trader-1Dffa5 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-1Dffa5 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2631,7 +2631,7 @@
     "id": 231531,
     "owner": "0xe4E164df813559f2579BF6Bf4Ba407DE762644c9",
     "name": "Trader-e4E164",
-    "description": "Swap Trader Trader-e4E164 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-e4E164 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2655,7 +2655,7 @@
     "id": 233221,
     "owner": "0xB37Da87fdC13b03baB29794b9f2F9094C345C3b6",
     "name": "Bridge-B37Da8",
-    "description": "Bridge Operator Bridge-B37Da8 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-B37Da8 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2679,7 +2679,7 @@
     "id": 234911,
     "owner": "0x0193C596D17d3fd5D7cC27d7D2F67E6549a9bC69",
     "name": "Trader-0193C5",
-    "description": "Swap Trader Trader-0193C5 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-0193C5 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2703,7 +2703,7 @@
     "id": 236601,
     "owner": "0x1A48b432FA98Fa969a9AD51879dEC7AB3c0AC135",
     "name": "Agent-1A48b4",
-    "description": "AI Agent Agent-1A48b4 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-1A48b4 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2727,7 +2727,7 @@
     "id": 238291,
     "owner": "0xb226485E6C8bdfA7F58e14cB305868ef5D1d055b",
     "name": "Agent-b22648",
-    "description": "AI Agent Agent-b22648 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-b22648 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2751,7 +2751,7 @@
     "id": 239981,
     "owner": "0xFc073934748A033F6E26A85c6877caAd62329FC1",
     "name": "Agent-Fc0739",
-    "description": "AI Agent Agent-Fc0739 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-Fc0739 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2775,7 +2775,7 @@
     "id": 241671,
     "owner": "0xaDB19EF37D86cf15bA6818806dA73974Cd660D73",
     "name": "Bridge-aDB19E",
-    "description": "Bridge Operator Bridge-aDB19E — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-aDB19E \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2799,7 +2799,7 @@
     "id": 243361,
     "owner": "0x54A6bc9e067F2E536483Ad59db8a3d629f25DD37",
     "name": "Agent-54A6bc",
-    "description": "AI Agent Agent-54A6bc — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-54A6bc \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2823,7 +2823,7 @@
     "id": 245051,
     "owner": "0xBCB868fE4D967FEAF0297aeF1C07ca40209CE9d3",
     "name": "Agent-BCB868",
-    "description": "AI Agent Agent-BCB868 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-BCB868 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2847,7 +2847,7 @@
     "id": 246741,
     "owner": "0xf847ae6F91CBc0c970e5F26F702C430141E96CEa",
     "name": "Agent-f847ae",
-    "description": "AI Agent Agent-f847ae — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-f847ae \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2871,7 +2871,7 @@
     "id": 248431,
     "owner": "0x00aA36747845cF84a66E7A0bD01a97E5fa4aD2F9",
     "name": "Bridge-00aA36",
-    "description": "Bridge Operator Bridge-00aA36 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-00aA36 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2895,7 +2895,7 @@
     "id": 250121,
     "owner": "0x1efE940120d7f4348c16a73394D8AFe89Ac7c575",
     "name": "Agent-1efE94",
-    "description": "AI Agent Agent-1efE94 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-1efE94 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2919,7 +2919,7 @@
     "id": 251811,
     "owner": "0x038cCbcA2a52b0FeF83705d4A2Cdba73D1B8F476",
     "name": "Bridge-038cCb",
-    "description": "Bridge Operator Bridge-038cCb — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-038cCb \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2943,7 +2943,7 @@
     "id": 253501,
     "owner": "0x649Ef08418A37AafC71Da922835f50e3295a3a8B",
     "name": "Bridge-649Ef0",
-    "description": "Bridge Operator Bridge-649Ef0 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-649Ef0 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2967,7 +2967,7 @@
     "id": 255191,
     "owner": "0xb1081A57c273047922Ba54112eAC12c558512D8F",
     "name": "Agent-b1081A",
-    "description": "AI Agent Agent-b1081A — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-b1081A \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -2991,7 +2991,7 @@
     "id": 256881,
     "owner": "0x856Bca3E2700CE391989eAE54c7C175c63C02657",
     "name": "Agent-856Bca",
-    "description": "AI Agent Agent-856Bca — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-856Bca \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3015,7 +3015,7 @@
     "id": 258571,
     "owner": "0xe37E85c975F914B0154B0E233ecbf35c810F9454",
     "name": "Agent-e37E85",
-    "description": "AI Agent Agent-e37E85 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-e37E85 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3039,7 +3039,7 @@
     "id": 260261,
     "owner": "0x033AFC71e1E2F1787c2fB1C7aDB023bF8Bb13Cf0",
     "name": "Agent-033AFC",
-    "description": "AI Agent Agent-033AFC — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-033AFC \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3063,7 +3063,7 @@
     "id": 261951,
     "owner": "0x3363CfEBcb1D537d6C6bD2408DdE03980F4A4da4",
     "name": "Agent-3363Cf",
-    "description": "AI Agent Agent-3363Cf — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-3363Cf \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3087,7 +3087,7 @@
     "id": 263641,
     "owner": "0xBC785A9F12A0DE2f6992F3D7D6FFB88675B1cf5f",
     "name": "Agent-BC785A",
-    "description": "AI Agent Agent-BC785A — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-BC785A \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3111,7 +3111,7 @@
     "id": 265331,
     "owner": "0x75aE6815A5db7f6B71b053Bb77DAE2B64a0b25DD",
     "name": "Agent-75aE68",
-    "description": "AI Agent Agent-75aE68 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-75aE68 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3135,7 +3135,7 @@
     "id": 267021,
     "owner": "0xf681D08F463fBe3D2AD3B5cE3c1D7b7AB9637fE9",
     "name": "Bridge-f681D0",
-    "description": "Bridge Operator Bridge-f681D0 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-f681D0 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3159,7 +3159,7 @@
     "id": 268711,
     "owner": "0xc697910625207A82C555BE47D3EAC910419DAD06",
     "name": "Agent-c69791",
-    "description": "AI Agent Agent-c69791 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-c69791 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3183,7 +3183,7 @@
     "id": 270401,
     "owner": "0x083ccdD14571A791494BebEE92215222669C32BE",
     "name": "Trader-083ccd",
-    "description": "Swap Trader Trader-083ccd — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-083ccd \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3207,7 +3207,7 @@
     "id": 272091,
     "owner": "0xB3377aCE074376C7373Df5CE449616f41be80a97",
     "name": "Trader-B3377a",
-    "description": "Swap Trader Trader-B3377a — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-B3377a \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3231,7 +3231,7 @@
     "id": 273781,
     "owner": "0x9DE6a72f28818d35a745C576c815581d461454ec",
     "name": "Agent-9DE6a7",
-    "description": "AI Agent Agent-9DE6a7 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-9DE6a7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3255,7 +3255,7 @@
     "id": 275471,
     "owner": "0xC5C5C18eF3b1479D777Ed7710dE947aa71C6C6fF",
     "name": "Agent-C5C5C1",
-    "description": "AI Agent Agent-C5C5C1 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-C5C5C1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3279,7 +3279,7 @@
     "id": 277161,
     "owner": "0x76BD05714C2764Cb693c0812AeB534eD350C54C1",
     "name": "Agent-76BD05",
-    "description": "AI Agent Agent-76BD05 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-76BD05 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3303,7 +3303,7 @@
     "id": 278851,
     "owner": "0xa621431E1C9fC844CBC40FF354Be79EeC8941F36",
     "name": "Bridge-a62143",
-    "description": "Bridge Operator Bridge-a62143 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-a62143 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3327,7 +3327,7 @@
     "id": 280541,
     "owner": "0xEFf170B52710767985096A3209Ac65334F533622",
     "name": "Trader-EFf170",
-    "description": "Swap Trader Trader-EFf170 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-EFf170 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3351,7 +3351,7 @@
     "id": 282231,
     "owner": "0xB4d12D74A6CF094A51Cff443553e2197A7de2151",
     "name": "Bridge-B4d12D",
-    "description": "Bridge Operator Bridge-B4d12D — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-B4d12D \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3375,7 +3375,7 @@
     "id": 283921,
     "owner": "0x975CE44E6Df7b7d839caC77B7b662458bd9A2609",
     "name": "Agent-975CE4",
-    "description": "AI Agent Agent-975CE4 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-975CE4 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3399,7 +3399,7 @@
     "id": 285611,
     "owner": "0x54EC4246e61AbE28573011d0FD16978032b685d2",
     "name": "Bridge-54EC42",
-    "description": "Bridge Operator Bridge-54EC42 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-54EC42 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3423,7 +3423,7 @@
     "id": 287301,
     "owner": "0xf62dD70a0aFb7d03B5CFE7b2430e45c1d7b39A0F",
     "name": "Agent-f62dD7",
-    "description": "AI Agent Agent-f62dD7 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-f62dD7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3447,7 +3447,7 @@
     "id": 288991,
     "owner": "0x89EF45661840B0e643417d162bB06f474D113953",
     "name": "Bridge-89EF45",
-    "description": "Bridge Operator Bridge-89EF45 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-89EF45 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3471,7 +3471,7 @@
     "id": 290681,
     "owner": "0xa6a9BbBfA9d7B25fF39293B6ed02a5E4E5354Eec",
     "name": "Bridge-a6a9Bb",
-    "description": "Bridge Operator Bridge-a6a9Bb — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-a6a9Bb \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3495,7 +3495,7 @@
     "id": 292371,
     "owner": "0xe642A5EE1fCC04d76Fa32f4fCB8910776113Be63",
     "name": "Agent-e642A5",
-    "description": "AI Agent Agent-e642A5 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-e642A5 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3519,7 +3519,7 @@
     "id": 294061,
     "owner": "0x0FcF65A79d29E41FddEE00BA015FF78514A8FDc1",
     "name": "Bridge-0FcF65",
-    "description": "Bridge Operator Bridge-0FcF65 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-0FcF65 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3543,7 +3543,7 @@
     "id": 295751,
     "owner": "0x36c0aeb5185D1F135cb50854AA2B7a67dEb24c3f",
     "name": "Bridge-36c0ae",
-    "description": "Bridge Operator Bridge-36c0ae — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-36c0ae \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3567,7 +3567,7 @@
     "id": 297441,
     "owner": "0xA8AF20b930FDd6F23fF456C3D3D1f617e13B30e1",
     "name": "Agent-A8AF20",
-    "description": "AI Agent Agent-A8AF20 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-A8AF20 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3591,7 +3591,7 @@
     "id": 299131,
     "owner": "0x080E261fca10E11Ec855683dbD90044EC300e872",
     "name": "Agent-080E26",
-    "description": "AI Agent Agent-080E26 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-080E26 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3615,7 +3615,7 @@
     "id": 300821,
     "owner": "0x12040ff1c1f0B3B9811b2568B07fe43A45D98C0c",
     "name": "Trader-12040f",
-    "description": "Swap Trader Trader-12040f — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-12040f \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3639,7 +3639,7 @@
     "id": 302511,
     "owner": "0xb9507e83705297A7adfE58ACa62Afa4f7Af6315E",
     "name": "Agent-b9507e",
-    "description": "AI Agent Agent-b9507e — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-b9507e \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3663,7 +3663,7 @@
     "id": 304201,
     "owner": "0x249fc2434594AE1Acb635C54C716A36A10df9344",
     "name": "Bridge-249fc2",
-    "description": "Bridge Operator Bridge-249fc2 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-249fc2 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3687,7 +3687,7 @@
     "id": 305891,
     "owner": "0x09cD21F04013cdeEa0390F1ec9C0c605d3F8bB6d",
     "name": "Trader-09cD21",
-    "description": "Swap Trader Trader-09cD21 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-09cD21 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3711,7 +3711,7 @@
     "id": 307581,
     "owner": "0xe5d7c3df294b8f197c669D7eC075fa54d0b51763",
     "name": "Agent-e5d7c3",
-    "description": "AI Agent Agent-e5d7c3 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-e5d7c3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3735,7 +3735,7 @@
     "id": 309271,
     "owner": "0x4285CFdf6F1967549f659aaB16Ce968B857Aa96D",
     "name": "Agent-4285CF",
-    "description": "AI Agent Agent-4285CF — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-4285CF \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3759,7 +3759,7 @@
     "id": 310961,
     "owner": "0x36ed4e01415c867FD40B61c13252cf851AeD9720",
     "name": "Trader-36ed4e",
-    "description": "Swap Trader Trader-36ed4e — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-36ed4e \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3783,7 +3783,7 @@
     "id": 312651,
     "owner": "0x64E7a98Fd792db84A733CF35F5DDeF8b4B65c8A4",
     "name": "Agent-64E7a9",
-    "description": "AI Agent Agent-64E7a9 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-64E7a9 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3807,7 +3807,7 @@
     "id": 314341,
     "owner": "0x56AC8749ad01aAe45E831900C08bb2f7961F69Af",
     "name": "Agent-56AC87",
-    "description": "AI Agent Agent-56AC87 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-56AC87 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3831,7 +3831,7 @@
     "id": 316031,
     "owner": "0xEDCb361DFa320381cD26A093C44F42809a56d699",
     "name": "Trader-EDCb36",
-    "description": "Swap Trader Trader-EDCb36 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-EDCb36 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3855,7 +3855,7 @@
     "id": 317721,
     "owner": "0x6fF0823055EC0964543fBB8f594CC1A32f1Bc28f",
     "name": "Agent-6fF082",
-    "description": "AI Agent Agent-6fF082 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-6fF082 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3879,7 +3879,7 @@
     "id": 319411,
     "owner": "0xc513FCE1E7f2ba4D2e296EC2bEA6D9b53b6009A1",
     "name": "Trader-c513FC",
-    "description": "Swap Trader Trader-c513FC — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-c513FC \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3903,7 +3903,7 @@
     "id": 321101,
     "owner": "0xbA47520038F83e6e156CEa113f6aA56b098857A0",
     "name": "Agent-bA4752",
-    "description": "AI Agent Agent-bA4752 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-bA4752 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3927,7 +3927,7 @@
     "id": 322791,
     "owner": "0xf62dD70a0aFb7d03B5CFE7b2430e45c1d7b39A0F",
     "name": "Agent-f62dD7",
-    "description": "AI Agent Agent-f62dD7 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-f62dD7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3951,7 +3951,7 @@
     "id": 324481,
     "owner": "0x27E0883504BbC5Df7d07Ff94359a60B09096b09E",
     "name": "Trader-27E088",
-    "description": "Swap Trader Trader-27E088 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-27E088 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3975,7 +3975,7 @@
     "id": 326171,
     "owner": "0x57e51E72a331eff9ab145b42abEEb132324f24c9",
     "name": "Trader-57e51E",
-    "description": "Swap Trader Trader-57e51E — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-57e51E \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -3999,7 +3999,7 @@
     "id": 327861,
     "owner": "0xfE36d23Ed1BaD3037A3006af26f59584C93dF842",
     "name": "Agent-fE36d2",
-    "description": "AI Agent Agent-fE36d2 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-fE36d2 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4023,7 +4023,7 @@
     "id": 329551,
     "owner": "0x7FFB14c239285512A971e6a1DaBF03DAe6653b14",
     "name": "Agent-7FFB14",
-    "description": "AI Agent Agent-7FFB14 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-7FFB14 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4047,7 +4047,7 @@
     "id": 331241,
     "owner": "0x260565993eA1F396fF624397f108Da6515Aa9EA7",
     "name": "Agent-260565",
-    "description": "AI Agent Agent-260565 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-260565 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4071,7 +4071,7 @@
     "id": 332931,
     "owner": "0x19ec6B1DA93bFd579874FaA22dFEE31F6aB2D7C0",
     "name": "Agent-19ec6B",
-    "description": "AI Agent Agent-19ec6B — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-19ec6B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4095,7 +4095,7 @@
     "id": 334621,
     "owner": "0xa5cbeB44cDE9B8b2a0b3537042FA16897F6d229f",
     "name": "Agent-a5cbeB",
-    "description": "AI Agent Agent-a5cbeB — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-a5cbeB \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4119,7 +4119,7 @@
     "id": 336311,
     "owner": "0x9C7308f14969d0C943418393E74b9E9b2f61f6b1",
     "name": "Bridge-9C7308",
-    "description": "Bridge Operator Bridge-9C7308 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-9C7308 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4143,7 +4143,7 @@
     "id": 338001,
     "owner": "0x4E24B37E25459d90F28AC4E5C2a0bBE804F6af4a",
     "name": "Agent-4E24B3",
-    "description": "AI Agent Agent-4E24B3 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-4E24B3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4167,7 +4167,7 @@
     "id": 339691,
     "owner": "0x8dcccC4e5a22730552F581f48157F31d67C7af7c",
     "name": "Trader-8dcccC",
-    "description": "Swap Trader Trader-8dcccC — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-8dcccC \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4191,7 +4191,7 @@
     "id": 341381,
     "owner": "0xBdf52e59E8E7141ec739c6eBFc54f87E11e94473",
     "name": "Trader-Bdf52e",
-    "description": "Swap Trader Trader-Bdf52e — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-Bdf52e \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4215,7 +4215,7 @@
     "id": 343071,
     "owner": "0xFDa20253C4d413dcA53254831387162Bc128Aeb7",
     "name": "Agent-FDa202",
-    "description": "AI Agent Agent-FDa202 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-FDa202 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4239,7 +4239,7 @@
     "id": 344761,
     "owner": "0xffF9972ab4e7039ee611d6428bA20da07F7C0a34",
     "name": "Bridge-ffF997",
-    "description": "Bridge Operator Bridge-ffF997 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-ffF997 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4263,7 +4263,7 @@
     "id": 346451,
     "owner": "0x4A7559FfA5D4b41D4b7d941368B98A5DfB81d722",
     "name": "Bridge-4A7559",
-    "description": "Bridge Operator Bridge-4A7559 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-4A7559 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4287,7 +4287,7 @@
     "id": 348141,
     "owner": "0xcE7176f2B7B8570993CDd44cEfbfEca68b26A0Cf",
     "name": "Agent-cE7176",
-    "description": "AI Agent Agent-cE7176 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-cE7176 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4311,7 +4311,7 @@
     "id": 349831,
     "owner": "0x69D58a3dd9B2190987A795C33C98EFa434c9DD34",
     "name": "Agent-69D58a",
-    "description": "AI Agent Agent-69D58a — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-69D58a \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4335,7 +4335,7 @@
     "id": 351521,
     "owner": "0xD57B35805991C33e15eF8A7dBdFa3DABb7CaB7d7",
     "name": "Agent-D57B35",
-    "description": "AI Agent Agent-D57B35 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-D57B35 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4359,7 +4359,7 @@
     "id": 353211,
     "owner": "0x571afc3b21ddE25b1c17d8349c9541e81D5867F1",
     "name": "Bridge-571afc",
-    "description": "Bridge Operator Bridge-571afc — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-571afc \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4383,7 +4383,7 @@
     "id": 354901,
     "owner": "0x0f53d1f614897789c5786D6532C751a4641A290e",
     "name": "Trader-0f53d1",
-    "description": "Swap Trader Trader-0f53d1 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-0f53d1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4407,7 +4407,7 @@
     "id": 356591,
     "owner": "0x02DD12D209c2e6FEfC5a2f1c325025BA1f03a5BF",
     "name": "Trader-02DD12",
-    "description": "Swap Trader Trader-02DD12 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-02DD12 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4431,7 +4431,7 @@
     "id": 358281,
     "owner": "0x9235b567063d48b41D43CB99fe891f64a8c88cdE",
     "name": "Bridge-9235b5",
-    "description": "Bridge Operator Bridge-9235b5 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-9235b5 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4455,7 +4455,7 @@
     "id": 359971,
     "owner": "0x16C33FBd031914b3330b71ea77d320B46600c153",
     "name": "Agent-16C33F",
-    "description": "AI Agent Agent-16C33F — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-16C33F \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4479,7 +4479,7 @@
     "id": 361661,
     "owner": "0x5DC7Bca2885f094c910c982d426B071d9671101e",
     "name": "Agent-5DC7Bc",
-    "description": "AI Agent Agent-5DC7Bc — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-5DC7Bc \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4503,7 +4503,7 @@
     "id": 363351,
     "owner": "0xFBC124ff7E98E06eB3D5050b69f89db8eF9718c1",
     "name": "Trader-FBC124",
-    "description": "Swap Trader Trader-FBC124 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-FBC124 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4527,7 +4527,7 @@
     "id": 365041,
     "owner": "0xfe87CaEA23de3e6f1F91ADE35b3C8A78A20E2101",
     "name": "Agent-fe87Ca",
-    "description": "AI Agent Agent-fe87Ca — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-fe87Ca \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4551,7 +4551,7 @@
     "id": 366731,
     "owner": "0x7b103B4f70d3f66cc6482d828b20ae0Ef5E97611",
     "name": "Agent-7b103B",
-    "description": "AI Agent Agent-7b103B — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-7b103B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4575,7 +4575,7 @@
     "id": 368421,
     "owner": "0x8E10d7288206FB3551F30e6d76E6996Af9cd8BCb",
     "name": "Trader-8E10d7",
-    "description": "Swap Trader Trader-8E10d7 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-8E10d7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4599,7 +4599,7 @@
     "id": 370111,
     "owner": "0x41e64099246C0FBD62Aaa81Bb854bCC587D986Fa",
     "name": "Trader-41e640",
-    "description": "Swap Trader Trader-41e640 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-41e640 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4623,7 +4623,7 @@
     "id": 371801,
     "owner": "0xAd127468eb77d3Ee92853531C0C5D22791A1b0bf",
     "name": "Agent-Ad1274",
-    "description": "AI Agent Agent-Ad1274 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-Ad1274 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4647,7 +4647,7 @@
     "id": 373491,
     "owner": "0xffF9972ab4e7039ee611d6428bA20da07F7C0a34",
     "name": "Bridge-ffF997",
-    "description": "Bridge Operator Bridge-ffF997 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-ffF997 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4671,7 +4671,7 @@
     "id": 375181,
     "owner": "0x32bE1fdD39D2C3f1795b0b4Fbf4A00d9b52Be48E",
     "name": "Agent-32bE1f",
-    "description": "AI Agent Agent-32bE1f — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-32bE1f \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4695,7 +4695,7 @@
     "id": 376871,
     "owner": "0x990C3aB0F191A4530927247E7C43E93189FBEca9",
     "name": "Agent-990C3a",
-    "description": "AI Agent Agent-990C3a — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-990C3a \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4719,7 +4719,7 @@
     "id": 378561,
     "owner": "0xAA509b2c1573b90D9f977fb2906662Bf293fcB7B",
     "name": "Trader-AA509b",
-    "description": "Swap Trader Trader-AA509b — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-AA509b \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4743,7 +4743,7 @@
     "id": 380251,
     "owner": "0xfbb23D17bDEea0F918253095DA8f89FB2B8169Ed",
     "name": "Bridge-fbb23D",
-    "description": "Bridge Operator Bridge-fbb23D — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-fbb23D \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4767,7 +4767,7 @@
     "id": 381941,
     "owner": "0xE5Cd7509B4CFf621005cF14AbD5AD8FE86cc8d5E",
     "name": "Agent-E5Cd75",
-    "description": "AI Agent Agent-E5Cd75 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-E5Cd75 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4791,7 +4791,7 @@
     "id": 383631,
     "owner": "0x0ECe66aBb244C20f689BFe6769c0a7c916f89B47",
     "name": "Agent-0ECe66",
-    "description": "AI Agent Agent-0ECe66 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-0ECe66 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4815,7 +4815,7 @@
     "id": 385321,
     "owner": "0x077D8631117aB4bb6629923718BDae3dC740a90a",
     "name": "Agent-077D86",
-    "description": "AI Agent Agent-077D86 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-077D86 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4839,7 +4839,7 @@
     "id": 387011,
     "owner": "0xDf10Ea3b437eD9167aCA28915D499727e7Ed844A",
     "name": "Agent-Df10Ea",
-    "description": "AI Agent Agent-Df10Ea — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-Df10Ea \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4863,7 +4863,7 @@
     "id": 388701,
     "owner": "0x0ab8b338142D54d8d2910FdC8D54dA485e2fd7a7",
     "name": "Agent-0ab8b3",
-    "description": "AI Agent Agent-0ab8b3 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-0ab8b3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4887,7 +4887,7 @@
     "id": 390391,
     "owner": "0x212ad6A5e88F4ec42fF76BcDc7cABb3851f37908",
     "name": "Agent-212ad6",
-    "description": "AI Agent Agent-212ad6 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-212ad6 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4911,7 +4911,7 @@
     "id": 392081,
     "owner": "0x559920b8c34CB00600d402f6e63ab1D7D9Daf6C9",
     "name": "Agent-559920",
-    "description": "AI Agent Agent-559920 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-559920 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4935,7 +4935,7 @@
     "id": 393771,
     "owner": "0xE57d91CdD63828eBb268DEc77fDA0E65C1D579eE",
     "name": "Agent-E57d91",
-    "description": "AI Agent Agent-E57d91 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-E57d91 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4959,7 +4959,7 @@
     "id": 395461,
     "owner": "0xf02565104B5649d141E6f2eE874Caf70203301B5",
     "name": "Bridge-f02565",
-    "description": "Bridge Operator Bridge-f02565 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-f02565 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -4983,7 +4983,7 @@
     "id": 397151,
     "owner": "0x486BDE9cDDba63BeE635004f6c0df322256E2a2d",
     "name": "Agent-486BDE",
-    "description": "AI Agent Agent-486BDE — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-486BDE \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5007,7 +5007,7 @@
     "id": 398841,
     "owner": "0x3f946EafcDa2A667856665Fa95751cDd2A5e585e",
     "name": "Agent-3f946E",
-    "description": "AI Agent Agent-3f946E — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-3f946E \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5031,7 +5031,7 @@
     "id": 400531,
     "owner": "0xd6D6007c2A1472fd1aF96D26baf083C0FE8a5329",
     "name": "Agent-d6D600",
-    "description": "AI Agent Agent-d6D600 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-d6D600 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5055,7 +5055,7 @@
     "id": 402221,
     "owner": "0x0a14182C51E783baBa2d9f3636551b1307c72cDD",
     "name": "Agent-0a1418",
-    "description": "AI Agent Agent-0a1418 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-0a1418 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5079,7 +5079,7 @@
     "id": 403911,
     "owner": "0x1b552666fBC6A0A2c399D995CBA9B4E5a92EcBcA",
     "name": "Agent-1b5526",
-    "description": "AI Agent Agent-1b5526 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-1b5526 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5103,7 +5103,7 @@
     "id": 405601,
     "owner": "0x6A9f8dC1d1c02Aff48473fb56119B7f9722de7bf",
     "name": "Agent-6A9f8d",
-    "description": "AI Agent Agent-6A9f8d — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-6A9f8d \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5127,7 +5127,7 @@
     "id": 407291,
     "owner": "0x239f1EA715Cad9CBfC651681465bEec08D52010a",
     "name": "Agent-239f1E",
-    "description": "AI Agent Agent-239f1E — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-239f1E \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5151,7 +5151,7 @@
     "id": 408981,
     "owner": "0x23f79616cA3Da3cDb3621fD04Bb688e901292729",
     "name": "Agent-23f796",
-    "description": "AI Agent Agent-23f796 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-23f796 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5175,7 +5175,7 @@
     "id": 410671,
     "owner": "0x11c5497902BfB16eabdA1a03BD617Ff95Fb6E84F",
     "name": "Agent-11c549",
-    "description": "AI Agent Agent-11c549 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-11c549 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5199,7 +5199,7 @@
     "id": 412361,
     "owner": "0x66C4d09714BF3F073bC23698D08267ec9679A20c",
     "name": "Agent-66C4d0",
-    "description": "AI Agent Agent-66C4d0 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-66C4d0 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5223,7 +5223,7 @@
     "id": 414051,
     "owner": "0x86ED3BB2C5C54849Aaf6a437D25dBC115E1c74E0",
     "name": "Agent-86ED3B",
-    "description": "AI Agent Agent-86ED3B — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-86ED3B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5254,7 +5254,7 @@
     "id": 417431,
     "owner": "0xB3D0B167C17aC441859744d58aFa65AEe9f172F4",
     "name": "Bridge-B3D0B1",
-    "description": "Bridge Operator Bridge-B3D0B1 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-B3D0B1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5278,7 +5278,7 @@
     "id": 419121,
     "owner": "0x80a66B437e18dA8C55377d2EA4bE683c821Df5e4",
     "name": "Bridge-80a66B",
-    "description": "Bridge Operator Bridge-80a66B — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-80a66B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5302,7 +5302,7 @@
     "id": 420811,
     "owner": "0x79e80552c602084Ceda417656f24E38AD5854901",
     "name": "Agent-79e805",
-    "description": "AI Agent Agent-79e805 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-79e805 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5326,7 +5326,7 @@
     "id": 422501,
     "owner": "0x75705d6BDe9F311Fcb4539FC5Df4f5a911Af9541",
     "name": "Agent-75705d",
-    "description": "AI Agent Agent-75705d — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-75705d \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5357,7 +5357,7 @@
     "id": 425881,
     "owner": "0x324c8BE33812091A805C32765641f8E77CF92Fa7",
     "name": "Agent-324c8B",
-    "description": "AI Agent Agent-324c8B — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-324c8B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5381,7 +5381,7 @@
     "id": 427571,
     "owner": "0xA114d8a1E1EE3579B3de080095E3747f4A092850",
     "name": "Agent-A114d8",
-    "description": "AI Agent Agent-A114d8 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-A114d8 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5405,7 +5405,7 @@
     "id": 429261,
     "owner": "0xAdA0C842FD252325542bcF44E87A674f226Dc610",
     "name": "Bridge-AdA0C8",
-    "description": "Bridge Operator Bridge-AdA0C8 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-AdA0C8 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5429,7 +5429,7 @@
     "id": 430951,
     "owner": "0xec8264C73a3949751Fb8f3AcCe8e09F3808d7d83",
     "name": "Trader-ec8264",
-    "description": "Swap Trader Trader-ec8264 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-ec8264 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5453,7 +5453,7 @@
     "id": 432641,
     "owner": "0x184Aa64aE15E179DB1C21138ea09d2C59F0753dc",
     "name": "Agent-184Aa6",
-    "description": "AI Agent Agent-184Aa6 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-184Aa6 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5477,7 +5477,7 @@
     "id": 434331,
     "owner": "0xD432C4e3dE3b420153b6155e331D00fDeFdb5D77",
     "name": "Agent-D432C4",
-    "description": "AI Agent Agent-D432C4 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-D432C4 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5501,7 +5501,7 @@
     "id": 436021,
     "owner": "0xab791926c54B57Cf651686379F31Ed57045E1487",
     "name": "Agent-ab7919",
-    "description": "AI Agent Agent-ab7919 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-ab7919 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5525,7 +5525,7 @@
     "id": 437711,
     "owner": "0xf251a767E7426246C984FeB940558A9999bac81C",
     "name": "Agent-f251a7",
-    "description": "AI Agent Agent-f251a7 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-f251a7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5549,7 +5549,7 @@
     "id": 439401,
     "owner": "0x695b980De0Fb2D8cD11E6907f764e01FE870c5CC",
     "name": "Agent-695b98",
-    "description": "AI Agent Agent-695b98 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-695b98 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5573,7 +5573,7 @@
     "id": 441091,
     "owner": "0xf251a767E7426246C984FeB940558A9999bac81C",
     "name": "Agent-f251a7",
-    "description": "AI Agent Agent-f251a7 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-f251a7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5597,7 +5597,7 @@
     "id": 442781,
     "owner": "0x06d6Fc5d138082e18cB28561C2b049f39143c396",
     "name": "Trader-06d6Fc",
-    "description": "Swap Trader Trader-06d6Fc — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-06d6Fc \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5621,7 +5621,7 @@
     "id": 444471,
     "owner": "0x4205e422A73019FE7fa12F0e83C24a91Df9Ec05C",
     "name": "Trader-4205e4",
-    "description": "Swap Trader Trader-4205e4 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-4205e4 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5645,7 +5645,7 @@
     "id": 446161,
     "owner": "0x9b28D308A20023cf819462158680428a9D205C70",
     "name": "Agent-9b28D3",
-    "description": "AI Agent Agent-9b28D3 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-9b28D3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5669,7 +5669,7 @@
     "id": 447851,
     "owner": "0x978AC1cEf52EEB24Ef1e62975e72026A81400404",
     "name": "Bridge-978AC1",
-    "description": "Bridge Operator Bridge-978AC1 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-978AC1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5693,7 +5693,7 @@
     "id": 449541,
     "owner": "0xDE01945dde74724184cfF16D4788523420fe97a1",
     "name": "Agent-DE0194",
-    "description": "AI Agent Agent-DE0194 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-DE0194 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5717,7 +5717,7 @@
     "id": 451231,
     "owner": "0xbec5E2a2e2cb5c22A8898eB852ee474813C14729",
     "name": "Agent-bec5E2",
-    "description": "AI Agent Agent-bec5E2 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-bec5E2 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5741,7 +5741,7 @@
     "id": 452921,
     "owner": "0x549ad82462F5a6dB4e5942603c65B93ADf26e97F",
     "name": "Trader-549ad8",
-    "description": "Swap Trader Trader-549ad8 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-549ad8 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5765,7 +5765,7 @@
     "id": 454611,
     "owner": "0x5b673F30F734877A77D4265BaD92dCDC406A952d",
     "name": "Agent-5b673F",
-    "description": "AI Agent Agent-5b673F — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-5b673F \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5789,7 +5789,7 @@
     "id": 456301,
     "owner": "0xAc8222Dc1F1975efBF167Ba0630025Eb190A6c63",
     "name": "Agent-Ac8222",
-    "description": "AI Agent Agent-Ac8222 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-Ac8222 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5813,7 +5813,7 @@
     "id": 457991,
     "owner": "0xaD0d6aA5ebA628d8c0cF17a4a57D37aB3BAdA6E2",
     "name": "Trader-aD0d6a",
-    "description": "Swap Trader Trader-aD0d6a — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-aD0d6a \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5837,7 +5837,7 @@
     "id": 459681,
     "owner": "0xe642A5EE1fCC04d76Fa32f4fCB8910776113Be63",
     "name": "Agent-e642A5",
-    "description": "AI Agent Agent-e642A5 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-e642A5 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5861,7 +5861,7 @@
     "id": 461371,
     "owner": "0xC668658a4a80E2e01449c8fD4c0465A7B2BFf5BC",
     "name": "Trader-C66865",
-    "description": "Swap Trader Trader-C66865 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-C66865 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5885,7 +5885,7 @@
     "id": 463061,
     "owner": "0x75031E153eF0a3205E53F8FEc887e00281731239",
     "name": "Agent-75031E",
-    "description": "AI Agent Agent-75031E — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-75031E \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5909,7 +5909,7 @@
     "id": 464751,
     "owner": "0xFf9D64c72F41E93C6798110087eFB977a056B0Ca",
     "name": "Bridge-Ff9D64",
-    "description": "Bridge Operator Bridge-Ff9D64 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-Ff9D64 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5933,7 +5933,7 @@
     "id": 466441,
     "owner": "0xCaf5F9DEBd845276BB7c65bE69D144b92BD0353F",
     "name": "Bridge-Caf5F9",
-    "description": "Bridge Operator Bridge-Caf5F9 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-Caf5F9 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5957,7 +5957,7 @@
     "id": 468131,
     "owner": "0xF6C645EDAeA37DA0C7AF23BaB2741f9468359367",
     "name": "Trader-F6C645",
-    "description": "Swap Trader Trader-F6C645 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-F6C645 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -5981,7 +5981,7 @@
     "id": 469821,
     "owner": "0xCe20b4dBCa7b602c750332ed407Aace62B1b2d31",
     "name": "Trader-Ce20b4",
-    "description": "Swap Trader Trader-Ce20b4 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-Ce20b4 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6005,7 +6005,7 @@
     "id": 471511,
     "owner": "0xad316E1cb077e22C7BE6554ba93513117667e0B0",
     "name": "Agent-ad316E",
-    "description": "AI Agent Agent-ad316E — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-ad316E \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6029,7 +6029,7 @@
     "id": 473201,
     "owner": "0x188985aE1Bb62F941b6B59F4283c7b7E92e6E0ab",
     "name": "Trader-188985",
-    "description": "Swap Trader Trader-188985 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-188985 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6053,7 +6053,7 @@
     "id": 474891,
     "owner": "0x9459859d417b4287aD9B21F27F9D6852d353C9Fe",
     "name": "Agent-945985",
-    "description": "AI Agent Agent-945985 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-945985 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6077,7 +6077,7 @@
     "id": 476581,
     "owner": "0xE6Be5D5B0A65d48Ce027eA93ECB650a7F794b0Fc",
     "name": "Trader-E6Be5D",
-    "description": "Swap Trader Trader-E6Be5D — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-E6Be5D \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6101,7 +6101,7 @@
     "id": 478271,
     "owner": "0x978AC1cEf52EEB24Ef1e62975e72026A81400404",
     "name": "Bridge-978AC1",
-    "description": "Bridge Operator Bridge-978AC1 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-978AC1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6125,7 +6125,7 @@
     "id": 479961,
     "owner": "0x0Be11a7Ec815f4D2d69cf94bC2A49eD5a06c0C79",
     "name": "Trader-0Be11a",
-    "description": "Swap Trader Trader-0Be11a — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-0Be11a \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6149,7 +6149,7 @@
     "id": 481651,
     "owner": "0x97ab7db647b3C34f2fEA8bF495eDfDEf00361251",
     "name": "Bridge-97ab7d",
-    "description": "Bridge Operator Bridge-97ab7d — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-97ab7d \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6173,7 +6173,7 @@
     "id": 483341,
     "owner": "0x6f4D612DC2991C11cDD4fdBD109892Bc6Efd67AD",
     "name": "Agent-6f4D61",
-    "description": "AI Agent Agent-6f4D61 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-6f4D61 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6197,7 +6197,7 @@
     "id": 485031,
     "owner": "0xF74809F6B997A5e13E6D4CBa26d249A3d3219886",
     "name": "Agent-F74809",
-    "description": "AI Agent Agent-F74809 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-F74809 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6221,7 +6221,7 @@
     "id": 486721,
     "owner": "0x1D32816e09a428456FB3BaFA15d8fa2fD0F81d99",
     "name": "Bridge-1D3281",
-    "description": "Bridge Operator Bridge-1D3281 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-1D3281 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6245,7 +6245,7 @@
     "id": 488411,
     "owner": "0xeb95D81818c40580C4CE0C6C25CB1e1EA873c2b7",
     "name": "Agent-eb95D8",
-    "description": "AI Agent Agent-eb95D8 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-eb95D8 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6269,7 +6269,7 @@
     "id": 490101,
     "owner": "0x67E73EE848790BA03d6fd44196aA98F3F88fc357",
     "name": "Bridge-67E73E",
-    "description": "Bridge Operator Bridge-67E73E — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-67E73E \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6293,7 +6293,7 @@
     "id": 491791,
     "owner": "0x2a5c0Be72a5903B37b02Ce3A62302d89Ae49dFd1",
     "name": "Trader-2a5c0B",
-    "description": "Swap Trader Trader-2a5c0B — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-2a5c0B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6317,7 +6317,7 @@
     "id": 493481,
     "owner": "0x52f8F0FF3BB35745f8ea306958b50E60884A0b41",
     "name": "Agent-52f8F0",
-    "description": "AI Agent Agent-52f8F0 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-52f8F0 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6341,7 +6341,7 @@
     "id": 495171,
     "owner": "0xAab33Be6F18FDbcd14F30A23e5166EeCFB1bAA17",
     "name": "Agent-Aab33B",
-    "description": "AI Agent Agent-Aab33B — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-Aab33B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6365,7 +6365,7 @@
     "id": 496861,
     "owner": "0xD28a8bBF771E549588B9E248BBfFC459E1A879DA",
     "name": "Agent-D28a8b",
-    "description": "AI Agent Agent-D28a8b — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-D28a8b \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6389,7 +6389,7 @@
     "id": 498551,
     "owner": "0x39288b2fDE888720BE5C3bd2E59Ab865e62E3B96",
     "name": "Trader-39288b",
-    "description": "Swap Trader Trader-39288b — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-39288b \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6413,7 +6413,7 @@
     "id": 500241,
     "owner": "0x8CEE1B78e5c4FdaE0b0D107F5205B608903c8441",
     "name": "Bridge-8CEE1B",
-    "description": "Bridge Operator Bridge-8CEE1B — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-8CEE1B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6437,7 +6437,7 @@
     "id": 501931,
     "owner": "0xFeCDc76040708DA10f10d81e38f8ec6cD95ae8E0",
     "name": "Bridge-FeCDc7",
-    "description": "Bridge Operator Bridge-FeCDc7 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-FeCDc7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6461,7 +6461,7 @@
     "id": 503621,
     "owner": "0x33b2eba2559e53ebe6081dc0D525cbD82d60F8BC",
     "name": "Bridge-33b2eb",
-    "description": "Bridge Operator Bridge-33b2eb — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-33b2eb \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6485,7 +6485,7 @@
     "id": 505311,
     "owner": "0x1a0Ce7eB9EDEb7c8524fCb4568159f16bF4c6193",
     "name": "Bridge-1a0Ce7",
-    "description": "Bridge Operator Bridge-1a0Ce7 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-1a0Ce7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6509,7 +6509,7 @@
     "id": 507001,
     "owner": "0x1CC9D3F7949807efC0da71458e60Be906845ea3E",
     "name": "Agent-1CC9D3",
-    "description": "AI Agent Agent-1CC9D3 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-1CC9D3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6533,7 +6533,7 @@
     "id": 508691,
     "owner": "0xc9b7665a71F2E40050B8E91b862a4428d48Efeb1",
     "name": "Bridge-c9b766",
-    "description": "Bridge Operator Bridge-c9b766 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-c9b766 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6557,7 +6557,7 @@
     "id": 510381,
     "owner": "0x22876A5DAB539f43AE42154976a9ecDf4956ECc8",
     "name": "Agent-22876A",
-    "description": "AI Agent Agent-22876A — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-22876A \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6581,7 +6581,7 @@
     "id": 512071,
     "owner": "0xA5568F2344aDf13d620957351F03506f7E9bdaDC",
     "name": "Agent-A5568F",
-    "description": "AI Agent Agent-A5568F — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-A5568F \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6605,7 +6605,7 @@
     "id": 513761,
     "owner": "0xA33ad4667DCf323FdF00fc6C61F82D1F9B0f76Ca",
     "name": "Bridge-A33ad4",
-    "description": "Bridge Operator Bridge-A33ad4 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-A33ad4 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6629,7 +6629,7 @@
     "id": 515451,
     "owner": "0x050Ed07001f215Ab9654a20BD7F14B0Fb6c14939",
     "name": "Bridge-050Ed0",
-    "description": "Bridge Operator Bridge-050Ed0 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-050Ed0 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6653,7 +6653,7 @@
     "id": 517141,
     "owner": "0xB1dBeB6Ae12e7e3dd9f762313579fA69F384b6ab",
     "name": "Trader-B1dBeB",
-    "description": "Swap Trader Trader-B1dBeB — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-B1dBeB \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6677,7 +6677,7 @@
     "id": 518831,
     "owner": "0xA64A9B18044c0094B38f67D022882FcDaB0a7688",
     "name": "Bridge-A64A9B",
-    "description": "Bridge Operator Bridge-A64A9B — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-A64A9B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6701,7 +6701,7 @@
     "id": 520521,
     "owner": "0xc5Eeb84C04AFF15578709a8BA47D5B396252325a",
     "name": "Agent-c5Eeb8",
-    "description": "AI Agent Agent-c5Eeb8 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-c5Eeb8 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6725,7 +6725,7 @@
     "id": 522211,
     "owner": "0xB2721543F6Af5710D95EBF6C2733e53CD719F1e0",
     "name": "Bridge-B27215",
-    "description": "Bridge Operator Bridge-B27215 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-B27215 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6749,7 +6749,7 @@
     "id": 523901,
     "owner": "0xFDa20253C4d413dcA53254831387162Bc128Aeb7",
     "name": "Agent-FDa202",
-    "description": "AI Agent Agent-FDa202 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-FDa202 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6773,7 +6773,7 @@
     "id": 525591,
     "owner": "0xbDA7C0833Ce2Fdd5FE3a6922AEfCd3AabA14F905",
     "name": "Trader-bDA7C0",
-    "description": "Swap Trader Trader-bDA7C0 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-bDA7C0 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6797,7 +6797,7 @@
     "id": 527281,
     "owner": "0x4693d54e427D53bECb2Eb951242Db07c4846684D",
     "name": "Agent-4693d5",
-    "description": "AI Agent Agent-4693d5 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-4693d5 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6821,7 +6821,7 @@
     "id": 528971,
     "owner": "0x038cCbcA2a52b0FeF83705d4A2Cdba73D1B8F476",
     "name": "Bridge-038cCb",
-    "description": "Bridge Operator Bridge-038cCb — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-038cCb \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6845,7 +6845,7 @@
     "id": 530661,
     "owner": "0x74C30304d3AE9B158c2D0AFd1e0E17ADED5849e6",
     "name": "Trader-74C303",
-    "description": "Swap Trader Trader-74C303 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-74C303 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6869,7 +6869,7 @@
     "id": 532351,
     "owner": "0x476eb4aa0b03880Edb1390EEE2C37BCd8f0DBc41",
     "name": "Trader-476eb4",
-    "description": "Swap Trader Trader-476eb4 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-476eb4 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6893,7 +6893,7 @@
     "id": 534041,
     "owner": "0x743DF123609171E7D3d1Ca9af5cb189198881B9D",
     "name": "Agent-743DF1",
-    "description": "AI Agent Agent-743DF1 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-743DF1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6917,7 +6917,7 @@
     "id": 535731,
     "owner": "0xDD4cCC277901018Dd86a56752828287937307cBf",
     "name": "Bridge-DD4cCC",
-    "description": "Bridge Operator Bridge-DD4cCC — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-DD4cCC \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6941,7 +6941,7 @@
     "id": 537421,
     "owner": "0xe0ee0Da1f22874C83860b669cEC4E54b2D14e133",
     "name": "Bridge-e0ee0D",
-    "description": "Bridge Operator Bridge-e0ee0D — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-e0ee0D \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6965,7 +6965,7 @@
     "id": 539111,
     "owner": "0xF3A0047D7CCDa29896A61aC30ec1DA422D4B1E0D",
     "name": "Bridge-F3A004",
-    "description": "Bridge Operator Bridge-F3A004 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-F3A004 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -6989,7 +6989,7 @@
     "id": 540801,
     "owner": "0xD6F151e12edC1a765e57d779067aC1AAb92Db04f",
     "name": "Agent-D6F151",
-    "description": "AI Agent Agent-D6F151 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-D6F151 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7013,7 +7013,7 @@
     "id": 542491,
     "owner": "0x1A4487D2dc3f00bb3b299c23037a1c8F37FFE9cD",
     "name": "Bridge-1A4487",
-    "description": "Bridge Operator Bridge-1A4487 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-1A4487 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7037,7 +7037,7 @@
     "id": 544181,
     "owner": "0x0E7Ad11b9F1B38F6d41faB6beA39cD0c904f41A8",
     "name": "Agent-0E7Ad1",
-    "description": "AI Agent Agent-0E7Ad1 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-0E7Ad1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7061,7 +7061,7 @@
     "id": 545871,
     "owner": "0x15bF56AcB32509cB6E23f9491Ced927cE681E940",
     "name": "Agent-15bF56",
-    "description": "AI Agent Agent-15bF56 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-15bF56 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7085,7 +7085,7 @@
     "id": 547561,
     "owner": "0xaA84D1C9422ef9DfB6e08720B2379E3FEb45652e",
     "name": "Agent-aA84D1",
-    "description": "AI Agent Agent-aA84D1 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-aA84D1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7109,7 +7109,7 @@
     "id": 549251,
     "owner": "0xd9486B4F5B4F2EfB8431AC5bd8d0E42861C698F2",
     "name": "Agent-d9486B",
-    "description": "AI Agent Agent-d9486B — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-d9486B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7133,7 +7133,7 @@
     "id": 550941,
     "owner": "0xcD44e15F52bb9979a242c5C5644e99eb9995f7b1",
     "name": "Bridge-cD44e1",
-    "description": "Bridge Operator Bridge-cD44e1 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-cD44e1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7157,7 +7157,7 @@
     "id": 552631,
     "owner": "0x1868B1D4821E4F4CaD62f7208ecA352b7be5C797",
     "name": "Agent-1868B1",
-    "description": "AI Agent Agent-1868B1 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-1868B1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7181,7 +7181,7 @@
     "id": 554321,
     "owner": "0x9822BEbf1c42621e28B70a81781EAa1bD0e4065a",
     "name": "Agent-9822BE",
-    "description": "AI Agent Agent-9822BE — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-9822BE \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7205,7 +7205,7 @@
     "id": 556011,
     "owner": "0x212E891ceD5A10Bf519f2FedEc081C0E8624387c",
     "name": "Agent-212E89",
-    "description": "AI Agent Agent-212E89 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-212E89 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7229,7 +7229,7 @@
     "id": 557701,
     "owner": "0x67b2325C499aBfBc910b9Ee2907579c5F9058fc0",
     "name": "Bridge-67b232",
-    "description": "Bridge Operator Bridge-67b232 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-67b232 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7253,7 +7253,7 @@
     "id": 559391,
     "owner": "0x79CA516CbeD8c4a746203CCacB4AaC44d449d014",
     "name": "Agent-79CA51",
-    "description": "AI Agent Agent-79CA51 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-79CA51 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7277,7 +7277,7 @@
     "id": 561081,
     "owner": "0x7Dc26BA8Af6e1E8B5f0efe67D39F369F2B26F2Cb",
     "name": "Agent-7Dc26B",
-    "description": "AI Agent Agent-7Dc26B — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-7Dc26B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7301,7 +7301,7 @@
     "id": 562771,
     "owner": "0xf7cE2D4EBe18e98aE82c7Da8CC545148d7be8ed8",
     "name": "Agent-f7cE2D",
-    "description": "AI Agent Agent-f7cE2D — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-f7cE2D \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7325,7 +7325,7 @@
     "id": 564461,
     "owner": "0x0591f79d15dD9000055dA990D0E3b5635984a436",
     "name": "Agent-0591f7",
-    "description": "AI Agent Agent-0591f7 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-0591f7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7349,7 +7349,7 @@
     "id": 566151,
     "owner": "0x28af34Fd1f48eFEA0D27dEe897FD782B2B83393E",
     "name": "Agent-28af34",
-    "description": "AI Agent Agent-28af34 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-28af34 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7373,7 +7373,7 @@
     "id": 567841,
     "owner": "0x50B7346b57F40FA3e710F6DbBdaba178f3B888e3",
     "name": "Trader-50B734",
-    "description": "Swap Trader Trader-50B734 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-50B734 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7397,7 +7397,7 @@
     "id": 569531,
     "owner": "0x47FeEFA4856C83f088d6CA74962107E5acc7397B",
     "name": "Agent-47FeEF",
-    "description": "AI Agent Agent-47FeEF — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-47FeEF \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7421,7 +7421,7 @@
     "id": 571221,
     "owner": "0x0E13d1919dD2567e9bcaCE72eDC491554FCA3AC4",
     "name": "Agent-0E13d1",
-    "description": "AI Agent Agent-0E13d1 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-0E13d1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7445,7 +7445,7 @@
     "id": 572911,
     "owner": "0xCF4FCDF7FB98F27d64bbEC343e1706AF772251bf",
     "name": "Agent-CF4FCD",
-    "description": "AI Agent Agent-CF4FCD — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-CF4FCD \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7469,7 +7469,7 @@
     "id": 574601,
     "owner": "0xdaB16b2aB7F49ACe7AD9408106B18812cd4Bf03b",
     "name": "Agent-daB16b",
-    "description": "AI Agent Agent-daB16b — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-daB16b \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7493,7 +7493,7 @@
     "id": 576291,
     "owner": "0x9659a53916CF49605471eac71dAFD347959EabD2",
     "name": "Agent-9659a5",
-    "description": "AI Agent Agent-9659a5 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-9659a5 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7517,7 +7517,7 @@
     "id": 577981,
     "owner": "0x758cD6690D8Cf641c384e144424Fe6128A2C6Cf7",
     "name": "Bridge-758cD6",
-    "description": "Bridge Operator Bridge-758cD6 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-758cD6 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7541,7 +7541,7 @@
     "id": 579671,
     "owner": "0x324c8BE33812091A805C32765641f8E77CF92Fa7",
     "name": "Agent-324c8B",
-    "description": "AI Agent Agent-324c8B — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-324c8B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7565,7 +7565,7 @@
     "id": 581361,
     "owner": "0x3e11BA874D8E63a05C7f72255F8Cb0A125582245",
     "name": "Bridge-3e11BA",
-    "description": "Bridge Operator Bridge-3e11BA — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-3e11BA \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7589,7 +7589,7 @@
     "id": 583051,
     "owner": "0xdD45a2eFa092C3FF974E14b9355291e857CbAaBf",
     "name": "Agent-dD45a2",
-    "description": "AI Agent Agent-dD45a2 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-dD45a2 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7613,7 +7613,7 @@
     "id": 584741,
     "owner": "0xB10e4a3d72939e44CE4EC3d5C69579E98a876878",
     "name": "Agent-B10e4a",
-    "description": "AI Agent Agent-B10e4a — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-B10e4a \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7637,7 +7637,7 @@
     "id": 586431,
     "owner": "0x9CF08b6A753003d319A62cABb8ABc2C37DB918e4",
     "name": "Trader-9CF08b",
-    "description": "Swap Trader Trader-9CF08b — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-9CF08b \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7661,7 +7661,7 @@
     "id": 588121,
     "owner": "0x76079509ddfbD9504B4dC7Eff88297d229D26563",
     "name": "Agent-760795",
-    "description": "AI Agent Agent-760795 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-760795 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7685,7 +7685,7 @@
     "id": 589811,
     "owner": "0xA98983B25ff7F897C804F00fa43153362CBE055B",
     "name": "Bridge-A98983",
-    "description": "Bridge Operator Bridge-A98983 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-A98983 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7709,7 +7709,7 @@
     "id": 591501,
     "owner": "0xa0fd77735FAb26068b7139cd8b6187B923340FfB",
     "name": "Trader-a0fd77",
-    "description": "Swap Trader Trader-a0fd77 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-a0fd77 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7733,7 +7733,7 @@
     "id": 593191,
     "owner": "0xc0bC413A2B18A90fa8f058819f643A91a72079c3",
     "name": "Bridge-c0bC41",
-    "description": "Bridge Operator Bridge-c0bC41 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-c0bC41 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7757,7 +7757,7 @@
     "id": 594881,
     "owner": "0xb6755C1AD54eF8D88b60E5048aFc0335440558EE",
     "name": "Agent-b6755C",
-    "description": "AI Agent Agent-b6755C — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-b6755C \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7781,7 +7781,7 @@
     "id": 596571,
     "owner": "0x93a75e2618C53076C2ad3A71964EdC8d882F4990",
     "name": "Bridge-93a75e",
-    "description": "Bridge Operator Bridge-93a75e — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-93a75e \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7805,7 +7805,7 @@
     "id": 598261,
     "owner": "0x6E42CA40F6ad4dBBF4D6DC462312196D1577dCbb",
     "name": "Agent-6E42CA",
-    "description": "AI Agent Agent-6E42CA — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-6E42CA \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7829,7 +7829,7 @@
     "id": 599951,
     "owner": "0x99524669b0D64b8FDBB33089059929e9968B87b0",
     "name": "Bridge-995246",
-    "description": "Bridge Operator Bridge-995246 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-995246 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7853,7 +7853,7 @@
     "id": 601641,
     "owner": "0xcE67bD9FaEDC03a0e64aD71928bE50fe9F05D599",
     "name": "Trader-cE67bD",
-    "description": "Swap Trader Trader-cE67bD — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-cE67bD \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7877,7 +7877,7 @@
     "id": 603331,
     "owner": "0x3B52021e991024fA3CA12F819c8E4D05e9DAf771",
     "name": "Bridge-3B5202",
-    "description": "Bridge Operator Bridge-3B5202 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-3B5202 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7901,7 +7901,7 @@
     "id": 605021,
     "owner": "0x9389F37B3d255D2F4D92Ed49299772a44F77bd8A",
     "name": "Agent-9389F3",
-    "description": "AI Agent Agent-9389F3 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-9389F3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7925,7 +7925,7 @@
     "id": 608401,
     "owner": "0x627c22fB307162f7Ab682c87822d9a5Bcb3c8eB2",
     "name": "Bridge-627c22",
-    "description": "Bridge Operator Bridge-627c22 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-627c22 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7949,7 +7949,7 @@
     "id": 610091,
     "owner": "0xb1f4Bc781187bf6f77f882232182C5335De69923",
     "name": "Bridge-b1f4Bc",
-    "description": "Bridge Operator Bridge-b1f4Bc — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-b1f4Bc \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7973,7 +7973,7 @@
     "id": 611781,
     "owner": "0x627c22fB307162f7Ab682c87822d9a5Bcb3c8eB2",
     "name": "Bridge-627c22",
-    "description": "Bridge Operator Bridge-627c22 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-627c22 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -7997,7 +7997,7 @@
     "id": 613471,
     "owner": "0x893Aaa544F9E2cef8754737c6dcEd92A1A0476D1",
     "name": "Bridge-893Aaa",
-    "description": "Bridge Operator Bridge-893Aaa — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-893Aaa \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8021,7 +8021,7 @@
     "id": 615161,
     "owner": "0x5bcC68f13be3a8693F139fCA9c20D7d1f2042bBa",
     "name": "Bridge-5bcC68",
-    "description": "Bridge Operator Bridge-5bcC68 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-5bcC68 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8045,7 +8045,7 @@
     "id": 616851,
     "owner": "0xf02565104B5649d141E6f2eE874Caf70203301B5",
     "name": "Bridge-f02565",
-    "description": "Bridge Operator Bridge-f02565 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-f02565 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8069,7 +8069,7 @@
     "id": 618541,
     "owner": "0x09cD21F04013cdeEa0390F1ec9C0c605d3F8bB6d",
     "name": "Trader-09cD21",
-    "description": "Swap Trader Trader-09cD21 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-09cD21 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8093,7 +8093,7 @@
     "id": 620231,
     "owner": "0xB22e47e08587A94c1F7d558D7E8a831A2c5843DD",
     "name": "Trader-B22e47",
-    "description": "Swap Trader Trader-B22e47 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-B22e47 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8117,7 +8117,7 @@
     "id": 621921,
     "owner": "0xbfC9f4F16a5E9c978f1bE2CFE7124477F5dE1c60",
     "name": "Trader-bfC9f4",
-    "description": "Swap Trader Trader-bfC9f4 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-bfC9f4 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8141,7 +8141,7 @@
     "id": 623611,
     "owner": "0x4C001469d2b41360991F696AD562b0cD7129A452",
     "name": "Bridge-4C0014",
-    "description": "Bridge Operator Bridge-4C0014 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-4C0014 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8165,7 +8165,7 @@
     "id": 625301,
     "owner": "0x6F75449B56Ea1563b33c6c186A4Caf4588cE8eD8",
     "name": "Bridge-6F7544",
-    "description": "Bridge Operator Bridge-6F7544 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-6F7544 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8189,7 +8189,7 @@
     "id": 626991,
     "owner": "0x627c22fB307162f7Ab682c87822d9a5Bcb3c8eB2",
     "name": "Bridge-627c22",
-    "description": "Bridge Operator Bridge-627c22 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-627c22 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8213,7 +8213,7 @@
     "id": 628681,
     "owner": "0xa95D5Fe17ef455311B6d151778A25B67f802562a",
     "name": "Bridge-a95D5F",
-    "description": "Bridge Operator Bridge-a95D5F — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-a95D5F \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8237,7 +8237,7 @@
     "id": 630371,
     "owner": "0x4fD4Ab25E719ACd9c8e4eFE45aFDb8130d568c41",
     "name": "Trader-4fD4Ab",
-    "description": "Swap Trader Trader-4fD4Ab — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-4fD4Ab \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8261,7 +8261,7 @@
     "id": 632061,
     "owner": "0x1dd4241BA0435a2c95a9109A3aE648e30Aea8914",
     "name": "Bridge-1dd424",
-    "description": "Bridge Operator Bridge-1dd424 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-1dd424 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8285,7 +8285,7 @@
     "id": 633751,
     "owner": "0xDF918F33F8eAcaB7BA4910A33555E832fcB741eD",
     "name": "Trader-DF918F",
-    "description": "Swap Trader Trader-DF918F — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-DF918F \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8309,7 +8309,7 @@
     "id": 635441,
     "owner": "0xcA061dB4eB2B46A4c11df578ae8aDdbF3B291574",
     "name": "Bridge-cA061d",
-    "description": "Bridge Operator Bridge-cA061d — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-cA061d \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8333,7 +8333,7 @@
     "id": 637131,
     "owner": "0x78D19Ed7dfC1C002ABACeD919D895F6dD69CFf01",
     "name": "Trader-78D19E",
-    "description": "Swap Trader Trader-78D19E — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-78D19E \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8357,7 +8357,7 @@
     "id": 638821,
     "owner": "0x7f79665Fa01Ef4a5F34f79d211cbb585050f5B1A",
     "name": "Bridge-7f7966",
-    "description": "Bridge Operator Bridge-7f7966 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-7f7966 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8381,7 +8381,7 @@
     "id": 640511,
     "owner": "0x3A204C0aeEBa0DE9B971fAfD84412f55Ec7e5e52",
     "name": "Trader-3A204C",
-    "description": "Swap Trader Trader-3A204C — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-3A204C \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8405,7 +8405,7 @@
     "id": 642201,
     "owner": "0x4db3E6C5F8f30F1127315E2aE975E7Ee46755BcD",
     "name": "Trader-4db3E6",
-    "description": "Swap Trader Trader-4db3E6 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-4db3E6 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8429,7 +8429,7 @@
     "id": 643891,
     "owner": "0xaE928569534ED25E3BFDC03d53546617A119Ae78",
     "name": "Bridge-aE9285",
-    "description": "Bridge Operator Bridge-aE9285 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-aE9285 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8453,7 +8453,7 @@
     "id": 645581,
     "owner": "0x1c584F59b2A26CCE97847FE8BE198614034036EB",
     "name": "Bridge-1c584F",
-    "description": "Bridge Operator Bridge-1c584F — Tower Exchange Bridge Routing",
+    "description": "Bridge Operator Bridge-1c584F \u2014 Tower Exchange Bridge Routing",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8477,7 +8477,7 @@
     "id": 647271,
     "owner": "0x5A294dE54fD492CF6D15262c60FE45dC00F0be0a",
     "name": "Trader-5A294d",
-    "description": "Swap Trader Trader-5A294d — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-5A294d \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8501,7 +8501,7 @@
     "id": 648961,
     "owner": "0x689180B8ce664139C6410eFE57Aef8b45308fcD0",
     "name": "TowerBridge-689180",
-    "description": "Tower Exchange Bridge Operator TowerBridge-689180 — ERC-8004 on Arc Testnet",
+    "description": "Tower Exchange Bridge Operator TowerBridge-689180 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8529,7 +8529,7 @@
     "id": 650651,
     "owner": "0x59619FEB62F2C0C16E3F91D4dc7bA78c8ff753a9",
     "name": "Trader-59619F",
-    "description": "Swap Trader Trader-59619F — Tower Exchange Routing",
+    "description": "Swap Trader Trader-59619F \u2014 Tower Exchange Routing",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8557,7 +8557,7 @@
     "id": 652341,
     "owner": "0x4C6dac1AB9D526eaf52D43c11D4cd8bcDa296279",
     "name": "Trader-4C6dac",
-    "description": "Swap Trader Trader-4C6dac — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-4C6dac \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8581,7 +8581,7 @@
     "id": 654031,
     "owner": "0xC3A901Db25ad6f2eA2488B1F68e9FE3fb0f9cEE9",
     "name": "Trader-C3A901",
-    "description": "Swap Trader Trader-C3A901 — Tower Exchange Aggregator on Arc Testnet",
+    "description": "Swap Trader Trader-C3A901 \u2014 Tower Exchange Aggregator on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8613,7 +8613,7 @@
     "id": 655721,
     "owner": "0xA5720C35D3c3e9a49DB6e45a2F504Fe2478EeF49",
     "name": "Bridge-A5720C",
-    "description": "Bridge Operator Bridge-A5720C — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-A5720C \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8637,7 +8637,7 @@
     "id": 657411,
     "owner": "0x79D995CdA345a2644f5d73fFe722258Fb910424d",
     "name": "Bridge-79D995",
-    "description": "Bridge Operator Bridge-79D995 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-79D995 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8661,7 +8661,7 @@
     "id": 659101,
     "owner": "0x716B5bCDf26656EC2911404d92Ce6719D0293004",
     "name": "Bridge-716B5b",
-    "description": "Bridge Operator Bridge-716B5b — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-716B5b \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8685,7 +8685,7 @@
     "id": 660791,
     "owner": "0x4db3E6C5F8f30F1127315E2aE975E7Ee46755BcD",
     "name": "Trader-4db3E6",
-    "description": "Swap Trader Trader-4db3E6 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-4db3E6 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8709,7 +8709,7 @@
     "id": 662481,
     "owner": "0x230201B39679224cC67DC3A9c4bCAfd759F866e9",
     "name": "Trader-230201",
-    "description": "Swap Trader Trader-230201 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-230201 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8733,7 +8733,7 @@
     "id": 664171,
     "owner": "0xA80CC0743DD5C3663Cc6Cf107b25e900c46d3e6F",
     "name": "Trader-A80CC0",
-    "description": "Swap Trader Trader-A80CC0 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-A80CC0 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8757,7 +8757,7 @@
     "id": 665861,
     "owner": "0xC890Eb85726E3457fC1Cc0d12A270169926bdf38",
     "name": "Trader-C890Eb",
-    "description": "Swap Trader Trader-C890Eb — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-C890Eb \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8781,7 +8781,7 @@
     "id": 667551,
     "owner": "0x63e35081b53Aa7a2A3E4225D9Ac17E2e6B7F97f9",
     "name": "Trader-63e350",
-    "description": "Swap Trader Trader-63e350 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-63e350 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8805,7 +8805,7 @@
     "id": 669241,
     "owner": "0x3B932d65F279FC4A7fF381571881b54Fa2a66fcA",
     "name": "Trader-3B932d",
-    "description": "Swap Trader Trader-3B932d — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-3B932d \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8829,7 +8829,7 @@
     "id": 670931,
     "owner": "0x9b547563Af5163339436100B0Ee5801038EdFfFa",
     "name": "Trader-9b5475",
-    "description": "Swap Trader Trader-9b5475 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-9b5475 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8853,7 +8853,7 @@
     "id": 672621,
     "owner": "0xE6Be5D5B0A65d48Ce027eA93ECB650a7F794b0Fc",
     "name": "Trader-E6Be5D",
-    "description": "Swap Trader Trader-E6Be5D — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-E6Be5D \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8877,7 +8877,7 @@
     "id": 674311,
     "owner": "0x44b73745Dbe3Be1824D23cf3c655334768cdAAdD",
     "name": "Bridge-44b737",
-    "description": "Bridge Operator Bridge-44b737 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-44b737 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8901,7 +8901,7 @@
     "id": 676001,
     "owner": "0x7537423Db5D0111F7ec6636616500D5d3Ed331cB",
     "name": "Trader-753742",
-    "description": "Swap Trader Trader-753742 — Tower Exchange Aggregator on Arc Testnet",
+    "description": "Swap Trader Trader-753742 \u2014 Tower Exchange Aggregator on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8933,7 +8933,7 @@
     "id": 677691,
     "owner": "0x956dADFDCCa66CcA66547a364A06A42b11194821",
     "name": "Bridge-956dAD",
-    "description": "Bridge Operator Bridge-956dAD — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-956dAD \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8957,7 +8957,7 @@
     "id": 679381,
     "owner": "0x9B5dfE938F8F961fcEe23f36C7f21A042d7adcf2",
     "name": "Bridge-9B5dfE",
-    "description": "Bridge Operator Bridge-9B5dfE — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-9B5dfE \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -8981,7 +8981,7 @@
     "id": 681071,
     "owner": "0x230201B39679224cC67DC3A9c4bCAfd759F866e9",
     "name": "Trader-230201",
-    "description": "Swap Trader Trader-230201 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-230201 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9005,7 +9005,7 @@
     "id": 682761,
     "owner": "0x1a0Ce7eB9EDEb7c8524fCb4568159f16bF4c6193",
     "name": "Bridge-1a0Ce7",
-    "description": "Bridge Operator Bridge-1a0Ce7 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-1a0Ce7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9029,7 +9029,7 @@
     "id": 684451,
     "owner": "0x4A88d300DDc9E405aD144d8d5EE68480DE5c3218",
     "name": "Trader-4A88d3",
-    "description": "Swap Trader Trader-4A88d3 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-4A88d3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9053,7 +9053,7 @@
     "id": 686141,
     "owner": "0x861d3807D9116133B7DB064C971abeE5B55C21a2",
     "name": "Trader-861d38",
-    "description": "Swap Trader Trader-861d38 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-861d38 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9077,7 +9077,7 @@
     "id": 687831,
     "owner": "0xAA509b2c1573b90D9f977fb2906662Bf293fcB7B",
     "name": "Trader-AA509b",
-    "description": "Swap Trader Trader-AA509b — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-AA509b \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9101,7 +9101,7 @@
     "id": 689521,
     "owner": "0x23d4631e648EBC749Fa9c56AD693293BdCCAC3F9",
     "name": "Trader-23d463",
-    "description": "Swap Trader Trader-23d463 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-23d463 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9125,7 +9125,7 @@
     "id": 691211,
     "owner": "0xCCDAddD2760EebFdFf938268CD94dc75DA4F8686",
     "name": "Trader-CCDAdd",
-    "description": "Swap Trader Trader-CCDAdd — Tower Exchange Routing",
+    "description": "Swap Trader Trader-CCDAdd \u2014 Tower Exchange Routing",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9149,7 +9149,7 @@
     "id": 692901,
     "owner": "0xbb22b47c6903aCB83abf1de8FC80351C27B17569",
     "name": "Trader-bb22b4",
-    "description": "Swap Trader Trader-bb22b4 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-bb22b4 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9173,7 +9173,7 @@
     "id": 694591,
     "owner": "0x30b833Ca84934aB141a3Bf4004478E563D410232",
     "name": "Trader-30b833",
-    "description": "Swap Trader Trader-30b833 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-30b833 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9197,7 +9197,7 @@
     "id": 696281,
     "owner": "0x0193C596D17d3fd5D7cC27d7D2F67E6549a9bC69",
     "name": "Trader-0193C5",
-    "description": "Swap Trader Trader-0193C5 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-0193C5 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9221,7 +9221,7 @@
     "id": 697971,
     "owner": "0xC2d51ffD1B3bE85bc180C2d65133246CE681134D",
     "name": "Bridge-C2d51f",
-    "description": "Bridge Operator Bridge-C2d51f — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-C2d51f \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9245,7 +9245,7 @@
     "id": 699661,
     "owner": "0xA46846d1C78880BB519CE6c61D73bD27DED49B50",
     "name": "Trader-A46846",
-    "description": "Swap Trader Trader-A46846 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-A46846 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9269,7 +9269,7 @@
     "id": 701351,
     "owner": "0xD2AC9E1373dA2D40824feD47316F976fF9a35235",
     "name": "Bridge-D2AC9E",
-    "description": "Bridge Operator Bridge-D2AC9E — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-D2AC9E \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9293,7 +9293,7 @@
     "id": 703041,
     "owner": "0x745Fe7869b41EbaDEb517a5086cfA52d8f53aD72",
     "name": "Bridge-745Fe7",
-    "description": "Bridge Operator Bridge-745Fe7 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-745Fe7 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9317,7 +9317,7 @@
     "id": 704731,
     "owner": "0x2ea4930C4b2A504D30140C4d78005BAc8e7E5D57",
     "name": "Trader-2ea493",
-    "description": "Swap Trader Trader-2ea493 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-2ea493 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9341,7 +9341,7 @@
     "id": 706421,
     "owner": "0x4B8eaF5C69cA63cB29082C565E3572875F43d22D",
     "name": "Trader-4B8eaF",
-    "description": "Swap Trader Trader-4B8eaF — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-4B8eaF \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9365,7 +9365,7 @@
     "id": 708111,
     "owner": "0x232A6Ad38d8cB2c3a567bCE5eA6da95EE17a877D",
     "name": "Bridge-232A6A",
-    "description": "Bridge Operator Bridge-232A6A — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-232A6A \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9389,7 +9389,7 @@
     "id": 709801,
     "owner": "0x7d13eBbB3C9e10A2906A7154E0FaC1012B47649B",
     "name": "Bridge-7d13eB",
-    "description": "Bridge Operator Bridge-7d13eB — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-7d13eB \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9413,7 +9413,7 @@
     "id": 711491,
     "owner": "0x5Df80C7984df4F1f486F9EF1d29349c0870202E0",
     "name": "Bridge-5Df80C",
-    "description": "Bridge Operator Bridge-5Df80C — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-5Df80C \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9437,7 +9437,7 @@
     "id": 713181,
     "owner": "0x4a29912Dd210eAF895871AbC41b5693E946a3411",
     "name": "Bridge-4a2991",
-    "description": "Bridge Operator Bridge-4a2991 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-4a2991 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9461,7 +9461,7 @@
     "id": 714871,
     "owner": "0x232A6Ad38d8cB2c3a567bCE5eA6da95EE17a877D",
     "name": "Bridge-232A6A",
-    "description": "Bridge Operator Bridge-232A6A — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-232A6A \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9485,7 +9485,7 @@
     "id": 716561,
     "owner": "0xE3D7Fb7f25472f85633D286DA3fa355D5Cc26430",
     "name": "Bridge-E3D7Fb",
-    "description": "Bridge Operator Bridge-E3D7Fb — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-E3D7Fb \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9509,7 +9509,7 @@
     "id": 718251,
     "owner": "0xDC0d41fA341247edeC05aa0AdD21d3B8813aE1Ef",
     "name": "Bridge-DC0d41",
-    "description": "Bridge Operator Bridge-DC0d41 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-DC0d41 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9533,7 +9533,7 @@
     "id": 719941,
     "owner": "0x41e64099246C0FBD62Aaa81Bb854bCC587D986Fa",
     "name": "Trader-41e640",
-    "description": "Swap Trader Trader-41e640 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-41e640 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9557,7 +9557,7 @@
     "id": 721631,
     "owner": "0x8F3Db61bdC5B893d83EF4A8bBc6274257517E336",
     "name": "Bridge-8F3Db6",
-    "description": "Bridge Operator Bridge-8F3Db6 — Tower Exchange Bridge Routing",
+    "description": "Bridge Operator Bridge-8F3Db6 \u2014 Tower Exchange Bridge Routing",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9581,7 +9581,7 @@
     "id": 723321,
     "owner": "0x69e9d102850467477EdBDa0cefa217f553AE448A",
     "name": "Bridge-69e9d1",
-    "description": "Bridge Operator Bridge-69e9d1 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-69e9d1 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9605,7 +9605,7 @@
     "id": 725011,
     "owner": "0x7909CAF8eFa7F3862c3e9a2c92530e36f3797d6f",
     "name": "Trader-7909CA",
-    "description": "Swap Trader Trader-7909CA — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-7909CA \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9629,7 +9629,7 @@
     "id": 726701,
     "owner": "0x1CEB0582D37eca2594977213F152067389803c2d",
     "name": "Bridge-1CEB05",
-    "description": "Bridge Operator Bridge-1CEB05 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-1CEB05 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9653,7 +9653,7 @@
     "id": 728391,
     "owner": "0x95e733034757216ac61059D337a0Ec383CC6Bae1",
     "name": "Trader-95e733",
-    "description": "Swap Trader Trader-95e733 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-95e733 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9677,7 +9677,7 @@
     "id": 731771,
     "owner": "0x43ABda2Ed0aC22671d97bfd1a6f24Ba77EB2A117",
     "name": "Trader-43ABda",
-    "description": "Swap Trader Trader-43ABda — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-43ABda \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9701,7 +9701,7 @@
     "id": 733461,
     "owner": "0x67b2325C499aBfBc910b9Ee2907579c5F9058fc0",
     "name": "Bridge-67b232",
-    "description": "Bridge Operator Bridge-67b232 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-67b232 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9725,7 +9725,7 @@
     "id": 735151,
     "owner": "0xD2AC9E1373dA2D40824feD47316F976fF9a35235",
     "name": "Bridge-D2AC9E",
-    "description": "Bridge Operator Bridge-D2AC9E — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-D2AC9E \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9749,7 +9749,7 @@
     "id": 736841,
     "owner": "0x69358d16424aF537472122067902056eeDCD2d74",
     "name": "Trader-69358d",
-    "description": "Swap Trader Trader-69358d — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-69358d \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9773,7 +9773,7 @@
     "id": 738531,
     "owner": "0x2166e33E5bA144387Ada08E8DDf32AEa524FAf35",
     "name": "Trader-2166e3",
-    "description": "Swap Trader Trader-2166e3 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-2166e3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9797,7 +9797,7 @@
     "id": 740221,
     "owner": "0x12e469Db8Fe74122640D5248D2d524f70F17a2d7",
     "name": "Bridge-12e469",
-    "description": "Bridge Operator Bridge-12e469 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-12e469 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9821,7 +9821,7 @@
     "id": 741911,
     "owner": "0xCED37Fd1741da4Aa9C8e2890a3bE88aa578e4441",
     "name": "Bridge-CED37F",
-    "description": "Bridge Operator Bridge-CED37F — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-CED37F \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9845,7 +9845,7 @@
     "id": 743601,
     "owner": "0x249fc2434594AE1Acb635C54C716A36A10df9344",
     "name": "Bridge-249fc2",
-    "description": "Bridge Operator Bridge-249fc2 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-249fc2 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9869,7 +9869,7 @@
     "id": 745291,
     "owner": "0xc52A54469A710bE31a33261aeD8118e8d0F20cA0",
     "name": "Trader-c52A54",
-    "description": "Swap Trader Trader-c52A54 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-c52A54 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9893,7 +9893,7 @@
     "id": 746981,
     "owner": "0x9ac8e3Ad416371A790CCed80fb570a699eB2BAED",
     "name": "Trader-9ac8e3",
-    "description": "Swap Trader Trader-9ac8e3 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-9ac8e3 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9917,7 +9917,7 @@
     "id": 748671,
     "owner": "0x97c66b0cCa3F00E24127C507Ee732B7b7Fd1a8fD",
     "name": "Bridge-97c66b",
-    "description": "Bridge Operator Bridge-97c66b — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-97c66b \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9941,7 +9941,7 @@
     "id": 750361,
     "owner": "0xffF9972ab4e7039ee611d6428bA20da07F7C0a34",
     "name": "Bridge-ffF997",
-    "description": "Bridge Operator Bridge-ffF997 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-ffF997 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9965,7 +9965,7 @@
     "id": 752051,
     "owner": "0xDB2586d26419474c09C6eCc146Fbce61AAc0C83a",
     "name": "Bridge-DB2586",
-    "description": "Bridge Operator Bridge-DB2586 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-DB2586 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -9989,7 +9989,7 @@
     "id": 753741,
     "owner": "0x84Fac2787D4Cf2Fb360B2c6aC525e25F8401E68E",
     "name": "Trader-84Fac2",
-    "description": "Swap Trader Trader-84Fac2 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-84Fac2 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10013,7 +10013,7 @@
     "id": 755431,
     "owner": "0x1c2f9C206b0938AD545F214525349294B1C944Da",
     "name": "Bridge-1c2f9C",
-    "description": "Bridge Operator Bridge-1c2f9C — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-1c2f9C \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10037,7 +10037,7 @@
     "id": 757121,
     "owner": "0xa3ec5531DcB472Efc5ca7D2855bEf9fB1E1536aC",
     "name": "Bridge-a3ec55",
-    "description": "Bridge Operator Bridge-a3ec55 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-a3ec55 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10061,7 +10061,7 @@
     "id": 758811,
     "owner": "0x4B8e46aD732A6BD4D4eEf3029466712eCB4BAC97",
     "name": "Trader-4B8e46",
-    "description": "Swap Trader Trader-4B8e46 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-4B8e46 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10085,7 +10085,7 @@
     "id": 760501,
     "owner": "0x3bb7095ee58FCcFC27DeA6379616050442fc8deB",
     "name": "Bridge-3bb709",
-    "description": "Bridge Operator Bridge-3bb709 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-3bb709 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10109,7 +10109,7 @@
     "id": 762191,
     "owner": "0x23A66c4962730B49AEE1866EF6b1aF05c6B0923B",
     "name": "Bridge-23A66c",
-    "description": "Bridge Operator Bridge-23A66c — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-23A66c \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10133,7 +10133,7 @@
     "id": 763881,
     "owner": "0x191cf52d9453768F5d194bCB1899eE9B3EC0Ca47",
     "name": "Bridge-191cf5",
-    "description": "Bridge Operator Bridge-191cf5 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-191cf5 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10157,7 +10157,7 @@
     "id": 765571,
     "owner": "0x2a5c0Be72a5903B37b02Ce3A62302d89Ae49dFd1",
     "name": "Trader-2a5c0B",
-    "description": "Swap Trader Trader-2a5c0B — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-2a5c0B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10181,7 +10181,7 @@
     "id": 767261,
     "owner": "0x52D629C730EBd250d5789D08e62E2aa335FEB2E0",
     "name": "Trader-52D629",
-    "description": "Swap Trader Trader-52D629 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-52D629 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10205,7 +10205,7 @@
     "id": 768951,
     "owner": "0x32bE1fdD39D2C3f1795b0b4Fbf4A00d9b52Be48E",
     "name": "Trader-32bE1f",
-    "description": "Swap Trader Trader-32bE1f — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-32bE1f \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10229,7 +10229,7 @@
     "id": 770641,
     "owner": "0x731e9E7B1e99175a15432347C6425761a5f2E2Fc",
     "name": "Bridge-731e9E",
-    "description": "Bridge Operator Bridge-731e9E — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-731e9E \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10253,7 +10253,7 @@
     "id": 772331,
     "owner": "0x3bb7095ee58FCcFC27DeA6379616050442fc8deB",
     "name": "Bridge-3bb709",
-    "description": "Bridge Operator Bridge-3bb709 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-3bb709 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10277,7 +10277,7 @@
     "id": 774021,
     "owner": "0xB676801c1cb7a314C33ff3e5C3a693b86F80Fa21",
     "name": "Bridge-B67680",
-    "description": "Bridge Operator Bridge-B67680 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-B67680 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10301,7 +10301,7 @@
     "id": 775711,
     "owner": "0x0A448bFCca1097890b64E9c204c23300BB8AE106",
     "name": "Bridge-0A448b",
-    "description": "Bridge Operator Bridge-0A448b — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-0A448b \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10325,7 +10325,7 @@
     "id": 777401,
     "owner": "0xdDC1B8D0B11cb473BD1b764Ceb86c602f5c136d5",
     "name": "Bridge-dDC1B8",
-    "description": "Bridge Operator Bridge-dDC1B8 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-dDC1B8 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10349,7 +10349,7 @@
     "id": 779091,
     "owner": "0x123E2337610555A152aE803b7fd806742dD864DF",
     "name": "Trader-123E23",
-    "description": "Swap Trader Trader-123E23 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-123E23 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10373,7 +10373,7 @@
     "id": 780781,
     "owner": "0xFca076cE893F2F642014A2886BaE29A99FDC6022",
     "name": "Trader-Fca076",
-    "description": "Swap Trader Trader-Fca076 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-Fca076 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10397,7 +10397,7 @@
     "id": 782471,
     "owner": "0xB4d12D74A6CF094A51Cff443553e2197A7de2151",
     "name": "Bridge-B4d12D",
-    "description": "Bridge Operator Bridge-B4d12D — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-B4d12D \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10421,7 +10421,7 @@
     "id": 784161,
     "owner": "0x208722CF8a76F5ef47dBCFCb2F414c4EC3BB71cE",
     "name": "Trader-208722",
-    "description": "Swap Trader Trader-208722 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-208722 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10445,7 +10445,7 @@
     "id": 785851,
     "owner": "0x4D3B8a2E0722eeCfAD98690B812697e568F55fBd",
     "name": "Bridge-4D3B8a",
-    "description": "Bridge Operator Bridge-4D3B8a — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-4D3B8a \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10469,7 +10469,7 @@
     "id": 787541,
     "owner": "0x072693A4242f1BD395d8462634ef9eB9c0c9E0c8",
     "name": "Trader-072693",
-    "description": "Swap Trader Trader-072693 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-072693 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10493,7 +10493,7 @@
     "id": 789231,
     "owner": "0xC9DB88838773925627F2366554d44d267fA797f4",
     "name": "Bridge-C9DB88",
-    "description": "Bridge Operator Bridge-C9DB88 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-C9DB88 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10517,7 +10517,7 @@
     "id": 790921,
     "owner": "0x1DE1a0EEd5efcda59E257c89bFe94FbaEaE8Ba50",
     "name": "Bridge-1DE1a0",
-    "description": "Bridge Operator Bridge-1DE1a0 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-1DE1a0 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10541,7 +10541,7 @@
     "id": 792611,
     "owner": "0x0EeE0BCCcf97EFB98907a17832E8Cb7845037472",
     "name": "Trader-0EeE0B",
-    "description": "Swap Trader Trader-0EeE0B — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-0EeE0B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10565,7 +10565,7 @@
     "id": 794301,
     "owner": "0x3A5836D8591CCb3276e3798BE7B3bcdD8AAA8278",
     "name": "Trader-3A5836",
-    "description": "Swap Trader Trader-3A5836 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-3A5836 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10589,7 +10589,7 @@
     "id": 795991,
     "owner": "0x4a29912Dd210eAF895871AbC41b5693E946a3411",
     "name": "Bridge-4a2991",
-    "description": "Bridge Operator Bridge-4a2991 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-4a2991 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10613,7 +10613,7 @@
     "id": 797681,
     "owner": "0xC0ab9577859f49AAb8299288678b952205567488",
     "name": "Bridge-C0ab95",
-    "description": "Bridge Operator Bridge-C0ab95 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-C0ab95 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10637,7 +10637,7 @@
     "id": 799371,
     "owner": "0x0a10CBab8F220100fBC2D43029ebfe35be604175",
     "name": "Trader-0a10CB",
-    "description": "Swap Trader Trader-0a10CB — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-0a10CB \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10661,7 +10661,7 @@
     "id": 801061,
     "owner": "0xF67D816665069f7371b65df44Ce6f9b9043429D8",
     "name": "Agent-F67D81",
-    "description": "AI Agent Agent-F67D81 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-F67D81 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10685,7 +10685,7 @@
     "id": 802751,
     "owner": "0x4093161EF38BD51799565Fe85041494249fd2A3e",
     "name": "Agent-409316",
-    "description": "AI Agent Agent-409316 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-409316 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10709,7 +10709,7 @@
     "id": 804441,
     "owner": "0x74d15B5cd0dC6e641137fA96FC1E3AaD8727c504",
     "name": "Agent-74d15B",
-    "description": "AI Agent Agent-74d15B — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-74d15B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10733,7 +10733,7 @@
     "id": 806131,
     "owner": "0x13b4D8D448D6DC3cFb7743eD1a6E0b683b4d0BE9",
     "name": "Agent-13b4D8",
-    "description": "AI Agent Agent-13b4D8 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-13b4D8 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10757,7 +10757,7 @@
     "id": 807821,
     "owner": "0xd695d65196E8Bba8D50C6AA6c288F7cBB422f9E7",
     "name": "Agent-d695d6",
-    "description": "AI Agent Agent-d695d6 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-d695d6 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10781,7 +10781,7 @@
     "id": 809511,
     "owner": "0xed941f8A458bf4B4f5f54AF6996F717795F55580",
     "name": "Agent-ed941f",
-    "description": "AI Agent Agent-ed941f — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-ed941f \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10805,7 +10805,7 @@
     "id": 811201,
     "owner": "0x619e01073E2cBC6C0b24bc05693cad662Df56c15",
     "name": "Agent-619e01",
-    "description": "AI Agent Agent-619e01 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-619e01 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10829,7 +10829,7 @@
     "id": 812891,
     "owner": "0xe61201942047E239c8fa229C38E5b6C0f60E8921",
     "name": "Agent-e61201",
-    "description": "AI Agent Agent-e61201 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-e61201 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10853,7 +10853,7 @@
     "id": 814581,
     "owner": "0xCaf5F9DEBd845276BB7c65bE69D144b92BD0353F",
     "name": "Bridge-Caf5F9",
-    "description": "Bridge Operator Bridge-Caf5F9 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-Caf5F9 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10877,7 +10877,7 @@
     "id": 816271,
     "owner": "0x010d1aBb1F729Ecd617ca7E3797FD4B70f5A1903",
     "name": "Agent-010d1a",
-    "description": "AI Agent Agent-010d1a — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-010d1a \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10901,7 +10901,7 @@
     "id": 817961,
     "owner": "0x6634062F1858C89494EEb2701b505e7fEFCBdc7C",
     "name": "Trader-663406",
-    "description": "Swap Trader Trader-663406 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-663406 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10925,7 +10925,7 @@
     "id": 819651,
     "owner": "0x549ad82462F5a6dB4e5942603c65B93ADf26e97F",
     "name": "Trader-549ad8",
-    "description": "Swap Trader Trader-549ad8 — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-549ad8 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10949,7 +10949,7 @@
     "id": 821341,
     "owner": "0x36e1F22ea126847460719cD6B0Deb07a5921b18c",
     "name": "Agent-36e1F2",
-    "description": "AI Agent Agent-36e1F2 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-36e1F2 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10973,7 +10973,7 @@
     "id": 823031,
     "owner": "0x95985a7D1D16cCF81C0891CC84C86613a0f57682",
     "name": "Bridge-95985a",
-    "description": "Bridge Operator Bridge-95985a — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-95985a \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -10997,7 +10997,7 @@
     "id": 824721,
     "owner": "0x31bd1438f95b098aa42fc4d752730E7DE38f6093",
     "name": "Agent-31bd14",
-    "description": "AI Agent Agent-31bd14 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-31bd14 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -11021,7 +11021,7 @@
     "id": 826411,
     "owner": "0x7AadDF2A83AB414309024Bd594f19Dcae88b52AC",
     "name": "Agent-7AadDF",
-    "description": "AI Agent Agent-7AadDF — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-7AadDF \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -11045,7 +11045,7 @@
     "id": 828101,
     "owner": "0xaceb0012A58D27F59f08C5223C91177a123CEF24",
     "name": "Bridge-aceb00",
-    "description": "Bridge Operator Bridge-aceb00 — ERC-8004 on Arc Testnet",
+    "description": "Bridge Operator Bridge-aceb00 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -11069,7 +11069,7 @@
     "id": 829791,
     "owner": "0x9F78D85038e0651C87C215ac6e1db666710ffDfb",
     "name": "Trader-9F78D8",
-    "description": "Swap Trader Trader-9F78D8 — Tower Exchange Routing",
+    "description": "Swap Trader Trader-9F78D8 \u2014 Tower Exchange Routing",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -11093,7 +11093,7 @@
     "id": 831481,
     "owner": "0x5c509B6B77BBEd2d819B1155A0E88481a3C947c0",
     "name": "Trader-5c509B",
-    "description": "Swap Trader Trader-5c509B — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-5c509B \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -11117,7 +11117,7 @@
     "id": 834861,
     "owner": "0x9636F55aD342b0667c61a01626960d7abE7c6524",
     "name": "Agent-9636F5",
-    "description": "AI Agent Agent-9636F5 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-9636F5 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -11141,7 +11141,7 @@
     "id": 836551,
     "owner": "0xabc52eF26794bCa00F904b84BC490219850e0975",
     "name": "Trader-abc52e",
-    "description": "Swap Trader Trader-abc52e — ERC-8004 on Arc Testnet",
+    "description": "Swap Trader Trader-abc52e \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -11165,7 +11165,7 @@
     "id": 838241,
     "owner": "0xD67472346dacBF581Ce538a8c7D5D17492735347",
     "name": "Agent-D67472",
-    "description": "AI Agent Agent-D67472 — ERC-8004 on Arc Testnet",
+    "description": "AI Agent Agent-D67472 \u2014 ERC-8004 on Arc Testnet",
     "attributes": [
       {
         "trait_type": "Framework",
@@ -11190,6 +11190,13 @@
     "owner": "0x6C3C3956Ccc9958875CE8605910A67687249De9a",
     "name": "ARC provider Agent 6C3C3956",
     "description": "Arc Testnet developer agent for Gateway, CCTP, ERC-8004, and ERC-8183 protocol workflows.",
+    "attributes": []
+  },
+  {
+    "id": 722871,
+    "owner": "0x9AC6869F641d49023Da150094519BB16ae3E0B80",
+    "name": "AgentPay",
+    "description": "Autonomous USDC payment agent on Arc testnet",
     "attributes": []
   }
 ]
