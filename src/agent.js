@@ -163,6 +163,76 @@ const groqCompound = new Groq({ apiKey: process.env.GROQ_API_KEY });
 // a job's task and produce real deliverable text, instead of a placeholder.
 const KERYX_BASE = 'https://keryxhq.xyz';
 
+async function payKeryx(toolId, args) {
+  const initial = await fetch(`${KERYX_BASE}/api/call`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ toolId, args })
+  });
+  if (initial.status !== 402) {
+    return { data: await initial.json(), paid: false };
+  }
+  const challenge = await initial.json();
+  const accept = challenge.accepts[0];
+
+  const { ethers } = require('ethers');
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+
+  const nonce = ethers.hexlify(ethers.randomBytes(32));
+  const validAfter = 0;
+  const validBefore = Math.floor(Date.now() / 1000) + (accept.maxTimeoutSeconds || 60);
+
+  const domain = {
+    name: 'USD Coin',
+    version: '2',
+    chainId: 5042002,
+    verifyingContract: accept.asset
+  };
+  const types = {
+    TransferWithAuthorization: [
+      { name: 'from', type: 'address' },
+      { name: 'to', type: 'address' },
+      { name: 'value', type: 'uint256' },
+      { name: 'validAfter', type: 'uint256' },
+      { name: 'validBefore', type: 'uint256' },
+      { name: 'nonce', type: 'bytes32' }
+    ]
+  };
+  const value = {
+    from: await wallet.getAddress(),
+    to: accept.payTo,
+    value: accept.amount,
+    validAfter,
+    validBefore,
+    nonce
+  };
+
+  const signature = await wallet.signTypedData(domain, types, value);
+
+  const paymentPayload = {
+    x402Version: challenge.x402Version,
+    scheme: accept.scheme,
+    network: accept.network,
+    payload: { authorization: value, signature }
+  };
+
+  const paidRes = await fetch(`${KERYX_BASE}/api/call`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-PAYMENT': Buffer.from(JSON.stringify(paymentPayload)).toString('base64')
+    },
+    body: JSON.stringify({ toolId, args })
+  });
+
+  if (!paidRes.ok) {
+    throw new Error(`Keryx payment failed: ${paidRes.status}`);
+  }
+
+  return { data: await paidRes.json(), paid: true, amount: accept.amount };
+}
+
 const KERYX_KEYWORDS = {
   'crypto.trending': ['top coins', 'trending', 'top crypto', 'popular coins', 'hot coins'],
   'crypto.price': ['price of', 'crypto price', 'coin price', 'how much is'],
@@ -214,15 +284,10 @@ async function performTask(description, walletId, userAddress) {
       try {
         const keryxTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Keryx call timeout')), 15000));
         const res = await Promise.race([
-          x402Client.fetchWithPayment(
-            `${KERYX_BASE}/api/call`,
-            walletId,
-            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ toolId: tool.id, args: tool.sampleArgs || {} }) },
-            userAddress
-          ),
+          payKeryx(tool.id, tool.sampleArgs || {}),
           keryxTimeout
         ]);
-        return `${JSON.stringify(res.data)} (sourced live via Keryx tool "${tool.name}", paid ${res.actualAmount || tool.priceUsd} USDC)`;
+        return `${JSON.stringify(res.data)} (sourced live via Keryx tool "${tool.name}", paid ${res.amount || tool.priceUsd} USDC)`;
       } catch (e) {
         console.error('[performTask] Keryx call failed, falling back to Groq:', e.message);
       }
