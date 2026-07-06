@@ -180,8 +180,8 @@ async function payKeryx(toolId, args) {
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const nonce = ethers.hexlify(ethers.randomBytes(32));
-  const validAfter = 0;
-  const validBefore = Math.floor(Date.now() / 1000) + (accept.maxTimeoutSeconds || 60);
+  const validAfter = '0';
+  const validBefore = String(Math.floor(Date.now() / 1000) + (accept.maxTimeoutSeconds || 60));
 
   const domain = {
     name: 'USDC',
