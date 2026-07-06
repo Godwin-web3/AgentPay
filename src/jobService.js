@@ -113,7 +113,7 @@ async function waitForTx(txId, label) {
     const check = await client.getTransaction({ id: txId });
     const tx = check.data?.transaction;
     if (tx?.txHash && tx?.state === 'COMPLETE') return tx.txHash;
-    if (tx?.state === 'FAILED') throw new Error(label + ' failed onchain');
+    if (tx?.state === 'FAILED') { console.error(`[waitForTx] ${label} FAILED, full tx:`, JSON.stringify(tx)); throw new Error(label + ' failed onchain'); }
   }
   throw new Error(label + ' timed out');
 }
