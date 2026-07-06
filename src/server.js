@@ -999,14 +999,11 @@ app.get('/api/agent-stats', (req, res) => {
     const fs = require('fs');
     const path = require('path');
     const agents = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'registered_agents.json')));
-    const providers = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'top_providers.json')));
-    const ownerSet = new Set(agents.map(a => a.owner.toLowerCase()));
-    const overlap = providers.filter(p => ownerSet.has(p.address.toLowerCase()));
+    const activity = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'registered_provider_activity.json')));
     return send(res, 200, {
       registeredCount: agents.length,
-      activeProviderCount: providers.length,
-      overlapCount: overlap.length,
-      overlap
+      activeAgentsWithJobs: activity.length,
+      overlap: activity
     });
   } catch (err) {
     return send(res, 500, { error: err.message });
