@@ -227,7 +227,7 @@ async function payKeryx(toolId, args) {
   });
 
   if (!paidRes.ok) {
-    throw new Error(`Keryx payment failed: ${paidRes.status}`);
+    const body = await paidRes.text(); throw new Error(`Keryx payment failed: ${paidRes.status} - ${body}`);
   }
 
   return { data: await paidRes.json(), paid: true, amount: accept.amount };
