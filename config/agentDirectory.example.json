@@ -1,0 +1,4 @@
+{
+  "_comment": "Known partner AgentPay deployments this operator will exchange deliverables with (scripts/marketplace-agent.js). Copy to agentDirectory.json and fill in real values. Keys are lowercase agent addresses; values are the partner's Render/base URL.",
+  "0x0000000000000000000000000000000000000000": "https://partner-agentpay.example.com"
+}

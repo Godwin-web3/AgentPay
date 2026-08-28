@@ -1,0 +1,356 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_agent",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "AlreadyCommitted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AlreadyFinalized",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotAgent",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotCommitted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotPendingAgent",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddress",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newAgent",
+          "type": "address"
+        }
+      ],
+      "name": "AgentUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "requestId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "decisionHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "summary",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "blockNumber",
+          "type": "uint64"
+        }
+      ],
+      "name": "DecisionCommitted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "requestId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "outcomeHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "DecisionFinalized",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "pendingAgent",
+          "type": "address"
+        }
+      ],
+      "name": "PendingAgentProposed",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "acceptAgent",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "agent",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "requestId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "decisionHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "string",
+          "name": "summary",
+          "type": "string"
+        }
+      ],
+      "name": "commit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "decisions",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "decisionHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "outcomeHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint64",
+          "name": "committedAt",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "committedBlock",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "finalizedAt",
+          "type": "uint64"
+        },
+        {
+          "internalType": "bool",
+          "name": "finalized",
+          "type": "bool"
+        },
+        {
+          "internalType": "string",
+          "name": "summary",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "requestId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "outcomeHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "finalize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "requestId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getDecision",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "decisionHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "outcomeHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint64",
+              "name": "committedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "committedBlock",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "finalizedAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "bool",
+              "name": "finalized",
+              "type": "bool"
+            },
+            {
+              "internalType": "string",
+              "name": "summary",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct DecisionLog.Decision",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pendingAgent",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_newAgent",
+          "type": "address"
+        }
+      ],
+      "name": "proposeAgent",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "requestId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "expectedDecisionHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "verify",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "608034609157601f610a9038819003918201601f19168301916001600160401b03831184841017609557808492602094604052833981010312609157516001600160a01b0381169081900360915780156082575f80546001600160a01b03199081163317909155600180549091169190911790556040516109e690816100aa8239f35b63d92e233d60e01b5f5260045ffd5b5f80fd5b634e487b7160e01b5f52604160045260245ffdfe60806040526004361015610011575f80fd5b5f3560e01c80631afd614a146107ad5780634e8fee001461075a57806353eb1a09146106e65780635992360014610653578063617fcd6e146102ee5780638601903b146102c65780638da5cb5b1461029f578063c65ff8f2146101c1578063d8c57892146100b35763f5ff5c7614610087575f80fd5b346100af575f3660031901126100af576001546040516001600160a01b039091168152602090f35b5f80fd5b346100af5760203660031901126100af57606060c06040516100d48161087f565b5f81525f60208201525f60408201525f838201525f60808201525f60a082015201526004355f52600360205260405f206040516101108161087f565b815481526101bd6001830154926020830193845260028101546001600160401b03604085019281831684528160608701818560401c16815281610170600360808b0195838960801c16875260ff60a08d019960c01c1615158952016108bb565b9660c08a019788526040519a8b9a60208c525160208c01525160408b01525116606089015251166080870152511660a085015251151560c08401525160e08084015261010083019061095b565b0390f35b346100af576101cf3661099a565b6001546001600160a01b0316330361029057815f52600360205260405f20600281019182546001600160401b038116156102815760c01c60ff16610272576001919091018190558154600160c01b68ffffffffffffffffff60801b1990911667ffffffffffffffff60801b4260801b1617179091556040519081527f0cd955e45c3412a7ec044ad83136d415962ede884e71e3312339f3413bcb9dba90602090a2005b63475a253560e01b5f5260045ffd5b63205e472d60e21b5f5260045ffd5b630d9ab13f60e01b5f5260045ffd5b346100af575f3660031901126100af575f546040516001600160a01b039091168152602090f35b346100af575f3660031901126100af576002546040516001600160a01b039091168152602090f35b346100af5760603660031901126100af576044356004356024356001600160401b0383116100af57366023840112156100af578260040135906001600160401b0382116100af57602484019360248336920101116100af576001546001600160a01b0316330361029057825f5260036020526001600160401b03600260405f20015416610644578391436001600160401b03166040519161038e8361087f565b83835260208301925f845260408101426001600160401b0316815260608201848152608083015f815260a08401915f8352601f19601f87011697866040519d8e60208c016103dc908261089a565b82815260200137868d016020015f905260c086019c8d528b5f52600360205260405f20955186555160018601556002850193516001600160401b03168454915160401b6fffffffffffffffff000000000000000016916fffffffffffffffffffffffffffffffff191617178355516001600160401b031661047f9083908154906001600160401b0360801b9060801b16906001600160401b0360801b1916179055565b51815460ff60c01b191690151560c01b60ff60c01b16179055965180519097600301906001600160401b038111610630576104ba8254610847565b601f81116105df575b506020601f821160011461055257925f92826080989796959389947f34b3e5bba62e324f614c1cafeeb0ab0ddbfcb79b7b61b558336d10a2868da2cb9c9d8792610547575b50508160011b9186199060031b1c19161790555b80604051988997885260606020890152816060890152838801378501015260408301528101030190a2005b015190508d80610508565b601f19821699835f52815f209a5f5b8181106105c75750837f34b3e5bba62e324f614c1cafeeb0ab0ddbfcb79b7b61b558336d10a2868da2cb9b9c60809a999897945f97948c97600195106105af575b505050811b01905561051c565b0151871960f88460031b161c191690558d80806105a2565b838301518d556001909c019b60209384019301610561565b818111156104c357825f5260205f20601f830160051c9060208410610628575b81601f9101920160051c03905f5b82811061061b5750506104c3565b5f8282015560010161060d565b5f91506105ff565b634e487b7160e01b5f52604160045260245ffd5b6317fd8aab60e31b5f5260045ffd5b346100af5760203660031901126100af576004356001600160a01b038116908190036100af575f546001600160a01b031633036106d75780156106c857600280546001600160a01b031916821790557fea779af854219f923f3fd082374c15e57d3132aefeccfb0e38106f6094736f025f80a2005b63d92e233d60e01b5f5260045ffd5b6330cd747160e01b5f5260045ffd5b346100af575f3660031901126100af576002546001600160a01b038116903382900361074b57600180546001600160a01b03199081168417909155166002557fe9f337c154e801e0f86b6bc993df9a2cd349bb210385592c7a52e38ea726334f5f80a2005b63186930c160e01b5f5260045ffd5b346100af57602061076a3661099a565b815f52600383526001600160401b03600260405f2001541615159182610797575b50506040519015158152f35b9091505f526003825260405f205414828061078b565b346100af5760203660031901126100af576004355f52600360205260405f2080546101bd60018301549260ff6107ea6003600284015493016108bb565b91604051958695865260208601526001600160401b03811660408601526001600160401b038160401c1660608601526001600160401b038160801c16608086015260c01c16151560a084015260e060c084015260e083019061095b565b90600182811c92168015610875575b602083101461086157565b634e487b7160e01b5f52602260045260245ffd5b91607f1691610856565b60e081019081106001600160401b0382111761063057604052565b90601f801991011681019081106001600160401b0382111761063057604052565b9060405191825f8254926108ce84610847565b808452936001811690811561093957506001146108f5575b506108f39250038361089a565b565b90505f9291925260205f20905f915b81831061091d5750509060206108f3928201015f6108e6565b6020919350806001915483858901015201910190918492610904565b9050602092506108f394915060ff191682840152151560051b8201015f6108e6565b91908251928382525f5b848110610985575050825f602080949584010152601f8019910116010190565b80602080928401015182828601015201610965565b60409060031901126100af57600435906024359056fea2646970667358221220baf0903aabfad53e5ffd4358e74ebd7c7d774bee5ee66d45884b97a10c55355a64736f6c63430008240033"
+}

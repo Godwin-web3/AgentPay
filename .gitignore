@@ -10,6 +10,7 @@ frontend/.env.local
 # Runtime stores (contain user wallet ids, spend logs, schedules)
 data/*.json
 artifacts/*-deployment.json
+config/agentDirectory.json
 
 # Build
 node_modules/
@@ -17,6 +18,11 @@ artifacts/deployment.json
 package-lock.json
 frontend/package-lock.json
 *.bak
+
+# Hardhat local test harness (test/*.test.js) — separate from the production
+# artifacts/ dir written by scripts/compile.js + scripts/deploy.js.
+hardhat-artifacts/
+hardhat-cache/
 
 # Misc
 *.log

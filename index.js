@@ -8,6 +8,10 @@ const walletService = require('./src/walletService');
 async function main() {
   await startServer();
 
+  // Advances any in-flight intent-solver plans (src/intentEngine.js) whose
+  // next step is blocked on a wait_for_condition/check_balance primitive.
+  require('./src/intentEngine').startTicker();
+
   // Dev mode: start CLI loop with a default wallet
   if (process.env.DEV_USER_ID) {
     const wallet = await walletService.createUserWallet(process.env.DEV_USER_ID);

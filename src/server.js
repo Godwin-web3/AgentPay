@@ -621,6 +621,88 @@ async function handleGetJob(req, res) {
   }
 }
 
+// POST /agent/deliver — receives a deliverable's real text from a PARTNER
+// AgentPay deployment that just submitted the on-chain hash for a job it's
+// the provider on (see scripts/marketplace-agent.js pushDeliverableToPartner).
+// Authenticated with a dedicated shared secret (MARKETPLACE_API_KEY), never
+// with this deployment's own APP_API_KEY.
+async function handleAgentDeliver(req, res) {
+  const key = req.headers['x-marketplace-key'] || '';
+  const expected = process.env.MARKETPLACE_API_KEY || '';
+  if (!expected || key !== expected) {
+    return send(res, 401, { error: 'Unauthorized: invalid or missing marketplace key' });
+  }
+  const { jobId, deliverableText, providerAddress } = req.body || {};
+  if (!jobId || !deliverableText || !providerAddress) {
+    return send(res, 400, { error: 'jobId, deliverableText and providerAddress are required' });
+  }
+  try {
+    const job = await require('./jobService').getJob(jobId);
+    if (job.provider.toLowerCase() !== String(providerAddress).toLowerCase()) {
+      return send(res, 400, { error: 'providerAddress does not match the job\'s on-chain provider' });
+    }
+    const doc = await require('./deliverableStore').putDeliverable(jobId, { deliverableText, providerAddress });
+    return send(res, 200, { received: true, jobId, receivedAt: doc.receivedAt });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /intent — state a goal; the intent solver decomposes it into a plan
+// graph and starts executing what it can right away (see src/solver.js /
+// src/intentEngine.js). Blocking steps (wait_for_condition, check_balance)
+// are advanced on a timer — see index.js intentEngine.startTicker().
+async function handleCreateIntent(req, res) {
+  const userId = getUserId(req);
+  const { goal } = req.body || {};
+  if (!goal || typeof goal !== 'string') return send(res, 400, { error: '"goal" (string) is required' });
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const intent = await require('./intentEngine').createIntent(goal, wallet.address, wallet.walletId);
+    return send(res, 200, intent);
+  } catch (err) {
+    if (err.unresolvable) return send(res, 422, { error: err.message, unresolvable: true });
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// GET /intent/:id — plan status: steps, cursor, per-step log, decision-log requestIds.
+async function handleGetIntent(req, res) {
+  try {
+    const intent = await require('./intentEngine').getIntent(req.params.id);
+    if (!intent) return send(res, 404, { error: 'Not found' });
+    return send(res, 200, intent);
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// GET /intents — list this user's plans, most recent first.
+async function handleListIntents(req, res) {
+  const userId = getUserId(req);
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const intents = await require('./intentEngine').listIntents(wallet.address);
+    return send(res, 200, intents);
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// GET /decision-log/:requestId — on-chain decision provenance for a given
+// requestId (see contracts/DecisionLog.sol). Public read, no auth needed
+// beyond the global API key, since it only ever reveals a hash + summary
+// that's already public on-chain.
+async function handleGetDecision(req, res) {
+  try {
+    const decisionLog = require('./decisionLog');
+    const decision = await decisionLog.getDecision(sharedProvider, req.params.requestId);
+    return send(res, 200, decision);
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
 // POST /jobs/:id/complete
 async function handleCompleteJob(req, res) {
   const userId = getUserId(req);
@@ -789,6 +871,11 @@ app.use((req, res, next) => {
     '/market-intel',
     '/api/jobs/mine',
     '/api/agent-stats',
+    // Agent-to-agent marketplace push (scripts/marketplace-agent.js on a
+    // PARTNER deployment). Authenticated separately, below, with its own
+    // shared secret — APP_API_KEY is this deployment's Worker<->Render
+    // secret and must never be handed to an external operator.
+    '/agent/deliver',
   ];
   const normalizedPath = req.path.endsWith('/') ? req.path.slice(0, -1) : req.path;
   if (exempt.includes(normalizedPath) || normalizedPath.startsWith('/api/tag/')) return next();
@@ -941,6 +1028,11 @@ app.post('/log-transaction', handleLogTransaction);
 app.post('/jobs', handleHireAgent);
 app.get('/jobs/:id', handleGetJob);
 app.post('/jobs/:id/complete', handleCompleteJob);
+app.post('/agent/deliver', handleAgentDeliver);
+app.post('/intent', handleCreateIntent);
+app.get('/intent/:id', handleGetIntent);
+app.get('/intents', handleListIntents);
+app.get('/decision-log/:requestId', handleGetDecision);
 app.post('/intelligence', gateway.require('$0.001'), handleIntelligence);
 app.get('/api/jobs/mine', async (req, res) => {
   try {
