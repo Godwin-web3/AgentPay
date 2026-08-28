@@ -5,6 +5,7 @@ require('dotenv').config();
 const { ethers } = require('ethers');
 const poolVault = require('./poolVault');
 const poolStore = require('./poolStore');
+const { appendSpend } = require('./spendStore');
 
 function getOperatorWallet() {
   const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
@@ -21,6 +22,14 @@ async function tickOnce() {
     try {
       const txHash = await poolVault.resolveProposal(wallet, p.proposalId);
       await poolStore.closeProposal(p.proposalId, { resolved: 'executed', txHash });
+      if (p.kind === 'Spend' && p.proposer) {
+        try {
+          const proposal = await poolVault.getProposal(wallet, p.proposalId);
+          await appendSpend({ userAddress: p.proposer, to: proposal.to, amount: proposal.amount, reason: proposal.reason || 'Pool spend', txHash, token: 'USDC', type: 'pool_spend' });
+        } catch (logErr) {
+          console.error(`[poolEngine] failed to log resolved spend ${p.proposalId} to history:`, logErr.message);
+        }
+      }
       console.log(`🤝 [poolEngine] resolved proposal ${p.proposalId}: executed (${txHash})`);
     } catch (err) {
       const reason = err.reason || err.shortMessage || err.message || 'unknown error';

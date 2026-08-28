@@ -55,12 +55,13 @@ async function listPoolsForMember(address) {
   return snap.docs.map((d) => d.data());
 }
 
-async function recordProposal({ proposalId, poolId, kind, windowEnds }) {
+async function recordProposal({ proposalId, poolId, kind, windowEnds, proposer }) {
   const doc = {
     proposalId: String(proposalId),
     poolId: String(poolId),
     kind,
     windowEnds,
+    proposer: proposer || null,
     closed: false,
     createdAt: new Date().toISOString(),
   };
@@ -73,8 +74,12 @@ async function closeProposal(proposalId, outcome) {
 }
 
 async function listProposalsForPool(poolId) {
-  const snap = await db.collection(PROPOSALS).where('poolId', '==', String(poolId)).orderBy('createdAt', 'desc').get();
-  return snap.docs.map((d) => d.data());
+  // Sort client-side rather than combining where()+orderBy() on different
+  // fields — that combination needs a composite Firestore index to exist,
+  // and a brand-new pool would just throw here (Firestore's error surfaces
+  // as a generic 500, easy to mistake for something else entirely broken).
+  const snap = await db.collection(PROPOSALS).where('poolId', '==', String(poolId)).get();
+  return snap.docs.map((d) => d.data()).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
 async function listPendingProposals() {

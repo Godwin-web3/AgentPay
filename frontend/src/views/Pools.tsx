@@ -46,17 +46,30 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
   useEffect(() => { fetchPools() }, [userId])
 
   async function fetchSelected(poolId: string) {
+    // Fetched independently — a proposals-list hiccup (e.g. a brand-new pool
+    // with nothing to list yet) must never block the pool view itself from
+    // rendering, and any real failure should be visible, not silent.
+    let pool: Pool
     try {
-      const [pool, proposalRows] = await Promise.all([getPool(poolId, userId), listPoolProposals(poolId, userId)])
+      pool = await getPool(poolId, userId)
       setSelectedPool(pool)
+      setActionError('')
+    } catch (e: any) {
+      setActionError(e.message || `Could not load pool ${poolId}`)
+      return
+    }
+
+    try {
+      const proposalRows = await listPoolProposals(poolId, userId)
       setProposals(
         proposalRows
           .map((r) => r.onChain)
           .filter((p): p is PoolProposal => !!p)
           .map((p) => ({ ...p, objectionWindowSeconds: pool.constitution.objectionWindow }))
       )
-    } catch {
-      // transient poll failure — keep showing the last good state
+    } catch (e: any) {
+      console.error('Failed to load pool proposals:', e.message)
+      // Keep showing the pool even if the proposal list fails to load.
     }
   }
 

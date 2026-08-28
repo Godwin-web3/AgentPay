@@ -731,6 +731,8 @@ async function handleContributeToPool(req, res) {
     const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
     const txHash = await poolVault.contribute(wallet.walletId, req.params.poolId, amount, !!toShared);
+    const { appendSpend } = require('./spendStore');
+    await appendSpend({ userAddress: wallet.address, to: `pool:${req.params.poolId}`, amount: Number(amount), reason: toShared ? 'Pool contribution (shared)' : 'Pool contribution (personal)', txHash, token: 'USDC', type: 'pool_contribute' });
     return send(res, 200, { success: true, txHash });
   } catch (err) {
     return send(res, 500, { error: err.message });
@@ -746,6 +748,8 @@ async function handleWithdrawPersonal(req, res) {
     const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
     const txHash = await poolVault.withdrawPersonal(wallet.walletId, req.params.poolId, amount);
+    const { appendSpend } = require('./spendStore');
+    await appendSpend({ userAddress: wallet.address, to: wallet.address, amount: Number(amount), reason: 'Personal allowance withdrawal', txHash, token: 'USDC', type: 'pool_withdraw_personal' });
     return send(res, 200, { success: true, txHash });
   } catch (err) {
     return send(res, 500, { error: err.message });
@@ -763,7 +767,16 @@ async function handleProposeSpend(req, res) {
     const { proposalId, txHash } = await poolVault.proposeSpend(getAgentWallet(), req.params.poolId, wallet.address, to, amount, reason || '');
     const onChainProposal = await poolVault.getProposal(sharedProvider, proposalId);
     const poolStore = require('./poolStore');
-    await poolStore.recordProposal({ proposalId, poolId: req.params.poolId, kind: 'Spend', windowEnds: onChainProposal.windowEnds });
+    await poolStore.recordProposal({ proposalId, poolId: req.params.poolId, kind: 'Spend', windowEnds: onChainProposal.windowEnds, proposer: wallet.address });
+    if (onChainProposal.resolved) {
+      // Below the discretionary threshold — already executed on-chain in the
+      // same call. Close it immediately rather than leaving it "pending"
+      // until the objection window happens to elapse, and log it to the
+      // shared history feed right away.
+      await poolStore.closeProposal(proposalId, { resolved: 'executed', txHash });
+      const { appendSpend } = require('./spendStore');
+      await appendSpend({ userAddress: wallet.address, to, amount: Number(amount), reason: reason || 'Pool spend', txHash, token: 'USDC', type: 'pool_spend' });
+    }
     return send(res, 200, { proposalId, txHash, ...onChainProposal });
   } catch (err) {
     return send(res, 500, { error: err.message });

@@ -41,6 +41,12 @@ function describeEntry(tx: any) {
       return { title: 'Job fulfilled', sub: tx.reason || 'Deliverable submitted', amount, tone: 'seal' as const }
     case 'swap':
       return { title: 'Swapped', sub: `${tx.fromToken || ''} → ${tx.toToken || ''}`, amount, tone: 'wire' as const }
+    case 'pool_contribute':
+      return { title: 'Contributed to pool', sub: tx.reason || '', amount, tone: 'seal' as const }
+    case 'pool_withdraw_personal':
+      return { title: 'Withdrew personal allowance', sub: 'from pool', amount, tone: 'wire' as const }
+    case 'pool_spend':
+      return { title: 'Pool spend', sub: tx.reason || `to ${shortAddr(tx.to)}`, amount, tone: 'seal' as const }
     default:
       if (tx.amount && tx.to) {
         return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, tone: 'seal' as const }
