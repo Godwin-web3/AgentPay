@@ -1,4 +1,4 @@
-import type { ChatResponse, PolicyData, HealthData, PayResponse } from './types'
+import type { ChatResponse, PolicyData, HealthData, PayResponse, IntentPlan, DecisionRecord } from './types'
 
 export const WORKER_URL = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
 export const RPC = import.meta.env.VITE_RPC_URL || 'https://rpc.testnet.arc.network'
@@ -300,4 +300,33 @@ export async function lookupTag(tag: string): Promise<{ tag: string; address: st
 
 export async function getMe(userId: string): Promise<{ uid: string; tag: string | null; address: string; walletId: string }> {
   return request<any>('/api/me', {}, userId)
+}
+
+// Intent solver — see src/solver.js / src/intentEngine.js on the backend.
+export async function createIntentPlan(goal: string, userId: string): Promise<IntentPlan> {
+  return request<IntentPlan>('/intent', {
+    method: 'POST',
+    body: JSON.stringify({ goal })
+  }, userId)
+}
+
+export async function getIntentPlan(id: string, userId: string): Promise<IntentPlan> {
+  return request<IntentPlan>('/intent/' + id, {}, userId)
+}
+
+export async function listIntentPlans(userId: string): Promise<IntentPlan[]> {
+  return request<IntentPlan[]>('/intents', {}, userId)
+}
+
+// On-chain decision provenance — contracts/DecisionLog.sol. requestId is the
+// same bytes32 keccak256("intent:<planId>:<stepIndex>") the backend commits
+// under (src/decisionLog.js makeRequestId), computed here so the UI can link
+// a plan step straight to its on-chain record without another round trip.
+export async function getDecision(requestId: string, userId: string): Promise<DecisionRecord> {
+  return request<DecisionRecord>('/decision-log/' + requestId, {}, userId)
+}
+
+export async function makeDecisionRequestId(planId: string, stepIndex: number): Promise<string> {
+  const { ethers } = await import('ethers')
+  return ethers.id(`intent:${planId}:${stepIndex}`)
 }

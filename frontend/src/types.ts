@@ -91,6 +91,54 @@ export interface HistoryLog {
   date: string
 }
 
+// Intent solver (src/solver.js / src/intentEngine.js on the backend) —
+// distinct from the `Intent` interface above, which is the chat brain's
+// single parsed action. An IntentPlan is a multi-step goal decomposition.
+export interface IntentStep {
+  type: 'check_balance' | 'wait_for_condition' | 'pay' | 'hire_agent'
+  to?: string
+  amount?: number
+  reason?: string
+  minBalance?: number
+  condition?: { type: string; [key: string]: any }
+  description?: string
+  budget?: number
+  providerAddress?: string
+}
+
+export interface IntentPlanLogEntry {
+  step: number
+  at: string
+  status: 'waiting' | 'done' | 'failed'
+  reason?: string
+  error?: string
+  outcome?: any
+}
+
+export interface IntentPlan {
+  id: string
+  goal: string
+  userAddress: string
+  walletId?: string
+  steps: IntentStep[]
+  cursor: number
+  status: 'active' | 'completed' | 'failed'
+  log: IntentPlanLogEntry[]
+  createdAt: string
+  error?: string
+}
+
+// contracts/DecisionLog.sol — on-chain decision provenance record.
+export interface DecisionRecord {
+  decisionHash: string
+  outcomeHash: string
+  committedAt: number
+  committedBlock: number
+  finalizedAt: number
+  finalized: boolean
+  summary: string
+}
+
 export interface PayResponse {
   requestId: string
   status: 'executed' | 'rejected' | 'failed'

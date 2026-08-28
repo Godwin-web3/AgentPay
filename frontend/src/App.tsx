@@ -8,6 +8,7 @@ import Policy from './views/Policy'
 import Schedules from './views/Schedules'
 import Jobs from './views/Jobs'
 import Agent from './views/Agent'
+import Goals from './views/Goals'
 import History from './views/History'
 import Landing from './views/Landing'
 import Profile from './views/Profile'
@@ -16,7 +17,7 @@ import Login from './components/Login'
 import type { ChatMessage } from './types'
 import { getTokenBalances, checkVault, getWallet, getVaultAddress, getVaultBalance } from './api'
 
-type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules' | 'jobs' | 'agent'
+type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules' | 'jobs' | 'agent' | 'goals'
 
 const TerminalIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -43,11 +44,10 @@ const HistoryIcon = () => (
     <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
   </svg>
 )
-const MarketplaceIcon = () => (
+const GoalIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 9l1.5-5h15L21 9"/>
-    <path d="M3 9h18v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-    <line x1="9" y1="13" x2="15" y2="13"/>
+    <path d="M4 2v20"/>
+    <path d="M4 4h13l-3 4 3 4H4"/>
   </svg>
 )
 const JobsIcon = () => (
@@ -66,6 +66,7 @@ const AgentIcon = () => (
 )
 const navItems = [
   { id: 'terminal', icon: TerminalIcon, label: 'Terminal' },
+  { id: 'goals', icon: GoalIcon, label: 'Goals' },
   { id: 'jobs', icon: JobsIcon, label: 'Jobs' },
   { id: 'schedules', icon: ScheduleIcon, label: 'Schedules' },
   { id: 'agent', icon: AgentIcon, label: 'Agent' },
@@ -288,6 +289,7 @@ function App({ tag }: { tag: string | null }) {
             {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={vaultAddress || agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
             {view === 'jobs' && <Jobs userAddress={userAddress} userId={userId} />}
+            {view === 'goals' && <Goals userAddress={userAddress} userId={userId} />}
             {view === 'agent' && <Agent />}
           </ErrorBoundary>
         </div>

@@ -89,7 +89,7 @@ export default function Jobs({ userAddress, userId }: { userAddress: string, use
       </div>
       {jobs.created.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '30px 20px', marginBottom: 24 }}>
-          <div style={{ color: 'var(--muted)' }}>No jobs created yet. Hire someone from the Marketplace.</div>
+          <div style={{ color: 'var(--muted)' }}>No jobs created yet. Ask the Terminal to hire an agent, or state a goal in Goals that includes a hire_agent step.</div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
