@@ -1,0 +1,12 @@
+{
+  "address": "0x3fc7E0089f3841b7456487f611199A5ebFa5145F",
+  "deployer": "0xd6aaeD54FB76C370A04D2E9dDf9cBBF3c9a63D35",
+  "agent": "0x9ac6869f641d49023da150094519bb16ae3e0b80",
+  "usdc": "0x3600000000000000000000000000000000000000",
+  "network": "Arc Testnet",
+  "chainId": 5042002,
+  "timestamp": "2026-08-28T22:40:10.046Z",
+  "txHash": "0xeb0ed6570069371a6b6291ada0b0d5300b431c77c2b34850ba697d84fa4f9b6e",
+  "ownershipTransferTxHash": "0x96ccda37100c560c078f9585f405b60fbd93ab26844969c5996e1e4e54e3371c",
+  "finalOwner": "0x9AC6869F641d49023Da150094519BB16ae3E0B80"
+}
