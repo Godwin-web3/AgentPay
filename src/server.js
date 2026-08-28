@@ -681,14 +681,17 @@ async function handleListMyPools(req, res) {
 
 // GET /pools/:poolId
 async function handleGetPool(req, res) {
+  const userId = getUserId(req);
   try {
+    const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
     const poolStore = require('./poolStore');
-    const [onChain, meta] = await Promise.all([
+    const [onChain, meta, myStatus] = await Promise.all([
       poolVault.getPool(sharedProvider, req.params.poolId),
       poolStore.getPoolMeta(req.params.poolId),
+      poolVault.getMemberStatus(sharedProvider, req.params.poolId, wallet.address),
     ]);
-    return send(res, 200, { ...onChain, name: meta?.name || null, poolId: req.params.poolId });
+    return send(res, 200, { ...onChain, name: meta?.name || null, poolId: req.params.poolId, myStatus });
   } catch (err) {
     return send(res, 500, { error: err.message });
   }
