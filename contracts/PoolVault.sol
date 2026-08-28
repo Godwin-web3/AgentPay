@@ -83,6 +83,8 @@ contract PoolVault is ReentrancyGuard {
     event ProposalCreated(uint256 indexed poolId, uint256 indexed proposalId, ProposalKind kind, uint256 windowEnds);
     event ProposalVetoed(uint256 indexed proposalId, address indexed by);
     event ProposalResolved(uint256 indexed proposalId, bool executed);
+    event AgentUpdated(address indexed newAgent);
+    event OwnerUpdated(address indexed newOwner);
 
     error NotOwner();
     error NotAgent();
@@ -317,5 +319,17 @@ contract PoolVault is ReentrancyGuard {
     function setAgent(address _agent) external onlyOwner {
         if (_agent == address(0)) revert ZeroAddress();
         agent = _agent;
+        emit AgentUpdated(_agent);
+    }
+
+    // The deployer is `owner` (msg.sender at construction) and owner's only
+    // power is setAgent() above — no fund access, no pool control. This lets
+    // a throwaway/disposable deployer key hand that off to a durable address
+    // immediately after deployment, so losing the deployer key afterward has
+    // zero consequence.
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) revert ZeroAddress();
+        owner = newOwner;
+        emit OwnerUpdated(newOwner);
     }
 }

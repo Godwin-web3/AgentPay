@@ -221,4 +221,17 @@ describe('PoolVault — singleton multi-tenant pools', function () {
       pool.connect(outsider).proposeSpend(poolId, founder.address, vendor.address, ethers.parseUnits('10', 6), 'x')
     ).to.be.revertedWithCustomError(pool, 'NotAgent');
   });
+
+  it('lets a disposable deployer hand off ownership so losing that key later has zero consequence', async function () {
+    // owner === deployer (owner) right after construction.
+    await expect(pool.connect(agent).transferOwnership(mike.address)).to.be.revertedWithCustomError(pool, 'NotOwner');
+
+    await expect(pool.connect(owner).transferOwnership(mike.address)).to.emit(pool, 'OwnerUpdated').withArgs(mike.address);
+
+    // Old owner is now powerless...
+    await expect(pool.connect(owner).setAgent(mike.address)).to.be.revertedWithCustomError(pool, 'NotOwner');
+    // ...and the new owner can exercise the (only) owner power: rotating the agent.
+    await expect(pool.connect(mike).setAgent(sarah.address)).to.emit(pool, 'AgentUpdated').withArgs(sarah.address);
+    expect(await pool.agent()).to.equal(sarah.address);
+  });
 });
