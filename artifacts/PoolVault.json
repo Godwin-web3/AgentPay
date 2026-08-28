@@ -1,0 +1,911 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_agent",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_usdc",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "AlreadyMember",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AlreadyResolved",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AlreadyVetoed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ExceedsBackstopCap",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InsufficientBalance",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotAgent",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotFounder",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotInvited",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotMember",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NotOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "PoolInactive",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ProposalVetoedError",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ProposerNotMember",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TransferFailed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "WindowNotElapsed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddress",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "toShared",
+          "type": "bool"
+        }
+      ],
+      "name": "Contributed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        }
+      ],
+      "name": "MemberInvited",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        }
+      ],
+      "name": "MemberJoined",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        }
+      ],
+      "name": "MemberLeft",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "PersonalWithdrawn",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "founder",
+          "type": "address"
+        }
+      ],
+      "name": "PoolCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "proposalId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum PoolVault.ProposalKind",
+          "name": "kind",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "windowEnds",
+          "type": "uint256"
+        }
+      ],
+      "name": "ProposalCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "proposalId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "executed",
+          "type": "bool"
+        }
+      ],
+      "name": "ProposalResolved",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "proposalId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "by",
+          "type": "address"
+        }
+      ],
+      "name": "ProposalVetoed",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        }
+      ],
+      "name": "acceptInvite",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "agent",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "toShared",
+          "type": "bool"
+        }
+      ],
+      "name": "contribute",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "invites",
+          "type": "address[]"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "discretionaryThreshold",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "objectionWindow",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxSingleProposal",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct PoolVault.Constitution",
+          "name": "constitution",
+          "type": "tuple"
+        }
+      ],
+      "name": "createPool",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getPool",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "founder",
+          "type": "address"
+        },
+        {
+          "internalType": "address[]",
+          "name": "memberList",
+          "type": "address[]"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "discretionaryThreshold",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "objectionWindow",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxSingleProposal",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct PoolVault.Constitution",
+          "name": "constitution",
+          "type": "tuple"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sharedBalance",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "active",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "proposalId",
+          "type": "uint256"
+        }
+      ],
+      "name": "getProposal",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "enum PoolVault.ProposalKind",
+          "name": "kind",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "windowEnds",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "vetoed",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "resolved",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "executed",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "hasVetoed",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        }
+      ],
+      "name": "leavePool",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "memberStatus",
+      "outputs": [
+        {
+          "internalType": "enum PoolVault.MemberStatus",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nextPoolId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nextProposalId",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "personalBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "proposals",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "proposer",
+          "type": "address"
+        },
+        {
+          "internalType": "enum PoolVault.ProposalKind",
+          "name": "kind",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "discretionaryThreshold",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "objectionWindow",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxSingleProposal",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct PoolVault.Constitution",
+          "name": "newConstitution",
+          "type": "tuple"
+        },
+        {
+          "internalType": "address",
+          "name": "targetMember",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "createdAt",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "windowEnds",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "vetoed",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "resolved",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "executed",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "proposer",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "discretionaryThreshold",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "objectionWindow",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxSingleProposal",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct PoolVault.Constitution",
+          "name": "newConstitution",
+          "type": "tuple"
+        }
+      ],
+      "name": "proposeAmendConstitution",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "proposalId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "proposer",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "targetMember",
+          "type": "address"
+        }
+      ],
+      "name": "proposeRemoveMember",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "proposalId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "proposer",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "proposeSpend",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "proposalId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "proposalId",
+          "type": "uint256"
+        }
+      ],
+      "name": "resolveProposal",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_agent",
+          "type": "address"
+        }
+      ],
+      "name": "setAgent",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "usdc",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "proposalId",
+          "type": "uint256"
+        }
+      ],
+      "name": "veto",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "poolId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdrawPersonal",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "6080346100e157601f6119d338819003918201601f19168301916001600160401b038311848410176100e55780849260409485528339810103126100e157610052602061004b836100f9565b92016100f9565b60015f8190556004819055600855906001600160a01b0316801580156100d0575b6100c157600180546001600160a01b0319908116331790915560028054821692909217909155600380549091166001600160a01b03929092169190911790556040516118c5908161010e8239f35b63d92e233d60e01b5f5260045ffd5b506001600160a01b03821615610073565b5f80fd5b634e487b7160e01b5f52604160045260245ffd5b51906001600160a01b03821682036100e15756fe60806040526004361015610011575f80fd5b5f3560e01c806262804e14611302578063013cf08b146111e057806302e5198f1461106e578063068bcd8d14610f3d5780630d3d677714610dc157806318e5613114610da45780631d28dec714610caf5780632ab09d1414610c9257806330c1f3e714610c425780633e413bee14610c1a578063579baff614610bd15780636dcc6eba14610a8457806383db7a61146109385780638da5cb5b146109105780639ca53f8214610861578063b851d2d1146106a0578063bcf685ed1461062d578063bf8e917614610575578063c1b8aa1314610531578063c7f758a814610474578063dcbdca19146101365763f5ff5c761461010a575f80fd5b34610132575f366003190112610132576002546040516001600160a01b039091168152602090f35b5f80fd5b346101325760a036600319011261013257600435610152611658565b61015a61166e565b916064356084359367ffffffffffffffff851161013257366023860112156101325784600401359467ffffffffffffffff8611610132573660248783010111610132576002546001600160a01b0316330361046557835f52600560205260405f2060ff6007820154161561045657845f52600660205260405f2060018060a01b0387165f5260205260ff60405f2054166003811015610415576002036104475760048101548411610438576005810154841161042957600a60038201549661026c600854986102288a611716565b6008555f8a81526009602081905260409091208a81556001810180546001600160a81b0319166001600160a01b0390961695909517909455429084018190556116e8565b9101819055604051907f76213cec8acb0f8cc52b8cefdf2593e442bf0b56bbaedcb83edd780f72fa803860408389935f8c96526020820152a35f8681526009602052604090206002810180546001600160a01b0319166001600160a01b0386161790556003810185905560040180546102e4906114ba565b601f81116103c4575b509086916020985f601f8211600114610355578190600295965f92610347575b50508160011b915f199060031b1c19161790555b0154831115610335575b8590604051908152f35b61033e936117a1565b8280808361032b565b602492500101358b8061030d565b94601f19821695835f528b5f20965f5b8181106103a7575091600296979184600195941061038b575b505050811b019055610321565b01602401355f19600384901b60f8161c191690558b808061037e565b8284016024013589556001909801978c9750918d01918d01610365565b888111156102ed5797815f5260205f20601f820160051c906020831061040d575b810199601f0160051c035f5b818110610400575050976102ed565b5f8b8201556001016103f1565b5f91506103e5565b634e487b7160e01b5f52602160045260245ffd5b631e9acf1760e31b5f5260045ffd5b633d68506760e01b5f5260045ffd5b639a428cd760e01b5f5260045ffd5b630f509b1160e01b5f5260045ffd5b630d9ab13f60e01b5f5260045ffd5b34610132576020366003190112610132576004355f52600960205260405f20805460ff600183015460a01c169160ff60018060a01b0360028301541691610504600382015493600a830154946104d16004600b8601549501611544565b916104e7604051998a998a5260208a019061160c565b604088015260608701526101206080870152610120860190611619565b9260a0850152818116151560c0850152818160081c16151560e085015260101c1615156101008301520390f35b346101325760403660031901126101325761054a611658565b6004355f52600760205260405f209060018060a01b03165f52602052602060405f2054604051908152f35b34610132576020366003190112610132576004355f81815260066020908152604080832033845290915290205460ff1660038110156104155760010361061e57805f52600660205260405f2060018060a01b0333165f5260205260405f20600260ff19825416179055805f5260056020526105f633600160405f2001611724565b33907f78da64a590c3052953ad9e0a5546bbf12bb68ae7634e3fb2a774e22a8c6557c15f80a3005b63779a6f4160e01b5f5260045ffd5b34610132576020366003190112610132576004356001600160a01b03811690819003610132576001546001600160a01b03163303610691578015610682576001600160601b0360a01b60025416176002555f80f35b63d92e233d60e01b5f5260045ffd5b6330cd747160e01b5f5260045ffd5b346101325760803660031901126101325760043567ffffffffffffffff811161013257366023820112156101325780600401359067ffffffffffffffff8211610132576024810190602436918460051b010111610132576060366023190112610132576004549061071082611716565b600455815f52600560205261076d60405f2060018060a01b0333166001600160601b0360a01b82541617815560243560028201556044356003820155606435600482015560078101600160ff198254161790556001339101611724565b5f8281526006602090815260408083203384529091528120805460ff191660021790555b8381106107c9576020836040519033817f65fc0eb45954044fb55e1b01344d5d72fbfdf88e732d955f73bb7fb2bcc131e95f80a38152f35b6001600160a01b036107e46107df83878661177d565b61178d565b161561068257600190835f52600660205260405f206108076107df83888761177d565b838060a01b03165f5260205260405f208260ff19825416179055818060a01b036108356107df83888761177d565b16847f6e32da99952e6892c42b54eec8c835d9a2e0a6c879c0219cc693229e6894175a5f80a301610791565b3461013257602036600319011261013257600435805f52600560205260ff600760405f2001541615610456575f81815260066020908152604080832033845290915290205460ff16600381101561041557600203610901575f8181526006602090815260408083203380855292528220805460ff1916905591907fa8dcd974806422d974a6135dd981896f1694065789986f7ba7947fbb4759e8999080a3005b63148fe22160e11b5f5260045ffd5b34610132575f366003190112610132576001546040516001600160a01b039091168152602090f35b346101325760a036600319011261013257600435610954611658565b6060366043190112610132576002546001600160a01b0316330361046557815f52600560205260405f2060ff6007820154161561045657825f52600660205260405f2060018060a01b0383165f5260205260ff60405f205416600381101561041557600203610447576003600a91015491610a1f600854936109d585611716565b6008555f8581526009602081905260409091208781556001810180546001600160a81b0319166001600160a01b0390961695909517600160a01b17909455429084018190556116e8565b9101819055604051927f76213cec8acb0f8cc52b8cefdf2593e442bf0b56bbaedcb83edd780f72fa8038604085859460016020985287820152a3805f526009825260405f20604435600582015560643560068201556007608435910155604051908152f35b3461013257606036600319011261013257600435610aa0611658565b610aa861166e565b6002546001600160a01b0316330361046557825f52600560205260405f2060ff6007820154161561045657835f52600660205260405f2060018060a01b0384165f5260205260ff60405f205416600381101561041557600203610447576003600a91015492610b6760085494610b1d86611716565b6008555f8681526009602081905260409091208881556001810180546001600160a81b0319166001600160a01b0390961695909517600160a11b17909455429084018190556116e8565b9101819055604051937f76213cec8acb0f8cc52b8cefdf2593e442bf0b56bbaedcb83edd780f72fa8038604086869460026020995288820152a3815f5260098352600860405f20019060018060a01b03166001600160601b0360a01b825416179055604051908152f35b3461013257604036600319011261013257610bea611658565b6004355f52600a60205260405f209060018060a01b03165f52602052602060ff60405f2054166040519015158152f35b34610132575f366003190112610132576003546040516001600160a01b039091168152602090f35b3461013257604036600319011261013257610c5b611658565b6004355f52600660205260405f209060018060a01b03165f5260205260ff60405f2054166040516003821015610415576020918152f35b34610132575f366003190112610132576020600854604051908152f35b34610132576020366003190112610132576004355f81815260096020908152604080832080548452600683528184203385529092529091205460ff1660038110156104155760020361090157600b0160ff815460081c16610d95575f828152600a6020908152604080832033845290915290205460ff16610d8657815f52600a60205260405f2060018060a01b0333165f5260205260405f20600160ff19825416179055600160ff1982541617905533907fc2131db10d833d6b93ae553fa450ea0f6c0c2dfb0160cb3309468bf72718f3eb5f80a3005b63712a5ee760e11b5f5260045ffd5b6336ab81e160e11b5f5260045ffd5b34610132575f366003190112610132576020600454604051908152f35b346101325760403660031901126101325760043560243590610de760025f541415611684565b60025f55805f52600560205260ff600760405f2001541615610456575f81815260066020908152604080832033845290915290205460ff16600381101561041557600203610901575f818152600760209081526040808320338452909152902054821161042957805f52600760205260405f2060018060a01b0333165f5260205260405f20610e77838254611709565b905560035460405163a9059cbb60e01b81523360048201526024810184905290602090829060449082905f906001600160a01b03165af1908115610f32575f91610f03575b5015610ef4576040519182527fb1f6bd09c6fe9f07951f396e3a79ee2e79b3ddbd7c6d4608768b6064cc0dcf3260203393a360015f55005b6312171d8360e31b5f5260045ffd5b610f25915060203d602011610f2b575b610f1d8183611522565b8101906116d0565b83610ebc565b503d610f13565b6040513d5f823e3d90fd5b34610132576020366003190112610132575f60408051610f5c816114f2565b82815282602082015201526004355f52600560205260405f2060018060a01b038154169060018101600582015460ff60078401541690604051938480956020865491828152019081965f5260205f20905f5b81811061104c5750505091610fca600292610fd0940388611522565b016115e4565b946040519460e0860191865260e0602087015251809152610100850193905f5b81811061102d5750505061101d849560408601906040809180518452602081015160208501520151910152565b60a0840152151560c08301520390f35b82516001600160a01b0316865260209586019590920191600101610ff0565b82546001600160a01b0316845289945060209093019260019283019201610fae565b346101325760603660031901126101325760243560043560443580151590818103610132576110a160025f541415611684565b60025f55825f52600560205260ff600760405f2001541615610456575f83815260066020908152604080832033845290915290205460ff16600381101561041557600203610901576003546040516323b872dd60e01b81523360048201523060248201526044810186905290602090829060649082905f906001600160a01b03165af1908115610f32575f916111c1575b5015610ef4571561119157815f526005602052600560405f20016111578482546116e8565b90555b60405192835260208301527f611ce9c70988dfa20af518b2da9c61b3e1a6c8f9d7cda710ad4995e580084bb360403393a360015f55005b815f52600760205260405f2060018060a01b0333165f5260205260405f206111ba8482546116e8565b905561115a565b6111da915060203d602011610f2b57610f1d8183611522565b85611132565b34610132576020366003190112610132576004355f52600960205260405f208054600182015491600160a01b600190036002820154166003820154916004810161122990611544565b92611236600583016115e4565b93600160a01b6001900360088401541690600984015492600a85015494600b015495604051998a998a52600160a01b60019003811660208b015260408a019060a01c60ff16906112859161160c565b6060890152608088015260a087016101e090526101e087016112a691611619565b855160c0880152602086015160e088015260409095015161010087015261012086015261014085015261016084015260ff811615156101808401528060081c60ff1615156101a084015260101c60ff1615156101c08301520390f35b3461013257602036600319011261013257600254600435906001600160a01b031633036104655761133760025f541415611684565b60025f55805f52600960205260405f20600b810190815460ff8160081c16610d9557600a82015442106114ab5760ff811661149c5761ff001916610100178255600181015460a01c60ff166004811015610415577fdb53c862706d03ae7c85dcaa4fd1aa1df7fa8914c2b999a15b37e280bf5a207c9260209260ff92806113ed5750806113d991549087600360018060a01b03600284015416920154926117a1565b5460101c166040519015158152a260015f55005b6001810361144e5750600581019080545f526005855260405f2091600283019181830361142d575b505050506201000062ff0000198254161781556113d9565b60049260079254905560068101546003850155015491015585808080611415565b60021461145c575b506113d9565b80545f9081526006855260408082206008909301546001600160a01b031682529185522080548319169055805462ff000019166201000017815585611456565b6305cab84560e11b5f5260045ffd5b638e3e812560e01b5f5260045ffd5b90600182811c921680156114e8575b60208310146114d457565b634e487b7160e01b5f52602260045260245ffd5b91607f16916114c9565b6060810190811067ffffffffffffffff82111761150e57604052565b634e487b7160e01b5f52604160045260245ffd5b90601f8019910116810190811067ffffffffffffffff82111761150e57604052565b9060405191825f825492611557846114ba565b80845293600181169081156115c2575060011461157e575b5061157c92500383611522565b565b90505f9291925260205f20905f915b8183106115a657505090602061157c928201015f61156f565b602091935080600191548385890101520191019091849261158d565b90506020925061157c94915060ff191682840152151560051b8201015f61156f565b906040516115f1816114f2565b60406002829480548452600181015460208501520154910152565b9060048210156104155752565b91908251928382525f5b848110611643575050825f602080949584010152601f8019910116010190565b80602080928401015182828601015201611623565b602435906001600160a01b038216820361013257565b604435906001600160a01b038216820361013257565b1561168b57565b60405162461bcd60e51b815260206004820152601f60248201527f5265656e7472616e637947756172643a207265656e7472616e742063616c6c006044820152606490fd5b90816020910312610132575180151581036101325790565b919082018092116116f557565b634e487b7160e01b5f52601160045260245ffd5b919082039182116116f557565b5f1981146116f55760010190565b8054906801000000000000000082101561150e5760018201808255821015611769575f5260205f20019060018060a01b03166001600160601b0360a01b825416179055565b634e487b7160e01b5f52603260045260245ffd5b91908110156117695760051b0190565b356001600160a01b03811681036101325790565b929190925f526005602052600560405f2001918254918183106104295761180d936117ce83602095611709565b905560035460405163a9059cbb60e01b81526001600160a01b0392831660048201526024810193909352919384929091169082905f9082906044820190565b03925af1908115610f32575f91611870575b5015610ef457805f526009602052600b60405f20016201010062ffff00198254161790557fdb53c862706d03ae7c85dcaa4fd1aa1df7fa8914c2b999a15b37e280bf5a207c602060405160018152a2565b611889915060203d602011610f2b57610f1d8183611522565b5f61181f56fea264697066735822122029df19650c70451b5ec4d9ae125a9e8b9a03b654fd2e65bcfc3845a60e8c942764736f6c63430008240033"
+}
