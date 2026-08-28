@@ -1,4 +1,4 @@
-import type { ChatResponse, PolicyData, HealthData, PayResponse, IntentPlan, DecisionRecord } from './types'
+import type { ChatResponse, PolicyData, HealthData, PayResponse, IntentPlan, DecisionRecord, Pool, PoolConstitution, PoolProposal } from './types'
 
 export const WORKER_URL = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
 export const RPC = import.meta.env.VITE_RPC_URL || 'https://rpc.testnet.arc.network'
@@ -329,4 +329,46 @@ export async function getDecision(requestId: string, userId: string): Promise<De
 export async function makeDecisionRequestId(planId: string, stepIndex: number): Promise<string> {
   const { ethers } = await import('ethers')
   return ethers.id(`intent:${planId}:${stepIndex}`)
+}
+
+// Pools — contracts/PoolVault.sol. Personal vault usage is unaffected;
+// this is a separate, opt-in tier for shared-money groups.
+export async function createPool(name: string, invites: string[], constitution: PoolConstitution, userId: string): Promise<{ poolId: string; txHash: string; name: string }> {
+  return request<{ poolId: string; txHash: string; name: string }>('/pools', { method: 'POST', body: JSON.stringify({ name, invites, constitution }) }, userId)
+}
+
+export async function listMyPools(userId: string): Promise<Pool[]> {
+  return request<Pool[]>('/pools/mine', {}, userId)
+}
+
+export async function getPool(poolId: string, userId: string): Promise<Pool> {
+  return request<Pool>('/pools/' + poolId, {}, userId)
+}
+
+export async function acceptPoolInvite(poolId: string, userId: string): Promise<{ success: boolean; txHash: string }> {
+  return request<{ success: boolean; txHash: string }>('/pools/' + poolId + '/accept', { method: 'POST' }, userId)
+}
+
+export async function leavePool(poolId: string, userId: string): Promise<{ success: boolean; txHash: string }> {
+  return request<{ success: boolean; txHash: string }>('/pools/' + poolId + '/leave', { method: 'POST' }, userId)
+}
+
+export async function contributeToPool(poolId: string, amount: number, toShared: boolean, userId: string): Promise<{ success: boolean; txHash: string }> {
+  return request<{ success: boolean; txHash: string }>('/pools/' + poolId + '/contribute', { method: 'POST', body: JSON.stringify({ amount, toShared }) }, userId)
+}
+
+export async function withdrawPersonalFromPool(poolId: string, amount: number, userId: string): Promise<{ success: boolean; txHash: string }> {
+  return request<{ success: boolean; txHash: string }>('/pools/' + poolId + '/withdraw-personal', { method: 'POST', body: JSON.stringify({ amount }) }, userId)
+}
+
+export async function proposeSpendInPool(poolId: string, to: string, amount: number, reason: string, userId: string): Promise<PoolProposal> {
+  return request<PoolProposal>('/pools/' + poolId + '/propose-spend', { method: 'POST', body: JSON.stringify({ to, amount, reason }) }, userId)
+}
+
+export async function listPoolProposals(poolId: string, userId: string): Promise<Array<{ proposalId: string; kind: string; closed: boolean; onChain: PoolProposal | null }>> {
+  return request<Array<{ proposalId: string; kind: string; closed: boolean; onChain: PoolProposal | null }>>('/pools/' + poolId + '/proposals', {}, userId)
+}
+
+export async function vetoProposal(proposalId: string, userId: string): Promise<{ success: boolean; txHash: string }> {
+  return request<{ success: boolean; txHash: string }>('/proposals/' + proposalId + '/veto', { method: 'POST' }, userId)
 }

@@ -621,6 +621,218 @@ async function handleGetJob(req, res) {
   }
 }
 
+// ── Pools (contracts/PoolVault.sol) ─────────────────────────────────────────
+// A pool is a shared-money group (roommates, small teams, trip funds) a user
+// opts into creating — personal AgentVault usage is completely unaffected.
+// Member-facing calls (create/accept/leave/contribute/withdraw/veto) are
+// signed by the member's own Circle wallet (src/poolVault.js); the agent's
+// operator key only ever proposes/resolves, and PoolVault.sol enforces that
+// a veto blocks execution no matter what.
+
+async function resolveInvite(raw) {
+  if (typeof raw === 'string' && raw.startsWith('0x')) return raw;
+  const tag = String(raw).replace('@', '').toLowerCase();
+  const entry = await walletStore.findByTag(tag);
+  if (!entry) throw new Error(`Could not resolve invite "${raw}" — not a known @tag or address`);
+  return entry.address;
+}
+
+function getAgentWallet() {
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
+  return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+}
+
+// POST /pools — { name, invites: (address|@tag)[], constitution }
+async function handleCreatePool(req, res) {
+  const userId = getUserId(req);
+  const { name, invites = [], constitution } = req.body || {};
+  if (!name || !constitution) return send(res, 400, { error: 'name and constitution are required' });
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const resolvedInvites = await Promise.all(invites.map(resolveInvite));
+    const poolVault = require('./poolVault');
+    const { poolId, txHash } = await poolVault.createPool(wallet.walletId, resolvedInvites, constitution);
+    const poolStore = require('./poolStore');
+    await poolStore.createPoolMeta({ poolId, name, founderAddress: wallet.address, memberAddresses: [wallet.address, ...resolvedInvites] });
+    return send(res, 200, { poolId, txHash, name });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// GET /pools/mine
+async function handleListMyPools(req, res) {
+  const userId = getUserId(req);
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const poolStore = require('./poolStore');
+    const metas = await poolStore.listPoolsForMember(wallet.address);
+    const poolVault = require('./poolVault');
+    const enriched = await Promise.all(metas.map(async (m) => {
+      const onChain = await poolVault.getPool(sharedProvider, m.poolId).catch(() => null);
+      const status = onChain ? await poolVault.getMemberStatus(sharedProvider, m.poolId, wallet.address) : 'None';
+      return { ...m, onChain, myStatus: status };
+    }));
+    return send(res, 200, enriched);
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// GET /pools/:poolId
+async function handleGetPool(req, res) {
+  try {
+    const poolVault = require('./poolVault');
+    const poolStore = require('./poolStore');
+    const [onChain, meta] = await Promise.all([
+      poolVault.getPool(sharedProvider, req.params.poolId),
+      poolStore.getPoolMeta(req.params.poolId),
+    ]);
+    return send(res, 200, { ...onChain, name: meta?.name || null, poolId: req.params.poolId });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /pools/:poolId/accept
+async function handleAcceptPoolInvite(req, res) {
+  const userId = getUserId(req);
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const poolVault = require('./poolVault');
+    const txHash = await poolVault.acceptInvite(wallet.walletId, req.params.poolId);
+    const poolStore = require('./poolStore');
+    await poolStore.addMemberToPoolMeta(req.params.poolId, wallet.address);
+    return send(res, 200, { success: true, txHash });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /pools/:poolId/leave
+async function handleLeavePool(req, res) {
+  const userId = getUserId(req);
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const poolVault = require('./poolVault');
+    const txHash = await poolVault.leavePool(wallet.walletId, req.params.poolId);
+    return send(res, 200, { success: true, txHash });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /pools/:poolId/contribute — { amount, toShared }
+async function handleContributeToPool(req, res) {
+  const userId = getUserId(req);
+  const { amount, toShared } = req.body || {};
+  if (!(Number(amount) > 0)) return send(res, 400, { error: 'amount must be positive' });
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const poolVault = require('./poolVault');
+    const txHash = await poolVault.contribute(wallet.walletId, req.params.poolId, amount, !!toShared);
+    return send(res, 200, { success: true, txHash });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /pools/:poolId/withdraw-personal — { amount }
+async function handleWithdrawPersonal(req, res) {
+  const userId = getUserId(req);
+  const { amount } = req.body || {};
+  if (!(Number(amount) > 0)) return send(res, 400, { error: 'amount must be positive' });
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const poolVault = require('./poolVault');
+    const txHash = await poolVault.withdrawPersonal(wallet.walletId, req.params.poolId, amount);
+    return send(res, 200, { success: true, txHash });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /pools/:poolId/propose-spend — { to, amount, reason }
+async function handleProposeSpend(req, res) {
+  const userId = getUserId(req);
+  const { to, amount, reason } = req.body || {};
+  if (!to || !(Number(amount) > 0)) return send(res, 400, { error: 'to and a positive amount are required' });
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const poolVault = require('./poolVault');
+    const { proposalId, txHash } = await poolVault.proposeSpend(getAgentWallet(), req.params.poolId, wallet.address, to, amount, reason || '');
+    const onChainProposal = await poolVault.getProposal(sharedProvider, proposalId);
+    const poolStore = require('./poolStore');
+    await poolStore.recordProposal({ proposalId, poolId: req.params.poolId, kind: 'Spend', windowEnds: onChainProposal.windowEnds });
+    return send(res, 200, { proposalId, txHash, ...onChainProposal });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /pools/:poolId/propose-amend — { constitution }
+async function handleProposeAmend(req, res) {
+  const userId = getUserId(req);
+  const { constitution } = req.body || {};
+  if (!constitution) return send(res, 400, { error: 'constitution is required' });
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const poolVault = require('./poolVault');
+    const { proposalId, txHash } = await poolVault.proposeAmendConstitution(getAgentWallet(), req.params.poolId, wallet.address, constitution);
+    const onChainProposal = await poolVault.getProposal(sharedProvider, proposalId);
+    const poolStore = require('./poolStore');
+    await poolStore.recordProposal({ proposalId, poolId: req.params.poolId, kind: 'AmendConstitution', windowEnds: onChainProposal.windowEnds });
+    return send(res, 200, { proposalId, txHash, ...onChainProposal });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /pools/:poolId/propose-remove — { targetMember: address|@tag }
+async function handleProposeRemove(req, res) {
+  const userId = getUserId(req);
+  const { targetMember } = req.body || {};
+  if (!targetMember) return send(res, 400, { error: 'targetMember is required' });
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const resolvedTarget = await resolveInvite(targetMember);
+    const poolVault = require('./poolVault');
+    const { proposalId, txHash } = await poolVault.proposeRemoveMember(getAgentWallet(), req.params.poolId, wallet.address, resolvedTarget);
+    const onChainProposal = await poolVault.getProposal(sharedProvider, proposalId);
+    const poolStore = require('./poolStore');
+    await poolStore.recordProposal({ proposalId, poolId: req.params.poolId, kind: 'RemoveMember', windowEnds: onChainProposal.windowEnds });
+    return send(res, 200, { proposalId, txHash, ...onChainProposal });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// GET /pools/:poolId/proposals
+async function handleListPoolProposals(req, res) {
+  try {
+    const poolStore = require('./poolStore');
+    const poolVault = require('./poolVault');
+    const metas = await poolStore.listProposalsForPool(req.params.poolId);
+    const enriched = await Promise.all(metas.map(async (m) => ({ ...m, onChain: await poolVault.getProposal(sharedProvider, m.proposalId).catch(() => null) })));
+    return send(res, 200, enriched);
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /proposals/:proposalId/veto
+async function handleVetoProposal(req, res) {
+  const userId = getUserId(req);
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const poolVault = require('./poolVault');
+    const txHash = await poolVault.veto(wallet.walletId, req.params.proposalId);
+    return send(res, 200, { success: true, txHash });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
 // POST /agent/deliver — receives a deliverable's real text from a PARTNER
 // AgentPay deployment that just submitted the on-chain hash for a job it's
 // the provider on (see scripts/marketplace-agent.js pushDeliverableToPartner).
@@ -1033,6 +1245,19 @@ app.post('/intent', handleCreateIntent);
 app.get('/intent/:id', handleGetIntent);
 app.get('/intents', handleListIntents);
 app.get('/decision-log/:requestId', handleGetDecision);
+
+app.post('/pools', handleCreatePool);
+app.get('/pools/mine', handleListMyPools);
+app.get('/pools/:poolId', handleGetPool);
+app.post('/pools/:poolId/accept', handleAcceptPoolInvite);
+app.post('/pools/:poolId/leave', handleLeavePool);
+app.post('/pools/:poolId/contribute', handleContributeToPool);
+app.post('/pools/:poolId/withdraw-personal', handleWithdrawPersonal);
+app.post('/pools/:poolId/propose-spend', handleProposeSpend);
+app.post('/pools/:poolId/propose-amend', handleProposeAmend);
+app.post('/pools/:poolId/propose-remove', handleProposeRemove);
+app.get('/pools/:poolId/proposals', handleListPoolProposals);
+app.post('/proposals/:proposalId/veto', handleVetoProposal);
 app.post('/intelligence', gateway.require('$0.001'), handleIntelligence);
 app.get('/api/jobs/mine', async (req, res) => {
   try {

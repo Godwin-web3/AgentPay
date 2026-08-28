@@ -9,6 +9,7 @@ import Schedules from './views/Schedules'
 import Jobs from './views/Jobs'
 import Agent from './views/Agent'
 import Goals from './views/Goals'
+import Pools from './views/Pools'
 import History from './views/History'
 import Landing from './views/Landing'
 import Profile from './views/Profile'
@@ -17,7 +18,7 @@ import Login from './components/Login'
 import type { ChatMessage } from './types'
 import { getTokenBalances, checkVault, getWallet, getVaultAddress, getVaultBalance } from './api'
 
-type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules' | 'jobs' | 'agent' | 'goals'
+type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules' | 'jobs' | 'agent' | 'goals' | 'pools'
 
 const TerminalIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -50,6 +51,19 @@ const GoalIcon = () => (
     <path d="M4 4h13l-3 4 3 4H4"/>
   </svg>
 )
+const PoolIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <circle cx="5" cy="6" r="2.2"/>
+    <circle cx="19" cy="6" r="2.2"/>
+    <circle cx="5" cy="18" r="2.2"/>
+    <circle cx="19" cy="18" r="2.2"/>
+    <line x1="9.5" y1="10" x2="6.5" y2="7.5"/>
+    <line x1="14.5" y1="10" x2="17.5" y2="7.5"/>
+    <line x1="9.5" y1="14" x2="6.5" y2="16.5"/>
+    <line x1="14.5" y1="14" x2="17.5" y2="16.5"/>
+  </svg>
+)
 const JobsIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="7" width="18" height="13" rx="2" ry="2"/>
@@ -67,6 +81,7 @@ const AgentIcon = () => (
 const navItems = [
   { id: 'terminal', icon: TerminalIcon, label: 'Terminal' },
   { id: 'goals', icon: GoalIcon, label: 'Goals' },
+  { id: 'pools', icon: PoolIcon, label: 'Pools' },
   { id: 'jobs', icon: JobsIcon, label: 'Jobs' },
   { id: 'schedules', icon: ScheduleIcon, label: 'Schedules' },
   { id: 'agent', icon: AgentIcon, label: 'Agent' },
@@ -290,6 +305,7 @@ function App({ tag }: { tag: string | null }) {
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
             {view === 'jobs' && <Jobs userAddress={userAddress} userId={userId} />}
             {view === 'goals' && <Goals userAddress={userAddress} userId={userId} />}
+            {view === 'pools' && <Pools userAddress={userAddress} userId={userId} />}
             {view === 'agent' && <Agent />}
           </ErrorBoundary>
         </div>

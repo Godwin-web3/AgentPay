@@ -128,6 +128,38 @@ export interface IntentPlan {
   error?: string
 }
 
+// contracts/PoolVault.sol — singleton shared-money pools.
+export interface PoolConstitution {
+  discretionaryThreshold: number
+  objectionWindow: number // seconds
+  maxSingleProposal: number
+}
+
+export interface Pool {
+  poolId: string
+  name: string | null
+  founder: string
+  memberList: string[]
+  constitution: PoolConstitution
+  sharedBalance: number
+  active: boolean
+  myStatus?: 'None' | 'Invited' | 'Active'
+}
+
+export interface PoolProposal {
+  proposalId: string
+  poolId: string
+  kind: 'Spend' | 'AmendConstitution' | 'RemoveMember' | 'AddMember'
+  to: string
+  amount: number
+  reason: string
+  windowEnds: number // unix seconds
+  vetoed: boolean
+  resolved: boolean
+  executed: boolean
+  objectionWindowSeconds?: number
+}
+
 // contracts/DecisionLog.sol — on-chain decision provenance record.
 export interface DecisionRecord {
   decisionHash: string

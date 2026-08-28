@@ -11,6 +11,7 @@ async function main() {
   // Advances any in-flight intent-solver plans (src/intentEngine.js) whose
   // next step is blocked on a wait_for_condition/check_balance primitive.
   require('./src/intentEngine').startTicker();
+  require('./src/poolEngine').startTicker();
 
   // Dev mode: start CLI loop with a default wallet
   if (process.env.DEV_USER_ID) {
