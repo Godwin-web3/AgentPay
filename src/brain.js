@@ -48,7 +48,7 @@ Cannot fulfil or general chat:
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userInput },
       ],
-      model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+      model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
       temperature: 0.2,
       max_tokens: 512,
     });

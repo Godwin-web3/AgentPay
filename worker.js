@@ -154,7 +154,7 @@ async function handleChat(request, env) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + env.GROQ_API_KEY },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile', temperature: 0.1, max_tokens: 400,
+      model: 'openai/gpt-oss-120b', temperature: 0.1, max_tokens: 400,
       messages: [{ role: 'system', content: GROQ_SYSTEM_PROMPT }, ...history.slice(-10).map(m => ({ role: m.role, content: m.content })), { role: 'user', content: message }]
     })
   });

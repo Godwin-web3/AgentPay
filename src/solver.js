@@ -76,7 +76,7 @@ async function planFromGoal(goal, walletAddress, usdcBalance) {
       { role: 'system', content: SOLVER_SYSTEM_PROMPT },
       { role: 'user', content: `Wallet ${walletAddress}. Current vault balance: ${usdcBalance} USDC. Goal: ${goal}` }
     ],
-    model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+    model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
     temperature: 0.1,
     max_tokens: 800,
   });

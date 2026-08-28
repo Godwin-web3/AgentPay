@@ -468,7 +468,7 @@ async function handleIntelligence(req, res) {
         { role: 'system', content: 'You are a DeFi and crypto intelligence analyst. Answer questions with real data, clear analysis, and no fluff. Be concise but thorough.' },
         { role: 'user', content: query }
       ],
-      model: process.env.GROQ_MODEL || 'llama-3.3-70b-versatile',
+      model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
       temperature: 0.3,
       max_tokens: 1024
     });
