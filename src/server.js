@@ -264,7 +264,12 @@ async function handleUpdatePolicy(req, res) {
 async function handleHistory(req, res) {
   const userId = getUserId(req);
   try {
-    const items = await getUnifiedHistory(userId, 100);
+    // Historical entries were written under two different keys — the
+    // Firebase UID (deposits, withdrawals, job hires) and the resolved
+    // on-chain wallet address (payments, job completions, pool activity).
+    // Query both so nothing written under either convention is missed.
+    const wallet = await getOrCreateWallet(userId);
+    const items = await getUnifiedHistory([userId, wallet.address], 100);
     return send(res, 200, { items, total: items.length });
   } catch (err) {
     return send(res, 500, { error: err.message });

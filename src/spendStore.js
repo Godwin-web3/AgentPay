@@ -127,10 +127,22 @@ async function getConsecutiveFailures(userAddress) {
 
 async function getHistory(userAddress, limit) {
   limit = limit || 50;
+
+  // userAddress may be a single key or an array of keys. Entries have been
+  // written under two different conventions over time (Firebase UID for some
+  // call sites, resolved on-chain wallet address for others) — querying an
+  // array with 'in' catches both without needing to rewrite every writer.
+  const keys = Array.isArray(userAddress) ? [...new Set(userAddress.filter(Boolean))] : userAddress ? [userAddress] : [];
+
   let query = db.collection(COLLECTION).orderBy('timestamp', 'desc').limit(limit);
-  if (userAddress) {
+  if (keys.length === 1) {
     query = db.collection(COLLECTION)
-      .where('userAddress', '==', userAddress)
+      .where('userAddress', '==', keys[0])
+      .orderBy('timestamp', 'desc')
+      .limit(limit);
+  } else if (keys.length > 1) {
+    query = db.collection(COLLECTION)
+      .where('userAddress', 'in', keys)
       .orderBy('timestamp', 'desc')
       .limit(limit);
   }
