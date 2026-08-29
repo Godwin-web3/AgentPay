@@ -68,7 +68,8 @@ export default function Profile({ userAddress, userId, vaultBalance, walletBalan
   }
 
   return (
-    <div style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
+    <div className="reveal" style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
+      <p className="eyebrow">Your account</p>
 
       {/* Identity strip */}
       <div className="card" style={{ marginBottom: 16, padding: '12px 16px' }}>
@@ -87,7 +88,7 @@ export default function Profile({ userAddress, userId, vaultBalance, walletBalan
       </div>
 
       {/* Vault — the primary stat, with quick actions right here */}
-      <div className="card" style={{ marginBottom: 16, padding: '20px' }}>
+      <div className="card-deep" style={{ marginBottom: 16, padding: '24px' }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 3, color: 'var(--muted)', marginBottom: 8 }}>
           VAULT BALANCE
         </div>

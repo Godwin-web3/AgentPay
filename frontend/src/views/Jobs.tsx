@@ -33,15 +33,15 @@ export default function Jobs({ userAddress, userId }: { userAddress: string, use
     return (
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div style={{ fontWeight: 600, color: 'var(--cyan)' }}>{job.budget} USDC</div>
+          <div className="mono-data" style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: 17, color: 'var(--cyan)' }}>{job.budget} USDC</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <div style={{
               fontSize: 10,
               padding: '2px 6px',
               borderRadius: 4,
-              background: 'rgba(255,255,255,0.05)',
+              background: 'transparent',
               color: 'var(--muted)',
-              border: '1px solid currentColor'
+              border: '1px solid var(--border)'
             }}>
               {role.toUpperCase()}
             </div>
@@ -49,9 +49,9 @@ export default function Jobs({ userAddress, userId }: { userAddress: string, use
               fontSize: 10,
               padding: '2px 6px',
               borderRadius: 4,
-              background: job.status === 'Open' || job.status === 'Funded' ? 'rgba(0,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+              background: job.status === 'Open' || job.status === 'Funded' ? 'var(--cyan-a1)' : 'transparent',
               color: job.status === 'Open' || job.status === 'Funded' ? 'var(--cyan)' : 'var(--muted)',
-              border: '1px solid currentColor'
+              border: `1px solid ${job.status === 'Open' || job.status === 'Funded' ? 'var(--border-hot)' : 'var(--border)'}`
             }}>
               {job.status?.toUpperCase()}
             </div>
@@ -77,8 +77,11 @@ export default function Jobs({ userAddress, userId }: { userAddress: string, use
 
   return (
     <div className="view-container" style={{ padding: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2 style={{ margin: 0 }}>My Jobs</h2>
+      <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+        <div>
+          <p className="eyebrow">Escrowed, on-chain</p>
+          <h2 className="page-title">My Jobs</h2>
+        </div>
         <button className="send-btn" onClick={fetchJobs} style={{ width: 'auto', padding: '0 15px' }}>Refresh</button>
       </div>
 

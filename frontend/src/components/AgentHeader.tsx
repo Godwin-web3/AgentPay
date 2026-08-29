@@ -114,8 +114,8 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
               fontSize: 9,
               fontWeight: 700,
               letterSpacing: 1.5,
-              background: '#FF3B5C12',
-              border: '1px solid #FF3B5C44',
+              background: 'var(--danger-a1)',
+              border: '1px solid var(--danger-a2)',
               color: 'var(--danger)',
             }}>
               PAUSED
@@ -164,7 +164,7 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
         <div style={{ padding: "0 16px 12px" }}>
           <button
             className="quick-btn"
-            style={{ width: "100%", color: "#ff4444", borderColor: "#ff4444" }}
+            style={{ width: "100%", color: 'var(--danger)', borderColor: 'var(--danger)' }}
             onClick={() => { onClearMemory?.(); setDrawerOpen(false) }}
           >
             CLEAR MEMORY
@@ -175,7 +175,7 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
         <div style={{ padding: "0 16px 12px" }}>
           <button
             className="quick-btn"
-            style={{ width: "100%", color: "#ff4444", borderColor: "#ff4444" }}
+            style={{ width: "100%", color: 'var(--danger)', borderColor: 'var(--danger)' }}
             onClick={() => { logout(); setDrawerOpen(false); }}
           >
             SIGN OUT
@@ -201,8 +201,8 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
                   letterSpacing: 1,
                   cursor: pauseLoading ? 'not-allowed' : 'pointer',
                   border: '1px solid',
-                  borderColor: isPaused ? '#FF3B5C44' : '#00E5CC44',
-                  background: isPaused ? '#FF3B5C12' : '#00E5CC12',
+                  borderColor: isPaused ? 'var(--danger-a2)' : 'var(--cyan-a2)',
+                  background: isPaused ? 'var(--danger-a1)' : 'var(--cyan-a1)',
                   color: isPaused ? 'var(--danger)' : 'var(--cyan)',
                   opacity: pauseLoading ? 0.5 : 1,
                   whiteSpace: 'nowrap',

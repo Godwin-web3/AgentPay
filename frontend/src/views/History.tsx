@@ -110,9 +110,10 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
 
   return (
     <div className="history-view" style={{ paddingBottom: 80 }}>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 6, fontFamily: 'var(--font-mono)', letterSpacing: 2 }}>FINANCIAL LOG</div>
-        <div style={{ fontSize: 11, color: 'var(--seal)', fontFamily: 'var(--font-mono)', opacity: 0.8 }}>{userAddress}</div>
+      <div className="reveal" style={{ marginBottom: 28 }}>
+        <p className="eyebrow">Every dollar, accounted for</p>
+        <h2 className="page-title" style={{ marginBottom: 8 }}>Financial Log</h2>
+        <div className="mono-data" style={{ fontSize: 11, color: 'var(--muted)' }}>{userAddress}</div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

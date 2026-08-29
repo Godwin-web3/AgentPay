@@ -169,12 +169,15 @@ export default function Goals({ userId }: { userAddress: string, userId: string 
 
   return (
     <div className="view-container" style={{ padding: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>Goals</h2>
+      <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+        <div>
+          <p className="eyebrow">State it, don't configure it</p>
+          <h2 className="page-title">Goals</h2>
+        </div>
         <button className="send-btn" onClick={fetchPlans} style={{ width: 'auto', padding: '0 15px' }}>Refresh</button>
       </div>
 
-      <div className="card" style={{ marginBottom: 24 }}>
+      <div className="card-deep reveal" style={{ marginBottom: 24, padding: 24 }}>
         <div className="section-title">State a goal, not a command</div>
         <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
           e.g. "pay 0xabc... 10 USDC once my balance is above 500" or "hire an agent to summarize the latest Arc testnet docs for 2 USDC".

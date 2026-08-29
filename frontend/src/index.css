@@ -985,9 +985,10 @@ body::after {
 
 .onboarding-card h2 {
   font-family: var(--font-head);
+  font-weight: 600;
   margin-bottom: 16px;
-  font-size: 20px;
-  color: #fff;
+  font-size: 21px;
+  color: var(--text);
 }
 
 .onboarding-card p {

@@ -97,8 +97,11 @@ export default function Policy({ userAddress, userId }: { userAddress: string, u
 
   return (
     <div className="policy-view">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h2 style={{ margin: 0 }}>Policy Settings</h2>
+      <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+        <div>
+          <p className="eyebrow">Enforced on-chain, not by the AI</p>
+          <h2 className="page-title">Policy Settings</h2>
+        </div>
         {!isEditing ? (
           <div style={{ display: 'flex', gap: 10 }}>
             <button className="send-btn" onClick={() => setIsEditing(true)}>

@@ -78,7 +78,7 @@ export default function ClaimTag({ onClaimed }: { onClaimed: (tag: string) => vo
           />
         </div>
 
-        {error && <p style={{ color: '#ff4444', fontSize: '12px', margin: 0 }}>{error}</p>}
+        {error && <p style={{ color: 'var(--danger)', fontSize: '12px', margin: 0 }}>{error}</p>}
 
         <button
           onClick={handleClaim}

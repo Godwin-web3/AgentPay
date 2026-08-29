@@ -107,8 +107,11 @@ export default function Schedules({ userAddress, userId }: { userAddress: string
 
   return (
     <div className="view-container" style={{ padding: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h2 style={{ margin: 0 }}>Automated Schedules</h2>
+      <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+        <div>
+          <p className="eyebrow">Runs itself, on your terms</p>
+          <h2 className="page-title">Automated Schedules</h2>
+        </div>
         <button className="send-btn" onClick={fetchSchedules} style={{ width: 'auto', padding: '0 15px' }}>Refresh</button>
       </div>
 
