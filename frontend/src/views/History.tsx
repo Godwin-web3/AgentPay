@@ -25,35 +25,37 @@ function describeEntry(tx: any) {
   const amount = tx.amount != null ? `${tx.amount} ${tx.token || 'USDC'}` : null
 
   if (tx.failed || tx.status === 'blocked') {
-    return { title: 'Blocked', sub: tx.blockedReason || 'Policy violation', amount, sign: null as null | '+' | '−' }
+    return { title: 'Blocked', sub: tx.blockedReason || 'Policy violation', amount, sign: null as null | '+' | '−', badge: null as string | null }
   }
 
   switch (tx.type) {
     case 'schedule':
-      return { title: 'Scheduled payment', sub: `to ${shortAddr(tx.to)}`, amount, sign: '−' as const }
+      return { title: 'Scheduled payment', sub: `to ${shortAddr(tx.to)}`, amount, sign: '−' as const, badge: null }
     case 'payment':
-      return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, sign: '−' as const }
+      return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, sign: '−' as const, badge: null }
     case 'deposit':
-      return { title: 'Deposited', sub: 'into vault', amount, sign: '+' as const }
+      return { title: 'Deposited', sub: 'into vault', amount, sign: '+' as const, badge: null }
     case 'withdrawal':
-      return { title: 'Withdrew', sub: 'from vault', amount, sign: '+' as const }
+      return { title: 'Withdrew', sub: 'from vault', amount, sign: '+' as const, badge: null }
     case 'job_hire':
-      return { title: 'Hired agent', sub: tx.reason || `to ${shortAddr(tx.to)}`, amount, sign: '−' as const }
+      return { title: 'Hired agent', sub: tx.reason || `to ${shortAddr(tx.to)}`, amount, sign: '−' as const, badge: null }
     case 'job_fulfilled':
-      return { title: 'Job fulfilled', sub: tx.reason || 'Deliverable submitted', amount, sign: '+' as const }
+      return { title: 'Job fulfilled', sub: tx.reason || 'Deliverable submitted', amount, sign: '+' as const, badge: null }
     case 'swap':
-      return { title: 'Swapped', sub: `${tx.fromToken || ''} → ${tx.toToken || ''}`, amount, sign: null }
+      return { title: 'Swapped', sub: `${tx.fromToken || ''} → ${tx.toToken || ''}`, amount, sign: null, badge: null }
     case 'pool_contribute':
-      return { title: 'Contributed to pool', sub: tx.reason || '', amount, sign: '−' as const }
+      return { title: 'Contributed to pool', sub: tx.reason || '', amount, sign: '−' as const, badge: null }
     case 'pool_withdraw_personal':
-      return { title: 'Withdrew personal allowance', sub: 'from pool', amount, sign: '+' as const }
+      return { title: 'Withdrew personal allowance', sub: 'from pool', amount, sign: '+' as const, badge: null }
     case 'pool_spend':
-      return { title: 'Pool spend', sub: tx.reason || `to ${shortAddr(tx.to)}`, amount, sign: '−' as const }
+      return { title: 'Pool spend', sub: tx.reason || `to ${shortAddr(tx.to)}`, amount, sign: '−' as const, badge: null }
+    case 'x402_fetch':
+      return { title: 'Paid for live data', sub: tx.reason || 'Fetched via x402', amount, sign: '−' as const, badge: 'x402' }
     default:
       if (tx.amount && tx.to) {
-        return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, sign: '−' as const }
+        return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, sign: '−' as const, badge: null }
       }
-      return { title: tx.label || 'Activity', sub: '', amount, sign: null }
+      return { title: tx.label || 'Activity', sub: '', amount, sign: null, badge: null }
   }
 }
 
@@ -160,13 +162,28 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
                   }}
                 >
                   <div style={{ minWidth: 0 }}>
-                    <div style={{
-                      fontFamily: 'var(--font-head)',
-                      fontWeight: 500,
-                      fontSize: 14,
-                      color: (tx.failed || tx.status === 'blocked') ? 'var(--danger)' : 'var(--text)',
-                    }}>
-                      {entry.title}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{
+                        fontFamily: 'var(--font-head)',
+                        fontWeight: 500,
+                        fontSize: 14,
+                        color: (tx.failed || tx.status === 'blocked') ? 'var(--danger)' : 'var(--text)',
+                      }}>
+                        {entry.title}
+                      </div>
+                      {entry.badge && (
+                        <span className="mono-data" style={{
+                          fontSize: 9,
+                          letterSpacing: '0.08em',
+                          padding: '2px 6px',
+                          borderRadius: 4,
+                          border: '1px solid var(--wire)',
+                          color: 'var(--wire)',
+                          textTransform: 'uppercase',
+                        }}>
+                          ⚡ {entry.badge}
+                        </span>
+                      )}
                     </div>
                     {entry.sub && (
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', marginTop: 3, wordBreak: 'break-word' }}>

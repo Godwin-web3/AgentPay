@@ -6,6 +6,7 @@ const escrow = require('./escrow');
 const { appendSpend, appendFailure, getHistory, getJobsCreatedBy } = require('./spendStore');
 const { parseIntent } = require('./brain');
 const jobService = require('./jobService');
+const { fromUnits } = require('../utils/usdc');
 
 // P1-7: off-chain PolicyEngine is now an ADVISORY pre-check only. The
 // authoritative decision lives in AgentVault.execute (per-tx/daily/hourly caps,
@@ -120,9 +121,9 @@ async function fetchAndPay(walletId, url, maxAmount, reason, userAddress) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: reason })
     } : {};
-    const { data, actualAmount, actualPayTo } = await x402Client.fetchWithPayment(url, walletId, fetchOptions, userAddress);
-    await appendSpend({ userAddress, to: actualPayTo || url, amount: actualAmount || maxAmount, reason, txHash: 'x402', token: 'USDC' });
-    return { success: true, data, actualAmount };
+    const { data, actualAmount, actualTxHash } = await x402Client.fetchWithPayment(url, walletId, fetchOptions, userAddress);
+    await appendSpend({ userAddress, to: url, amount: Number(actualAmount) || maxAmount, reason, txHash: actualTxHash, token: 'USDC', type: 'x402_fetch' });
+    return { success: true, data, actualAmount, txHash: actualTxHash };
   } catch (err) {
     await appendFailure({ userAddress, to: url, amount: maxAmount, reason, blockedReason: err.message });
     return { success: false, reason: err.message };
@@ -261,6 +262,19 @@ async function chat(message, walletId, userAddress) {
       intent.message = "Could not propose that spend: " + e.message;
     }
   }
+  if (intent.action === "fetch_paid_data") {
+    try {
+      const paid = await payForLiveData(intent.description || message, walletId, address);
+      if (paid) {
+        intent.message = `Paid ${paid.amount} USDC via x402 to "${paid.tool.name}" for live data: ${JSON.stringify(paid.data)}`;
+        intent.data = { x402: true, tool: paid.tool.name, amount: paid.amount, txHash: paid.txHash, result: paid.data };
+      }
+      // else: no matching paid source for this — intent.message already
+      // carries brain.js's best-guess answer, so there's nothing to overwrite.
+    } catch (e) {
+      console.error('[chat] fetch_paid_data failed, falling back to best-guess answer:', e.message);
+    }
+  }
   if (intent.action === "policy") {
     try {
       const escrow = require('./escrow');
@@ -363,7 +377,12 @@ async function payKeryx(toolId, args) {
     const body = await paidRes.text(); throw new Error(`Keryx payment failed: ${paidRes.status} - ${body}`);
   }
 
-  return { data: await paidRes.json(), paid: true, amount: accept.amount };
+  const body = await paidRes.json();
+  // Keryx's documented paid-response shape includes settlement.txHash — best
+  // effort, since it isn't guaranteed to be populated the same way across
+  // every publisher's tool.
+  const txHash = body?.settlement?.txHash || null;
+  return { data: body, paid: true, amount: fromUnits(accept.amount), txHash };
 }
 
 const KERYX_KEYWORDS = {
@@ -410,20 +429,36 @@ async function findKeryxTool(description) {
   }
 }
 
+// Shared by performTask (job deliverables) and the "fetch_paid_data" chat
+// action — finds a matching Keryx tool, pays for it via x402, and logs the
+// spend. Returns null (not a throw) when no tool matches, so callers can
+// fall back to an ungrounded answer without special-casing "not found".
+async function payForLiveData(description, walletId, userAddress) {
+  const tool = walletId ? await findKeryxTool(description) : null;
+  if (!tool) return null;
+  const keryxTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Keryx call timeout')), 15000));
+  const res = await Promise.race([
+    payKeryx(tool.id, tool.sampleArgs || {}),
+    keryxTimeout
+  ]);
+  const paidAmount = res.amount || tool.priceUsd;
+  // This data-purchase cost was previously untracked entirely — nothing
+  // recorded it as spend anywhere. Log it so the real x402 payment is
+  // visible in History, not just implied by the answer text.
+  if (userAddress) {
+    await appendSpend({ userAddress, to: tool.publisherWallet || 'keryx', amount: paidAmount, reason: `Paid data: ${tool.name}`, txHash: res.txHash, token: 'USDC', type: 'x402_fetch' });
+  }
+  return { data: res.data, tool, amount: paidAmount, txHash: res.txHash };
+}
+
 async function performTask(description, walletId, userAddress) {
   try {
-    const tool = walletId ? await findKeryxTool(description) : null;
-    if (tool) {
-      try {
-        const keryxTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Keryx call timeout')), 15000));
-        const res = await Promise.race([
-          payKeryx(tool.id, tool.sampleArgs || {}),
-          keryxTimeout
-        ]);
-        return `${JSON.stringify(res.data)} (sourced live via Keryx tool "${tool.name}", paid ${res.amount || tool.priceUsd} USDC)`;
-      } catch (e) {
-        console.error('[performTask] Keryx call failed, falling back to Groq:', e.message);
-      }
+    const paid = await payForLiveData(description, walletId, userAddress).catch(e => {
+      console.error('[performTask] Keryx call failed, falling back to Groq:', e.message);
+      return null;
+    });
+    if (paid) {
+      return `${JSON.stringify(paid.data)} (sourced live via Keryx tool "${paid.tool.name}", paid ${paid.amount} USDC)`;
     }
     const completion = await groqCompound.chat.completions.create({
       messages: [
