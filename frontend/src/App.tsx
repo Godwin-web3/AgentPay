@@ -5,7 +5,6 @@ import AgentHeader from './components/AgentHeader'
 import ErrorBoundary from './components/ErrorBoundary'
 import Terminal from './views/Terminal'
 import Policy from './views/Policy'
-import Schedules from './views/Schedules'
 import Jobs from './views/Jobs'
 import Agent from './views/Agent'
 import Goals from './views/Goals'
@@ -18,7 +17,7 @@ import Login from './components/Login'
 import type { ChatMessage } from './types'
 import { getTokenBalances, checkVault, getWallet, getVaultAddress, getVaultBalance } from './api'
 
-type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'schedules' | 'jobs' | 'agent' | 'goals' | 'pools'
+type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'jobs' | 'agent' | 'goals' | 'pools'
 
 const TerminalIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -30,14 +29,6 @@ const AccountIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="8" r="4"/>
     <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-  </svg>
-)
-const ScheduleIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-    <line x1="16" y1="2" x2="16" y2="6"/>
-    <line x1="8" y1="2" x2="8" y2="6"/>
-    <line x1="3" y1="10" x2="21" y2="10"/>
   </svg>
 )
 const HistoryIcon = () => (
@@ -83,7 +74,6 @@ const navItems = [
   { id: 'goals', icon: GoalIcon, label: 'Goals' },
   { id: 'pools', icon: PoolIcon, label: 'Pools' },
   { id: 'jobs', icon: JobsIcon, label: 'Jobs' },
-  { id: 'schedules', icon: ScheduleIcon, label: 'Schedules' },
   { id: 'agent', icon: AgentIcon, label: 'Agent' },
   { id: 'history',   icon: HistoryIcon,  label: 'History'   },
   { id: 'account',   icon: AccountIcon,  label: 'Account'   },
@@ -92,7 +82,12 @@ const navItems = [
 function App({ tag }: { tag: string | null }) {
   const { walletAddress: authWalletAddress, uid: authUid } = useAuth();
   const [historyKey, setHistoryKey] = useState(0)
-  const [view, setView] = useState<View>(() => (localStorage.getItem('agentpay_view') as View) || 'landing')
+  const [view, setView] = useState<View>(() => {
+    const stored = localStorage.getItem('agentpay_view')
+    // Schedules was folded into Goals — a stale stored value would otherwise render a blank view.
+    if (stored === 'schedules') return 'goals'
+    return (stored as View) || 'landing'
+  })
 
   useEffect(() => {
     function setAppHeight() {
@@ -299,7 +294,6 @@ function App({ tag }: { tag: string | null }) {
         <div className="view-content">
           <ErrorBoundary onReset={() => setView('terminal')}>
             {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} userId={userId} onActionSuccess={refreshBalances} />}
-            {view === 'schedules' && <Schedules userAddress={userAddress} userId={userId} />}
             {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} userId={userId} />}
             {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={vaultAddress || agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}

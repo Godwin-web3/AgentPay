@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react'
-import { createIntentPlan, listIntentPlans, getDecision, makeDecisionRequestId } from '../api'
+import {
+  createIntentPlan, listIntentPlans, getDecision, makeDecisionRequestId,
+  getSchedules, getOnChainSchedules, getScheduleStats, cancelSchedule, cancelOnChainSchedule,
+} from '../api'
 import type { IntentPlan, IntentStep, DecisionRecord } from '../types'
+
+function formatInterval(seconds: number) {
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} minute(s)`
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} hour(s)`
+  return `${Math.floor(seconds / 86400)} day(s)`
+}
 
 const STATUS_COLOR: Record<string, string> = {
   active: 'var(--cyan)',
@@ -130,12 +139,52 @@ function PlanCard({ plan, userId }: { plan: IntentPlan, userId: string }) {
   )
 }
 
+function RecurringCard({ job, stats, onCancel }: { job: any, stats?: { success: number; failed: number; lastRun: number }, onCancel: (job: any) => void }) {
+  return (
+    <div className="card" style={{ marginBottom: 16, opacity: job.active ? 1 : 0.6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
+        <div style={{ fontSize: 13 }}>
+          {job.amount} USDC to <span style={{ fontFamily: 'var(--font-mono)' }}>{(job.to || '').slice(0, 6)}...{(job.to || '').slice(-4)}</span>
+          {job.reason && <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>"{job.reason}"</div>}
+        </div>
+        <Badge status={job.active ? 'active' : 'inactive'} />
+      </div>
+
+      <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10 }}>
+        Every {job.onChain ? formatInterval(job.interval) : (job.intervalLabel || formatInterval(job.interval / 1000))}
+        {' · '}next {new Date(job.nextRun).toLocaleString()}
+        {job.onChain ? ' · on-chain' : ' · local agent'}
+      </div>
+
+      {stats && (
+        <div style={{ display: 'flex', gap: 16, marginBottom: 10, fontSize: 11, fontFamily: 'var(--font-mono)' }}>
+          <span style={{ color: 'var(--cyan)' }}>{stats.success} succeeded</span>
+          <span style={{ color: stats.failed ? 'var(--danger)' : 'var(--muted)' }}>{stats.failed} failed</span>
+        </div>
+      )}
+
+      {job.active && (
+        <button
+          onClick={() => onCancel(job)}
+          style={{ background: 'rgba(196,87,63,0.1)', color: 'var(--danger)', border: '1px solid var(--danger)', padding: '6px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 11, fontFamily: 'var(--font-mono)' }}
+        >
+          CANCEL
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function Goals({ userId }: { userAddress: string, userId: string }) {
   const [plans, setPlans] = useState<IntentPlan[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [goal, setGoal] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const [recurring, setRecurring] = useState<any[]>([])
+  const [recurringStats, setRecurringStats] = useState<Record<string, { success: number; failed: number; lastRun: number }>>({})
+  const [recurringLoading, setRecurringLoading] = useState(true)
 
   async function fetchPlans() {
     setLoading(true)
@@ -150,7 +199,41 @@ export default function Goals({ userId }: { userAddress: string, userId: string 
     }
   }
 
-  useEffect(() => { fetchPlans() }, [userId])
+  async function fetchRecurring() {
+    setRecurringLoading(true)
+    try {
+      let all: any[] = []
+      try {
+        const res = await getSchedules(userId)
+        if (res.schedules) all = [...res.schedules]
+      } catch {}
+      try {
+        const onChain = await getOnChainSchedules(userId)
+        onChain.forEach(oc => {
+          if (!all.find(a => a.id === oc.id && a.onChain)) all.push({ ...oc, onChain: true })
+        })
+      } catch {}
+      setRecurring(all.filter(j => j.active))
+      try {
+        setRecurringStats(await getScheduleStats(userId))
+      } catch {}
+    } finally {
+      setRecurringLoading(false)
+    }
+  }
+
+  async function handleCancelRecurring(job: any) {
+    if (!confirm('Cancel this recurring goal?')) return
+    try {
+      if (job.onChain) await cancelOnChainSchedule(job.id, userId)
+      else await cancelSchedule(job.id.toString(), userId)
+      setRecurring(prev => prev.filter(j => !(j.id === job.id && j.onChain === job.onChain)))
+    } catch (e: any) {
+      alert('Failed to cancel: ' + e.message)
+    }
+  }
+
+  useEffect(() => { fetchPlans(); fetchRecurring() }, [userId])
 
   async function handleSubmit() {
     if (!goal.trim() || submitting) return
@@ -174,7 +257,7 @@ export default function Goals({ userId }: { userAddress: string, userId: string 
           <p className="eyebrow">State it, don't configure it</p>
           <h2 className="page-title">Goals</h2>
         </div>
-        <button className="send-btn" onClick={fetchPlans} style={{ width: 'auto', padding: '0 15px' }}>Refresh</button>
+        <button className="send-btn" onClick={() => { fetchPlans(); fetchRecurring() }} style={{ width: 'auto', padding: '0 15px' }}>Refresh</button>
       </div>
 
       <div className="card-deep reveal" style={{ marginBottom: 24, padding: 24 }}>
@@ -182,6 +265,7 @@ export default function Goals({ userId }: { userAddress: string, userId: string 
         <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
           e.g. "pay 0xabc... 10 USDC once my balance is above 500" or "hire an agent to summarize the latest Arc testnet docs for 2 USDC".
           The solver breaks it into steps and runs them through your policy-enforced vault — see the Goals README section for exactly which primitives it can use.
+          For something recurring, like "pay 0.1 USDC every day", ask the agent in the Terminal — it'll show up below once created.
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <input
@@ -209,6 +293,20 @@ export default function Goals({ userId }: { userAddress: string, userId: string 
         </div>
       ) : (
         plans.map(plan => <PlanCard key={plan.id} plan={plan} userId={userId} />)
+      )}
+
+      {!recurringLoading && recurring.length > 0 && (
+        <div style={{ marginTop: 32 }}>
+          <p className="eyebrow" style={{ marginBottom: 12 }}>Runs itself, on your terms</p>
+          {recurring.map((job, idx) => (
+            <RecurringCard
+              key={`${job.id}-${job.onChain ? 'oc' : 'lc'}-${idx}`}
+              job={job}
+              stats={job.onChain ? recurringStats[job.id?.toString()] : undefined}
+              onCancel={handleCancelRecurring}
+            />
+          ))}
+        </div>
       )}
     </div>
   )
