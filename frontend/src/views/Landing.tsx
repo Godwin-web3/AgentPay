@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import PoolsAmbientCanvas from '../components/PoolsAmbientCanvas'
 
 const DEMO_LINES = [
   { role: 'user', text: 'send 5 USDC to @sara for design work', delay: 300 },
@@ -24,23 +25,24 @@ function DemoTerminal() {
 
   return (
     <div style={{
-      background: '#0B0D10',
-      border: '1px solid #222',
+      background: 'var(--bg)',
+      border: '1px solid var(--border)',
+      borderRadius: 6,
       fontFamily: 'var(--font-mono)',
       fontSize: 12,
       width: '100%',
       overflow: 'hidden',
     }}>
       <div style={{
-        padding: '8px 14px',
-        borderBottom: '1px solid #222',
-        background: '#111',
+        padding: '9px 14px',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--bg-card)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <span style={{ color: 'var(--seal)', fontSize: 10, letterSpacing: 2 }}>AGENTPAY TERMINAL</span>
-        <span style={{ color: '#333', fontSize: 9 }}>ARC TESTNET</span>
+        <span style={{ color: 'var(--cyan)', fontSize: 10, letterSpacing: 2 }}>AGENTPAY TERMINAL</span>
+        <span style={{ color: 'var(--muted)', fontSize: 9, opacity: 0.6 }}>ARC TESTNET</span>
       </div>
       <div style={{ padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 200 }}>
         {DEMO_LINES.slice(0, visible).map((line, i) => (
@@ -48,9 +50,10 @@ function DemoTerminal() {
             <div style={{
               maxWidth: '85%',
               padding: '7px 11px',
-              background: line.role === 'user' ? '#D9A44110' : (line.blocked ? '#ff444410' : '#141414'),
-              border: `1px solid ${line.role === 'user' ? '#D9A44130' : (line.blocked ? '#ff444430' : '#222')}`,
-              color: line.blocked ? '#ff6666' : (line.role === 'user' ? 'var(--seal)' : '#ccc'),
+              borderRadius: 6,
+              background: line.role === 'user' ? 'var(--cyan-a1)' : (line.blocked ? 'var(--danger-a1)' : 'var(--bg-card)'),
+              border: `1px solid ${line.role === 'user' ? 'var(--border-hot)' : (line.blocked ? 'var(--danger-a2)' : 'var(--border)')}`,
+              color: line.blocked ? 'var(--danger)' : (line.role === 'user' ? 'var(--cyan)' : 'var(--text)'),
               lineHeight: 1.5,
             }}>
               {line.text}
@@ -59,9 +62,9 @@ function DemoTerminal() {
         ))}
         {visible > 0 && visible < DEMO_LINES.length && (
           <div style={{ display: 'flex', gap: 4, padding: '4px 0' }}>
-            {[0,1,2].map(i => (
+            {[0, 1, 2].map(i => (
               <span key={i} style={{
-                width: 5, height: 5, background: 'var(--seal)', display: 'inline-block',
+                width: 5, height: 5, background: 'var(--cyan)', display: 'inline-block',
                 borderRadius: '50%', animation: `pulse 1s infinite ${i * 0.2}s`
               }} />
             ))}
@@ -74,12 +77,21 @@ function DemoTerminal() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ padding: '20px 24px', borderRight: '1px solid #1a1a1a' }}>
-      <div style={{ color: '#444', fontSize: 9, letterSpacing: 1, fontFamily: 'var(--font-mono)', marginBottom: 8, whiteSpace: 'nowrap' }}>{label}</div>
-      <div style={{ color: 'var(--seal)', fontSize: 28, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{value}</div>
+    <div style={{ padding: '20px 24px', borderRight: '1px solid var(--border)' }}>
+      <div className="eyebrow" style={{ margin: '0 0 8px', whiteSpace: 'nowrap' }}>{label}</div>
+      <div className="mono-data" style={{ color: 'var(--cyan)', fontSize: 28, fontWeight: 700 }}>{value}</div>
     </div>
   )
 }
+
+const FEATURES = [
+  { tag: '01', title: 'No wallet required to start', desc: 'Sign in with Google. A Circle-issued wallet is created automatically. No seed phrases, no gas, no setup.' },
+  { tag: '02', title: 'Send to @tags, not addresses', desc: 'Claim your @tag and receive USDC from anyone. No address copying. Works with any wallet externally.' },
+  { tag: '03', title: 'Gasless transactions', desc: 'Circle sponsors every transaction on Arc testnet. Your users never touch native tokens.' },
+  { tag: '04', title: 'On-chain policy enforcement', desc: 'Per-tx caps, daily limits, whitelist, active hours, circuit breaker. All enforced by the vault contract before any payment fires.' },
+  { tag: '05', title: 'Scheduled + conditional payments', desc: 'Recurring on-chain payments. Trigger on weather, GitHub PRs, price feeds, or any HTTP condition.' },
+  { tag: '06', title: 'Agent-to-agent payments (x402)', desc: 'Your agent pays other agents for data and compute over HTTP 402. Fully autonomous, policy-gated.' },
+]
 
 export default function Landing({ onLaunch }: { onLaunch: () => void }) {
   const [stats, setStats] = useState({ users: 0, transactions: 0, volume: '0.00', schedules: 0 })
@@ -96,7 +108,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0B0D10', color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
 
       {/* Nav */}
       <nav style={{
@@ -104,66 +116,66 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '16px 24px',
-        borderBottom: '1px solid #1a1a1a',
+        borderBottom: '1px solid var(--border)',
         position: 'sticky',
         top: 0,
-        background: '#0B0D10',
+        background: 'var(--bg)',
         zIndex: 100,
       }}>
-        <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: 3 }}>AGENTPAY</span>
+        <span style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontStyle: 'italic', fontSize: 17, letterSpacing: 0.3 }}>AgentPay</span>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
           <a href="https://github.com/Godwin-web3/AgentPay" target="_blank" rel="noreferrer"
-            style={{ color: '#444', fontSize: 11, textDecoration: 'none', letterSpacing: 1 }}>GITHUB</a>
+            style={{ color: 'var(--muted)', fontSize: 11, textDecoration: 'none', letterSpacing: 1, fontFamily: 'var(--font-mono)' }}>GITHUB</a>
           <button onClick={handleStart} style={{
             padding: '7px 18px',
             background: 'transparent',
-            border: '1px solid var(--seal)',
-            color: 'var(--seal)',
+            border: '1px solid var(--cyan)',
+            color: 'var(--cyan)',
             fontSize: 10,
             letterSpacing: 2,
             cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            borderRadius: 4,
           }}>GET STARTED</button>
         </div>
       </nav>
 
       {/* Hero */}
-      <div style={{ padding: '60px 24px 40px', maxWidth: 720, width: '100%', margin: '0 auto' }}>
-        <div style={{ fontSize: 9, letterSpacing: 4, color: 'var(--seal)', marginBottom: 20 }}>
-          BUILT FOR ARC PROGRAMMABLE MONEY HACKATHON
-        </div>
-        <h1 style={{ fontSize: 32, fontWeight: 800, lineHeight: 1.1, margin: '0 0 20px', letterSpacing: -0.5 }}>
-          Tell your agent to pay.<br />
-          Your rules stop it<br />
-          from going too far.
+      <div style={{ padding: '72px 24px 40px', maxWidth: 720, width: '100%', margin: '0 auto' }} className="reveal">
+        <p className="eyebrow">Built on Arc — Circle's stablecoin-native L1</p>
+        <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: 'clamp(32px, 5vw, 46px)', lineHeight: 1.08, letterSpacing: '-0.01em', margin: '0 0 22px', textWrap: 'balance' as any }}>
+          Tell your agent to pay. <em style={{ fontStyle: 'italic', color: 'var(--cyan)' }}>Your rules stop it</em> from going too far.
         </h1>
-        <p style={{ color: '#666', fontSize: 14, lineHeight: 1.8, margin: '0 0 32px', fontFamily: 'var(--font-body)' }}>
+        <p style={{ color: 'var(--muted)', fontSize: 15, lineHeight: 1.75, margin: '0 0 32px', fontFamily: 'var(--font-body)', maxWidth: '52ch' }}>
           AgentPay gives an AI agent access to your USDC. A smart contract enforces your spending rules — per-transaction caps, daily limits, whitelists, active hours. The AI physically cannot exceed what you pre-authorized on-chain.
         </p>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <button onClick={handleStart} style={{
             padding: '13px 28px',
-            background: 'var(--seal)',
+            background: 'var(--cyan)',
             border: 'none',
-            color: '#0B0D10',
+            color: '#17140A',
             fontSize: 13,
             fontWeight: 700,
             cursor: 'pointer',
             letterSpacing: 1,
             fontFamily: 'var(--font-mono)',
+            borderRadius: 5,
           }}>
             START WITH GOOGLE
           </button>
           <a href="https://github.com/Godwin-web3/AgentPay" target="_blank" rel="noreferrer" style={{
             padding: '13px 28px',
             background: 'transparent',
-            border: '1px solid #333',
-            color: '#888',
+            border: '1px solid var(--border)',
+            color: 'var(--muted)',
             fontSize: 13,
             cursor: 'pointer',
             letterSpacing: 1,
             fontFamily: 'var(--font-mono)',
             textDecoration: 'none',
             display: 'inline-block',
+            borderRadius: 5,
           }}>
             VIEW CODE
           </a>
@@ -173,13 +185,13 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
       {/* Demo terminal */}
       <div style={{ padding: '0 24px 60px', maxWidth: 720, width: '100%', margin: '0 auto' }}>
         <DemoTerminal />
-        <p style={{ color: '#333', fontSize: 11, marginTop: 10, textAlign: 'center' }}>
+        <p style={{ color: 'var(--muted)', fontSize: 11, marginTop: 10, textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
           The second payment is blocked by the vault. The AI cannot override it.
         </p>
       </div>
 
       {/* Live stats */}
-      <div style={{ borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a' }}>
+      <div style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 500 ? 'repeat(2, minmax(0, 1fr))' : 'repeat(4, minmax(0, 1fr))', maxWidth: 720, width: '100%', margin: '0 auto' }}>
           <StatCard label="USERS" value={String(stats.users)} />
           <StatCard label="TRANSACTIONS" value={String(stats.transactions)} />
@@ -188,23 +200,43 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
         </div>
       </div>
 
+      {/* Pools — flagship feature gets its own hero moment */}
+      <div style={{ borderBottom: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{
+          maxWidth: 960, width: '100%', margin: '0 auto', padding: '76px 24px',
+          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center',
+        }} className="pools-pitch-grid">
+          <div>
+            <p className="eyebrow">AgentPay · Pools</p>
+            <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: 'clamp(28px, 4vw, 40px)', lineHeight: 1.06, margin: '0 0 20px', textWrap: 'balance' as any }}>
+              Nothing leaves<br />without <em style={{ fontStyle: 'italic', color: 'var(--cyan)' }}>a witness.</em>
+            </h2>
+            <p style={{ color: 'var(--muted)', fontSize: 14.5, lineHeight: 1.7, margin: '0 0 20px', fontFamily: 'var(--font-body)', maxWidth: '48ch' }}>
+              Share money with roommates, a small team, a trip fund — with rules everyone agreed to. Small spends clear instantly; anything above your threshold is proposed to the whole group and <b style={{ color: 'var(--text)' }}>sealed only if nobody objects.</b> One tap from anyone stops it, permanently, on-chain.
+            </p>
+            <button onClick={handleStart} style={{
+              padding: '11px 22px', background: 'transparent', border: '1px solid var(--cyan)', color: 'var(--cyan)',
+              fontSize: 12, letterSpacing: 1, cursor: 'pointer', fontFamily: 'var(--font-mono)', borderRadius: 5,
+            }}>
+              TRY POOLS →
+            </button>
+          </div>
+          <div style={{ aspectRatio: '1 / 1', width: '100%', maxWidth: 340, margin: '0 auto' }}>
+            <PoolsAmbientCanvas nodeCount={5} />
+          </div>
+        </div>
+      </div>
+
       {/* Features */}
-      <div style={{ padding: '60px 24px', maxWidth: 720, width: '100%', margin: '0 auto' }}>
-        <div style={{ fontSize: 9, letterSpacing: 4, color: '#444', marginBottom: 32 }}>WHAT YOU GET</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: '#1a1a1a' }}>
-          {[
-            { tag: '01', title: 'NO WALLET REQUIRED TO START', desc: 'Sign in with Google. A Circle-issued wallet is created automatically. No seed phrases, no gas, no setup.' },
-            { tag: '02', title: 'SEND TO @TAGS NOT ADDRESSES', desc: 'Claim your @tag and receive USDC from anyone. No address copying. Works with any wallet externally.' },
-            { tag: '03', title: 'GASLESS TRANSACTIONS', desc: 'Circle sponsors every transaction on Arc testnet. Your users never touch native tokens.' },
-            { tag: '04', title: 'ON-CHAIN POLICY ENFORCEMENT', desc: 'Per-tx caps, daily limits, whitelist, active hours, circuit breaker. All enforced by the vault contract before any payment fires.' },
-            { tag: '05', title: 'SCHEDULED + CONDITIONAL PAYMENTS', desc: 'Recurring on-chain payments. Trigger on weather, GitHub PRs, price feeds, or any HTTP condition.' },
-            { tag: '06', title: 'AGENT-TO-AGENT PAYMENTS (x402)', desc: 'Your agent pays other agents for data and compute over HTTP 402. Fully autonomous, policy-gated.' },
-          ].map((f, i) => (
-            <div key={i} style={{ background: '#0B0D10', padding: '24px 20px', display: 'flex', gap: 16 }}>
-              <span style={{ color: 'var(--seal)', fontSize: 9, letterSpacing: 2, flexShrink: 0, paddingTop: 2 }}>{f.tag}</span>
+      <div style={{ padding: '64px 24px', maxWidth: 720, width: '100%', margin: '0 auto' }}>
+        <p className="eyebrow">What you get</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, background: 'var(--border)', marginTop: 20 }}>
+          {FEATURES.map((f, i) => (
+            <div key={i} style={{ background: 'var(--bg)', padding: '26px 20px', display: 'flex', gap: 18 }}>
+              <span className="mono-data" style={{ color: 'var(--cyan)', fontSize: 10, letterSpacing: 2, flexShrink: 0, paddingTop: 4 }}>{f.tag}</span>
               <div>
-                <div style={{ fontSize: 11, letterSpacing: 1, marginBottom: 8 }}>{f.title}</div>
-                <div style={{ color: '#555', fontSize: 13, lineHeight: 1.7, fontFamily: 'var(--font-body)' }}>{f.desc}</div>
+                <div style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: 17, marginBottom: 8 }}>{f.title}</div>
+                <div style={{ color: 'var(--muted)', fontSize: 13.5, lineHeight: 1.7, fontFamily: 'var(--font-body)' }}>{f.desc}</div>
               </div>
             </div>
           ))}
@@ -212,21 +244,22 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
       </div>
 
       {/* CTA */}
-      <div style={{ borderTop: '1px solid #1a1a1a', padding: '60px 24px', textAlign: 'center' }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Ready to try it?</h2>
-        <p style={{ color: '#555', fontSize: 13, marginBottom: 32, fontFamily: 'var(--font-body)' }}>
+      <div style={{ borderTop: '1px solid var(--border)', padding: '64px 24px', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: 26, marginBottom: 12 }}>Ready to try it?</h2>
+        <p style={{ color: 'var(--muted)', fontSize: 13.5, marginBottom: 32, fontFamily: 'var(--font-body)' }}>
           Sign in with Google. Pick your @tag. Your wallet is ready in seconds.
         </p>
         <button onClick={handleStart} style={{
           padding: '14px 36px',
-          background: 'var(--seal)',
+          background: 'var(--cyan)',
           border: 'none',
-          color: '#0B0D10',
+          color: '#17140A',
           fontSize: 14,
           fontWeight: 700,
           cursor: 'pointer',
           letterSpacing: 1,
           fontFamily: 'var(--font-mono)',
+          borderRadius: 5,
         }}>
           START WITH GOOGLE
         </button>
@@ -234,7 +267,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
 
       {/* Footer */}
       <div style={{
-        borderTop: '1px solid #1a1a1a',
+        borderTop: '1px solid var(--border)',
         padding: '20px 24px',
         display: 'flex',
         justifyContent: 'space-between',
@@ -242,14 +275,20 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
         flexWrap: 'wrap',
         gap: 8,
       }}>
-        <span style={{ fontSize: 11, letterSpacing: 3 }}>AGENTPAY</span>
+        <span style={{ fontFamily: 'var(--font-head)', fontStyle: 'italic', fontWeight: 600, fontSize: 13 }}>AgentPay</span>
         <div style={{ display: 'flex', gap: 20 }}>
           <a href="https://github.com/Godwin-web3/AgentPay" target="_blank" rel="noreferrer"
-            style={{ color: '#444', fontSize: 10, textDecoration: 'none', letterSpacing: 1 }}>GITHUB</a>
+            style={{ color: 'var(--muted)', fontSize: 10, textDecoration: 'none', letterSpacing: 1, fontFamily: 'var(--font-mono)' }}>GITHUB</a>
           <a href="https://testnet.arcscan.app/address/0x24DD07639faA28c597c1Fb6a32367B1cc933DF60" target="_blank" rel="noreferrer"
-            style={{ color: '#444', fontSize: 10, textDecoration: 'none', letterSpacing: 1 }}>CONTRACT</a>
+            style={{ color: 'var(--muted)', fontSize: 10, textDecoration: 'none', letterSpacing: 1, fontFamily: 'var(--font-mono)' }}>CONTRACT</a>
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 720px) {
+          .pools-pitch-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
     </div>
   )
