@@ -403,11 +403,15 @@ async function payKeryx(toolId, args) {
 // becoming "no match", which is what made an earlier bug here (stripped
 // periods corrupting every tool id) indistinguishable from "nothing fits"
 // or "Keryx is unreachable" purely from what the user saw in chat.
+// Returns { tool, raw } — `raw` is always populated (even on a clean "none"
+// decision or a failed match) so callers can surface exactly what the model
+// said, rather than every "no match" outcome looking identical from the
+// outside regardless of whether it was a deliberate decision or a bug.
 async function findKeryxTool(description) {
   const res = await fetch(`${KERYX_BASE}/api/tools`, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`Keryx tool catalog fetch failed: ${res.status}`);
   const { tools } = await res.json();
-  if (!tools || tools.length === 0) return null;
+  if (!tools || tools.length === 0) return { tool: null, raw: '(empty catalog)' };
 
   const catalog = tools.map(t => `- ${t.id}: ${t.name} — ${t.summary}`).join('\n');
   const completion = await groqCompound.chat.completions.create({
@@ -431,12 +435,14 @@ async function findKeryxTool(description) {
   // real tool id is dotted ("weather.current", "crypto.price"); a prior
   // version stripped them and corrupted every id, so this never matched
   // anything, ever, regardless of what the model picked.
-  const raw = (completion.choices[0]?.message?.content || '').trim().replace(/^["'`]+|["'`]+$/g, '');
-  if (!raw || /^none\b/i.test(raw)) return null;
+  const rawContent = (completion.choices[0]?.message?.content || '').trim();
+  const cleaned = rawContent.replace(/^["'`]+|["'`]+$/g, '');
+  if (!cleaned || /^none\b/i.test(cleaned)) return { tool: null, raw: rawContent || '(empty response)' };
   // Exact match first, then fall back to "the id appears somewhere in the
   // response" in case the model added any surrounding text despite the
   // "ONLY the tool id" instruction.
-  return tools.find(t => t.id === raw) || tools.find(t => raw.includes(t.id)) || null;
+  const match = tools.find(t => t.id === cleaned) || tools.find(t => cleaned.includes(t.id)) || null;
+  return { tool: match, raw: rawContent };
 }
 
 // Fills a matched tool's actual argument schema from the user's request,
@@ -497,11 +503,17 @@ async function summarizePaidResult(description, resultData) {
 
 // Shared by performTask (job deliverables) and the "fetch_paid_data" chat
 // action — finds a matching Keryx tool, pays for it via x402, and logs the
-// spend. Returns null (not a throw) when no tool matches, so callers can
-// fall back to an ungrounded answer without special-casing "not found".
+// spend. Returns null only when there's no wallet to pay with; throws
+// (carrying the model's raw tool-pick response) when nothing matched, so
+// callers see WHAT the model said instead of an opaque "no match" that
+// looks identical whether it was a correct "nothing fits" decision or a bug.
 async function payForLiveData(description, walletId, userAddress) {
-  const tool = walletId ? await findKeryxTool(description) : null;
-  if (!tool) return null;
+  if (!walletId) return null;
+  const picked = await findKeryxTool(description);
+  if (!picked.tool) {
+    throw new Error(`no Keryx tool matched — model said: "${picked.raw}"`);
+  }
+  const tool = picked.tool;
   const args = await resolveToolArgs(tool, description);
   const keryxTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Keryx call timeout')), 15000));
   const res = await Promise.race([
