@@ -266,8 +266,9 @@ async function chat(message, walletId, userAddress) {
     try {
       const paid = await payForLiveData(intent.description || message, walletId, address);
       if (paid) {
-        intent.message = `Paid ${paid.amount} USDC via x402 to "${paid.tool.name}" for live data: ${JSON.stringify(paid.data)}`;
-        intent.data = { x402: true, tool: paid.tool.name, amount: paid.amount, txHash: paid.txHash, result: paid.data };
+        const answer = await summarizePaidResult(intent.description || message, paid.result);
+        intent.message = `${answer}\n\n(paid ${paid.amount} USDC via x402 for live data from "${paid.tool.name}")`;
+        intent.data = { x402: true, tool: paid.tool.name, amount: paid.amount, txHash: paid.txHash, result: paid.result };
       }
       // else: no matching paid source for this — intent.message already
       // carries brain.js's best-guess answer, so there's nothing to overwrite.
@@ -385,47 +386,85 @@ async function payKeryx(toolId, args) {
   return { data: body, paid: true, amount: fromUnits(accept.amount), txHash };
 }
 
-const KERYX_KEYWORDS = {
-  'crypto.trending': ['top coins', 'trending', 'top crypto', 'popular coins', 'hot coins'],
-  'crypto.price': ['price of', 'crypto price', 'coin price', 'how much is'],
-  'crypto.btc-dominance': ['btc dominance', 'market dominance', 'bitcoin dominance'],
-  'weather.current': ['current weather', 'weather right now', 'weather today'],
-  'weather.forecast': ['weather forecast', 'forecast for'],
-  'finance.exchange-rates': ['exchange rate', 'exchange rates'],
-  'finance.convert': ['convert', 'currency conversion'],
-  'solana.token-activity': ['solana token', 'token trading data', 'dex pairs'],
-  'solana.launches': ['new solana token', 'solana launches'],
-  'solana.rug-check': ['rug check', 'rug risk', 'is this token safe'],
-  'search.web': ['what is', 'who is', 'define', 'history of'],
-  'web.hacker-news': ['hacker news', 'hn top'],
-  'web.github-repo': ['github repo', 'github stars'],
-  'geo.ip-lookup': ['ip lookup', 'geolocate ip'],
-  'geo.country': ['country info', 'capital of'],
-  'time.current': ['current time', 'what time is it'],
-  'dns.domain-whois': ['whois', 'domain info'],
-  'utility.qr': ['qr code'],
-  'utility.uuid': ['generate uuid', 'unique id']
-};
-
+// Picks the best-matching Keryx tool for a request using the model over the
+// full live catalog, rather than a hand-maintained keyword table. The prior
+// keyword table's fallback did naive substring matching against each tool's
+// summary text — which meant "get me the current ETH price" matched
+// "Wikipedia Grounded Search" because that tool's own summary says "NOT for
+// prices...", and ".includes('price')" doesn't know the difference.
 async function findKeryxTool(description) {
   try {
     const res = await fetch(`${KERYX_BASE}/api/tools`, { signal: AbortSignal.timeout(5000) });
     const { tools } = await res.json();
-    const lower = description.toLowerCase();
+    if (!tools || tools.length === 0) return null;
 
-    for (const [toolId, keywords] of Object.entries(KERYX_KEYWORDS)) {
-      if (keywords.some(k => lower.includes(k))) {
-        const match = tools.find(t => t.id === toolId);
-        if (match) return match;
-      }
-    }
-
-    return tools.find(t =>
-      lower.includes(t.name.toLowerCase()) ||
-      (t.summary && lower.split(' ').some(w => w.length > 4 && t.summary.toLowerCase().includes(w)))
-    ) || null;
+    const catalog = tools.map(t => `- ${t.id}: ${t.name} — ${t.summary}`).join('\n');
+    const completion = await groqCompound.chat.completions.create({
+      messages: [
+        { role: 'system', content: `Pick the single best-matching tool id for the user's request from this catalog. Respond with ONLY the tool id, or the word none if nothing genuinely fits — do not force a match.\n${catalog}` },
+        { role: 'user', content: description },
+      ],
+      model: 'openai/gpt-oss-120b',
+      temperature: 0,
+      max_tokens: 20,
+    });
+    const pickedId = (completion.choices[0]?.message?.content || '').trim().replace(/["'.]/g, '');
+    if (!pickedId || pickedId.toLowerCase() === 'none') return null;
+    return tools.find(t => t.id === pickedId) || null;
   } catch (e) {
     return null;
+  }
+}
+
+// Fills a matched tool's actual argument schema from the user's request,
+// instead of always calling with the tool's canned sampleArgs (the previous
+// behavior — it meant "what's the weather in Lagos" silently paid for and
+// returned New York's weather, since weather.current's sample lat/lon is
+// NYC's, and the args were never actually replaced with what was asked).
+async function resolveToolArgs(tool, description) {
+  const argEntries = Object.entries(tool.args || {});
+  if (argEntries.length === 0) return {};
+  const schema = argEntries.map(([name, spec]) =>
+    `- ${name} (${spec.type}${spec.required ? ', required' : ''}): ${spec.description || ''}`
+  ).join('\n');
+  try {
+    const completion = await groqCompound.chat.completions.create({
+      messages: [
+        { role: 'system', content: `Extract arguments for a tool call from the user's request.\nTool: "${tool.name}" — ${tool.summary}\nArguments:\n${schema}\nRespond with ONLY a JSON object mapping argument names to values found in the request. Omit any argument not mentioned — do not guess or invent a value.` },
+        { role: 'user', content: description },
+      ],
+      model: 'openai/gpt-oss-120b',
+      temperature: 0,
+      max_tokens: 200,
+    });
+    const cleaned = (completion.choices[0]?.message?.content || '{}').replace(/```json|```/g, '').trim();
+    const extracted = JSON.parse(cleaned);
+    // Sample args fill in anything the user didn't mention (still needed for
+    // required fields), extracted values override them where present.
+    return { ...(tool.sampleArgs || {}), ...extracted };
+  } catch (e) {
+    console.error('[resolveToolArgs] extraction failed, using sample args:', e.message);
+    return tool.sampleArgs || {};
+  }
+}
+
+// One-sentence natural-language answer from a paid tool's raw JSON result —
+// callers previously dumped the entire response (tool metadata, quote,
+// settlement info and all) straight into the chat/deliverable text.
+async function summarizePaidResult(description, resultData) {
+  try {
+    const completion = await groqCompound.chat.completions.create({
+      messages: [
+        { role: 'system', content: 'Answer the question in one or two plain sentences using ONLY the JSON data given. No meta-commentary about the data format, no mention of JSON.' },
+        { role: 'user', content: `Question: ${description}\nData: ${JSON.stringify(resultData)}` },
+      ],
+      model: 'openai/gpt-oss-120b',
+      temperature: 0.2,
+      max_tokens: 200,
+    });
+    return completion.choices[0]?.message?.content?.trim() || JSON.stringify(resultData);
+  } catch (e) {
+    return JSON.stringify(resultData);
   }
 }
 
@@ -436,9 +475,10 @@ async function findKeryxTool(description) {
 async function payForLiveData(description, walletId, userAddress) {
   const tool = walletId ? await findKeryxTool(description) : null;
   if (!tool) return null;
+  const args = await resolveToolArgs(tool, description);
   const keryxTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Keryx call timeout')), 15000));
   const res = await Promise.race([
-    payKeryx(tool.id, tool.sampleArgs || {}),
+    payKeryx(tool.id, args),
     keryxTimeout
   ]);
   const paidAmount = res.amount || tool.priceUsd;
@@ -448,7 +488,9 @@ async function payForLiveData(description, walletId, userAddress) {
   if (userAddress) {
     await appendSpend({ userAddress, to: tool.publisherWallet || 'keryx', amount: paidAmount, reason: `Paid data: ${tool.name}`, txHash: res.txHash, token: 'USDC', type: 'x402_fetch' });
   }
-  return { data: res.data, tool, amount: paidAmount, txHash: res.txHash };
+  // res.data is the full paid-response envelope (tool metadata, quote,
+  // settlement info); `result` is the part actually worth showing a user.
+  return { data: res.data, result: res.data?.result ?? res.data, tool, amount: paidAmount, txHash: res.txHash };
 }
 
 async function performTask(description, walletId, userAddress) {
@@ -458,7 +500,8 @@ async function performTask(description, walletId, userAddress) {
       return null;
     });
     if (paid) {
-      return `${JSON.stringify(paid.data)} (sourced live via Keryx tool "${paid.tool.name}", paid ${paid.amount} USDC)`;
+      const answer = await summarizePaidResult(description, paid.result);
+      return `${answer} (sourced live via Keryx tool "${paid.tool.name}", paid ${paid.amount} USDC)`;
     }
     const completion = await groqCompound.chat.completions.create({
       messages: [

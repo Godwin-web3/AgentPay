@@ -24,14 +24,7 @@ What AgentPay actually is, so you can explain it and answer questions about it i
 - History: the full ledger of everything spent, received, or blocked, across the Terminal, Goals, Jobs, and Pools.
 If asked about pools, goals, jobs, policy, or history as concepts, answer using this knowledge via the "chat" action below — don't say you're unsure what they mean.
 
-Known paid endpoints (use these exactly, do not invent URLs):
-- ETH/USD price: https://hermes.pyth.network/v2/updates/price/latest?ids[]=0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace
-- BTC/USD price: https://hermes.pyth.network/v2/updates/price/latest?ids[]=0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43
-- AI intelligence (x402 paid): http://localhost:3000/intelligence
-
 Actions:
-Goal requires fetching a paid resource:
-{"action":"fetch_and_pay","url":"https://...","maxAmount":0.01,"reason":"...","message":"..."}
 Direct payment instruction:
 {"action":"pay","to":"0x...","amount":0.01,"reason":"...","message":"..."}
 Deposit own funds into own vault (NOT a payment, no spend policy applies):
@@ -87,8 +80,18 @@ Cannot fulfil, or general/explanatory chat (including "what is X" questions abou
     try {
       return JSON.parse(cleaned);
     } catch (parseError) {
+      // Salvage just the "message" field's text when the model's own quoting
+      // broke strict JSON (e.g. an unescaped quote inside the sentence) but
+      // the shape is still recognizable — beats showing the raw JSON blob
+      // as the chat reply, which is what falling straight to `result` did.
+      const messageMatch = cleaned.match(/"message"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (messageMatch) {
+        try {
+          return { action: 'chat', message: JSON.parse(`"${messageMatch[1]}"`) };
+        } catch (_) { /* fall through to the generic apology below */ }
+      }
       console.error('JSON parse error, falling back to chat action:', parseError, cleaned);
-      return { action: 'chat', message: result };
+      return { action: 'chat', message: "Sorry, I had trouble formatting that response — could you rephrase?" };
     }
   } catch (error) {
     console.error('Groq API error:', error);
