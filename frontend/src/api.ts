@@ -1,4 +1,4 @@
-import type { ChatResponse, PolicyData, HealthData, PayResponse, IntentPlan, DecisionRecord, Pool, PoolConstitution, PoolProposal } from './types'
+import type { ChatResponse, PolicyData, HealthData, PayResponse, IntentPlan, DecisionRecord, Pool, PoolConstitution, PoolProposal, PoolChatMessage, PoolCreationDraft } from './types'
 
 export const WORKER_URL = import.meta.env.VITE_WORKER_URL || 'https://agentpay-c4o7.onrender.com'
 export const RPC = import.meta.env.VITE_RPC_URL || 'https://rpc.testnet.arc.network'
@@ -371,4 +371,16 @@ export async function listPoolProposals(poolId: string, userId: string): Promise
 
 export async function vetoProposal(proposalId: string, userId: string): Promise<{ success: boolean; txHash: string }> {
   return request<{ success: boolean; txHash: string }>('/proposals/' + proposalId + '/veto', { method: 'POST' }, userId)
+}
+
+export async function parsePoolCreation(description: string, userId: string): Promise<PoolCreationDraft> {
+  return request<PoolCreationDraft>('/pools/parse', { method: 'POST', body: JSON.stringify({ description }) }, userId)
+}
+
+export async function sendPoolChatMessage(poolId: string, message: string, userId: string): Promise<{ message: PoolChatMessage }> {
+  return request<{ message: PoolChatMessage }>('/pools/' + poolId + '/chat', { method: 'POST', body: JSON.stringify({ message }) }, userId)
+}
+
+export async function getPoolChat(poolId: string, userId: string): Promise<PoolChatMessage[]> {
+  return request<PoolChatMessage[]>('/pools/' + poolId + '/chat', {}, userId)
 }

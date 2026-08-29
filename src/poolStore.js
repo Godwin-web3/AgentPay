@@ -21,6 +21,7 @@ if (!getApps().length) {
 const db = getFirestore();
 const POOLS = 'pools';
 const PROPOSALS = 'poolProposals';
+const MESSAGES = 'poolMessages';
 
 async function createPoolMeta({ poolId, name, founderAddress, memberAddresses }) {
   const doc = {
@@ -87,11 +88,39 @@ async function listPendingProposals() {
   return snap.docs.map((d) => d.data());
 }
 
+// ── Pool group chat ──────────────────────────────────────────────────────
+// Every member of a pool sees the same thread — this is not per-user chat
+// history like the personal Terminal's chatStore.js.
+
+async function appendPoolMessage({ poolId, role, authorAddress, content, proposalId, messageType }) {
+  const doc = {
+    poolId: String(poolId),
+    role, // 'user' | 'assistant' | 'system'
+    authorAddress: authorAddress || null,
+    content,
+    proposalId: proposalId || null,
+    messageType: messageType || 'text', // 'text' | 'proposal' | 'system'
+    timestamp: new Date().toISOString(),
+  };
+  const ref = await db.collection(MESSAGES).add(doc);
+  return { id: ref.id, ...doc };
+}
+
+async function listPoolMessages(poolId, limit = 100) {
+  const snap = await db.collection(MESSAGES).where('poolId', '==', String(poolId)).get();
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1))
+    .slice(-limit);
+}
+
 module.exports = {
   createPoolMeta,
   addMemberToPoolMeta,
   getPoolMeta,
   listPoolsForMember,
+  appendPoolMessage,
+  listPoolMessages,
   recordProposal,
   closeProposal,
   listProposalsForPool,

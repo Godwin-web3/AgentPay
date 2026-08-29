@@ -146,6 +146,24 @@ export interface Pool {
   myStatus?: 'None' | 'Invited' | 'Active'
 }
 
+export interface PoolChatMessage {
+  id: string
+  poolId: string
+  role: 'user' | 'assistant' | 'system'
+  authorAddress: string | null
+  content: string
+  proposalId: string | null
+  messageType: 'text' | 'proposal' | 'system'
+  timestamp: string
+}
+
+export interface PoolCreationDraft {
+  name: string
+  invites: string[]
+  constitution: { discretionaryThreshold: number; objectionWindowHours: number; maxSingleProposal: number }
+  message: string
+}
+
 export interface PoolProposal {
   proposalId: string
   poolId: string

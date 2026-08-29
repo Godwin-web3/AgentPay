@@ -642,6 +642,21 @@ function getAgentWallet() {
   return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 }
 
+// POST /pools/parse — { description } -> a draft {name, invites, constitution}
+// for the user to review before anything touches the chain. One sentence in,
+// not a multi-field settings form.
+async function handleParsePoolCreation(req, res) {
+  const { description } = req.body || {};
+  if (!description || !description.trim()) return send(res, 400, { error: 'description is required' });
+  try {
+    const poolBrain = require('./poolBrain');
+    const draft = await poolBrain.parsePoolCreation(description.trim());
+    return send(res, 200, draft);
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
 // POST /pools — { name, invites: (address|@tag)[], constitution }
 async function handleCreatePool(req, res) {
   const userId = getUserId(req);
@@ -843,7 +858,105 @@ async function handleVetoProposal(req, res) {
     const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
     const txHash = await poolVault.veto(wallet.walletId, req.params.proposalId);
+    try {
+      const poolStore = require('./poolStore');
+      const proposal = await poolVault.getProposal(sharedProvider, req.params.proposalId);
+      await poolStore.appendPoolMessage({ poolId: proposal.poolId, role: 'system', content: `🛑 ${wallet.address} objected — this proposal is blocked.`, proposalId: req.params.proposalId, messageType: 'system' });
+    } catch (logErr) {
+      console.error('[handleVetoProposal] failed to post system message:', logErr.message);
+    }
     return send(res, 200, { success: true, txHash });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// POST /pools/:poolId/chat — { message }. Group chat everyone in the pool
+// sees. The AI here can only ever propose an action (contribute, propose_
+// spend/amend/remove) — the actual money/governance move still goes through
+// the exact same PoolVault calls (and on-chain enforcement) as the old
+// form-based routes did. Objecting is deliberately NOT parsed from free
+// text — src/poolBrain.js always redirects that to the explicit veto button.
+async function handlePoolChatMessage(req, res) {
+  const userId = getUserId(req);
+  const { message } = req.body || {};
+  if (!message || !message.trim()) return send(res, 400, { error: 'message is required' });
+  const poolId = req.params.poolId;
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const poolVault = require('./poolVault');
+    const poolStore = require('./poolStore');
+    const poolBrain = require('./poolBrain');
+
+    const [pool, meta] = await Promise.all([poolVault.getPool(sharedProvider, poolId), poolStore.getPoolMeta(poolId)]);
+
+    await poolStore.appendPoolMessage({ poolId, role: 'user', authorAddress: wallet.address, content: message.trim() });
+
+    const intent = await poolBrain.parsePoolMessage(message.trim(), { name: meta?.name || `Pool #${poolId}`, memberList: pool.memberList, sharedBalance: pool.sharedBalance, constitution: pool.constitution });
+
+    let replyContent = intent.message || '';
+    let proposalId = null;
+    let messageType = 'text';
+
+    if (intent.action === 'contribute') {
+      const txHash = await poolVault.contribute(wallet.walletId, poolId, intent.amount, intent.toShared !== false);
+      const { appendSpend } = require('./spendStore');
+      await appendSpend({ userAddress: wallet.address, to: `pool:${poolId}`, amount: Number(intent.amount), reason: intent.toShared !== false ? 'Pool contribution (shared)' : 'Pool contribution (personal)', txHash, token: 'USDC', type: 'pool_contribute' });
+      replyContent = replyContent || `Contributed ${intent.amount} USDC. Tx: ${txHash}`;
+    } else if (intent.action === 'propose_spend') {
+      const to = await resolveInvite(intent.to);
+      const result = await poolVault.proposeSpend(getAgentWallet(), poolId, wallet.address, to, intent.amount, intent.reason || '');
+      const onChainProposal = await poolVault.getProposal(sharedProvider, result.proposalId);
+      await poolStore.recordProposal({ proposalId: result.proposalId, poolId, kind: 'Spend', windowEnds: onChainProposal.windowEnds, proposer: wallet.address });
+      proposalId = result.proposalId;
+      messageType = 'proposal';
+      if (onChainProposal.resolved) {
+        await poolStore.closeProposal(result.proposalId, { resolved: 'executed', txHash: result.txHash });
+        const { appendSpend } = require('./spendStore');
+        await appendSpend({ userAddress: wallet.address, to, amount: Number(intent.amount), reason: intent.reason || 'Pool spend', txHash: result.txHash, token: 'USDC', type: 'pool_spend' });
+        replyContent = replyContent || `Sent ${intent.amount} USDC to ${to} immediately (under the discretionary threshold). Tx: ${result.txHash}`;
+      } else {
+        replyContent = replyContent || `Proposed ${intent.amount} USDC to ${to}. Everyone has until the objection window closes to object.`;
+      }
+    } else if (intent.action === 'propose_amend') {
+      const newConstitution = {
+        discretionaryThreshold: intent.discretionaryThreshold ?? pool.constitution.discretionaryThreshold,
+        objectionWindow: intent.objectionWindowHours != null ? Math.round(Number(intent.objectionWindowHours) * 3600) : pool.constitution.objectionWindow,
+        maxSingleProposal: intent.maxSingleProposal ?? pool.constitution.maxSingleProposal,
+      };
+      const result = await poolVault.proposeAmendConstitution(getAgentWallet(), poolId, wallet.address, newConstitution);
+      const onChainProposal = await poolVault.getProposal(sharedProvider, result.proposalId);
+      await poolStore.recordProposal({ proposalId: result.proposalId, poolId, kind: 'AmendConstitution', windowEnds: onChainProposal.windowEnds, proposer: wallet.address });
+      proposalId = result.proposalId;
+      messageType = 'proposal';
+      replyContent = replyContent || `Proposed a rules change. Everyone has until the objection window closes to object.`;
+    } else if (intent.action === 'propose_remove') {
+      const targetMember = await resolveInvite(intent.targetMember);
+      const result = await poolVault.proposeRemoveMember(getAgentWallet(), poolId, wallet.address, targetMember);
+      const onChainProposal = await poolVault.getProposal(sharedProvider, result.proposalId);
+      await poolStore.recordProposal({ proposalId: result.proposalId, poolId, kind: 'RemoveMember', windowEnds: onChainProposal.windowEnds, proposer: wallet.address });
+      proposalId = result.proposalId;
+      messageType = 'proposal';
+      replyContent = replyContent || `Proposed removing ${targetMember}. Everyone has until the objection window closes to object.`;
+    }
+
+    const assistantMsg = await poolStore.appendPoolMessage({ poolId, role: 'assistant', content: replyContent, proposalId, messageType });
+    return send(res, 200, { message: assistantMsg });
+  } catch (err) {
+    try {
+      const poolStore = require('./poolStore');
+      await poolStore.appendPoolMessage({ poolId, role: 'assistant', content: `Couldn't do that: ${err.message}` });
+    } catch { /* best-effort */ }
+    return send(res, 500, { error: err.message });
+  }
+}
+
+// GET /pools/:poolId/chat
+async function handleGetPoolChat(req, res) {
+  try {
+    const poolStore = require('./poolStore');
+    const messages = await poolStore.listPoolMessages(req.params.poolId, 200);
+    return send(res, 200, messages);
   } catch (err) {
     return send(res, 500, { error: err.message });
   }
@@ -1262,6 +1375,7 @@ app.get('/intent/:id', handleGetIntent);
 app.get('/intents', handleListIntents);
 app.get('/decision-log/:requestId', handleGetDecision);
 
+app.post('/pools/parse', handleParsePoolCreation);
 app.post('/pools', handleCreatePool);
 app.get('/pools/mine', handleListMyPools);
 app.get('/pools/:poolId', handleGetPool);
@@ -1274,6 +1388,8 @@ app.post('/pools/:poolId/propose-amend', handleProposeAmend);
 app.post('/pools/:poolId/propose-remove', handleProposeRemove);
 app.get('/pools/:poolId/proposals', handleListPoolProposals);
 app.post('/proposals/:proposalId/veto', handleVetoProposal);
+app.post('/pools/:poolId/chat', handlePoolChatMessage);
+app.get('/pools/:poolId/chat', handleGetPoolChat);
 app.post('/intelligence', gateway.require('$0.001'), handleIntelligence);
 app.get('/api/jobs/mine', async (req, res) => {
   try {

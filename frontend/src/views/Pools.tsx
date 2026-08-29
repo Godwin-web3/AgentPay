@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
-  listMyPools, createPool, getPool, acceptPoolInvite, contributeToPool,
-  proposeSpendInPool, listPoolProposals, vetoProposal,
+  listMyPools, parsePoolCreation, createPool, getPool, acceptPoolInvite,
+  listPoolProposals, vetoProposal, sendPoolChatMessage, getPoolChat,
 } from '../api'
-import type { Pool, PoolProposal } from '../types'
+import type { Pool, PoolProposal, PoolChatMessage, PoolCreationDraft } from '../types'
 import LivingPool from '../components/LivingPool'
+
+function formatTime(ts: string) {
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
 
 export default function Pools({ userAddress, userId }: { userAddress: string, userId: string }) {
   const [pools, setPools] = useState<Pool[]>([])
@@ -14,22 +18,18 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
   const [selectedPool, setSelectedPool] = useState<Pool | null>(null)
   const [proposals, setProposals] = useState<PoolProposal[]>([])
   const [vetoingId, setVetoingId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState('')
 
   const [showCreate, setShowCreate] = useState(false)
-  const [name, setName] = useState('')
-  const [invitesText, setInvitesText] = useState('')
-  const [discretionaryThreshold, setDiscretionaryThreshold] = useState('50')
-  const [objectionWindowHours, setObjectionWindowHours] = useState('4')
-  const [maxSingleProposal, setMaxSingleProposal] = useState('1000')
+  const [description, setDescription] = useState('')
+  const [drafting, setDrafting] = useState(false)
+  const [draft, setDraft] = useState<PoolCreationDraft | null>(null)
   const [creating, setCreating] = useState(false)
 
-  const [contributeAmount, setContributeAmount] = useState('')
-  const [contributing, setContributing] = useState(false)
-  const [spendTo, setSpendTo] = useState('')
-  const [spendAmount, setSpendAmount] = useState('')
-  const [spendReason, setSpendReason] = useState('')
-  const [proposing, setProposing] = useState(false)
-  const [actionError, setActionError] = useState('')
+  const [messages, setMessages] = useState<PoolChatMessage[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [sending, setSending] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   async function fetchPools() {
     setLoading(true)
@@ -46,9 +46,6 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
   useEffect(() => { fetchPools() }, [userId])
 
   async function fetchSelected(poolId: string) {
-    // Fetched independently — a proposals-list hiccup (e.g. a brand-new pool
-    // with nothing to list yet) must never block the pool view itself from
-    // rendering, and any real failure should be visible, not silent.
     let pool: Pool
     try {
       pool = await getPool(poolId, userId)
@@ -58,7 +55,6 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
       setActionError(e.message || `Could not load pool ${poolId}`)
       return
     }
-
     try {
       const proposalRows = await listPoolProposals(poolId, userId)
       setProposals(
@@ -69,31 +65,52 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
       )
     } catch (e: any) {
       console.error('Failed to load pool proposals:', e.message)
-      // Keep showing the pool even if the proposal list fails to load.
+    }
+    try {
+      setMessages(await getPoolChat(poolId, userId))
+    } catch (e: any) {
+      console.error('Failed to load pool chat:', e.message)
     }
   }
 
   useEffect(() => {
     if (!selectedId) return
     fetchSelected(selectedId)
-    const t = setInterval(() => fetchSelected(selectedId), 5000)
+    const t = setInterval(() => fetchSelected(selectedId), 4000)
     return () => clearInterval(t)
   }, [selectedId, userId])
 
-  async function handleCreate() {
-    if (!name.trim() || creating) return
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
+  }, [messages])
+
+  async function handleDraft() {
+    if (!description.trim() || drafting) return
+    setDrafting(true)
+    setActionError('')
+    try {
+      setDraft(await parsePoolCreation(description.trim(), userId))
+    } catch (e: any) {
+      setActionError(e.message || 'Could not turn that into a pool')
+    } finally {
+      setDrafting(false)
+    }
+  }
+
+  async function handleConfirmCreate() {
+    if (!draft || creating) return
     setCreating(true)
     setActionError('')
     try {
-      const invites = invitesText.split(',').map((s) => s.trim()).filter(Boolean)
       const constitution = {
-        discretionaryThreshold: Number(discretionaryThreshold),
-        objectionWindow: Math.round(Number(objectionWindowHours) * 3600),
-        maxSingleProposal: Number(maxSingleProposal),
+        discretionaryThreshold: draft.constitution.discretionaryThreshold,
+        objectionWindow: Math.round(draft.constitution.objectionWindowHours * 3600),
+        maxSingleProposal: draft.constitution.maxSingleProposal,
       }
-      const result = await createPool(name.trim(), invites, constitution, userId)
+      const result = await createPool(draft.name, draft.invites, constitution, userId)
       setShowCreate(false)
-      setName(''); setInvitesText('')
+      setDescription('')
+      setDraft(null)
       await fetchPools()
       setSelectedId(result.poolId)
     } catch (e: any) {
@@ -114,36 +131,6 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
     }
   }
 
-  async function handleContribute() {
-    if (!selectedId || !(Number(contributeAmount) > 0) || contributing) return
-    setContributing(true)
-    setActionError('')
-    try {
-      await contributeToPool(selectedId, Number(contributeAmount), true, userId)
-      setContributeAmount('')
-      await fetchSelected(selectedId)
-    } catch (e: any) {
-      setActionError(e.message || 'Contribution failed')
-    } finally {
-      setContributing(false)
-    }
-  }
-
-  async function handleProposeSpend() {
-    if (!selectedId || !spendTo.trim() || !(Number(spendAmount) > 0) || proposing) return
-    setProposing(true)
-    setActionError('')
-    try {
-      await proposeSpendInPool(selectedId, spendTo.trim(), Number(spendAmount), spendReason, userId)
-      setSpendTo(''); setSpendAmount(''); setSpendReason('')
-      await fetchSelected(selectedId)
-    } catch (e: any) {
-      setActionError(e.message || 'Proposal failed')
-    } finally {
-      setProposing(false)
-    }
-  }
-
   async function handleVeto(proposalId: string) {
     setVetoingId(proposalId)
     setActionError('')
@@ -157,37 +144,71 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
     }
   }
 
+  async function handleSendMessage() {
+    if (!selectedId || !chatInput.trim() || sending) return
+    const text = chatInput.trim()
+    setChatInput('')
+    setSending(true)
+    setActionError('')
+    try {
+      await sendPoolChatMessage(selectedId, text, userId)
+      await fetchSelected(selectedId)
+    } catch (e: any) {
+      setActionError(e.message || 'Message failed to send')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const liveProposalIds = new Set(proposals.filter((p) => !p.resolved && !p.vetoed).map((p) => p.proposalId))
+
   return (
     <div className="view-container" style={{ padding: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2 style={{ margin: 0 }}>Pools</h2>
-        <button className="send-btn" onClick={() => setShowCreate((v) => !v)} style={{ width: 'auto', padding: '0 15px' }}>
+        <button className="send-btn" onClick={() => { setShowCreate((v) => !v); setDraft(null) }} style={{ width: 'auto', padding: '0 15px' }}>
           {showCreate ? 'Cancel' : 'Create Pool'}
         </button>
       </div>
 
       {showCreate && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <div className="section-title">New pool</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <input className="chat-input" style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }} placeholder="Pool name (e.g. Apartment 4B)" value={name} onChange={(e) => setName(e.target.value)} />
-            <input className="chat-input" style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }} placeholder="Invite @tags or addresses, comma-separated" value={invitesText} onChange={(e) => setInvitesText(e.target.value)} />
-            <div style={{ display: 'flex', gap: 10 }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>Discretionary threshold (USDC)</div>
-                <input className="chat-input" style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', width: '100%' }} value={discretionaryThreshold} onChange={(e) => setDiscretionaryThreshold(e.target.value)} />
+          {!draft ? (
+            <>
+              <div className="section-title">Describe your pool</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
+                e.g. "Apartment 4B with @mike and @sarah, cap discretionary spend at $50, give everyone 4 hours to object"
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>Objection window (hours)</div>
-                <input className="chat-input" style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', width: '100%' }} value={objectionWindowHours} onChange={(e) => setObjectionWindowHours(e.target.value)} />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <input
+                  className="chat-input"
+                  style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', flex: 1 }}
+                  placeholder="Describe who's in it and the rules..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleDraft() }}
+                />
+                <button className="send-btn" onClick={handleDraft} disabled={drafting || !description.trim()} style={{ width: 'auto', padding: '0 15px' }}>
+                  {drafting ? 'Thinking...' : 'Draft'}
+                </button>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>Backstop cap (USDC)</div>
-                <input className="chat-input" style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', width: '100%' }} value={maxSingleProposal} onChange={(e) => setMaxSingleProposal(e.target.value)} />
+            </>
+          ) : (
+            <>
+              <div className="section-title">{draft.name}</div>
+              <div style={{ fontSize: 13, marginBottom: 12 }}>{draft.message}</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>
+                Invites: {draft.invites.length ? draft.invites.join(', ') : 'none yet'}
               </div>
-            </div>
-            <button className="send-btn" onClick={handleCreate} disabled={creating || !name.trim()}>{creating ? 'Creating...' : 'Create'}</button>
-          </div>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>
+                Under {draft.constitution.discretionaryThreshold} USDC executes instantly · objections open for {draft.constitution.objectionWindowHours}h · never more than {draft.constitution.maxSingleProposal} USDC per proposal
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button className="send-btn" onClick={handleConfirmCreate} disabled={creating}>{creating ? 'Creating...' : 'Looks good, create it'}</button>
+                <button className="send-btn" style={{ background: 'var(--muted)' }} onClick={() => setDraft(null)}>Start over</button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -200,7 +221,7 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
             <div className="empty-state">Loading pools...</div>
           ) : pools.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: '20px' }}>
-              <div style={{ color: 'var(--muted)', fontSize: 12 }}>No pools yet. Create one to share money with rules everyone agreed to.</div>
+              <div style={{ color: 'var(--muted)', fontSize: 12 }}>No pools yet. Describe one above to share money with rules everyone agreed to.</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -225,7 +246,7 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
         </div>
 
         {selectedPool && (
-          <div className="card" style={{ flex: 1, minWidth: 320 }}>
+          <div className="card" style={{ flex: 1, minWidth: 320, display: 'flex', flexDirection: 'column' }}>
             <div className="section-title">{selectedPool.name || `Pool #${selectedPool.poolId}`}</div>
             <LivingPool
               members={selectedPool.memberList}
@@ -237,28 +258,55 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
             />
 
             {selectedPool.myStatus === 'Active' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
-                <div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Contribute to shared pool</div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input className="chat-input" style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', flex: 1 }} placeholder="Amount (USDC)" value={contributeAmount} onChange={(e) => setContributeAmount(e.target.value)} />
-                    <button className="send-btn" style={{ width: 'auto', padding: '0 14px' }} onClick={handleContribute} disabled={contributing}>{contributing ? '...' : 'Contribute'}</button>
-                  </div>
+              <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column' }}>
+                <div ref={scrollRef} style={{ maxHeight: 320, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, padding: '4px 2px' }}>
+                  {messages.length === 0 && (
+                    <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', padding: '12px 0' }}>
+                      Talk to the pool — "send $50 to @mike for groceries", "contribute 20 USDC", "raise the discretionary cap to $100"...
+                    </div>
+                  )}
+                  {messages.map((m) => (
+                    <div key={m.id} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                      <div style={{ fontSize: 9, letterSpacing: 1, marginBottom: 3, color: m.role === 'user' ? 'var(--muted)' : 'var(--cyan)', fontFamily: 'var(--font-mono)', textAlign: m.role === 'user' ? 'right' : 'left' }}>
+                        {m.role === 'user' ? (m.authorAddress === userAddress ? 'YOU' : m.authorAddress?.slice(0, 8)) : m.role === 'system' ? 'POOL' : 'AP'} — {formatTime(m.timestamp)}
+                      </div>
+                      <div style={{
+                        padding: '8px 12px', borderRadius: 8, fontSize: 13,
+                        background: m.role === 'user' ? 'var(--cyan)' : m.messageType === 'system' ? 'transparent' : 'var(--bg)',
+                        color: m.role === 'user' ? '#000' : m.messageType === 'system' ? 'var(--muted)' : 'var(--text)',
+                        border: m.messageType === 'system' ? 'none' : m.role === 'user' ? 'none' : '1px solid var(--border)',
+                        fontStyle: m.messageType === 'system' ? 'italic' : 'normal',
+                      }}>
+                        {m.content}
+                        {m.messageType === 'proposal' && m.proposalId && liveProposalIds.has(m.proposalId) && (
+                          <div style={{ marginTop: 8 }}>
+                            <button
+                              className="send-btn"
+                              style={{ width: 'auto', padding: '3px 12px', fontSize: 11, background: 'var(--danger)' }}
+                              disabled={vetoingId === m.proposalId}
+                              onClick={() => handleVeto(m.proposalId!)}
+                            >
+                              {vetoingId === m.proposalId ? 'Objecting...' : 'Object'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-
-                <div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Propose a spend</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <input className="chat-input" style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }} placeholder="To (0x... or @tag)" value={spendTo} onChange={(e) => setSpendTo(e.target.value)} />
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input className="chat-input" style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', flex: 1 }} placeholder="Amount (USDC)" value={spendAmount} onChange={(e) => setSpendAmount(e.target.value)} />
-                      <input className="chat-input" style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', flex: 2 }} placeholder="Reason" value={spendReason} onChange={(e) => setSpendReason(e.target.value)} />
-                    </div>
-                    <button className="send-btn" onClick={handleProposeSpend} disabled={proposing}>{proposing ? 'Proposing...' : 'Propose'}</button>
-                    <div style={{ fontSize: 10, color: 'var(--muted)' }}>
-                      Under {selectedPool.constitution.discretionaryThreshold} USDC executes immediately. Above it, every member sees it and can object for {(selectedPool.constitution.objectionWindow / 3600).toFixed(1)}h.
-                    </div>
-                  </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                  <input
+                    className="chat-input"
+                    style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', flex: 1 }}
+                    placeholder="Talk to the pool..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage() }}
+                    disabled={sending}
+                  />
+                  <button className="send-btn" onClick={handleSendMessage} disabled={sending || !chatInput.trim()} style={{ width: 'auto', padding: '0 14px' }}>
+                    {sending ? '...' : 'Send'}
+                  </button>
                 </div>
               </div>
             )}
