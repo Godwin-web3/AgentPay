@@ -164,15 +164,18 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
 
   return (
     <div className="view-container" style={{ padding: 20 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>Pools</h2>
+      <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+        <div>
+          <p className="eyebrow">Shared money, witnessed</p>
+          <h2 className="page-title">Pools</h2>
+        </div>
         <button className="send-btn" onClick={() => { setShowCreate((v) => !v); setDraft(null) }} style={{ width: 'auto', padding: '0 15px' }}>
           {showCreate ? 'Cancel' : 'Create Pool'}
         </button>
       </div>
 
       {showCreate && (
-        <div className="card" style={{ marginBottom: 24 }}>
+        <div className="card-deep reveal" style={{ marginBottom: 24, padding: 24 }}>
           {!draft ? (
             <>
               <div className="section-title">Describe your pool</div>
@@ -195,13 +198,13 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
             </>
           ) : (
             <>
-              <div className="section-title">{draft.name}</div>
-              <div style={{ fontSize: 13, marginBottom: 12 }}>{draft.message}</div>
-              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>
+              <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: 22, margin: '0 0 10px' }}>{draft.name}</h3>
+              <div style={{ fontSize: 13.5, marginBottom: 16, lineHeight: 1.5 }}>{draft.message}</div>
+              <div className="mono-data" style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 6 }}>
                 Invites: {draft.invites.length ? draft.invites.join(', ') : 'none yet'}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16 }}>
-                Under {draft.constitution.discretionaryThreshold} USDC executes instantly · objections open for {draft.constitution.objectionWindowHours}h · never more than {draft.constitution.maxSingleProposal} USDC per proposal
+              <div className="mono-data" style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 20 }}>
+                Under {draft.constitution.discretionaryThreshold} USDC executes instantly · sealed after {draft.constitution.objectionWindowHours}h unless objected · never more than {draft.constitution.maxSingleProposal} USDC per proposal
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button className="send-btn" onClick={handleConfirmCreate} disabled={creating}>{creating ? 'Creating...' : 'Looks good, create it'}</button>
@@ -229,13 +232,17 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
                 <div
                   key={p.poolId}
                   onClick={() => setSelectedId(p.poolId)}
-                  className="card"
-                  style={{ padding: '10px 14px', cursor: 'pointer', border: selectedId === p.poolId ? '1px solid var(--cyan)' : undefined }}
+                  className="card reveal"
+                  style={{ padding: '12px 16px', cursor: 'pointer', border: selectedId === p.poolId ? '1px solid var(--cyan)' : '1px solid var(--border)' }}
                 >
-                  <div style={{ fontWeight: 600 }}>{p.name || `Pool #${p.poolId}`}</div>
-                  <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>{p.myStatus}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: 16 }}>{p.name || `Pool #${p.poolId}`}</div>
+                    <span className="mono-data" style={{ fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase', color: p.myStatus === 'Active' ? 'var(--cyan)' : 'var(--muted)', border: '1px solid var(--border-hot)', padding: '2px 8px', borderRadius: 20, flexShrink: 0 }}>
+                      {p.myStatus}
+                    </span>
+                  </div>
                   {p.myStatus === 'Invited' && (
-                    <button className="send-btn" style={{ width: 'auto', padding: '3px 10px', fontSize: 10, marginTop: 6 }} onClick={(e) => { e.stopPropagation(); handleAccept(p.poolId) }}>
+                    <button className="send-btn" style={{ width: 'auto', padding: '3px 10px', fontSize: 10, marginTop: 8 }} onClick={(e) => { e.stopPropagation(); handleAccept(p.poolId) }}>
                       Accept invite
                     </button>
                   )}
@@ -246,8 +253,16 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
         </div>
 
         {selectedPool && (
-          <div className="card" style={{ flex: 1, minWidth: 320, display: 'flex', flexDirection: 'column' }}>
-            <div className="section-title">{selectedPool.name || `Pool #${selectedPool.poolId}`}</div>
+          <div className="card-deep reveal" style={{ flex: 1, minWidth: 320, display: 'flex', flexDirection: 'column', padding: 32 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 6 }}>
+              <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 600, fontSize: 26, margin: 0 }}>{selectedPool.name || `Pool #${selectedPool.poolId}`}</h3>
+              <span className="mono-data" style={{ fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--cyan)', border: '1px solid var(--border-hot)', padding: '4px 10px', borderRadius: 20, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                {selectedPool.active ? 'Active' : 'Inactive'} · {selectedPool.memberList.length} member{selectedPool.memberList.length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <p className="mono-data" style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 28 }}>
+              {selectedPool.memberList.map((a) => `${a.slice(0, 6)}…${a.slice(-4)}`).join(' · ')}
+            </p>
             <LivingPool
               members={selectedPool.memberList}
               sharedBalance={selectedPool.sharedBalance}
@@ -271,22 +286,25 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
                         {m.role === 'user' ? (m.authorAddress === userAddress ? 'YOU' : m.authorAddress?.slice(0, 8)) : m.role === 'system' ? 'POOL' : 'AP'} — {formatTime(m.timestamp)}
                       </div>
                       <div style={{
-                        padding: '8px 12px', borderRadius: 8, fontSize: 13,
-                        background: m.role === 'user' ? 'var(--cyan)' : m.messageType === 'system' ? 'transparent' : 'var(--bg)',
-                        color: m.role === 'user' ? '#000' : m.messageType === 'system' ? 'var(--muted)' : 'var(--text)',
-                        border: m.messageType === 'system' ? 'none' : m.role === 'user' ? 'none' : '1px solid var(--border)',
+                        padding: m.messageType === 'proposal' ? '12px 14px' : '9px 13px',
+                        borderRadius: 8, fontSize: 13.5, lineHeight: 1.45,
+                        background: m.messageType === 'proposal'
+                          ? 'linear-gradient(180deg, var(--bg-hover), #171A1E)'
+                          : m.role === 'user' ? 'var(--cyan)' : m.messageType === 'system' ? 'transparent' : 'var(--bg)',
+                        color: m.role === 'user' && m.messageType !== 'proposal' ? '#17140A' : m.messageType === 'system' ? 'var(--muted)' : 'var(--text)',
+                        border: m.messageType === 'proposal' ? '1px solid var(--border-hot)' : m.messageType === 'system' ? 'none' : m.role === 'user' ? 'none' : '1px solid var(--border)',
                         fontStyle: m.messageType === 'system' ? 'italic' : 'normal',
                       }}>
                         {m.content}
                         {m.messageType === 'proposal' && m.proposalId && liveProposalIds.has(m.proposalId) && (
-                          <div style={{ marginTop: 8 }}>
+                          <div style={{ marginTop: 10 }}>
                             <button
                               className="send-btn"
-                              style={{ width: 'auto', padding: '3px 12px', fontSize: 11, background: 'var(--danger)' }}
+                              style={{ width: 'auto', padding: '4px 13px', fontSize: 11, background: 'transparent', color: 'var(--danger)', border: '1px solid var(--danger)' }}
                               disabled={vetoingId === m.proposalId}
                               onClick={() => handleVeto(m.proposalId!)}
                             >
-                              {vetoingId === m.proposalId ? 'Objecting...' : 'Object'}
+                              {vetoingId === m.proposalId ? 'Objecting…' : '✕ Object'}
                             </button>
                           </div>
                         )}
