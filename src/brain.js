@@ -67,6 +67,13 @@ Cannot fulfil, or general/explanatory chat (including "what is X" questions abou
       model: process.env.GROQ_MODEL || 'openai/gpt-oss-120b',
       temperature: 0.2,
       max_tokens: 512,
+      // gpt-oss-120b is a reasoning model — its hidden reasoning tokens count
+      // against max_tokens before the JSON answer is emitted. 'hidden' keeps
+      // reasoning out of message.content entirely (so it can never leak into
+      // what gets shown as a chat reply), 'low' keeps it from eating into the
+      // budget more than a simple intent-classification task needs.
+      reasoning_effort: 'low',
+      reasoning_format: 'hidden',
     });
 
     let result = chatCompletion.choices[0].message.content;

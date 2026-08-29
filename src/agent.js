@@ -417,7 +417,15 @@ async function findKeryxTool(description) {
     ],
     model: 'openai/gpt-oss-120b',
     temperature: 0,
-    max_tokens: 20,
+    max_tokens: 300,
+    // gpt-oss-120b is a reasoning model (defaults to 'medium' effort) whose
+    // reasoning tokens count against max_tokens before the answer is ever
+    // emitted — a low budget here previously got consumed entirely by
+    // hidden reasoning, leaving an empty response that looked identical to
+    // "no tool matched." 'low' effort + hidden reasoning format keeps this
+    // classification-sized task from starving itself.
+    reasoning_effort: 'low',
+    reasoning_format: 'hidden',
   });
   // Trim wrapping quotes/backticks only — do NOT strip periods, since every
   // real tool id is dotted ("weather.current", "crypto.price"); a prior
@@ -450,7 +458,9 @@ async function resolveToolArgs(tool, description) {
       ],
       model: 'openai/gpt-oss-120b',
       temperature: 0,
-      max_tokens: 200,
+      max_tokens: 400,
+      reasoning_effort: 'low',
+      reasoning_format: 'hidden',
     });
     const cleaned = (completion.choices[0]?.message?.content || '{}').replace(/```json|```/g, '').trim();
     const extracted = JSON.parse(cleaned);
@@ -475,7 +485,9 @@ async function summarizePaidResult(description, resultData) {
       ],
       model: 'openai/gpt-oss-120b',
       temperature: 0.2,
-      max_tokens: 200,
+      max_tokens: 400,
+      reasoning_effort: 'low',
+      reasoning_format: 'hidden',
     });
     return completion.choices[0]?.message?.content?.trim() || JSON.stringify(resultData);
   } catch (e) {
@@ -526,6 +538,8 @@ async function performTask(description, walletId, userAddress) {
       model: 'openai/gpt-oss-120b',
       temperature: 0.2,
       max_tokens: 512,
+      reasoning_effort: 'low',
+      reasoning_format: 'hidden',
     });
     return completion.choices[0]?.message?.content || 'Task completed — no content returned.';
   } catch (err) {
