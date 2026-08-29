@@ -1,0 +1,607 @@
+<title>Nothing Leaves Without a Witness</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --bg:        #0B0D10;
+    --card:      #15181C;
+    --card-2:    #1B1F24;
+    --hair:      #262B31;
+    --hair-hot:  #D9A44144;
+    --gold:      #D9A441;
+    --gold-dim:  #D9A44199;
+    --coral:     #C4573F;
+    --wire:      #5B8CA6;
+    --paper:     #EDEAE2;
+    --muted:     #8A8F98;
+    --font-head: 'Fraunces', Georgia, serif;
+    --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+    --font-body: 'Inter', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--paper);
+    font-family: var(--font-body);
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--gold-dim); color: #0B0D10; }
+  a { color: var(--gold); }
+  img { max-width: 100%; }
+
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 28px; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    padding: 92px 0 64px;
+    border-bottom: 1px solid var(--hair);
+    overflow: hidden;
+  }
+  .hero .wrap { position: relative; z-index: 2; }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin: 0 0 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 8px var(--gold);
+  }
+  h1.thesis {
+    font-family: var(--font-head);
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: clamp(40px, 6vw, 74px);
+    line-height: 1.03;
+    letter-spacing: -0.01em;
+    margin: 0 0 26px;
+    max-width: 15ch;
+    text-wrap: balance;
+  }
+  h1.thesis em {
+    font-style: italic;
+    color: var(--gold);
+  }
+  .hero-sub {
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 46ch;
+    margin: 0 0 8px;
+  }
+  .hero-sub b { color: var(--paper); font-weight: 500; }
+
+  .hero-canvas-wrap {
+    position: absolute;
+    right: -60px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 620px;
+    height: 620px;
+    z-index: 1;
+    opacity: 0.9;
+    pointer-events: none;
+  }
+  @media (max-width: 880px) {
+    .hero-canvas-wrap { position: static; transform: none; width: 100%; height: 340px; margin-top: 36px; opacity: 1; }
+    .hero { padding: 56px 0 40px; }
+  }
+
+  /* ---------- How it reads strip ---------- */
+  .strip {
+    border-bottom: 1px solid var(--hair);
+    padding: 46px 0;
+  }
+  .strip-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+  }
+  .strip-item {
+    padding: 0 28px;
+    border-left: 1px solid var(--hair);
+  }
+  .strip-item:first-child { border-left: none; padding-left: 0; }
+  @media (max-width: 720px) {
+    .strip-grid { grid-template-columns: 1fr; gap: 28px; }
+    .strip-item { border-left: none; padding-left: 0; border-top: 1px solid var(--hair); padding-top: 24px; }
+    .strip-item:first-child { border-top: none; padding-top: 0; }
+  }
+  .strip-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 10px;
+  }
+  .strip-head {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  .strip-body {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  /* ---------- Section shell ---------- */
+  section.block { padding: 72px 0; border-bottom: 1px solid var(--hair); }
+  section.block:last-of-type { border-bottom: none; }
+  .block-kicker {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin: 0 0 14px;
+  }
+  .block-title {
+    font-family: var(--font-head);
+    font-size: clamp(28px, 3.4vw, 38px);
+    font-weight: 600;
+    margin: 0 0 16px;
+    max-width: 20ch;
+    text-wrap: balance;
+  }
+  .block-desc {
+    font-size: 15.5px;
+    line-height: 1.65;
+    color: var(--muted);
+    max-width: 58ch;
+    margin: 0 0 40px;
+  }
+  .block-desc b { color: var(--paper); font-weight: 500; }
+
+  /* ---------- Living Pool mockup ---------- */
+  .pool-card {
+    background: radial-gradient(120% 140% at 30% -10%, #1E2229 0%, var(--card) 55%, #101317 100%);
+    border: 1px solid var(--hair);
+    border-radius: 4px;
+    padding: 40px;
+    position: relative;
+  }
+  .pool-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .pool-name {
+    font-family: var(--font-head);
+    font-size: 26px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .pool-status {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--hair-hot);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .pool-members {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 30px;
+  }
+  .pool-canvas-wrap { width: 100%; height: 320px; margin-bottom: 8px; }
+  .pool-caption {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+  .pool-caption b { color: var(--gold); font-weight: 500; }
+
+  .annot {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--wire);
+    letter-spacing: 0.02em;
+    max-width: 150px;
+    line-height: 1.4;
+  }
+  .annot::before { content: '— '; color: var(--wire); }
+  .annot.a1 { top: 40px; left: -172px; text-align: right; }
+  .annot.a2 { bottom: 78px; right: -178px; }
+  @media (max-width: 900px) {
+    .annot { display: none; }
+  }
+
+  /* ---------- Chat mockup ---------- */
+  .chat-mock {
+    background: var(--card);
+    border: 1px solid var(--hair);
+    border-radius: 4px;
+    padding: 28px;
+    max-width: 620px;
+  }
+  .msg { margin-bottom: 18px; max-width: 84%; }
+  .msg.user { margin-left: auto; text-align: right; }
+  .msg-meta {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  .msg.user .msg-meta { color: var(--gold-dim); }
+  .bubble {
+    display: inline-block;
+    text-align: left;
+    padding: 11px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .msg.assistant .bubble { background: var(--card-2); border: 1px solid var(--hair); color: var(--paper); }
+  .msg.user .bubble { background: var(--gold); color: #17140A; }
+  .msg.proposal .bubble {
+    background: linear-gradient(180deg, #1B1F24, #171A1E);
+    border: 1px solid var(--hair-hot);
+  }
+  .proposal-amount { font-family: var(--font-mono); color: var(--gold); font-weight: 500; }
+  .obj-btn {
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: transparent;
+    border: 1px solid var(--coral);
+    color: var(--coral);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .obj-btn:hover { background: var(--coral); color: #17100D; }
+  .obj-btn:focus-visible { outline: 2px solid var(--wire); outline-offset: 2px; }
+  .msg.system .bubble { background: transparent; border: none; color: var(--muted); font-style: italic; padding-left: 0; }
+  .msg.system.sealed .bubble::before { content: '✓ '; color: var(--gold); font-style: normal; }
+  .msg.system.broken .bubble::before { content: '✕ '; color: var(--coral); font-style: normal; }
+
+  /* ---------- Positioning block ---------- */
+  .taglines { display: grid; gap: 14px; max-width: 640px; }
+  .tagline-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    align-items: baseline;
+    padding: 16px 0;
+    border-top: 1px solid var(--hair);
+  }
+  .tagline-row:first-child { border-top: none; padding-top: 0; }
+  .tagline-num { font-family: var(--font-mono); font-size: 12px; color: var(--gold-dim); }
+  .tagline-text { font-family: var(--font-head); font-size: 19px; font-weight: 600; }
+  .tagline-sub { font-family: var(--font-body); font-size: 13.5px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+
+  footer {
+    padding: 40px 0 60px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="hero">
+  <div class="hero-canvas-wrap"><canvas id="heroCanvas"></canvas></div>
+  <div class="wrap">
+    <p class="eyebrow">AgentPay · Pools</p>
+    <h1 class="thesis">Nothing leaves<br>without <em>a witness.</em></h1>
+    <p class="hero-sub">Shared money an AI can move — <b>but never past a single objection.</b> Every proposal is watched by the whole pool before it clears, and silence only counts because everyone was standing there.</p>
+  </div>
+</div>
+
+<div class="strip">
+  <div class="wrap">
+    <div class="strip-grid">
+      <div class="strip-item">
+        <div class="strip-label">01 · Propose</div>
+        <h3 class="strip-head">Someone says it out loud</h3>
+        <p class="strip-body">"Send 150 USDC to the landlord for rent." No form — the pool's own chat. Everyone in Apartment 4B sees it land at once.</p>
+      </div>
+      <div class="strip-item">
+        <div class="strip-label">02 · Witness</div>
+        <h3 class="strip-head">The window is public</h3>
+        <p class="strip-body">Under the shared threshold, it moves instantly. Above it, a countdown starts — visible to every member, not just the proposer.</p>
+      </div>
+      <div class="strip-item">
+        <div class="strip-label">03 · Seal or break</div>
+        <h3 class="strip-head">One voice can stop it</h3>
+        <p class="strip-body">No objection when the window closes: it's sealed, and moves. One tap from anyone, any time before that: it's broken, and it never does.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="block">
+  <div class="wrap">
+    <p class="block-kicker">Direction 01 — The Living Pool</p>
+    <h2 class="block-title">The pool should look like it's actually holding money, not showing a chart of it.</h2>
+    <p class="block-desc">Depth instead of a flat outline. The center reads as a vault, not a label. A live wire mid-transit is the most important thing on the screen while it exists — everything else recedes until it resolves.</p>
+
+    <div style="position: relative;">
+      <span class="annot a1">Radial depth reads as "a vault," not a stat tile — weight signals real money sitting there.</span>
+      <div class="pool-card">
+        <div class="pool-card-head">
+          <h3 class="pool-name">Apartment 4B</h3>
+          <span class="pool-status">Active · 3 members</span>
+        </div>
+        <p class="pool-members">0x9c45…4de0 · 0x71ab…9f22 · 0x2e88…c103</p>
+        <div class="pool-canvas-wrap"><canvas id="poolCanvas"></canvas></div>
+        <p class="pool-caption"><b>150.00 USDC</b> in transit to 0x71ab…9f22 · sealed in 3h 12m unless objected</p>
+      </div>
+      <span class="annot a2">The ring is the actual objection window ticking down — not decorative, load-bearing.</span>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <p class="block-kicker">Direction 02 — The thread</p>
+    <h2 class="block-title">Everything is conversation. Objecting is the one thing that isn't.</h2>
+    <p class="block-desc">A proposal reads like a message because it <b>is</b> one — but it carries a button no sentence can replace. That asymmetry is the whole safety model, so the interface should make it visible: soft bubbles for talk, one hard edge for the vote that actually moves money.</p>
+
+    <div class="chat-mock">
+      <div class="msg user">
+        <div class="msg-meta">Sarah — 6:41 PM</div>
+        <div class="bubble">send 150 to the landlord for rent</div>
+      </div>
+      <div class="msg proposal">
+        <div class="msg-meta">AgentPay — 6:41 PM</div>
+        <div class="bubble">
+          Proposed <span class="proposal-amount">150.00 USDC</span> to 0x71ab…9f22 for rent. Above the discretionary threshold — sealed automatically in 4h unless someone objects.
+          <div><button class="obj-btn">✕ Object</button></div>
+        </div>
+      </div>
+      <div class="msg system sealed">
+        <div class="bubble">No objections — sealed. 150.00 USDC sent to 0x71ab…9f22.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap">
+    <p class="block-kicker">Direction 03 — Positioning</p>
+    <h2 class="block-title">Landing copy that says what a form never could.</h2>
+    <p class="block-desc">Pick one thesis and repeat it everywhere — nav label, empty state, landing hero. Right now Pools has no line of its own; it borrows the personal assistant's voice. It needs one that's about the group, not the AI.</p>
+
+    <div class="taglines">
+      <div class="tagline-row">
+        <div class="tagline-num">01</div>
+        <div>
+          <div class="tagline-text">Nothing leaves without a witness.</div>
+          <div class="tagline-sub">Leads with transparency, not permission — every member sees a proposal the moment it exists, not after.</div>
+        </div>
+      </div>
+      <div class="tagline-row">
+        <div class="tagline-num">02</div>
+        <div>
+          <div class="tagline-text">Silence counts as a vote. Make sure it's the right one.</div>
+          <div class="tagline-sub">Names the actual mechanism plainly — the honest, slightly provocative version.</div>
+        </div>
+      </div>
+      <div class="tagline-row">
+        <div class="tagline-num">03</div>
+        <div>
+          <div class="tagline-text">One voice can stop anything. That's the point.</div>
+          <div class="tagline-sub">Frames the veto as the feature, not a safety footnote — for a security-minded or skeptical audience.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">Direction mockup — not wired to live data. For review before implementation.</div>
+</footer>
+
+<script>
+(function () {
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var GOLD = '#D9A441', CORAL = '#C4573F', WIRE = '#5B8CA6', HAIR = '#262B31', MUTED = '#3A3F46';
+
+  function setupCanvas(canvas) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return { ctx: ctx, w: rect.width, h: rect.height };
+  }
+
+  function makeScene(canvasId, nodeCount) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    var dims = setupCanvas(canvas);
+    var ctx = dims.ctx, W = dims.w, H = dims.h;
+    var cx = W / 2, cy = H / 2;
+    var nodeR = Math.min(W, H) * 0.34;
+    var nodes = [];
+    for (var i = 0; i < nodeCount; i++) {
+      var angle = (Math.PI * 2 * i) / nodeCount - Math.PI / 2;
+      nodes.push({ x: cx + nodeR * Math.cos(angle), y: cy + nodeR * Math.sin(angle) });
+    }
+
+    var wire = null; // {from, to, t, duration, outcome, phase, startedAt}
+
+    function spawnWire() {
+      var from = nodes[Math.floor(Math.random() * nodes.length)];
+      var to = Math.random() < 0.4 ? { x: cx, y: cy } : nodes[Math.floor(Math.random() * nodes.length)];
+      if (to === from) to = { x: cx, y: cy };
+      var outcome = Math.random() < 0.7 ? 'seal' : 'break';
+      wire = { from: from, to: to, startedAt: performance.now(), duration: 3200, outcome: outcome, phase: 'transit', effectStart: 0 };
+    }
+
+    function drawEmblem() {
+      ctx.beginPath();
+      ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+      ctx.strokeStyle = GOLD;
+      ctx.globalAlpha = 0.8;
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, 15, 0, Math.PI * 2);
+      ctx.fillStyle = GOLD;
+      ctx.globalAlpha = 0.12;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    function draw(now) {
+      ctx.clearRect(0, 0, W, H);
+
+      // spokes
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = HAIR;
+      nodes.forEach(function (n) {
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(n.x, n.y);
+        ctx.stroke();
+      });
+
+      drawEmblem();
+
+      nodes.forEach(function (n) {
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 7, 0, Math.PI * 2);
+        ctx.fillStyle = '#0B0D10';
+        ctx.fill();
+        ctx.lineWidth = 1.4;
+        ctx.strokeStyle = MUTED;
+        ctx.stroke();
+      });
+
+      if (!reduceMotion) {
+        if (!wire) {
+          spawnWire();
+        } else {
+          var elapsed = now - wire.startedAt;
+          if (wire.phase === 'transit') {
+            var t = Math.min(elapsed / wire.duration, 1);
+            var breakPoint = 0.55;
+            if (wire.outcome === 'break' && t >= breakPoint) {
+              wire.phase = 'return';
+              wire.startedAt = now;
+              wire.returnFrom = t;
+            } else {
+              var px = wire.from.x + (wire.to.x - wire.from.x) * t;
+              var py = wire.from.y + (wire.to.y - wire.from.y) * t;
+              ctx.beginPath();
+              ctx.moveTo(wire.from.x, wire.from.y);
+              ctx.lineTo(px, py);
+              ctx.strokeStyle = WIRE;
+              ctx.globalAlpha = 0.7;
+              ctx.lineWidth = 1.4;
+              ctx.stroke();
+              ctx.globalAlpha = 1;
+
+              var ringR = 9 + (1 - t) * 3;
+              ctx.beginPath();
+              ctx.arc(px, py, ringR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - t));
+              ctx.strokeStyle = GOLD;
+              ctx.lineWidth = 2;
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(px, py, 4, 0, Math.PI * 2);
+              ctx.fillStyle = GOLD;
+              ctx.fill();
+
+              if (t >= 1) { wire.phase = 'seal'; wire.startedAt = now; wire.at = { x: px, y: py }; }
+            }
+          } else if (wire.phase === 'return') {
+            var rt = Math.min((now - wire.startedAt) / 700, 1);
+            var fromT = wire.returnFrom;
+            var bx = wire.from.x + (wire.to.x - wire.from.x) * fromT;
+            var by = wire.from.y + (wire.to.y - wire.from.y) * fromT;
+            var px2 = bx + (wire.from.x - bx) * rt;
+            var py2 = by + (wire.from.y - by) * rt;
+            ctx.beginPath();
+            ctx.moveTo(bx, by);
+            ctx.lineTo(px2, py2);
+            ctx.strokeStyle = CORAL;
+            ctx.globalAlpha = 0.8;
+            ctx.lineWidth = 1.4;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+            ctx.beginPath();
+            ctx.arc(px2, py2, 4, 0, Math.PI * 2);
+            ctx.fillStyle = CORAL;
+            ctx.fill();
+            if (rt >= 1) { wire.phase = 'break'; wire.startedAt = now; wire.at = { x: wire.from.x, y: wire.from.y }; }
+          } else if (wire.phase === 'seal' || wire.phase === 'break') {
+            var et = Math.min((now - wire.startedAt) / 600, 1);
+            var color = wire.phase === 'seal' ? GOLD : CORAL;
+            ctx.beginPath();
+            ctx.arc(wire.at.x, wire.at.y, 6 + et * 22, 0, Math.PI * 2);
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = 1 - et;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+            if (et >= 1) wire = null;
+          }
+        }
+      } else if (wire === null) {
+        // static reduced-motion frame: one wire frozen mid-transit
+        var t0 = 0.6;
+        var sx = nodes[0].x + (cx - nodes[0].x) * t0;
+        var sy = nodes[0].y + (cy - nodes[0].y) * t0;
+        ctx.beginPath();
+        ctx.moveTo(nodes[0].x, nodes[0].y);
+        ctx.lineTo(sx, sy);
+        ctx.strokeStyle = WIRE;
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(sx, sy, 9, -Math.PI / 2, Math.PI);
+        ctx.strokeStyle = GOLD;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+  }
+
+  makeScene('heroCanvas', 5);
+  makeScene('poolCanvas', 3);
+})();
+</script>
