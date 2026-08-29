@@ -408,9 +408,16 @@ async function findKeryxTool(description) {
       temperature: 0,
       max_tokens: 20,
     });
-    const pickedId = (completion.choices[0]?.message?.content || '').trim().replace(/["'.]/g, '');
-    if (!pickedId || pickedId.toLowerCase() === 'none') return null;
-    return tools.find(t => t.id === pickedId) || null;
+    // Trim wrapping quotes/backticks only — do NOT strip periods, since every
+    // real tool id is dotted ("weather.current", "crypto.price"); a prior
+    // version stripped them and corrupted every id, so this never matched
+    // anything, ever, regardless of what the model picked.
+    const raw = (completion.choices[0]?.message?.content || '').trim().replace(/^["'`]+|["'`]+$/g, '');
+    if (!raw || /^none\b/i.test(raw)) return null;
+    // Exact match first, then fall back to "the id appears somewhere in the
+    // response" in case the model added any surrounding text despite the
+    // "ONLY the tool id" instruction.
+    return tools.find(t => t.id === raw) || tools.find(t => raw.includes(t.id)) || null;
   } catch (e) {
     return null;
   }
