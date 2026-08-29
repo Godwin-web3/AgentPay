@@ -3,7 +3,7 @@ const PolicyEngine = require('./policyEngine');
 const walletService = require('./walletService');
 const x402Client = require('./x402Client');
 const escrow = require('./escrow');
-const { appendSpend, appendFailure, getHistory } = require('./spendStore');
+const { appendSpend, appendFailure, getHistory, getJobsCreatedBy } = require('./spendStore');
 const { parseIntent } = require('./brain');
 const jobService = require('./jobService');
 
@@ -127,6 +127,52 @@ async function chat(message, walletId, userAddress) {
     intent.balance = balance;
     intent.address = address;
     intent.data = { balances: { USDC: balance }, vault: vaultBalance };
+  }
+  if (intent.action === "pools_status") {
+    try {
+      const poolStore = require('./poolStore');
+      const pools = await poolStore.listPoolsForMember(address.toLowerCase());
+      if (pools.length === 0) {
+        intent.message = "You're not in any pools yet. Head to the Pools tab to create one or accept an invite.";
+      } else {
+        const names = pools.map(p => `"${p.name || p.poolId}" (${p.memberAddresses.length} members)`).join(', ');
+        intent.message = `You're in ${pools.length} pool${pools.length === 1 ? '' : 's'}: ${names}. Open the Pools tab for balances and pending proposals.`;
+      }
+      intent.data = { pools };
+    } catch (e) {
+      intent.message = "Could not load your pools: " + e.message;
+    }
+  }
+  if (intent.action === "jobs_status") {
+    try {
+      const jobIds = await getJobsCreatedBy(userAddress);
+      const results = await Promise.allSettled(jobIds.map(id => jobService.getJob(id)));
+      const jobs = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+      if (jobs.length === 0) {
+        intent.message = "You haven't hired any agents yet. Try \"hire an agent to...\" or use the Jobs tab.";
+      } else {
+        const openCount = jobs.filter(j => j.status !== 'Completed' && j.status !== 'Rejected' && j.status !== 'Expired').length;
+        intent.message = `You've hired ${jobs.length} agent job${jobs.length === 1 ? '' : 's'}, ${openCount} still open. See the Jobs tab for deliverables and status.`;
+      }
+      intent.data = { jobs };
+    } catch (e) {
+      intent.message = "Could not load your jobs: " + e.message;
+    }
+  }
+  if (intent.action === "goals_status") {
+    try {
+      const intentEngine = require('./intentEngine');
+      const plans = await intentEngine.listIntents(address);
+      if (plans.length === 0) {
+        intent.message = "No goals set yet. State one in the Goals tab, like \"pay 0xabc... 10 USDC once my balance is above 500\" or \"pay 0.1 USDC every day\" for something recurring.";
+      } else {
+        const active = plans.filter(p => p.status === 'active').length;
+        intent.message = `You have ${plans.length} goal${plans.length === 1 ? '' : 's'}, ${active} still in progress. See the Goals tab for step-by-step status.`;
+      }
+      intent.data = { plans };
+    } catch (e) {
+      intent.message = "Could not load your goals: " + e.message;
+    }
   }
   if (intent.action === "policy") {
     try {

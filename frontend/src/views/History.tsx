@@ -1,65 +1,71 @@
 import { useEffect, useState } from 'react'
 import { getHistory } from '../api'
 
-function formatTime(ts: number | string) {
-  const d = new Date(ts)
-  const month = d.toLocaleString([], { month: 'short' })
-  const day = d.getDate()
-  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  return `${month} ${day}, ${time}`
-}
-
 function shortAddr(addr?: string) {
   if (!addr) return ''
   return addr.slice(0, 6) + '...' + addr.slice(-4)
+}
+
+function dateGroupLabel(ts: number | string) {
+  const d = new Date(ts)
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(today.getDate() - 1)
+  const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString()
+  if (sameDay(d, today)) return 'Today'
+  if (sameDay(d, yesterday)) return 'Yesterday'
+  return d.toLocaleDateString([], { month: 'long', day: 'numeric', year: d.getFullYear() !== today.getFullYear() ? 'numeric' : undefined })
+}
+
+function formatClock(ts: number | string) {
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 function describeEntry(tx: any) {
   const amount = tx.amount != null ? `${tx.amount} ${tx.token || 'USDC'}` : null
 
   if (tx.failed || tx.status === 'blocked') {
-    return {
-      title: 'Blocked',
-      sub: tx.blockedReason || 'Policy violation',
-      amount,
-      tone: 'danger' as const
-    }
+    return { title: 'Blocked', sub: tx.blockedReason || 'Policy violation', amount, sign: null as null | '+' | '−' }
   }
 
   switch (tx.type) {
     case 'schedule':
-      return { title: 'Scheduled payment', sub: `to ${shortAddr(tx.to)}`, amount, tone: 'seal' as const }
+      return { title: 'Scheduled payment', sub: `to ${shortAddr(tx.to)}`, amount, sign: '−' as const }
     case 'payment':
-      return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, tone: 'seal' as const }
+      return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, sign: '−' as const }
     case 'deposit':
-      return { title: 'Deposited', sub: 'into vault', amount, tone: 'seal' as const }
+      return { title: 'Deposited', sub: 'into vault', amount, sign: '+' as const }
     case 'withdrawal':
-      return { title: 'Withdrew', sub: 'from vault', amount, tone: 'wire' as const }
+      return { title: 'Withdrew', sub: 'from vault', amount, sign: '+' as const }
     case 'job_hire':
-      return { title: 'Hired agent', sub: tx.reason || `to ${shortAddr(tx.to)}`, amount, tone: 'wire' as const }
+      return { title: 'Hired agent', sub: tx.reason || `to ${shortAddr(tx.to)}`, amount, sign: '−' as const }
     case 'job_fulfilled':
-      return { title: 'Job fulfilled', sub: tx.reason || 'Deliverable submitted', amount, tone: 'seal' as const }
+      return { title: 'Job fulfilled', sub: tx.reason || 'Deliverable submitted', amount, sign: '+' as const }
     case 'swap':
-      return { title: 'Swapped', sub: `${tx.fromToken || ''} → ${tx.toToken || ''}`, amount, tone: 'wire' as const }
+      return { title: 'Swapped', sub: `${tx.fromToken || ''} → ${tx.toToken || ''}`, amount, sign: null }
     case 'pool_contribute':
-      return { title: 'Contributed to pool', sub: tx.reason || '', amount, tone: 'seal' as const }
+      return { title: 'Contributed to pool', sub: tx.reason || '', amount, sign: '−' as const }
     case 'pool_withdraw_personal':
-      return { title: 'Withdrew personal allowance', sub: 'from pool', amount, tone: 'wire' as const }
+      return { title: 'Withdrew personal allowance', sub: 'from pool', amount, sign: '+' as const }
     case 'pool_spend':
-      return { title: 'Pool spend', sub: tx.reason || `to ${shortAddr(tx.to)}`, amount, tone: 'seal' as const }
+      return { title: 'Pool spend', sub: tx.reason || `to ${shortAddr(tx.to)}`, amount, sign: '−' as const }
     default:
       if (tx.amount && tx.to) {
-        return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, tone: 'seal' as const }
+        return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, sign: '−' as const }
       }
-      return { title: tx.label || 'Activity', sub: '', amount, tone: 'muted' as const }
+      return { title: tx.label || 'Activity', sub: '', amount, sign: null }
   }
 }
 
-const toneColor: Record<string, string> = {
-  seal: 'var(--seal)',
-  wire: 'var(--wire)',
-  danger: 'var(--danger)',
-  muted: 'var(--muted)'
+function groupByDate(txs: any[]) {
+  const groups: { label: string; entries: any[] }[] = []
+  for (const tx of txs) {
+    const label = dateGroupLabel(tx.timestamp)
+    let group = groups.find(g => g.label === label)
+    if (!group) { group = { label, entries: [] }; groups.push(group) }
+    group.entries.push(tx)
+  }
+  return groups
 }
 
 export default function History({ userAddress, userId, refreshTrigger = 0 }: { userAddress: string, userId: string, refreshTrigger?: number }) {
@@ -108,61 +114,89 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
     </div>
   )
 
+  const groups = groupByDate(txs)
+
   return (
     <div className="history-view" style={{ paddingBottom: 80 }}>
       <div className="reveal" style={{ marginBottom: 28 }}>
         <p className="eyebrow">Every dollar, accounted for</p>
-        <h2 className="page-title" style={{ marginBottom: 8 }}>Financial Log</h2>
+        <h2 className="page-title" style={{ marginBottom: 8 }}>The Ledger</h2>
         <div className="mono-data" style={{ fontSize: 11, color: 'var(--muted)' }}>{userAddress}</div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {txs.map((tx, i) => {
-          const explorerUrl = tx.txHash ? 'https://testnet.arcscan.app/tx/' + tx.txHash : null
-          const entry = describeEntry(tx)
-          const color = toneColor[entry.tone]
+      <div className="card-deep reveal" style={{ padding: '4px 20px' }}>
+        {groups.map((group, gi) => (
+          <div key={group.label}>
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: 'var(--muted)',
+              padding: '16px 0 8px',
+              borderTop: gi === 0 ? 'none' : '1px solid var(--border)',
+              marginTop: gi === 0 ? 0 : 4,
+            }}>
+              {group.label}
+            </div>
 
-          return (
-            <div key={tx.id || i} className="card" style={{ padding: '14px 16px', margin: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, minWidth: 0 }}>
-                  <span style={{
-                    width: 8, height: 8, borderRadius: '50%', background: color,
-                    marginTop: 5, flexShrink: 0,
-                    boxShadow: entry.tone === 'seal' ? `0 0 6px ${color}88` : 'none'
-                  }} />
+            {group.entries.map((tx, i) => {
+              const explorerUrl = tx.txHash ? 'https://testnet.arcscan.app/tx/' + tx.txHash : null
+              const entry = describeEntry(tx)
+              const amountColor = entry.sign === null && !tx.failed && tx.status !== 'blocked'
+                ? 'var(--text)'
+                : (tx.failed || tx.status === 'blocked') ? 'var(--danger)' : 'var(--seal)'
+
+              return (
+                <div
+                  key={tx.id || i}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    gap: 16,
+                    padding: '13px 0',
+                    borderBottom: i === group.entries.length - 1 ? 'none' : '1px solid var(--border)',
+                  }}
+                >
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, color: entry.tone === 'danger' ? color : 'var(--text)' }}>
+                    <div style={{
+                      fontFamily: 'var(--font-head)',
+                      fontWeight: 500,
+                      fontSize: 14,
+                      color: (tx.failed || tx.status === 'blocked') ? 'var(--danger)' : 'var(--text)',
+                    }}>
                       {entry.title}
                     </div>
                     {entry.sub && (
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', marginTop: 2, wordBreak: 'break-word' }}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', marginTop: 3, wordBreak: 'break-word' }}>
                         {entry.sub}
                       </div>
                     )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+                      {explorerUrl && (
+                        <a href={explorerUrl} target="_blank" rel="noreferrer" className="mono-data" style={{ color: 'var(--wire)', textDecoration: 'none', fontSize: 10 }}>
+                          {tx.txHash.slice(0, 8)}... ↗
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    {entry.amount && (
+                      <div className="mono-data" style={{ fontSize: 14, fontWeight: 700, color: amountColor }}>
+                        {entry.sign || ''}{entry.amount}
+                      </div>
+                    )}
+                    <div className="mono-data" style={{ fontSize: 10, color: 'var(--muted)', marginTop: 5 }}>
+                      {formatClock(tx.timestamp)}
+                    </div>
                   </div>
                 </div>
-                {entry.amount && (
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color, flexShrink: 0, whiteSpace: 'nowrap' }}>
-                    {entry.amount}
-                  </div>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-                {explorerUrl && (
-                  <a href={explorerUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--wire)', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: 10 }}>
-                    Tx: {tx.txHash.slice(0, 8)}... ↗
-                  </a>
-                )}
-                <span style={{ flex: 1 }} />
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)' }}>
-                  {formatTime(tx.timestamp)}
-                </span>
-              </div>
-            </div>
-          )
-        })}
+              )
+            })}
+          </div>
+        ))}
       </div>
     </div>
   )
