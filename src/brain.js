@@ -54,6 +54,12 @@ User asks about their jobs (hired agents, job status):
 {"action":"jobs_status","message":"..."}
 User asks about their goals (one-shot or recurring plans, schedules):
 {"action":"goals_status","message":"..."}
+User wants to create a new pool (a shared vault with invited members):
+{"action":"create_pool","description":"<the user's request verbatim, including any names/@tags/rules mentioned>","message":"..."}
+User wants to put money into a pool they're already in (default toShared to true unless they say "personal"/"my own allowance"):
+{"action":"pool_contribute","poolName":"<pool name as they referred to it>","amount":0.01,"toShared":true,"message":"..."}
+User wants to propose spending FROM a pool's shared balance to someone (only for pools — use "pay" for their own vault):
+{"action":"pool_propose_spend","poolName":"<pool name as they referred to it>","to":"0x... or @tag","amount":0.01,"reason":"...","message":"..."}
 Cannot fulfil, or general/explanatory chat (including "what is X" questions about AgentPay's own features):
 {"action":"chat","message":"..."}`;
 

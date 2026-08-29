@@ -14,6 +14,40 @@ const jobService = require('./jobService');
 // the vault may still revert on chain.
 const engine = new PolicyEngine();
 
+// Mirrors src/server.js's getAgentWallet()/resolveInvite() — needed here too
+// since pool actions reachable from Terminal chat sign the same way pool
+// actions reachable from the Pools tab do (agent-signed proposeSpend, member
+// @tag resolution via walletStore).
+function getAgentWallet() {
+  const { ethers } = require('ethers');
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
+  return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+}
+
+async function resolveAddressOrTag(raw) {
+  if (typeof raw === 'string' && raw.startsWith('0x')) return raw;
+  const walletStore = require('./walletStore');
+  const tag = String(raw).replace('@', '').toLowerCase();
+  const entry = await walletStore.findByTag(tag);
+  if (!entry) throw new Error(`Could not resolve "${raw}" — not a known @tag or address`);
+  return entry.address;
+}
+
+async function resolvePoolByName(memberAddress, poolName) {
+  const poolStore = require('./poolStore');
+  const pools = await poolStore.listPoolsForMember(memberAddress.toLowerCase());
+  if (pools.length === 0) throw new Error("you're not in any pools yet — create one in the Pools tab first");
+  if (!poolName) {
+    if (pools.length === 1) return pools[0];
+    throw new Error(`which pool? you're in: ${pools.map(p => p.name).join(', ')}`);
+  }
+  const lower = poolName.toLowerCase();
+  const match = pools.find(p => p.name && p.name.toLowerCase() === lower) ||
+    pools.find(p => p.name && p.name.toLowerCase().includes(lower));
+  if (!match) throw new Error(`couldn't find a pool named "${poolName}" among yours: ${pools.map(p => p.name).join(', ')}`);
+  return match;
+}
+
 async function pay(walletId, to, amountUSDC, reason, userAddress) {
   const advisory = engine.check(to, amountUSDC, userAddress);
   if (!advisory.allowed) {
@@ -172,6 +206,59 @@ async function chat(message, walletId, userAddress) {
       intent.data = { plans };
     } catch (e) {
       intent.message = "Could not load your goals: " + e.message;
+    }
+  }
+  if (intent.action === "create_pool") {
+    try {
+      const poolBrain = require('./poolBrain');
+      const poolVault = require('./poolVault');
+      const poolStore = require('./poolStore');
+      const draft = await poolBrain.parsePoolCreation(intent.description || message);
+      const resolvedInvites = await Promise.all(draft.invites.map(resolveAddressOrTag));
+      const { poolId, txHash } = await poolVault.createPool(walletId, resolvedInvites, draft.constitution);
+      await poolStore.createPoolMeta({ poolId, name: draft.name, founderAddress: address, memberAddresses: [address, ...resolvedInvites] });
+      intent.message = `Created pool "${draft.name}" with ${resolvedInvites.length} invite${resolvedInvites.length === 1 ? '' : 's'}. Find it in the Pools tab.`;
+      intent.data = { poolId, txHash, name: draft.name };
+    } catch (e) {
+      intent.message = "Could not create that pool: " + e.message;
+    }
+  }
+  if (intent.action === "pool_contribute") {
+    try {
+      const poolVault = require('./poolVault');
+      const pool = await resolvePoolByName(address, intent.poolName);
+      const toShared = intent.toShared !== false;
+      const txHash = await poolVault.contribute(walletId, pool.poolId, intent.amount, toShared);
+      await appendSpend({ userAddress: address, to: `pool:${pool.poolId}`, amount: Number(intent.amount), reason: toShared ? 'Pool contribution (shared)' : 'Pool contribution (personal)', txHash, token: 'USDC', type: 'pool_contribute' });
+      intent.message = `Contributed ${intent.amount} USDC to "${pool.name}" (${toShared ? 'shared' : 'personal'} balance).`;
+      intent.data = { poolId: pool.poolId, txHash };
+    } catch (e) {
+      intent.message = "Could not contribute to that pool: " + e.message;
+    }
+  }
+  if (intent.action === "pool_propose_spend") {
+    try {
+      const poolVault = require('./poolVault');
+      const poolStore = require('./poolStore');
+      const pool = await resolvePoolByName(address, intent.poolName);
+      const to = await resolveAddressOrTag(intent.to);
+      intent.to = to; // pre-resolved — keeps handleChat's generic @tag pass a no-op
+      const { proposalId, txHash } = await poolVault.proposeSpend(getAgentWallet(), pool.poolId, address, to, intent.amount, intent.reason || '');
+      const { ethers } = require('ethers');
+      const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
+      const onChainProposal = await poolVault.getProposal(provider, proposalId);
+      await poolStore.recordProposal({ proposalId, poolId: pool.poolId, kind: 'Spend', windowEnds: onChainProposal.windowEnds, proposer: address });
+      if (onChainProposal.resolved) {
+        await poolStore.closeProposal(proposalId, { resolved: 'executed', txHash });
+        await appendSpend({ userAddress: address, to, amount: Number(intent.amount), reason: intent.reason || 'Pool spend', txHash, token: 'USDC', type: 'pool_spend' });
+        intent.message = `Spent ${intent.amount} USDC from "${pool.name}" — under the discretionary threshold, so it executed immediately.`;
+      } else {
+        const hoursLeft = onChainProposal.windowEnds ? Math.max(0, Math.round((onChainProposal.windowEnds * 1000 - Date.now()) / 3600000)) : null;
+        intent.message = `Proposed spending ${intent.amount} USDC from "${pool.name}". Other members have ${hoursLeft != null ? hoursLeft + 'h' : 'the objection window'} to veto before it executes.`;
+      }
+      intent.data = { poolId: pool.poolId, proposalId, txHash };
+    } catch (e) {
+      intent.message = "Could not propose that spend: " + e.message;
     }
   }
   if (intent.action === "policy") {
