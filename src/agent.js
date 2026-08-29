@@ -263,17 +263,23 @@ async function chat(message, walletId, userAddress) {
     }
   }
   if (intent.action === "fetch_paid_data") {
+    // Deliberately surfaces *why* this fell back instead of silently keeping
+    // brain.js's guessed answer — a silent catch here previously made a real
+    // bug (findKeryxTool never matching anything) look identical to "there's
+    // just no paid source for this," with no way to tell them apart from
+    // the chat transcript alone.
     try {
       const paid = await payForLiveData(intent.description || message, walletId, address);
       if (paid) {
         const answer = await summarizePaidResult(intent.description || message, paid.result);
         intent.message = `${answer}\n\n(paid ${paid.amount} USDC via x402 for live data from "${paid.tool.name}")`;
         intent.data = { x402: true, tool: paid.tool.name, amount: paid.amount, txHash: paid.txHash, result: paid.result };
+      } else {
+        intent.message = `${intent.message}\n\n[no live paid data source matched this request]`;
       }
-      // else: no matching paid source for this — intent.message already
-      // carries brain.js's best-guess answer, so there's nothing to overwrite.
     } catch (e) {
-      console.error('[chat] fetch_paid_data failed, falling back to best-guess answer:', e.message);
+      console.error('[chat] fetch_paid_data failed:', e.message);
+      intent.message = `${intent.message}\n\n[live data lookup failed: ${e.message}]`;
     }
   }
   if (intent.action === "policy") {
@@ -392,35 +398,37 @@ async function payKeryx(toolId, args) {
 // summary text — which meant "get me the current ETH price" matched
 // "Wikipedia Grounded Search" because that tool's own summary says "NOT for
 // prices...", and ".includes('price')" doesn't know the difference.
+// Does NOT swallow errors internally — a network failure fetching the
+// catalog or calling Groq propagates to the caller instead of silently
+// becoming "no match", which is what made an earlier bug here (stripped
+// periods corrupting every tool id) indistinguishable from "nothing fits"
+// or "Keryx is unreachable" purely from what the user saw in chat.
 async function findKeryxTool(description) {
-  try {
-    const res = await fetch(`${KERYX_BASE}/api/tools`, { signal: AbortSignal.timeout(5000) });
-    const { tools } = await res.json();
-    if (!tools || tools.length === 0) return null;
+  const res = await fetch(`${KERYX_BASE}/api/tools`, { signal: AbortSignal.timeout(8000) });
+  if (!res.ok) throw new Error(`Keryx tool catalog fetch failed: ${res.status}`);
+  const { tools } = await res.json();
+  if (!tools || tools.length === 0) return null;
 
-    const catalog = tools.map(t => `- ${t.id}: ${t.name} — ${t.summary}`).join('\n');
-    const completion = await groqCompound.chat.completions.create({
-      messages: [
-        { role: 'system', content: `Pick the single best-matching tool id for the user's request from this catalog. Respond with ONLY the tool id, or the word none if nothing genuinely fits — do not force a match.\n${catalog}` },
-        { role: 'user', content: description },
-      ],
-      model: 'openai/gpt-oss-120b',
-      temperature: 0,
-      max_tokens: 20,
-    });
-    // Trim wrapping quotes/backticks only — do NOT strip periods, since every
-    // real tool id is dotted ("weather.current", "crypto.price"); a prior
-    // version stripped them and corrupted every id, so this never matched
-    // anything, ever, regardless of what the model picked.
-    const raw = (completion.choices[0]?.message?.content || '').trim().replace(/^["'`]+|["'`]+$/g, '');
-    if (!raw || /^none\b/i.test(raw)) return null;
-    // Exact match first, then fall back to "the id appears somewhere in the
-    // response" in case the model added any surrounding text despite the
-    // "ONLY the tool id" instruction.
-    return tools.find(t => t.id === raw) || tools.find(t => raw.includes(t.id)) || null;
-  } catch (e) {
-    return null;
-  }
+  const catalog = tools.map(t => `- ${t.id}: ${t.name} — ${t.summary}`).join('\n');
+  const completion = await groqCompound.chat.completions.create({
+    messages: [
+      { role: 'system', content: `Pick the single best-matching tool id for the user's request from this catalog. Respond with ONLY the tool id, or the word none if nothing genuinely fits — do not force a match.\n${catalog}` },
+      { role: 'user', content: description },
+    ],
+    model: 'openai/gpt-oss-120b',
+    temperature: 0,
+    max_tokens: 20,
+  });
+  // Trim wrapping quotes/backticks only — do NOT strip periods, since every
+  // real tool id is dotted ("weather.current", "crypto.price"); a prior
+  // version stripped them and corrupted every id, so this never matched
+  // anything, ever, regardless of what the model picked.
+  const raw = (completion.choices[0]?.message?.content || '').trim().replace(/^["'`]+|["'`]+$/g, '');
+  if (!raw || /^none\b/i.test(raw)) return null;
+  // Exact match first, then fall back to "the id appears somewhere in the
+  // response" in case the model added any surrounding text despite the
+  // "ONLY the tool id" instruction.
+  return tools.find(t => t.id === raw) || tools.find(t => raw.includes(t.id)) || null;
 }
 
 // Fills a matched tool's actual argument schema from the user's request,
