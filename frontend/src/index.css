@@ -29,6 +29,24 @@
   --header-height: 70px;
   --sidebar-width: 240px;
   --bottom-nav-height: 65px;
+
+  /* Semantic tints derived from the same accent tokens above — used for
+     alert/status backgrounds so a rebrand only ever changes --cyan/--danger
+     once, not every hardcoded rgba() that copied their old values. */
+  --cyan-a1:    #D9A44112;
+  --cyan-a2:    #D9A44144;
+  --danger-a1:  #C4573F15;
+  --danger-a2:  #C4573F44;
+
+  /* Spacing rhythm — one scale, reused instead of ad hoc pixel values. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
 }
 
 html, body, #root {
@@ -195,8 +213,8 @@ body::after {
   text-transform: uppercase;
 }
 
-.status-pill.online { background: #00E5CC12; border: 1px solid #00E5CC44; color: var(--cyan); }
-.status-pill.offline { background: #FF3B5C12; border: 1px solid #FF3B5C44; color: var(--danger); }
+.status-pill.online { background: var(--cyan-a1); border: 1px solid var(--cyan-a2); color: var(--cyan); }
+.status-pill.offline { background: var(--danger-a1); border: 1px solid var(--danger-a2); color: var(--danger); }
 
 /* View Container */
 .view-content {
@@ -207,6 +225,82 @@ body::after {
   width: 100%;
   position: relative;
   padding-bottom: 16px;
+}
+
+/* Every view wraps its content in .view-container — previously an unstyled
+   no-op class, each screen relying entirely on its own inline padding.
+   Giving it real rules means every view picks up consistent width/rhythm
+   for free. */
+.view-container {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+/* Display type — Fraunces used with actual confidence instead of only at
+   12-24px for labels. Every view's page title should carry this. */
+.page-title {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: clamp(24px, 3.4vw, 32px);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  color: var(--text);
+  margin: 0;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+.eyebrow::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 6px var(--border-hot);
+  flex-shrink: 0;
+}
+
+.hairline {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: var(--space-5) 0;
+}
+
+.mono-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* Flagship-card depth — opt-in, for the one or two cards per view that
+   deserve to read as "holding something real" rather than a settings
+   panel. Not applied to every .card; that would flatten the hierarchy
+   this is meant to create. */
+.card-deep {
+  background: radial-gradient(120% 140% at 30% -10%, var(--bg-hover) 0%, var(--bg-card) 55%, #101317 100%);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+@keyframes reveal-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal {
+  animation: reveal-rise 0.4s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal { animation: none; }
 }
 
 @media (max-width: 768px) {
@@ -411,7 +505,7 @@ body::after {
 }
 .tx-badge.failed::before { background: var(--danger); }
 .tx-badge.rejected { background: #FF6B3515; border: 1px solid #FF6B3544; color: var(--warning); }
-.tx-badge.failed { background: #FF3B5C15; border: 1px solid #FF3B5C44; color: var(--danger); }
+.tx-badge.failed { background: var(--danger-a1); border: 1px solid var(--danger-a2); color: var(--danger); }
 
 /* Navigation */
 .nav-item {
@@ -561,8 +655,8 @@ body::after {
   font-family: var(--font-mono);
 }
 
-.alert.success { background: #00E5CC12; border: 1px solid #00E5CC44; color: var(--cyan); }
-.alert.danger { background: #FF3B5C12; border: 1px solid #FF3B5C44; color: var(--danger); }
+.alert.success { background: var(--cyan-a1); border: 1px solid var(--cyan-a2); color: var(--cyan); }
+.alert.danger { background: var(--danger-a1); border: 1px solid var(--danger-a2); color: var(--danger); }
 
 /* Views */
 .policy-view, .history-view {
