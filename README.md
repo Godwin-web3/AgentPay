@@ -126,6 +126,7 @@ AgentPay is built on a robust, high-availability hybrid stack:
 ### 1. Backend Setup (Render/Local)
 ```bash
 npm install
+npm run setup:check   # validates ARC_RPC, Circle, Groq, and vault config before you run anything
 node index.js
 ```
 *Configure your `.env` with `PRIVATE_KEY`, `ARC_RPC`, and `VAULT_ADDRESS`.*

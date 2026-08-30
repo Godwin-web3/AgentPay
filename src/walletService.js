@@ -1,4 +1,5 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const { initiateDeveloperControlledWalletsClient } = require('@circle-fin/developer-controlled-wallets');
 
 const client = initiateDeveloperControlledWalletsClient({
@@ -55,7 +56,8 @@ async function sendUSDC(walletId, toAddress, amountUSDC) {
     destinationAddress: toAddress,
     amounts: [amountUnits],
     blockchain: 'ARC-TESTNET',
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+    idempotencyKey: crypto.randomUUID()
   });
   const txId = response.data.id;
   // Poll for onchain hash
@@ -84,7 +86,8 @@ async function approveAndDepositToVault(walletId, vaultAddress, amountUSDC) {
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'approve(address,uint256)',
     abiParameters: [vaultAddress, amountWei],
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+    idempotencyKey: crypto.randomUUID()
   });
 
   // Poll for approval confirmation
@@ -104,7 +107,8 @@ async function approveAndDepositToVault(walletId, vaultAddress, amountUSDC) {
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'deposit(uint256)',
     abiParameters: [amountWei],
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+    idempotencyKey: crypto.randomUUID()
   });
 
   const depositId = depositRes.data.id;
@@ -128,7 +132,8 @@ async function withdrawFromVault(walletId, vaultAddress, amountUSDC) {
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'withdraw(uint256)',
     abiParameters: [amountWei],
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+    idempotencyKey: crypto.randomUUID()
   });
 
   const txId = res.data.id;
@@ -153,7 +158,8 @@ async function createVaultSchedule(walletId, vaultAddress, toAddress, amountUSDC
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'createSchedule(address,uint256,uint256,string,uint256)',
     abiParameters: [toAddress, amountWei, String(intervalSec), reason || '', minBalWei],
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+    idempotencyKey: crypto.randomUUID()
   });
 
   return await waitForTxHash(res.data.id, 'createSchedule');
@@ -166,7 +172,8 @@ async function cancelVaultSchedule(walletId, vaultAddress, index) {
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'cancelSchedule(uint256)',
     abiParameters: [String(index)],
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+    idempotencyKey: crypto.randomUUID()
   });
 
   return await waitForTxHash(res.data.id, 'cancelSchedule');

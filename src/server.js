@@ -1,5 +1,6 @@
 require('dotenv').config();
 const http = require('http');
+const crypto = require('crypto');
 const { ethers } = require('ethers');
 const sharedProvider = require('./provider');
 const { pay, fetchAndPay, getBalance, getSummary, getUnifiedHistory, chat } = require('./agent');
@@ -229,7 +230,8 @@ async function handleUpdatePolicy(req, res) {
         String(maxTxPerHour || 20),
         whitelist || []
       ],
-      fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+      fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+      idempotencyKey: crypto.randomUUID()
     });
 
     let txState = tx.data?.state;
@@ -1277,7 +1279,8 @@ async function setDefaultPolicy(client, walletId, vaultAddress, agentAddress) {
       '20',
       []
     ],
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+    idempotencyKey: crypto.randomUUID()
   });
   let txState = tx.data?.state;
   const txId = tx.data?.id;
@@ -1313,7 +1316,8 @@ async function resolveOrCreateVault(userId) {
       walletId: wallet.walletId,
       contractAddress: factoryAddress,
       abiFunctionSignature: 'createVault()',
-      fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+      fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+      idempotencyKey: crypto.randomUUID()
     });
 
     let txState = tx.data?.state;

@@ -1,4 +1,5 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const { initiateDeveloperControlledWalletsClient } = require('@circle-fin/developer-controlled-wallets');
 const { createPublicClient, http, keccak256, toHex, decodeEventLog } = require('viem');
 const { toUnits, fromUnits } = require('../utils/usdc');
@@ -126,7 +127,8 @@ async function contractCall(walletId, contractAddress, abiFunctionSignature, abi
     blockchain: 'ARC-TESTNET',
     abiFunctionSignature,
     abiParameters,
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } }
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+    idempotencyKey: crypto.randomUUID()
   });
   return await waitForTx(res.data.id, label);
 }

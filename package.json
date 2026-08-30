@@ -7,7 +7,8 @@
     "start": "node index.js",
     "frontend": "cd frontend && npm run dev",
     "test": "hardhat test",
-    "compile": "node scripts/compile.js"
+    "compile": "node scripts/compile.js",
+    "setup:check": "node scripts/check-setup.js"
   },
   "keywords": [],
   "author": "",

@@ -14,6 +14,7 @@
 // no per-pool factory lookup like escrow.findVault needs.
 
 const { ethers } = require('ethers');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { initiateDeveloperControlledWalletsClient } = require('@circle-fin/developer-controlled-wallets');
@@ -84,6 +85,7 @@ async function memberContractCall(walletId, abiFunctionSignature, abiParameters,
     abiFunctionSignature,
     abiParameters,
     fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+    idempotencyKey: crypto.randomUUID(),
   });
   return await waitForTxHash(res.data.id, label);
 }
@@ -125,6 +127,7 @@ async function contribute(walletId, poolId, amountUSDC, toShared) {
     walletId, contractAddress: usdcAddress, blockchain: 'ARC-TESTNET',
     abiFunctionSignature: 'approve(address,uint256)', abiParameters: [getAddress(), amountWei],
     fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+    idempotencyKey: crypto.randomUUID(),
   });
   await waitForTxHash(approveRes.data.id, 'approve USDC');
 
