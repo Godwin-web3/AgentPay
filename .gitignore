@@ -27,3 +27,15 @@ hardhat-cache/
 # Misc
 *.log
 .DS_Store
+
+# One-off exploration/scrape dumps (root only — src/data/*.json is real app data)
+/active_providers_full.json
+/all_minted_tokens.json
+/agent-metadata.json
+/confirmed_overlap_addresses.json
+/registered_agents.json
+/top_providers.json
+/registered_provider_activity.json
+
+# Applied one-off patch scripts (string-replace diffs from an earlier codegen pass)
+/patch_*.py
