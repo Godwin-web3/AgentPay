@@ -2,9 +2,11 @@ require('dotenv').config();
 const { ethers } = require('ethers');
 const fs = require('fs');
 const path = require('path');
+const { getChain } = require('../config/chains');
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
+  const chain = getChain();
+  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC || chain.rpc);
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const factoryDeployment = JSON.parse(fs.readFileSync(path.join(__dirname, '../artifacts/VaultFactory-deployment.json'), 'utf8'));
@@ -13,24 +15,23 @@ async function main() {
   const factoryArtifact = JSON.parse(fs.readFileSync(path.join(__dirname, '../artifacts/VaultFactory.json'), 'utf8'));
   const factory = new ethers.Contract(factoryAddress, factoryArtifact.abi, wallet);
 
-  console.log('🚀 Creating vault for: ' + wallet.address);
-  const tx = await factory.createVault(wallet.address);
-  console.log('⏳ Waiting for transaction: ' + tx.hash);
-  const receipt = await tx.wait();
+  const target = process.argv[2] || wallet.address;
+  console.log('Creating vault for: ' + target);
 
-  const vaultAddress = await factory.getVault(wallet.address);
-  console.log('✅ Vault created at: ' + vaultAddress);
-
-  // Verify bytecode
-  const code = await provider.getCode(vaultAddress);
-  const selector = '374efb81'; // handleAgentResponse(uint256,Response[],uint8,(uint256,address,address,bytes4,address[],(address,bytes,uint8,uint256,uint256,uint256)[],uint256,uint256,uint256,uint256,uint256,uint8,uint8,uint256,uint256))
-  // Wait, let's just check if the hex string contains the selector
-  if (code.includes(selector)) {
-    console.log('🔍 Verified: handleAgentResponse selector ' + selector + ' found in bytecode.');
-  } else {
-    console.error('❌ Error: handleAgentResponse selector ' + selector + ' NOT found in bytecode!');
+  const existing = await factory.getVault(target);
+  if (existing !== ethers.ZeroAddress) {
+    console.log('Vault already exists at: ' + existing);
+    return existing;
   }
 
+  const tx = target.toLowerCase() === wallet.address.toLowerCase()
+    ? await factory.createVault()
+    : await factory.createVaultFor(target);
+  console.log('Waiting for transaction: ' + tx.hash);
+  await tx.wait();
+
+  const vaultAddress = await factory.getVault(target);
+  console.log('Vault created at: ' + vaultAddress);
   return vaultAddress;
 }
 
