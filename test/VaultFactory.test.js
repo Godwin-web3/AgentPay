@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 
-describe('VaultFactory — ownership and operator gate', function () {
+describe('VaultFactory - ownership and operator gate', function () {
   let usdc, factory, owner, operator, user, agent, outsider;
 
   beforeEach(async function () {
