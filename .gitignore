@@ -19,10 +19,15 @@ package-lock.json
 frontend/package-lock.json
 *.bak
 
-# Hardhat local test harness (test/*.test.js) — separate from the production
-# artifacts/ dir written by scripts/compile.js + scripts/deploy.js.
+# Hardhat local test harness (test/*.test.js). Separate from production artifacts/.
 hardhat-artifacts/
 hardhat-cache/
+
+# Scraped / generated dumps that do not belong in a clone
+all_minted_tokens.json
+active_providers_full.json
+confirmed_overlap_addresses.json
+patch_*.py
 
 # Misc
 *.log
