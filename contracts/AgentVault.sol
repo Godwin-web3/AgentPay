@@ -3,14 +3,21 @@ pragma solidity ^0.8.20;
 
 /**
  * @title AgentVault
- * @dev Policy-enforced USDC vault for autonomous agents on Arc.
+ * @dev Policy-enforced USDC vault for autonomous agents.
  *
- * Hardened for multi-user:
- *  - Two-step agent rotation (owner proposes, new agent accepts).
- *  - EIP-712 signed execution path (`executeWithSig`) so a user SCA can authorize
- *    a payment without the operator holding a spend key.
- *  - Per-user circuit breaker / emergency pause (onlyOwner) layered on top of policy.
- *  - `executeSchedule` is now agent-only (no permissionless force-execution).
+ * Ownership model:
+ *  - `owner` is the user (the address that created the vault, usually their
+ *    Circle SCA). They can pause themselves and start two-step agent rotation.
+ *  - `guardian` is set by the factory to the factory operator. Guardian can
+ *    pause/resume a user as a circuit breaker without holding spend rights.
+ *  - `agent` is the only address that can call `execute` / `multicall` /
+ *    `executeScheduled`.
+ *
+ * Signed execution:
+ *  - `executeWithSig` is an agent meta-tx. The signature must come from `agent`.
+ *    Anyone can submit it. Policy still applies.
+ *  - `executeWithUserSig` is user authorization. The signature must come from
+ *    `user`. No operator spend key is required. Policy still applies.
  */
 
 interface IERC20 {
@@ -34,11 +41,11 @@ abstract contract ReentrancyGuard {
 
 contract AgentVault is ReentrancyGuard {
     address public owner;
+    address public guardian;
     address public agent;
     address public pendingAgent;
     address public usdc;
 
-    // EIP-712 domain
     bytes32 private constant _EIP712_DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
     bytes32 private constant _EXECUTE_WITH_SIG_TYPEHASH =
@@ -65,8 +72,8 @@ contract AgentVault is ReentrancyGuard {
     mapping(address => Policy) public policies;
     mapping(address => address[]) public whitelists;
     mapping(address => Schedule[]) public schedules;
-    mapping(address => bool) public userPaused;          // P2-12 circuit breaker (operator-controlled)
-    mapping(address => uint256) public nonces;           // EIP-712 sig nonces
+    mapping(address => bool) public userPaused;
+    mapping(address => uint256) public nonces;
 
     mapping(address => uint256) public dailySpent;
     mapping(address => uint256) public lastSpendTimestamp;
@@ -83,9 +90,11 @@ contract AgentVault is ReentrancyGuard {
     event ScheduleCancelled(address indexed user, uint256 index);
     event UserPaused(address indexed user);
     event UserResumed(address indexed user);
+    event GuardianUpdated(address indexed guardian);
 
     error NotOwner();
     error NotAgent();
+    error NotGuardian();
     error NotPendingAgent();
     error PolicyNotSet();
     error InsufficientBalance();
@@ -111,19 +120,23 @@ contract AgentVault is ReentrancyGuard {
         _;
     }
 
+    modifier onlyOwnerOrGuardian() {
+        if (msg.sender != owner && msg.sender != guardian) revert NotGuardian();
+        _;
+    }
+
     modifier notPaused(address user) {
         if (userPaused[user]) revert UserPausedError();
         _;
     }
 
-    constructor(address _agent, address _usdc) {
-        if (_agent == address(0) || _usdc == address(0)) revert ZeroAddress();
-        owner = msg.sender;
+    constructor(address _owner, address _agent, address _usdc, address _guardian) {
+        if (_owner == address(0) || _agent == address(0) || _usdc == address(0)) revert ZeroAddress();
+        owner = _owner;
         agent = _agent;
         usdc = _usdc;
+        guardian = _guardian;
     }
-
-    // ── Agent rotation (two-step) ────────────────────────────────────────────
 
     function proposeAgent(address _newAgent) external onlyOwner {
         if (_newAgent == address(0)) revert ZeroAddress();
@@ -138,14 +151,16 @@ contract AgentVault is ReentrancyGuard {
         emit AgentUpdated(agent);
     }
 
-    // Retained for backwards-compat; routes through two-step (proposes only).
     function setAgent(address _newAgent) external onlyOwner {
         if (_newAgent == address(0)) revert ZeroAddress();
         pendingAgent = _newAgent;
         emit PendingAgentProposed(_newAgent);
     }
 
-    // ── User Functions ────────────────────────────────────────────────────────
+    function setGuardian(address _guardian) external onlyOwner {
+        guardian = _guardian;
+        emit GuardianUpdated(_guardian);
+    }
 
     function deposit(uint256 amount) external nonReentrant {
         uint256 balBefore = IERC20(usdc).balanceOf(address(this));
@@ -183,13 +198,12 @@ contract AgentVault is ReentrancyGuard {
         emit PolicyUpdated(msg.sender, perTxCap, dailyCap);
     }
 
-    // P2-12: emergency circuit breaker, operator-controlled per user.
-    function pauseUser(address user) external onlyOwner {
+    function pauseUser(address user) external onlyOwnerOrGuardian {
         userPaused[user] = true;
         emit UserPaused(user);
     }
 
-    function resumeUser(address user) external onlyOwner {
+    function resumeUser(address user) external onlyOwnerOrGuardian {
         userPaused[user] = false;
         emit UserResumed(user);
     }
@@ -218,8 +232,6 @@ contract AgentVault is ReentrancyGuard {
         schedules[msg.sender][index].active = false;
         emit ScheduleCancelled(msg.sender, index);
     }
-
-    // ── Internal Helpers ──────────────────────────────────────────────────────
 
     function _checkWhitelist(address user, address to) internal view {
         address[] storage whitelist = whitelists[user];
@@ -271,8 +283,6 @@ contract AgentVault is ReentrancyGuard {
         emit Executed(user, to, amount, reason, requestId);
     }
 
-    // ── EIP-712 domain / signed execution ─────────────────────────────────────
-
     function domainSeparator() public view returns (bytes32) {
         return keccak256(abi.encode(
             _EIP712_DOMAIN_TYPEHASH,
@@ -302,7 +312,6 @@ contract AgentVault is ReentrancyGuard {
         ));
     }
 
-    // Decode a 65-byte ECDSA signature (r||s||v). Accepts v in {0,1} or {27,28}.
     function _splitSig(bytes calldata sig) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
         require(sig.length == 65, "bad sig length");
         r = bytes32(sig[0:32]);
@@ -311,11 +320,6 @@ contract AgentVault is ReentrancyGuard {
         if (v < 27) v += 27;
     }
 
-    // Build the EIP-712 digest in its own frame so the outer execute function
-    // doesn't keep all typed-data fields live at once (avoids "stack too deep"
-    // on the legacy EVM pipeline). `reason` is intentionally NOT part of the
-    // signed payload; it is emitted in the Executed event and recorded off-chain
-    // by the operator. This keeps the signed struct small and stack-friendly.
     function _sigDigest(
         address user,
         address to,
@@ -325,7 +329,7 @@ contract AgentVault is ReentrancyGuard {
         uint256 deadline
     ) internal view returns (bytes32) {
         return keccak256(abi.encodePacked(
-            "\x19\x01",
+            "\\x19\\x01",
             domainSeparator(),
             _hashTyped(user, to, amount, requestId, nonce, deadline)
         ));
@@ -337,6 +341,22 @@ contract AgentVault is ReentrancyGuard {
         return signer != address(0) && signer == expected;
     }
 
+    function _executeSigned(
+        address user,
+        address to,
+        uint256 amount,
+        bytes32 requestId,
+        uint256 deadline,
+        bytes calldata sig,
+        address expectedSigner
+    ) internal {
+        if (block.timestamp > deadline) revert SignatureExpired();
+        bytes32 digest = _sigDigest(user, to, amount, requestId, nonces[user], deadline);
+        if (!_verify(digest, expectedSigner, sig)) revert InvalidSignature();
+        nonces[user] = nonces[user] + 1;
+        _execute(user, to, amount, "", requestId);
+    }
+
     function executeWithSig(
         address user,
         address to,
@@ -345,14 +365,19 @@ contract AgentVault is ReentrancyGuard {
         uint256 deadline,
         bytes calldata sig
     ) external nonReentrant notPaused(user) {
-        if (block.timestamp > deadline) revert SignatureExpired();
-        bytes32 digest = _sigDigest(user, to, amount, requestId, nonces[user], deadline);
-        if (!_verify(digest, agent, sig)) revert InvalidSignature();
-        nonces[user] = nonces[user] + 1;
-        _execute(user, to, amount, "", requestId);
+        _executeSigned(user, to, amount, requestId, deadline, sig, agent);
     }
 
-    // ── Agent Functions ───────────────────────────────────────────────────────
+    function executeWithUserSig(
+        address user,
+        address to,
+        uint256 amount,
+        bytes32 requestId,
+        uint256 deadline,
+        bytes calldata sig
+    ) external nonReentrant notPaused(user) {
+        _executeSigned(user, to, amount, requestId, deadline, sig, user);
+    }
 
     function execute(
         address user,
@@ -377,8 +402,6 @@ contract AgentVault is ReentrancyGuard {
         }
     }
 
-    // P0-4: was permissionless — now agent-only. Third parties can no longer
-    // force a schedule to execute on the user's gas.
     function executeScheduled(address user, uint256 index) external onlyAgent nonReentrant notPaused(user) {
         if (index >= schedules[user].length) revert InvalidSchedule();
         Schedule storage schedule = schedules[user][index];
@@ -388,8 +411,6 @@ contract AgentVault is ReentrancyGuard {
         schedule.nextRun = block.timestamp + schedule.interval;
         _execute(user, schedule.to, schedule.amount, schedule.reason, bytes32(0));
     }
-
-    // ── View Functions ────────────────────────────────────────────────────────
 
     function getSchedules(address user) external view returns (Schedule[] memory) {
         return schedules[user];
