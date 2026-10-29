@@ -15,6 +15,8 @@ const { setupRoutes } = require('./api/serverRoutes');
 setupRoutes(app);
 ```
 
+A ready-to-apply patch is in patches/mount-routes.patch.
+
 Or call mountAgentPayRoutes from src/serverMount.js.
 
 The routes live under /api/payment-requests and /api/adapters/propose.
@@ -40,7 +42,8 @@ The functions remain side-effect free.
 
 ## Frontend
 
-Register PayView at the /pay/:id route and ReceiptView where you display settlement status.
+The Requests view is already in the main navigation (frontend/src/App.tsx).
+Register PayView at the /pay/:id route if you add a router, and ReceiptView where you display settlement status.
 Neither component authorizes a transfer.
 
 ## Tests
