@@ -1,0 +1,12 @@
+--- a/src/server.js
++++ b/src/server.js
+@@ -1479,6 +1479,9 @@ app.get('/schedules/stats', handleScheduleStats);
+ 
+ const server = require('http').createServer(app);
+ 
++const { setupRoutes } = require('./api/serverRoutes');
++setupRoutes(app);
++
+ function startServer() {
+   return new Promise((resolve) => {
+     server.listen(PORT, () => {
