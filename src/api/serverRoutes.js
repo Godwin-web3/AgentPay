@@ -1,6 +1,7 @@
 const { createRequest, getRequest, shareRequest, listRequests, updateRequest } = require('./paymentRequests');
 const { getAdaptersFor } = require('../adapters');
 const { makeShareLink } = require('../payments/links');
+const { handleAgentIntent } = require('./agentInterface');
 
 // Minimal route handlers. Mount these in your existing Express/server.js.
 // None of these move funds. Settlement still requires AgentVault.
@@ -57,6 +58,15 @@ function setupRoutes(app) {
       proposals.push(await a.propose(intent));
     }
     res.json({ proposals });
+  });
+
+  app.post('/api/agent/intent', async (req, res) => {
+    try {
+      const result = await handleAgentIntent(req.body);
+      res.json(result);
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
   });
 }
 
