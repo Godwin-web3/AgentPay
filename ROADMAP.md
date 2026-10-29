@@ -10,20 +10,21 @@ Grounded in the existing AgentVault / DecisionLog boundary and the white paper p
 - src/settlement/verify.js and src/monitoring/txStatus.js.
 - src/api/paymentRequests.js (persistent) and src/api/serverRoutes.js (includes settle endpoint).
 - src/serverMount.js example for mounting routes.
+- patches/mount-routes.patch ready to apply to src/server.js.
 - sdk/index.js.
 - frontend/src/views/PaymentRequestView.tsx, PayView.tsx, and ReceiptView.tsx.
 - frontend/src/App.tsx now includes a Requests nav item that renders PaymentRequestView.
-- test/adapters.test.js, test/links.test.js, and test/verify.test.js.
-- INTEGRATION.md with the exact insertion point in src/server.js.
+- test/adapters.test.js, test/links.test.js, test/verify.test.js, and test/verify.integration.test.js (skeleton).
+- INTEGRATION.md with the exact insertion point and patch file.
 - .env.example documents QUOTE_SWAP_URL, QUOTE_BRIDGE_URL, and DEFI_QUOTE_URL.
 
 ## Still required for production
 
 - Set the quote URL environment variables to real endpoints.
-- Insert the two lines from INTEGRATION.md into src/server.js and deploy.
+- Apply patches/mount-routes.patch (or insert the two lines) into src/server.js and deploy.
 - Concurrent-safe store (database) if multiple processes write.
 - External agent interface that accepts structured intents and still enforces vault policy.
-- Broader test coverage that spins up a local vault and exercises verifySettlement against real Executed events.
+- Expand the integration test to spin up a local vault and exercise verifySettlement against real Executed events.
 
 Every new adapter or workflow must:
 1. Call propose() or estimate() only from the planning layer.
@@ -31,4 +32,4 @@ Every new adapter or workflow must:
 3. Commit a decision hash to DecisionLog before execution when the action is AI-derived.
 4. Emit a verifiable receipt that can be checked against on-chain events.
 
-The white paper phases are scaffolded. The Requests view is in the frontend nav. Providers accept real URLs via environment. Settlement still happens only inside AgentVault.
+The white paper phases are scaffolded. The Requests view is in the frontend nav. A patch exists for the server mount. Providers accept real URLs via environment. Settlement still happens only inside AgentVault.
