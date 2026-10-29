@@ -5,25 +5,24 @@ Grounded in the existing AgentVault / DecisionLog boundary and the white paper p
 ## Done
 
 - TECHNICAL_ARCHITECTURE.md maps the five layers to current contracts and code.
-- src/adapters/: ExecutionAdapter, DirectUSDCAdapter, SwapAdapter, CrossNetworkAdapter, DeFiAdapter, and registry. Planners call propose/estimate only.
-- src/payments/PaymentRequest.js with explicit lifecycle states. Settlement still requires AgentVault.
-- src/settlement/verify.js matches receipts to AgentVault Executed events.
-- src/api/paymentRequests.js and src/api/serverRoutes.js (Express-style handlers).
-- src/monitoring/txStatus.js distinguishes submitted / included / confirmed.
-- sdk/index.js minimal client for propose() and PaymentRequest creation.
-- frontend/src/views/PaymentRequestView.tsx wired to the API endpoints.
+- src/adapters/: ExecutionAdapter, DirectUSDCAdapter, SwapAdapter, CrossNetworkAdapter, DeFiAdapter, registry, and providers.js stubs.
+- src/payments/PaymentRequest.js + file-based store in src/payments/store.js.
+- src/settlement/verify.js and src/monitoring/txStatus.js.
+- src/api/paymentRequests.js (persistent) and src/api/serverRoutes.js.
+- sdk/index.js.
+- frontend/src/views/PaymentRequestView.tsx wired to the API.
+- test/adapters.test.js for propose paths and request lifecycle.
+- INTEGRATION.md with mount instructions.
 
 ## Still required for production
 
-- Persistent store for payment requests (current is in-memory).
-- Real quote provider injected into SwapAdapter.
-- Real bridge provider for CrossNetworkAdapter.
-- Real DeFi protocol integration inside DeFiAdapter (currently stub with risk notes).
-- Mount setupRoutes in the existing server.js and deploy.
-- Shareable link generation that encodes the request ID.
-- Full frontend routing and receipt display after vault execution.
+- Replace quoteSwap and quoteBridge stubs with real aggregator and bridge HTTP calls.
+- Real protocol integration inside DeFiAdapter.
+- Mount setupRoutes in the live server process and deploy.
+- Shareable link that encodes the request ID and a receipt view after vault execution.
+- Concurrent-safe store (database) if multiple processes write.
 - External agent interface that accepts structured intents and still enforces vault policy.
-- Tests covering the new adapters and verification helper.
+- Broader test coverage that includes the verification helper against a local vault.
 
 Every new adapter or workflow must:
 1. Call propose() or estimate() only from the planning layer.
@@ -31,4 +30,4 @@ Every new adapter or workflow must:
 3. Commit a decision hash to DecisionLog before execution when the action is AI-derived.
 4. Emit a verifiable receipt that can be checked against on-chain events.
 
-The white paper phases are now scaffolded. Production use still requires wiring real providers and persistent storage while keeping the vault as the only authorization path.
+The white paper phases are scaffolded and the request store is persistent. Production settlement still happens only inside AgentVault.
