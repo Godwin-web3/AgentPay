@@ -11,6 +11,7 @@ AI interprets intent and proposes actions. Deterministic policy and execution sy
 ### 1. Intent Layer
 - Off-chain. Natural language is parsed in the Node.js backend (src/brain.js and related). Groq / Llama produces structured intents.
 - Structured output is limited to known actions (pay, schedule, hire_agent, etc.). See frontend/src/types.ts Intent interface.
+- PaymentRequest (src/payments/PaymentRequest.js) is the structured form for request-payment flows. Creating or sharing a request does not move funds.
 - No financial authority lives here.
 
 ### 2. Intelligence and Planning Layer
@@ -18,6 +19,7 @@ AI interprets intent and proposes actions. Deterministic policy and execution sy
 - validatePlan() rejects unknown primitives before execution.
 - Triggers (src/triggers.js) evaluate external conditions (price, GitHub, weather). These are advisory.
 - Plans that include pay or hire_agent still route through AgentVault or the escrow contract. Bad plans fail safely because of the on-chain limits.
+- Execution adapters (src/adapters/) can be called from the planner for propose() and estimate() only.
 
 ### 3. Policy and Authorization Layer
 - Implemented in contracts/AgentVault.sol.
@@ -35,13 +37,14 @@ AI interprets intent and proposes actions. Deterministic policy and execution sy
 - AgentVault.execute and executeWithSig move USDC after policy checks.
 - Schedules are stored on-chain and executed only by the registered agent.
 - Multicall exists for batched payments under the same requestId.
-- Current settlement is direct USDC transfer on Arc. Adapters for other networks, DEXes, or bridges are not yet modular.
+- Modular adapters live in src/adapters/. ExecutionAdapter defines propose / estimate / execute. DirectUSDCAdapter proposes a same-network USDC transfer and records a receipt only after the vault has already executed. New adapters must follow the same rule: no fund movement without prior vault authorization.
 - Backend (src/server.js and related) calls the vault. It does not bypass it for payment paths.
 
 ### 5. Settlement and Verification Layer
 - DecisionLog.sol commits keccak256 of the off-chain decision record (goal + plan + action) under the same requestId used in AgentVault before execution.
 - Anyone can recompute the hash from a published record and confirm it matches the on-chain commit. Commit block number precedes the Executed event.
 - finalize() records an outcome hash. This is operator-written and non-authoritative, but it sits on the same log.
+- PaymentRequest states (created / shared / reviewed / authorized / settled / expired / cancelled / failed) track the request lifecycle. Settlement is recorded only after a vault execution produces a txHash.
 - On-chain verification is limited to the USDC transfer receipt and the DecisionLog commit. Cross-network settlement and multi-stage receipts are not yet implemented.
 
 ## What Is Proven
@@ -53,17 +56,14 @@ AI interprets intent and proposes actions. Deterministic policy and execution sy
 
 ## What Is Not Yet Implemented
 
-- Modular adapters for swaps, bridges, or multi-network routing.
-- Full payment-request lifecycle with shareable links, expiry, and structured receipts beyond the current pay path.
+- Additional adapters for swaps, bridges, or multi-network routing.
+- Full frontend payment-request creation, shareable links, and receipt views.
 - DeFi protocol integrations with risk explanations.
 - Public API / SDK surface for external agents beyond the existing worker and marketplace daemon.
 - Verifiable inference (explicitly stubbed in src/arcAi.js).
 
 ## Next Concrete Steps
 
-1. Keep every new payment path routing through AgentVault._execute or an equivalent on-chain policy check.
-2. Add an adapter interface for execution providers so swaps and cross-network moves can be proposed without giving the planner authority.
-3. Extend DecisionLog usage so every planned action (not only payments) commits before execution.
-4. Document the exact requestId flow from solver to vault to log in the README.
+See ROADMAP.md. Every new capability extends the adapter registry or the PaymentRequest lifecycle and still routes fund movement through AgentVault.
 
 The white paper defines the product thesis. This document maps the current security guarantees to the contracts that enforce them. New capabilities should extend the execution adapters, not move authorization off-chain.
