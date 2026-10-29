@@ -1,4 +1,5 @@
 const { ExecutionAdapter } = require('./ExecutionAdapter');
+const { quoteSwap } = require('./providers');
 
 /**
  * SwapAdapter
@@ -8,9 +9,6 @@ const { ExecutionAdapter } = require('./ExecutionAdapter');
  * execute() expects the caller to have already authorized any required
  * USDC movement through AgentVault. The adapter itself does not hold keys
  * or call the vault.
- *
- * This is a proposal stub. Real DEX routing would be injected via a
- * provider function that returns quotes without signing.
  */
 class SwapAdapter extends ExecutionAdapter {
   constructor({ quoteProvider } = {}) {
@@ -19,19 +17,7 @@ class SwapAdapter extends ExecutionAdapter {
       supportedAssets: ['USDC', 'ETH', 'WETH'],
       supportedNetworks: ['arc'], // extend per network
     });
-    this.quoteProvider = quoteProvider || this._defaultQuote;
-  }
-
-  async _defaultQuote(intent) {
-    // Placeholder. Replace with real aggregator call that returns a quote object.
-    return {
-      fromAsset: intent.asset,
-      toAsset: intent.toAsset || 'ETH',
-      amountIn: intent.amount,
-      amountOutEstimated: null,
-      slippageBps: intent.slippageBps || 50,
-      route: 'stub',
-    };
+    this.quoteProvider = quoteProvider || quoteSwap;
   }
 
   async propose(intent) {
