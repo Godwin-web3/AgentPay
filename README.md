@@ -2,6 +2,8 @@
 
 **AgentPay** is an AI-powered autonomous payment agent built for the **Arc Testnet**. It bridges conversational AI with secure on-chain execution by keeping the *Decision* (AI) off-chain and the *Permission* (policy) on-chain in the `AgentVault` smart contract. Built for the Arc Agent Hackathon.
 
+The product thesis and five-layer model (intent, planning, policy, execution, settlement) are described in the white paper. The mapping from that model to the implemented contracts and code lives in [TECHNICAL_ARCHITECTURE.md](./TECHNICAL_ARCHITECTURE.md). Every security claim below is grounded there and proven by `npm test`.
+
 ## ⚠️ Honest status
 
 This branch hardens AgentPay for multi-user hackathon deployment. The original README overstated several claims; the corrections live inline below. Specifically:
