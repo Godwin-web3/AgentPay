@@ -2,25 +2,23 @@
 
 ## Mount the API routes
 
-In src/server.js, after the last app.get / app.post definitions and before:
-
-```js
-const server = require('http').createServer(app);
-```
-
-add:
+Preferred: apply patches/mount-routes.patch to src/server.js, or insert these two lines immediately before the createServer call:
 
 ```js
 const { setupRoutes } = require('./api/serverRoutes');
 setupRoutes(app);
 ```
 
-A ready-to-apply patch is in patches/mount-routes.patch.
+Alternative: require the startup hook early and call it with the Express app instance before listen.
 
-Or call mountAgentPayRoutes from src/serverMount.js.
+```js
+const { mountIfNeeded } = require('./src/startup');
+mountIfNeeded(app);
+```
 
-The routes live under /api/payment-requests and /api/adapters/propose.
+The routes live under /api/payment-requests, /api/adapters/propose, and /api/agent/intent.
 POST /api/payment-requests/:id/settle only records a txHash after you have already verified the vault event. It does not move funds.
+POST /api/agent/intent accepts structured intents from external agents and returns proposals or PaymentRequests without moving funds.
 
 ## Persistent store
 
@@ -43,13 +41,11 @@ The functions remain side-effect free.
 ## Frontend
 
 The Requests view is already in the main navigation (frontend/src/App.tsx).
-Register PayView at the /pay/:id route if you add a router, and ReceiptView where you display settlement status.
-Neither component authorizes a transfer.
 
 ## Tests
 
 ```bash
-node --test test/adapters.test.js test/links.test.js test/verify.test.js
+node --test test/adapters.test.js test/links.test.js test/verify.test.js test/agentInterface.test.js
 ```
 
 Existing Hardhat tests for AgentVault and DecisionLog are unchanged.
@@ -58,3 +54,4 @@ Existing Hardhat tests for AgentVault and DecisionLog are unchanged.
 
 Every path that settles value still requires AgentVault.execute or executeWithSig.
 The new code only proposes, records, or verifies after the fact.
+Firebase auth and stores are unchanged.
