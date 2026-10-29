@@ -2,13 +2,20 @@
 
 ## Mount the API routes
 
-In your existing server.js (or index.js):
+In src/server.js, after the last app.get / app.post definitions and before:
 
 ```js
-const { setupRoutes } = require('./src/api/serverRoutes');
-// after you create the Express app
+const server = require('http').createServer(app);
+```
+
+add:
+
+```js
+const { setupRoutes } = require('./api/serverRoutes');
 setupRoutes(app);
 ```
+
+Or call mountAgentPayRoutes from src/serverMount.js.
 
 The routes live under /api/payment-requests and /api/adapters/propose.
 POST /api/payment-requests/:id/settle only records a txHash after you have already verified the vault event. It does not move funds.
@@ -26,14 +33,20 @@ The link encodes the request ID. Opening it does not authorize a payment.
 
 ## Adapters
 
-SwapAdapter calls quoteSwap from src/adapters/providers.js.
-Replace the body of quoteSwap with a real aggregator HTTP call.
-Do the same for quoteBridge when you wire CrossNetworkAdapter.
+SwapAdapter and CrossNetworkAdapter call quote functions from src/adapters/providers.js.
+DeFiAdapter checks DEFI_QUOTE_URL.
+Set QUOTE_SWAP_URL, QUOTE_BRIDGE_URL, or DEFI_QUOTE_URL to real endpoints.
+The functions remain side-effect free.
+
+## Frontend
+
+Register PayView at the /pay/:id route and ReceiptView where you display settlement status.
+Neither component authorizes a transfer.
 
 ## Tests
 
 ```bash
-node --test test/adapters.test.js test/links.test.js
+node --test test/adapters.test.js test/links.test.js test/verify.test.js
 ```
 
 Existing Hardhat tests for AgentVault and DecisionLog are unchanged.
