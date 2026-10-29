@@ -2,29 +2,31 @@
 
 Grounded in the existing AgentVault / DecisionLog boundary and the white paper phases. Each item must keep authorization on-chain.
 
-## Done in this pass
+## Done
 
 - TECHNICAL_ARCHITECTURE.md maps the five layers to current contracts and code.
-- src/adapters/ExecutionAdapter.js + DirectUSDCAdapter.js + registry. Planners can propose; only vault-authorized paths execute.
+- src/adapters/: ExecutionAdapter, DirectUSDCAdapter, SwapAdapter, CrossNetworkAdapter, and registry. Planners call propose/estimate only.
 - src/payments/PaymentRequest.js with explicit lifecycle states. Settlement still requires AgentVault.
+- src/settlement/verify.js matches receipts to AgentVault Executed events.
+- src/api/paymentRequests.js basic handlers (in-memory).
+- frontend/src/views/PaymentRequestView.tsx skeleton for creating a request.
 
 ## Phase 1 remaining (Core Execution Foundation)
 
 - Smart-account integration beyond current Circle SCA notes.
-- Additional EVM network adapters (Base, etc.) that still call an on-chain policy check.
+- Wire additional EVM networks into CrossNetworkAdapter with real bridging providers.
 - Transaction monitoring that distinguishes submitted / included / confirmed.
-- Settlement verification that matches AgentVault Executed events to PaymentRequest or adapter receipts.
+- Connect verify.js into the request settlement path.
 
-## Phase 2 (Consumer Crypto Interface)
+## Phase 2 remaining (Consumer Crypto Interface)
 
-- Frontend payment request creation, shareable link, and receipt view.
+- Wire PaymentRequestView to the real API and add shareable link + receipt view.
 - Natural-language transfer that produces a PaymentRequest then routes to vault.
 - Balance and history aggregation across connected accounts.
 
-## Phase 3 (Intelligent Asset Operations)
+## Phase 3 remaining (Intelligent Asset Operations)
 
-- Swap adapter (DEX or aggregator) that returns a proposal only.
-- Cross-network route adapter.
+- Inject a real quote provider into SwapAdapter.
 - Fee estimation that is shown before authorization.
 - Portfolio intelligence views that read on-chain state, not LLM claims.
 
