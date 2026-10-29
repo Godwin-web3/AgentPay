@@ -12,14 +12,15 @@ Grounded in the existing AgentVault / DecisionLog boundary and the white paper p
 - src/serverMount.js example for mounting routes.
 - sdk/index.js.
 - frontend/src/views/PaymentRequestView.tsx, PayView.tsx, and ReceiptView.tsx.
+- frontend/src/App.tsx now includes a Requests nav item that renders PaymentRequestView.
 - test/adapters.test.js, test/links.test.js, and test/verify.test.js.
 - INTEGRATION.md with the exact insertion point in src/server.js.
+- .env.example documents QUOTE_SWAP_URL, QUOTE_BRIDGE_URL, and DEFI_QUOTE_URL.
 
 ## Still required for production
 
-- Set QUOTE_SWAP_URL, QUOTE_BRIDGE_URL, and DEFI_QUOTE_URL to real endpoints.
+- Set the quote URL environment variables to real endpoints.
 - Insert the two lines from INTEGRATION.md into src/server.js and deploy.
-- Register PayView and ReceiptView in the frontend router.
 - Concurrent-safe store (database) if multiple processes write.
 - External agent interface that accepts structured intents and still enforces vault policy.
 - Broader test coverage that spins up a local vault and exercises verifySettlement against real Executed events.
@@ -30,4 +31,4 @@ Every new adapter or workflow must:
 3. Commit a decision hash to DecisionLog before execution when the action is AI-derived.
 4. Emit a verifiable receipt that can be checked against on-chain events.
 
-The white paper phases are scaffolded. Providers accept real URLs via environment. The mount point is documented. Settlement still happens only inside AgentVault.
+The white paper phases are scaffolded. The Requests view is in the frontend nav. Providers accept real URLs via environment. Settlement still happens only inside AgentVault.
