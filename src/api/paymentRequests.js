@@ -1,7 +1,11 @@
 const { PaymentRequest } = require('../payments');
+const { load, save } = require('../payments/store');
 
-// In-memory store for demo. Replace with persistent store.
-const store = new Map();
+let store = load();
+
+function persist() {
+  save(store);
+}
 
 function createRequest(body) {
   const req = new PaymentRequest({
@@ -14,6 +18,7 @@ function createRequest(body) {
     expiresAt: body.expiresAt || null,
   });
   store.set(req.id, req);
+  persist();
   return req.toJSON();
 }
 
@@ -27,6 +32,7 @@ function shareRequest(id) {
   const req = store.get(id);
   if (!req) return null;
   req.share();
+  persist();
   return req.toJSON();
 }
 
@@ -34,4 +40,12 @@ function listRequests() {
   return Array.from(store.values()).map(r => r.toJSON());
 }
 
-module.exports = { createRequest, getRequest, shareRequest, listRequests };
+function updateRequest(id, patch) {
+  const req = store.get(id);
+  if (!req) return null;
+  Object.assign(req, patch);
+  persist();
+  return req.toJSON();
+}
+
+module.exports = { createRequest, getRequest, shareRequest, listRequests, updateRequest };
