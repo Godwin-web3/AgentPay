@@ -14,10 +14,11 @@ import Landing from './views/Landing'
 import Profile from './views/Profile'
 import Onboarding from './views/Onboarding'
 import Login from './components/Login'
+import { PaymentRequestView } from './views/PaymentRequestView'
 import type { ChatMessage } from './types'
 import { getTokenBalances, checkVault, getWallet, getVaultAddress, getVaultBalance } from './api'
 
-type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'jobs' | 'agent' | 'goals' | 'pools'
+type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'jobs' | 'agent' | 'goals' | 'pools' | 'requests'
 
 const TerminalIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -69,8 +70,15 @@ const AgentIcon = () => (
     <circle cx="15" cy="14" r="1"/>
   </svg>
 )
+const RequestIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2v20"/>
+    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+  </svg>
+)
 const navItems = [
   { id: 'terminal', icon: TerminalIcon, label: 'Terminal' },
+  { id: 'requests', icon: RequestIcon, label: 'Requests' },
   { id: 'goals', icon: GoalIcon, label: 'Goals' },
   { id: 'pools', icon: PoolIcon, label: 'Pools' },
   { id: 'jobs', icon: JobsIcon, label: 'Jobs' },
@@ -294,6 +302,7 @@ function App({ tag }: { tag: string | null }) {
         <div className="view-content">
           <ErrorBoundary onReset={() => setView('terminal')}>
             {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} userId={userId} onActionSuccess={refreshBalances} />}
+            {view === 'requests' && <PaymentRequestView />}
             {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} userId={userId} />}
             {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={vaultAddress || agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
