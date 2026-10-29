@@ -55,10 +55,12 @@ export function PaymentRequestView() {
             {r.amount} {r.asset} to {r.to} — {r.state}
             {r.state === 'created' && <button onClick={() => handleShare(r.id)}>Share</button>}
             <div>ID: {r.id}</div>
+            {r.shareLink && <div>Link: <a href={r.shareLink}>{r.shareLink}</a></div>}
+            {r.txHash && <div>Receipt tx: {r.txHash}</div>}
           </li>
         ))}
       </ul>
-      <p>Creating or sharing a request does not move funds. Settlement still requires the payer to authorize via AgentVault.</p>
+      <p>Creating or sharing a request does not move funds. Settlement still requires the payer to authorize via AgentVault. The receipt appears only after a verified vault execution.</p>
     </div>
   );
 }
