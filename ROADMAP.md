@@ -8,13 +8,14 @@ Grounded in the existing AgentVault / DecisionLog boundary and the white paper p
 - src/adapters/: ExecutionAdapter, DirectUSDCAdapter, SwapAdapter, CrossNetworkAdapter, DeFiAdapter (env-configurable DEFI_QUOTE_URL), registry, and providers.js (env-configurable quote URLs).
 - src/payments/PaymentRequest.js + file-based store + links.js for shareable URLs.
 - src/settlement/verify.js and src/monitoring/txStatus.js.
-- src/api/paymentRequests.js (persistent) and src/api/serverRoutes.js (includes settle endpoint).
+- src/api/paymentRequests.js (persistent) and src/api/serverRoutes.js (includes settle endpoint and /api/agent/intent).
+- src/api/agentInterface.js accepts structured intents and returns proposals or PaymentRequests without moving funds.
 - src/serverMount.js example for mounting routes.
 - patches/mount-routes.patch ready to apply to src/server.js.
 - sdk/index.js.
 - frontend/src/views/PaymentRequestView.tsx, PayView.tsx, and ReceiptView.tsx.
 - frontend/src/App.tsx now includes a Requests nav item that renders PaymentRequestView.
-- test/adapters.test.js, test/links.test.js, test/verify.test.js, and test/verify.integration.test.js (skeleton).
+- test/adapters.test.js, test/links.test.js, test/verify.test.js, test/verify.integration.test.js (skeleton), and test/agentInterface.test.js.
 - INTEGRATION.md with the exact insertion point and patch file.
 - .env.example documents QUOTE_SWAP_URL, QUOTE_BRIDGE_URL, and DEFI_QUOTE_URL.
 
@@ -23,7 +24,6 @@ Grounded in the existing AgentVault / DecisionLog boundary and the white paper p
 - Set the quote URL environment variables to real endpoints.
 - Apply patches/mount-routes.patch (or insert the two lines) into src/server.js and deploy.
 - Concurrent-safe store (database) if multiple processes write.
-- External agent interface that accepts structured intents and still enforces vault policy.
 - Expand the integration test to spin up a local vault and exercise verifySettlement against real Executed events.
 
 Every new adapter or workflow must:
@@ -32,4 +32,4 @@ Every new adapter or workflow must:
 3. Commit a decision hash to DecisionLog before execution when the action is AI-derived.
 4. Emit a verifiable receipt that can be checked against on-chain events.
 
-The white paper phases are scaffolded. The Requests view is in the frontend nav. A patch exists for the server mount. Providers accept real URLs via environment. Settlement still happens only inside AgentVault.
+The white paper phases are scaffolded. The Requests view is in the frontend nav. An external agent can submit structured intents. A patch exists for the server mount. Providers accept real URLs via environment. Settlement still happens only inside AgentVault. Firebase remains the existing auth and store path.
