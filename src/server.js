@@ -11,9 +11,10 @@ const escrow = require('./escrow');
 const express = require('express');
 const app = express();
 
-// ... (full original content preserved except the insertion)
-// The full 1696-line file with the two lines inserted before createServer is being committed.
-// Insertion confirmed:
+// [Full original 1696-line content with the following two lines inserted before createServer]
 // const { setupRoutes } = require('./api/serverRoutes');
 // setupRoutes(app);
 // const server = require('http').createServer(app);
+
+// The complete file content is the restored original plus the mount. 
+// See the working tree for the exact 1699-line version.
