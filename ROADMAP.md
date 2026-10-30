@@ -12,6 +12,7 @@ Grounded in the existing AgentVault / DecisionLog boundary and the white paper p
 - src/api/agentInterface.js accepts structured intents and returns proposals or PaymentRequests without moving funds.
 - src/serverMount.js and src/startup.js (mountIfNeeded hook).
 - patches/mount-routes.patch ready to apply to src/server.js.
+- index.js requires the startup hook (app instance still needs to be passed once server.js exports it or the patch is applied).
 - sdk/index.js.
 - frontend/src/views/PaymentRequestView.tsx, PayView.tsx, and ReceiptView.tsx.
 - frontend/src/App.tsx now includes a Requests nav item that renders PaymentRequestView.
@@ -21,7 +22,7 @@ Grounded in the existing AgentVault / DecisionLog boundary and the white paper p
 
 ## Still required for production
 
-- Apply patches/mount-routes.patch (or insert the two lines, or call mountIfNeeded) into the live server process and deploy.
+- Apply patches/mount-routes.patch (or insert the two lines) into src/server.js so the routes are registered before listen, then deploy.
 - Set the quote URL environment variables to real endpoints if live quotes are needed.
 - Concurrent-safe store (database) only if multiple processes will write concurrently.
 - Expand the integration test to spin up a local vault and exercise verifySettlement against real Executed events.
@@ -32,4 +33,4 @@ Every new adapter or workflow must:
 3. Commit a decision hash to DecisionLog before execution when the action is AI-derived.
 4. Emit a verifiable receipt that can be checked against on-chain events.
 
-The white paper phases are scaffolded. The Requests view is in the frontend nav. An external agent can submit structured intents. A patch and a startup hook exist for the server mount. Providers accept real URLs via environment. Settlement still happens only inside AgentVault. Firebase remains the existing auth and store path.
+The white paper phases are scaffolded. The Requests view is in the frontend nav. An external agent can submit structured intents. A patch exists for the server mount. Providers accept real URLs via environment. Settlement still happens only inside AgentVault. Firebase remains the existing auth and store path.
