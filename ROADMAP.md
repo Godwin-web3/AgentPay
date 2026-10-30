@@ -11,8 +11,7 @@ Grounded in the existing AgentVault / DecisionLog boundary and the white paper p
 - src/api/paymentRequests.js (persistent) and src/api/serverRoutes.js (includes settle endpoint and /api/agent/intent).
 - src/api/agentInterface.js accepts structured intents and returns proposals or PaymentRequests without moving funds.
 - src/serverMount.js and src/startup.js (mountIfNeeded hook).
-- patches/mount-routes.patch ready to apply to src/server.js.
-- index.js requires the startup hook (app instance still needs to be passed once server.js exports it or the patch is applied).
+- src/server.js now calls setupRoutes(app) before listen. The payment, adapter, and agent endpoints are registered.
 - sdk/index.js.
 - frontend/src/views/PaymentRequestView.tsx, PayView.tsx, and ReceiptView.tsx.
 - frontend/src/App.tsx now includes a Requests nav item that renders PaymentRequestView.
@@ -22,10 +21,10 @@ Grounded in the existing AgentVault / DecisionLog boundary and the white paper p
 
 ## Still required for production
 
-- Apply patches/mount-routes.patch (or insert the two lines) into src/server.js so the routes are registered before listen, then deploy.
 - Set the quote URL environment variables to real endpoints if live quotes are needed.
 - Concurrent-safe store (database) only if multiple processes will write concurrently.
 - Expand the integration test to spin up a local vault and exercise verifySettlement against real Executed events.
+- Deploy the updated server so the new routes are live.
 
 Every new adapter or workflow must:
 1. Call propose() or estimate() only from the planning layer.
@@ -33,4 +32,4 @@ Every new adapter or workflow must:
 3. Commit a decision hash to DecisionLog before execution when the action is AI-derived.
 4. Emit a verifiable receipt that can be checked against on-chain events.
 
-The white paper phases are scaffolded. The Requests view is in the frontend nav. An external agent can submit structured intents. A patch exists for the server mount. Providers accept real URLs via environment. Settlement still happens only inside AgentVault. Firebase remains the existing auth and store path.
+The white paper phases are scaffolded. The Requests view is in the frontend nav. An external agent can submit structured intents. The server now mounts the new routes. Providers accept real URLs via environment. Settlement still happens only inside AgentVault. Firebase remains the existing auth and store path.
