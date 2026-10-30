@@ -4,8 +4,12 @@ require('dotenv').config();
 const { startServer } = require('./src/server');
 const { startLoop } = require('./src/loop');
 const walletService = require('./src/walletService');
+const { mountIfNeeded } = require('./src/startup');
 
 async function main() {
+  // The Express app is created inside src/server.js. If it is exported in a future
+  // change, call mountIfNeeded(app) here before startServer. For now the patch
+  // or the two-line insert in server.js remains the reliable path.
   await startServer();
 
   // Advances any in-flight intent-solver plans (src/intentEngine.js) whose
