@@ -354,9 +354,9 @@ body::after {
   text-align: right;
   font-family: var(--font-head);
   font-weight: 500;
-  font-size: clamp(26px, 6vw, 36px);
-  letter-spacing: -0.04em;
-  line-height: 0.95;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
 }
 
 .message.assistant .message-bubble {
@@ -364,9 +364,9 @@ body::after {
   border: none;
   color: var(--text);
   align-self: stretch;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1.45;
-  max-width: 36ch;
+  max-width: none;
 }
 
 .message {
@@ -1251,7 +1251,34 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
   color: #3c3832;
   word-break: break-all;
 }
-.move-book { border-top: 1px solid #161513; margin-top: 4px; }
+.term-where {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 10px;
+}
+.term-panel {
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+  flex-shrink: 0;
+}
+.term-chains {
+  display: flex;
+  gap: 18px;
+}
+.term-chains button,
+.term-quiet {
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font-family: var(--font-head);
+  font-size: 14px;
+  color: var(--muted);
+}
+.term-chains button.on { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+.term-assets { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 4px 0 2px; }
 .move-group {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);

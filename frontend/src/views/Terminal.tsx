@@ -147,6 +147,8 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
   const [where, setWhere] = React.useState('')
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
+  const [panel, setPanel] = React.useState(false)
+  const [chain, setChain] = React.useState('Robinhood')
   const [txResults, setTxResultsRaw] = React.useState<Record<number, any>>({})
 
   const setTxResults = React.useCallback((updater: Record<number, any> | ((prev: Record<number, any>) => Record<number, any>)) => {
@@ -190,8 +192,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
     getVaultBalanceApi(userId).then((res) => {
       const hood = res.chains?.find((c) => c.id === 'robinhood-testnet')
       if (hood) {
-        const stocks = (hood.tokens || []).map((token) => `${token.symbol} ${token.amount}`).join(' · ')
-        setWhere(`${hood.eth} ETH on Robinhood${stocks ? ' · ' + stocks : ''}`)
+        setWhere(`${hood.eth} ETH · Robinhood`)
         return
       }
       const base = res.chains?.find((c) => c.id === 'base')
@@ -449,6 +450,14 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         ? `Deposits into the vault on ${selected.where}.`
         : `Sends ${selected.symbol} from your ${selected.where} wallet.`
 
+  function chooseChain(name: string) {
+    setChain(name)
+    const first = MOVES.find((move) => move.where === name || String(move.where).startsWith(name))
+    if (first) setWant(first.id)
+  }
+
+  const chainMoves = MOVES.filter((move) => move.where === chain || String(move.where).startsWith(chain))
+
   if (!userAddress) return (
     <div className="terminal">
       <div className="messages">
@@ -461,11 +470,11 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
 
   return (
     <div className="terminal" style={{ padding: '8px 0 0' }}>
-      {where && <div style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 8, letterSpacing: '0.02em' }}>{where}</div>}
-      <div className="messages" ref={scrollRef} style={{ minHeight: 120 }}>
+      {where && <div className="term-where">{where}</div>}
+      <div className="messages" ref={scrollRef}>
         {messages.length === 0 && (
           <div className="message assistant">
-            <div className="message-bubble" style={{ fontSize: 14, color: 'var(--muted)' }}>Say the outcome, or use the form below. Nothing moves until you confirm.</div>
+            <div className="message-bubble" style={{ color: 'var(--muted)' }}>Say what to do. Nothing moves until you confirm.</div>
           </div>
         )}
         {messages.map((msg, i) => (
@@ -490,45 +499,44 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
           </div>
         )}
       </div>
-      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 8 }}>
-        <button type="button" disabled={loading} onClick={() => {
-          const userMsg = { role: 'user' as const, content: 'Deposit 100 of my test USDG', timestamp: Date.now() }
-          const assistantMsg = { role: 'assistant' as const, content: 'Deposit 100 from the USDG already in the wallet.', timestamp: Date.now() }
-          setMessages((prev) => {
-            const next = [...prev, userMsg, assistantMsg]
-            const idx = next.length - 1
-            setTimeout(() => setTxResults((r) => ({ ...r, [idx]: { status: 'proposing_mint' } })), 0)
-            return next
-          })
-        }} className="text-link" style={{ padding: '2px 0 10px', fontFamily: 'var(--font-head)', fontSize: 15 }}>
-          Deposit 100 USDG
-        </button>
-        <div className="move-book">
-          {['Robinhood', 'Base', 'Arc'].map((group) => {
-            const items = MOVES.filter((move) => move.where === group || String(move.where).startsWith(group))
-            return (
-              <div key={group} className="move-group">
-                <div className="move-group-name">{group}</div>
-                <div className="move-group-items">
-                  {items.map((move) => (
-                    <button key={move.id} type="button" disabled={loading} onClick={() => setWant(move.id)} className={want === move.id ? 'move-chip on' : 'move-chip'} aria-pressed={want === move.id}>
-                      {move.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
+      {panel && (
+        <div className="term-panel">
+          <div className="term-chains">
+            {['Robinhood', 'Base', 'Arc'].map((name) => (
+              <button key={name} type="button" className={chain === name ? 'on' : ''} onClick={() => chooseChain(name)}>{name}</button>
+            ))}
+          </div>
+          <div className="term-assets">
+            {chainMoves.map((move) => (
+              <button key={move.id} type="button" disabled={loading} onClick={() => setWant(move.id)} className={want === move.id ? 'move-chip on' : 'move-chip'} aria-pressed={want === move.id}>
+                {move.label}
+              </button>
+            ))}
+            {chain === 'Robinhood' && (
+              <button type="button" disabled={loading} className="term-quiet" onClick={() => {
+                const userMsg = { role: 'user' as const, content: 'Deposit 100 of my test USDG', timestamp: Date.now() }
+                const assistantMsg = { role: 'assistant' as const, content: 'Deposit 100 from the USDG already in the wallet.', timestamp: Date.now() }
+                setMessages((prev) => {
+                  const next = [...prev, userMsg, assistantMsg]
+                  const idx = next.length - 1
+                  setTimeout(() => setTxResults((r) => ({ ...r, [idx]: { status: 'proposing_mint' } })), 0)
+                  return next
+                })
+                setPanel(false)
+              }}>Deposit 100</button>
+            )}
+          </div>
+          <div style={{ color: 'var(--muted)', fontSize: 12, margin: '4px 0 2px' }}>{routeLine}</div>
+          <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" style={fieldStyle} />
+          {selected.mode === 'send' && <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Recipient address" style={fieldStyle} />}
+          <button type="button" onClick={submitMove} disabled={loading} className="ink-btn" style={{ marginTop: 12, width: '100%', minHeight: 44 }}>
+            Review
+          </button>
         </div>
-        <div style={{ color: 'var(--muted)', fontSize: 12, margin: '6px 0 8px' }}>{routeLine}</div>
-        <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" style={fieldStyle} />
-        {selected.mode === 'send' && <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Recipient address" style={fieldStyle} />}
-        <button type="button" onClick={submitMove} disabled={loading} className="ink-btn" style={{ marginTop: 12, width: '100%', minHeight: 44 }}>
-          Review
-        </button>
-      </div>
-      <div className="input-area" style={{ marginTop: 8 }}>
-        <textarea ref={inputRef} className="chat-input" placeholder="Or type it" value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '100px', fontSize: 14 }} />
+      )}
+      <div className="input-area">
+        <button type="button" className={panel ? 'move-chip on' : 'move-chip'} onClick={() => setPanel((open) => !open)}>{panel ? 'Close' : 'Send'}</button>
+        <textarea ref={inputRef} className="chat-input" placeholder="Say what to do" value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '100px', fontSize: 15 }} />
         <button className="send-btn icon-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>Go</button>
       </div>
     </div>
