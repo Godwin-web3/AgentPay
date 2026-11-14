@@ -126,7 +126,6 @@ function App({ tag }: { tag: string | null }) {
   const [isOnboarded, setIsOnboarded] = useState(false)
   const [onboardCheckDone, setOnboardCheckDone] = useState(false)
   const [agentWalletAddress, setAgentWalletAddress] = useState('')
-  const [vaultAddress, setVaultAddress] = useState('')
 
   useEffect(() => {
     localStorage.setItem('agentpay_view', view)
@@ -303,7 +302,7 @@ function App({ tag }: { tag: string | null }) {
             {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} userId={userId} onActionSuccess={refreshBalances} />}
             {view === 'requests' && <PaymentRequestView />}
             {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} userId={userId} />}
-            {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} vaultChain={vaultChain} positions={positions} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={vaultAddress || agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
+            {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} vaultChain={vaultChain} positions={positions} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
             {view === 'goals' && <Goals userAddress={userAddress} userId={userId} />}
             {view === 'pools' && <Pools userAddress={userAddress} userId={userId} />}
