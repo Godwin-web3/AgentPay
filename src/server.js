@@ -306,7 +306,13 @@ async function handleHistory(req, res) {
         const chainItems = await require('./baseBalance').baseDepositHistory(baseAddress);
         const seen = new Set(items.map((item) => item.txHash).filter(Boolean));
         for (const item of chainItems) {
-          if (!seen.has(item.txHash)) items.push(item);
+          const existing = items.find((row) => row.txHash && row.txHash === item.txHash);
+          if (existing) {
+            existing.reason = item.reason;
+            existing.chain = 'base';
+          } else if (!seen.has(item.txHash)) {
+            items.push(item);
+          }
         }
         items.sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
       } catch (err) {

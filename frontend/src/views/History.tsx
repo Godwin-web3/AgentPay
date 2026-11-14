@@ -34,7 +34,7 @@ function describeEntry(tx: any) {
     case 'payment':
       return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, sign: '−' as const, badge: null }
     case 'deposit':
-      return { title: 'Deposited', sub: tx.reason || 'into vault', amount, sign: '+' as const, badge: null }
+      return { title: 'Deposit', sub: tx.chain === 'base' || String(tx.reason || '').includes('Base') ? 'Base Sepolia vault' : (tx.reason || 'Vault'), amount, sign: '+' as const, badge: null }
     case 'withdrawal':
       return { title: 'Withdrew', sub: 'from vault', amount, sign: '+' as const, badge: null }
     case 'job_hire':
@@ -121,8 +121,8 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
   return (
     <div className="history-view" style={{ paddingBottom: 80 }}>
       <div className="reveal" style={{ marginBottom: 28 }}>
-        <p className="eyebrow">Every dollar, accounted for</p>
-        <h2 className="page-title" style={{ marginBottom: 8 }}>The Ledger</h2>
+        <p className="eyebrow">Activity</p>
+        <h2 className="page-title" style={{ marginBottom: 8 }}>History</h2>
         <div className="mono-data" style={{ fontSize: 11, color: 'var(--muted)' }}>{userAddress}</div>
       </div>
 

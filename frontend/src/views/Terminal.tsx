@@ -75,20 +75,13 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
 function BalanceCard({ data }: { data: any }) {
   if (!data?.balances) return null
   return (
-    <div style={{ marginTop: 10, border: '1px solid var(--border)', padding: '12px 14px', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-      <div style={{ color: 'var(--cyan)', marginBottom: 8, fontSize: 9, letterSpacing: 2 }}>BALANCES</div>
+    <div style={{ marginTop: 12 }}>
       {Object.entries(data.balances).map(([token, amt]) => (
-        <div key={token} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+        <div key={token} style={{ display: 'flex', justifyContent: 'space-between', gap: 24, padding: '6px 0', borderTop: '1px solid var(--border)', fontFamily: 'var(--font-body)', fontSize: 14 }}>
           <span style={{ color: 'var(--muted)' }}>{token}</span>
-          <span>{String(amt)}</span>
+          <span style={{ fontVariantNumeric: 'tabular-nums' }}>{String(amt)} USDC</span>
         </div>
       ))}
-      {data.vault && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-          <span style={{ color: 'var(--muted)' }}>VAULT</span>
-          <span style={{ color: 'var(--cyan)' }}>{data.vault} USDC</span>
-        </div>
-      )}
     </div>
   )
 }
@@ -293,8 +286,8 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
       <div className="messages" ref={scrollRef}>
         {messages.map((msg, i) => (
           <div key={i} className={`message ${msg.role}`}>
-            <div style={{ fontSize: 9, letterSpacing: 1, marginBottom: 4, color: msg.role === 'user' ? 'var(--muted)' : 'var(--cyan)', fontFamily: 'var(--font-mono)', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
-              {msg.role === 'user' ? 'YOU' : 'AP'} — {formatTime(msg.timestamp)}
+            <div style={{ fontSize: 12, marginBottom: 4, color: 'var(--muted)', fontFamily: 'var(--font-body)', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
+              {msg.role === 'user' ? 'You' : 'AgentPay'} · {formatTime(msg.timestamp)}
             </div>
             <div className="message-bubble">
               {msg.content}
@@ -317,7 +310,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         )}
       </div>
       <div className="quick-actions">
-        {[{ label: 'SEND', value: 'Send 1 USDC to ', auto: false }, { label: 'SWAP', value: 'Swap 10 USDC for ETH on Base Sepolia', auto: true }, { label: 'BALANCE', value: 'What is my vault balance?', auto: true }, { label: 'SCHEDULE', value: 'Pay 1 USDC every day to ', auto: false }].map(btn => (
+        {[{ label: 'Send', value: 'Send 1 USDC to ', auto: false }, { label: 'Swap', value: 'Swap 10 USDC for ETH on Base Sepolia', auto: true }, { label: 'Balance', value: 'What is my vault balance?', auto: true }, { label: 'Schedule', value: 'Pay 1 USDC every day to ', auto: false }].map(btn => (
           <button key={btn.label} className="quick-btn" disabled={loading} onClick={() => { if (btn.auto) { handleSend(btn.value) } else { setInput(btn.value); inputRef.current?.focus() } }}>
             {btn.label}
           </button>
@@ -325,7 +318,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
       </div>
       <div className="input-area">
         <textarea ref={inputRef} className="chat-input" placeholder="send, pay, swap..." value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '120px' }} />
-        <button className="send-btn icon-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>SEND</button>
+        <button className="send-btn icon-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>Send</button>
       </div>
     </div>
   )

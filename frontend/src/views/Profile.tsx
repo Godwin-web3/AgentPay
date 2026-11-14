@@ -8,6 +8,7 @@ interface Props {
   tag?: string | null
   vaultBalance: string
   vaultChain?: string
+  positions?: { label: string; amount: string }[]
   walletBalance: string
   tokenBalances: Record<string, string>
   activeProvider: any
@@ -25,12 +26,8 @@ const ChevronRight = () => (
   </svg>
 )
 
-export default function Profile({ userAddress, userId, vaultBalance, vaultChain, walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, tag }: Props) {
+export default function Profile({ userAddress, userId, vaultBalance, vaultChain, positions = [], walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, tag }: Props) {
   const [subView, setSubView] = useState<SubView>(null)
-
-  function shortAddr(addr: string) {
-    return addr.slice(0, 6) + '...' + addr.slice(-4)
-  }
 
   if (!userAddress) {
     return (
@@ -70,101 +67,33 @@ export default function Profile({ userAddress, userId, vaultBalance, vaultChain,
 
   return (
     <div className="reveal" style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
-      <p className="eyebrow">Your account</p>
+      <p className="eyebrow">{tag && tag !== 'skip' ? `@${tag}` : 'Account'}</p>
+      <div style={{ fontFamily: 'var(--font-body)', fontSize: 40, fontWeight: 500, letterSpacing: '-0.03em', lineHeight: 1, margin: '8px 0 4px' }}>
+        {vaultBalance}
+      </div>
+      <div style={{ color: 'var(--muted)', marginBottom: 20 }}>{vaultChain ? `USDC in the ${vaultChain} vault` : 'USDC in the vault'}</div>
 
-      {/* Identity strip */}
-      <div className="card" style={{ marginBottom: 16, padding: '12px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>CONNECTED</div>
-            <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--seal)', fontSize: 14 }}>{shortAddr(userAddress)}</div>
+      <div style={{ borderTop: '1px solid var(--border)' }}>
+        {(positions.length ? positions : [{ label: 'Vault', amount: vaultBalance }]).map((row) => (
+          <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '12px 0', borderBottom: '1px solid var(--border)', fontSize: 14 }}>
+            <span style={{ color: 'var(--muted)' }}>{row.label}</span>
+            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{row.amount} USDC</span>
           </div>
-          {tag && tag !== 'skip' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', color: 'var(--seal)', fontSize: 13, fontWeight: 700 }}>
-              <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--seal)', display: 'inline-block', boxShadow: '0 0 4px var(--seal)' }} />
-              @{tag}
-            </div>
-          )}
-        </div>
+        ))}
+        {walletBalance && !positions.some((row) => row.label === 'Arc wallet') && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '12px 0', borderBottom: '1px solid var(--border)', fontSize: 14 }}>
+            <span style={{ color: 'var(--muted)' }}>Arc wallet</span>
+            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{walletBalance} USDC</span>
+          </div>
+        )}
       </div>
 
-      {/* Vault — the primary stat, with quick actions right here */}
-      <div className="card-deep" style={{ marginBottom: 16, padding: '24px' }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 3, color: 'var(--muted)', marginBottom: 8 }}>
-          VAULT BALANCE
-        </div>
-        <div style={{ fontFamily: 'var(--font-head)', fontSize: 36, fontWeight: 700, color: 'var(--text)', lineHeight: 1, marginBottom: 16 }}>
-          {vaultBalance} <span style={{ fontSize: 16, color: 'var(--muted)', fontWeight: 400 }}>{vaultChain ? `USDC · ${vaultChain}` : 'USDC'}</span>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-          <button
-            onClick={() => setSubView('vault')}
-            style={{ padding: '10px 8px', background: 'var(--seal)', border: '1px solid var(--seal)', color: '#0B0D10', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 1.5, fontWeight: 700, cursor: 'pointer' }}
-          >
-            DEPOSIT
-          </button>
-          <button
-            onClick={() => setSubView('vault')}
-            style={{ padding: '10px 8px', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: 1.5, cursor: 'pointer' }}
-          >
-            WITHDRAW
-          </button>
-        </div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--muted)', wordBreak: 'break-all', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-          {agentWalletAddress || '—'}
-        </div>
+      <div style={{ display: 'flex', gap: 16, margin: '16px 0 24px' }}>
+        <button onClick={() => setSubView('vault')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text)', cursor: 'pointer', font: 'inherit' }}>Deposit</button>
+        <button onClick={() => setSubView('vault')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--muted)', cursor: 'pointer', font: 'inherit' }}>Withdraw</button>
       </div>
 
-      {/* Wallet — secondary stat */}
-      <div className="card" style={{ marginBottom: 16, padding: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <span style={{ fontSize: 10, color: 'var(--muted)', letterSpacing: '0.05em' }}>YOUR WALLET</span>
-          <span style={{ fontSize: 9, color: 'var(--wire)', border: '1px solid var(--wire)', borderRadius: 3, padding: '1px 6px' }}>CIRCLE</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13 }}>{shortAddr(userAddress)}</span>
-          <button
-            onClick={(e) => {
-              const btn = e.currentTarget
-              const original = btn.textContent
-              const fallbackCopy = () => {
-                const el = document.createElement('textarea')
-                el.value = userAddress
-                el.style.position = 'fixed'
-                el.style.opacity = '0'
-                document.body.appendChild(el)
-                el.select()
-                try { document.execCommand('copy') } catch {}
-                document.body.removeChild(el)
-              }
-              if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(userAddress).catch(fallbackCopy)
-              } else {
-                fallbackCopy()
-              }
-              btn.textContent = 'copied'
-              setTimeout(() => { btn.textContent = original }, 1200)
-            }}
-            style={{ background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--font-mono)', padding: 0 }}
-            title="Copy full address"
-          >
-            copy
-          </button>
-        </div>
-        <div style={{ fontSize: 11, color: 'var(--muted)', borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-          Balance: <span style={{ color: 'var(--text)' }}>{walletBalance || '0'} USDC</span>
-        </div>
-      </div>
-
-      {/* Network */}
-      <div className="card" style={{ marginBottom: 16, padding: '14px 16px' }}>
-        <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 8, letterSpacing: '0.05em' }}>NETWORK</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--seal)', display: 'inline-block' }} />
-          <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--seal)', fontSize: 13 }}>Arc Testnet</span>
-          <span style={{ color: 'var(--muted)', fontSize: 12 }}>· Chain ID 5042002</span>
-        </div>
-      </div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--muted)', wordBreak: 'break-all' }}>{agentWalletAddress || userAddress}</div>
 
       {/* Policy — the one menu item that's genuinely unique to Account */}
       <button

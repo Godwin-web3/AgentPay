@@ -154,6 +154,7 @@ function App({ tag }: { tag: string | null }) {
 
   const [vaultBalance, setVaultBalance] = useState('0')
   const [vaultChain, setVaultChain] = useState('')
+  const [positions, setPositions] = useState<{ label: string; amount: string }[]>([])
   const [activeProvider, setActiveProvider] = useState<any>(null)
   const [walletBalance, setWalletBalance] = useState('0')
   const [tokenBalances, setTokenBalances] = useState<Record<string,string>>({})
@@ -195,9 +196,17 @@ function App({ tag }: { tag: string | null }) {
     }
     try {
       const api = await getVaultBalanceApi(userId)
-      if (api.balance) setVaultBalance(Number(api.balance).toFixed(4))
+      const rows: { label: string; amount: string }[] = []
       const base = api.chains?.find((c) => c.id === 'base')
-      if (base) setVaultChain(base.name)
+      if (base) {
+        rows.push({ label: 'Base Sepolia vault', amount: Number(base.vault).toFixed(2) })
+        rows.push({ label: 'Base Sepolia wallet', amount: Number(base.wallet).toFixed(2) })
+        setVaultBalance(Number(base.vault).toFixed(2))
+        setVaultChain(base.name)
+      } else if (api.balance) {
+        setVaultBalance(Number(api.balance).toFixed(2))
+      }
+      setPositions(rows)
     } catch (e) {
       console.error('Failed to refresh vault balance', e)
     }
@@ -257,7 +266,7 @@ function App({ tag }: { tag: string | null }) {
       {/* Desktop Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <h1>AGENTPAY</h1>
+          <h1>AgentPay</h1>
         </div>
 
         <nav style={{ flex: 1 }}>
@@ -278,7 +287,7 @@ function App({ tag }: { tag: string | null }) {
       <main className="main">
         <AgentHeader 
           onAddressChange={setUserAddress} 
-          onBalanceChange={(v, w) => { setVaultBalance(v); setWalletBalance(w) }} 
+          onBalanceChange={() => {}} 
           onProviderChange={setActiveProvider} 
           currentView={view} 
           onNavigate={(v) => setView(v as View)} 
@@ -294,7 +303,7 @@ function App({ tag }: { tag: string | null }) {
             {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} userId={userId} onActionSuccess={refreshBalances} />}
             {view === 'requests' && <PaymentRequestView />}
             {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} userId={userId} />}
-            {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} vaultChain={vaultChain} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={vaultAddress || agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
+            {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} vaultChain={vaultChain} positions={positions} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={vaultAddress || agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
             {view === 'goals' && <Goals userAddress={userAddress} userId={userId} />}
             {view === 'pools' && <Pools userAddress={userAddress} userId={userId} />}
