@@ -1,4 +1,5 @@
 import { useAuth } from '../contexts/AuthContext'
+import { Wordmark } from './Mark'
 import { useEffect, useState, useCallback } from 'react'
 import { getHealth, getPausedState, pauseAgent, resumeAgent } from '../api'
 import type { HealthData } from '../types'
@@ -67,7 +68,7 @@ export default function AgentHeader({ currentView, onNavigate, onClearMemory, re
     <>
       <div className="agent-header" style={{ height: 52, padding: '0 16px', alignItems: 'center' }}>
         <div className="agent-info" style={{ gap: 8 }}>
-          <div className="agent-name" style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.02em' }}>AgentPay</div>
+          <Wordmark size={16} />
           {tag && tag !== 'skip' && (
             <div style={{
               fontFamily: 'var(--font-body)',

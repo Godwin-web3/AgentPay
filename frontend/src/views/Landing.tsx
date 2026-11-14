@@ -1,3 +1,5 @@
+import { Wordmark } from '../components/Mark'
+
 const chains = [
   {
     index: '01',
@@ -23,7 +25,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
   return (
     <div className="sheet">
       <header className="sheet-bar">
-        <span className="mark">AgentPay</span>
+        <Wordmark />
         <button type="button" onClick={onLaunch} className="text-link">Sign in</button>
       </header>
 

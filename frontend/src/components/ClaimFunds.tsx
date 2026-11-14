@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { claimTestnet } from '../api'
 import { useAuth } from '../contexts/AuthContext'
+import { Wordmark } from './Mark'
 
 export default function ClaimFunds({ userId, onDone }: { userId: string; onDone: () => void }) {
   const { walletAddress } = useAuth()
@@ -41,7 +42,7 @@ export default function ClaimFunds({ userId, onDone }: { userId: string; onDone:
   return (
     <div className="sheet">
       <header className="sheet-bar">
-        <span className="mark">AgentPay</span>
+        <Wordmark />
         <span className="kicker" style={{ margin: 0 }}>Test funds</span>
       </header>
       <main className="sheet-main">

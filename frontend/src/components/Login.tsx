@@ -1,4 +1,5 @@
 import { useAuth } from '../contexts/AuthContext';
+import { Wordmark } from './Mark';
 
 export default function Login({ onBack }: { onBack?: () => void }) {
   const { signInWithGoogle } = useAuth();
@@ -8,7 +9,7 @@ export default function Login({ onBack }: { onBack?: () => void }) {
       <header className="sheet-bar">
         {onBack ? (
           <button type="button" onClick={onBack} className="text-link">Back</button>
-        ) : <span className="mark">AgentPay</span>}
+        ) : <Wordmark />}
         <span className="kicker" style={{ margin: 0 }}>Sign in</span>
       </header>
       <main className="sheet-main">

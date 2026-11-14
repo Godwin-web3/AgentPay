@@ -12,6 +12,7 @@ import History from './views/History'
 import Landing from './views/Landing'
 import Profile from './views/Profile'
 import Login from './components/Login'
+import { Wordmark } from './components/Mark'
 import { PaymentRequestView } from './views/PaymentRequestView'
 import type { ChatMessage } from './types'
 import { getTokenBalances, getWallet, getVaultBalanceApi } from './api'
@@ -194,7 +195,7 @@ function App({ tag }: { tag: string | null }) {
       {/* Desktop Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <h1>AgentPay</h1>
+          <Wordmark size={20} />
         </div>
 
         <nav style={{ flex: 1 }}>

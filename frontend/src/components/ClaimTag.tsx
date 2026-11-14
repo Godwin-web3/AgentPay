@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { claimTag } from '../api'
 import { useAuth } from '../contexts/AuthContext'
+import { Wordmark } from './Mark'
 
 export default function ClaimTag({ onClaimed }: { onClaimed: (tag: string) => void }) {
   const { user } = useAuth()
@@ -26,7 +27,7 @@ export default function ClaimTag({ onClaimed }: { onClaimed: (tag: string) => vo
   return (
     <div className="sheet">
       <header className="sheet-bar">
-        <span className="mark">AgentPay</span>
+        <Wordmark />
         <span className="kicker" style={{ margin: 0 }}>Tag</span>
       </header>
       <main className="sheet-main">
