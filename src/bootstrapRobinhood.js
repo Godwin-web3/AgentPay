@@ -15,21 +15,49 @@ async function bootstrapRobinhood() {
     return registry.remember(CHAIN_KEY, { status: 'disabled' });
   }
 
-  if (process.env.VAULT_ADDRESS_ROBINHOOD_TESTNET) {
+  const chain = getChain(CHAIN_KEY);
+  if (!chain.testnet || chain.chainId !== 46630) {
+    return registry.remember(CHAIN_KEY, {
+      status: 'skipped',
+      reason: 'Refusing to deploy. Robinhood bootstrap is testnet chain id 46630 only.',
+    });
+  }
+
+  const provider = getProvider(CHAIN_KEY);
+  const wanted = chain.stable.address.toLowerCase();
+
+  async function holdsWanted(address) {
+    if (!address) return false;
+    try {
+      const current = await new ethers.Contract(address, ['function usdc() view returns (address)'], provider).usdc();
+      return String(current).toLowerCase() === wanted;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  const pinned = process.env.VAULT_ADDRESS_ROBINHOOD_TESTNET;
+  if (pinned && await holdsWanted(pinned)) {
     return registry.remember(CHAIN_KEY, {
       status: 'deployed',
-      vault: process.env.VAULT_ADDRESS_ROBINHOOD_TESTNET,
+      vault: pinned,
       executor: null,
       executorSkipped: true,
+      token: chain.stable.address,
+      tokenSymbol: chain.stable.symbol,
       source: 'env',
     });
   }
 
   try {
     const stored = await registry.load(CHAIN_KEY);
-    if (stored && stored.status === 'deployed' && stored.vault) {
+    if (stored && stored.vault && await holdsWanted(stored.vault)) {
       console.log('[robinhood-testnet] using stored vault ' + stored.vault);
       return stored;
+    }
+    if (stored && stored.vault) {
+      console.log('[robinhood-testnet] stored vault does not hold test USDG. Deploying a new one.');
+      await registry.save(CHAIN_KEY, { status: 'replaced', vault: null, executor: null, executorSkipped: false, previousVault: stored.vault });
     }
   } catch (err) {
     console.error('[robinhood-testnet] could not read stored deployment:', err.message);
@@ -42,15 +70,6 @@ async function bootstrapRobinhood() {
     return registry.remember(CHAIN_KEY, { status: 'skipped', reason: 'Firestore is not configured, so a deploy would repeat on every restart' });
   }
 
-  const chain = getChain(CHAIN_KEY);
-  if (!chain.testnet || chain.chainId !== 46630) {
-    return registry.remember(CHAIN_KEY, {
-      status: 'skipped',
-      reason: 'Refusing to deploy. Robinhood bootstrap is testnet chain id 46630 only.',
-    });
-  }
-
-  const provider = getProvider(CHAIN_KEY);
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
   let balance;
   try {
@@ -79,8 +98,12 @@ async function bootstrapRobinhood() {
 
   try {
     const prior = registry.recall(CHAIN_KEY) || {};
-    let vaultAddress = prior.vault || null;
-    let vaultTx = prior.vaultTx || null;
+    let vaultAddress = null;
+    let vaultTx = null;
+    if (await holdsWanted(prior.vault)) {
+      vaultAddress = prior.vault;
+      vaultTx = prior.vaultTx || null;
+    }
     if (!vaultAddress) {
       console.log('[robinhood-testnet] deploying vault from ' + wallet.address);
       const vaultArtifact = readArtifact('AgentVault');

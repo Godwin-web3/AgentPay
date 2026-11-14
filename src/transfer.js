@@ -57,4 +57,41 @@ async function mintTestUsdg(amount) {
   return { txHash: receipt.hash, amount: String(whole), explorer: chain.explorer + '/tx/' + receipt.hash };
 }
 
-module.exports = { sendOnRobinhood, mintTestUsdg };
+async function fundTestWallet() {
+  const chain = getChain('robinhood-testnet');
+  if (!chain.testnet || chain.chainId !== 46630) throw new Error('Test funding stays on Robinhood testnet.');
+  if (!process.env.PRIVATE_KEY) throw new Error('The Robinhood testnet key is not on the server.');
+  const provider = getProvider(chain.id);
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  const token = new ethers.Contract(chain.usdg.address, [
+    'function balanceOf(address) view returns (uint256)',
+    'function mint(address,uint256)',
+    'function approve(address,uint256) returns (bool)',
+  ], wallet);
+  const depositRaw = ethers.parseUnits('100', chain.usdg.decimals);
+  let balance = await token.balanceOf(wallet.address);
+  let mintTx = null;
+  if (balance < depositRaw) {
+    const minted = await token.mint(wallet.address, ethers.parseUnits('1000', chain.usdg.decimals));
+    const receipt = await minted.wait();
+    mintTx = receipt.hash;
+    balance = await token.balanceOf(wallet.address);
+  }
+  const vaultAddress = require('./swap').vaultAddressFor(chain);
+  if (!vaultAddress) {
+    return {
+      minted: Boolean(mintTx),
+      mintTx,
+      deposited: false,
+      reason: 'Test USDG is in the wallet. The vault is still deploying. Tap again in a minute.',
+    };
+  }
+  const approved = await token.approve(vaultAddress, depositRaw);
+  await approved.wait();
+  const vault = new ethers.Contract(vaultAddress, ['function deposit(uint256)'], wallet);
+  const deposited = await vault.deposit(depositRaw);
+  const receipt = await deposited.wait();
+  return { minted: Boolean(mintTx), mintTx, deposited: true, txHash: receipt.hash, amount: '100', explorer: chain.explorer + '/tx/' + receipt.hash };
+}
+
+module.exports = { sendOnRobinhood, mintTestUsdg, fundTestWallet };

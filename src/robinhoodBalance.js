@@ -56,7 +56,7 @@ async function depositStock(amount) {
   const token = new ethers.Contract(chain.stable.address, ERC20, wallet);
   const balance = await token.balanceOf(wallet.address);
   if (balance < raw) {
-    throw new Error('Robinhood wallet holds ' + ethers.formatUnits(balance, chain.stable.decimals) + ' TSLA.');
+    throw new Error('Robinhood wallet holds ' + ethers.formatUnits(balance, chain.stable.decimals) + ' ' + chain.stable.symbol + '. Tap Fund test wallet first.');
   }
   const approved = await token.approve(vaultAddress, raw);
   await approved.wait();

@@ -589,7 +589,7 @@ async function handleVaultDeposit(req, res) {
         amount: Number(amount),
         reason: 'Robinhood testnet vault',
         txHash,
-        token: 'TSLA',
+        token: 'USDG',
         type: 'deposit',
       });
       return send(res, 200, { success: true, txHash, explorer: chain.explorer + '/tx/' + txHash });
@@ -1471,6 +1471,33 @@ async function handleMintUsdg(req, res) {
 }
 
 app.post('/usdg/mint', handleMintUsdg);
+async function handleFundTest(req, res) {
+  const userId = getUserId(req);
+  try {
+    const result = await require('./transfer').fundTestWallet();
+    if (result.txHash) {
+      const { appendSpend } = require('./spendStore');
+      try {
+        await appendSpend({
+          userAddress: userId,
+          to: 'robinhood-testnet',
+          amount: 100,
+          reason: 'Fund test wallet',
+          txHash: result.txHash,
+          token: 'USDG',
+          type: 'deposit',
+        });
+      } catch (err) {
+        console.error('[fund] history:', err.message);
+      }
+    }
+    return send(res, 200, { success: result.deposited === true, ...result });
+  } catch (err) {
+    return send(res, 200, { success: false, reason: err.shortMessage || err.message });
+  }
+}
+
+app.post('/test/fund', handleFundTest);
 app.get('/chains', handleChains);
 app.get('/schedules', handleGetSchedules);
 app.post('/schedules', handleCreateSchedule);

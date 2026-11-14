@@ -69,11 +69,8 @@ export async function executeSwap(
   }, userId)
 }
 
-export async function mintTestUsdg(amount: number, userId: string): Promise<any> {
-  return request<any>('/usdg/mint', {
-    method: 'POST',
-    body: JSON.stringify({ amount })
-  }, userId)
+export async function fundTestWallet(userId: string): Promise<any> {
+  return request<any>('/test/fund', { method: 'POST', body: '{}' }, userId)
 }
 
 export async function executeTransfer(

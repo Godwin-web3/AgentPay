@@ -129,15 +129,12 @@ const CHAINS = {
     explorer: 'https://explorer.testnet.chain.robinhood.com',
     gasSymbol: 'ETH',
     gasDecimals: 18,
-    // The testnet faucet mints stock tokens, not USDG. TSLA is the vault asset
-    // until a testnet stable exists. 18 decimals, matching the token.
+    // Vault asset is the open test USDG. Paxos will not mint while their faucet is down.
     stable: {
-      symbol: 'TSLA',
-      address: '0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E',
-      decimals: 18,
+      symbol: 'USDG',
+      address: '0x42fa9A8085c0bc633Afa4e19a1f491db9a4dC0fE',
+      decimals: 6,
     },
-    // Paxos testnet USDG (0x7E95…) cannot be minted while their faucet is down.
-    // This is an open test token on the same chain. It is not Paxos USDG.
     usdg: {
       symbol: 'USDG',
       address: '0x42fa9A8085c0bc633Afa4e19a1f491db9a4dC0fE',
