@@ -1488,12 +1488,15 @@ async function handleClaimTest(req, res) {
     if (!wallet || !wallet.address) {
       return send(res, 200, { success: false, reason: 'Sign in again so the wallet exists.' });
     }
-    if (wallet.testClaim && wallet.testClaim.landed) {
-      return send(res, 200, { success: true, already: true, ...wallet.testClaim });
+    const previous = (wallet.testClaim && wallet.testClaim.landed) || [];
+    const result = await require('./testClaim').claimTestnet(wallet.address, previous);
+    const landed = previous.concat(result.landed);
+    if (!result.landed.length) {
+      return send(res, 200, { success: true, already: true, landed, skipped: result.skipped });
     }
-    const result = await require('./testClaim').claimTestnet(wallet.address);
-    await walletStore.setWallet(userId, { testClaim: result });
-    return send(res, 200, { success: true, ...result });
+    const saved = { landed, skipped: result.skipped };
+    await walletStore.setWallet(userId, { testClaim: saved });
+    return send(res, 200, { success: true, ...saved });
   } catch (err) {
     return send(res, 200, { success: false, reason: err.shortMessage || err.message });
   }

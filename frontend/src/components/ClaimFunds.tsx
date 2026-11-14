@@ -35,7 +35,7 @@ export default function ClaimFunds({ userId, onDone }: { userId: string; onDone:
         {!landed ? (
           <>
             <p style={{ margin: 0, fontSize: 17, lineHeight: 1.4, maxWidth: '34ch' }}>
-              One tap sends test funds to your wallet. Stock tokens and Base USDC cannot be minted.
+              One tap sends test USDG, the stock tokens, and gas to your wallet.
             </p>
             {error && <p style={{ color: '#8a3b2c', marginTop: 16 }}>{error}</p>}
             <button type="button" onClick={claim} disabled={loading} style={{ marginTop: 28, background: '#161513', color: '#f3f0e8', border: 'none', padding: '14px 22px', fontFamily: 'var(--font-head)', fontSize: 16, cursor: 'pointer' }}>
