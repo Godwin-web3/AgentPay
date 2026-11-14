@@ -190,6 +190,7 @@ describe('PoolVault — authorization and objection-window hardening', function 
       maxSingleProposal: ethers.parseUnits('500', 6),
     }, constitutionAuth.deadline, constitutionAuth.signature);
 
+    await pool.connect(mike).acceptInvite(poolId);
     const removalAuth = await authorize(founder, poolId, 2, { targetMember: mike.address });
     await pool.connect(agent).proposeRemoveMember(
       poolId, founder.address, mike.address, removalAuth.deadline, removalAuth.signature
