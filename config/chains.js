@@ -136,6 +136,12 @@ const CHAINS = {
       address: '0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E',
       decimals: 18,
     },
+    // Paxos testnet USDG. Not the mainnet token. The vault still accounts in TSLA.
+    usdg: {
+      symbol: 'USDG',
+      address: '0x7E955252E15c84f5768B83c41a71F9eba181802F',
+      decimals: 6,
+    },
     stocks: [
       { symbol: 'TSLA', address: '0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E', decimals: 18 },
       { symbol: 'AMD', address: '0x71178BAc73cBeb415514eB542a8995b82669778d', decimals: 18 },

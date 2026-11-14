@@ -117,7 +117,7 @@ function PolicyCard({ data }: { data: any }) {
 export default function Terminal({ messages, setMessages, userAddress, userId, onActionSuccess }: Props) {
   const [amount, setAmount] = React.useState('')
   const [who, setWho] = React.useState('')
-  const [want, setWant] = React.useState<'eth' | 'tsla' | 'amd' | 'amzn' | 'nflx' | 'pltr' | 'base-eth'>('eth')
+  const [want, setWant] = React.useState<'usdg' | 'eth' | 'tsla' | 'amd' | 'amzn' | 'nflx' | 'pltr' | 'base-eth'>('usdg')
   const [where, setWhere] = React.useState('')
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
@@ -409,6 +409,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
         <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
           {([
+            ['usdg', 'USDG'],
             ['eth', 'ETH'],
             ['tsla', 'TSLA'],
             ['amd', 'AMD'],

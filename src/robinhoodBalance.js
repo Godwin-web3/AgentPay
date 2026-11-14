@@ -15,7 +15,9 @@ async function readRobinhoodPosition() {
   if (!address || !chain.stocks) return null;
   const provider = getProvider(chain.id);
   const tokens = [];
-  for (const token of chain.stocks) {
+  const listed = [...(chain.stocks || [])];
+  if (chain.usdg) listed.unshift(chain.usdg);
+  for (const token of listed) {
     const contract = new ethers.Contract(token.address, ERC20, provider);
     const balance = await contract.balanceOf(address);
     tokens.push({

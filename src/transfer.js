@@ -25,7 +25,9 @@ async function sendOnRobinhood({ asset, amount, to }) {
     return { txHash: receipt.hash, token: 'ETH', explorer: chain.explorer + '/tx/' + receipt.hash };
   }
 
-  const token = (chain.stocks || []).find((item) => item.symbol === symbol);
+  const listed = [...(chain.stocks || [])];
+  if (chain.usdg) listed.push(chain.usdg);
+  const token = listed.find((item) => item.symbol === symbol);
   if (!token) throw new Error(symbol + ' is not held on Robinhood testnet.');
   const raw = ethers.parseUnits(String(amount), token.decimals);
   const erc20 = new ethers.Contract(token.address, [
