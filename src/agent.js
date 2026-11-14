@@ -310,7 +310,7 @@ async function chat(message, walletId, userId) {
       const pool = await resolvePoolByName(address, intent.poolName);
       const to = await resolveAddressOrTag(intent.to);
       intent.to = to; // pre-resolved — keeps handleChat's generic @tag pass a no-op
-      const { proposalId, txHash } = await poolVault.proposeSpend(getAgentWallet(), pool.poolId, address, to, intent.amount, intent.reason || '');
+      const { proposalId, txHash } = await poolVault.proposeSpend(walletId, pool.poolId, address, to, intent.amount, intent.reason || '');
       const { ethers } = require('ethers');
       const provider = getProvider();
       const onChainProposal = await poolVault.getProposal(provider, proposalId);
