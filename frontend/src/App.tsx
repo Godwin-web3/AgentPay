@@ -145,16 +145,16 @@ function App({ tag }: { tag: string | null }) {
       const base = api.chains?.find((c) => c.id === 'base')
       const arc = api.chains?.find((c) => c.id === 'arc')
       if (base) {
-        rows.push({ label: 'Base Sepolia vault', amount: Number(base.vault).toFixed(2) })
-        rows.push({ label: 'Base Sepolia wallet', amount: Number(base.wallet).toFixed(2) })
+        rows.push({ label: 'Base USDC', amount: Number(base.wallet || 0).toFixed(2) })
+        if (base.eth) rows.push({ label: 'Base ETH', amount: Number(base.eth).toFixed(4) })
+        if (Number(base.vault) > 0) rows.push({ label: 'Base vault', amount: Number(base.vault).toFixed(2) })
       }
-      if (arc && Number(arc.vault) > 0) {
-        rows.push({ label: 'Arc vault', amount: Number(arc.vault).toFixed(2) })
-      }
-      if (Number(arcWallet) > 0 && !rows.some((row) => row.label === 'Arc wallet')) {
-        rows.push({ label: 'Arc wallet', amount: Number(arcWallet).toFixed(2) })
+      if (arc) {
+        if (Number(arc.wallet) > 0) rows.push({ label: 'Arc USDC', amount: Number(arc.wallet).toFixed(2) })
+        if (Number(arc.vault) > 0) rows.push({ label: 'Arc vault', amount: Number(arc.vault).toFixed(2) })
       }
       const hood = api.chains?.find((c) => c.id === 'robinhood-testnet')
+      if (hood?.eth && Number(hood.eth) > 0) rows.push({ label: 'Robinhood ETH', amount: Number(hood.eth).toFixed(4) })
       setStocks(hood?.tokens || [])
       const total = rows.reduce((sum, row) => sum + Number(row.amount), 0)
       setPositions(rows)

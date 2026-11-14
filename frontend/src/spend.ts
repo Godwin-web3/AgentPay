@@ -5,15 +5,6 @@ const HOOD = 46630
 const BASE = 84532
 const ARC = 5042002
 
-const TOKENS: Record<string, { address: string; decimals: number }> = {
-  USDG: { address: '0x42fa9A8085c0bc633Afa4e19a1f491db9a4dC0fE', decimals: 6 },
-  TSLA: { address: '0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E', decimals: 18 },
-  AMD: { address: '0x71178BAc73cBeb415514eB542a8995b82669778d', decimals: 18 },
-  AMZN: { address: '0x5884aD2f920c162CFBbACc88C9C51AA75eC09E02', decimals: 18 },
-  NFLX: { address: '0x3b8262A63d25f0477c4DDE23F83cfe22Cb768C93', decimals: 18 },
-  PLTR: { address: '0x1FBE1a0e43594b3455993B5dE5Fd0A7A266298d0', decimals: 18 },
-}
-
 const BASE_USDC = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'
 const EXPLORER: Record<number, string> = {
   [HOOD]: 'https://explorer.testnet.chain.robinhood.com/tx/',
@@ -33,21 +24,24 @@ function explorer(chainId: number, hash: string) {
   return (EXPLORER[chainId] || '') + hash
 }
 
-export async function sendFromWallet(wallets: ConnectedWallet[], asset: string, amount: number, to: string) {
+export async function sendFromWallet(
+  wallets: ConnectedWallet[],
+  spec: { chainId: number; symbol: string; kind: 'native' | 'erc20'; address?: string; decimals: number },
+  amount: number,
+  to: string,
+) {
   if (!ethers.isAddress(to)) throw new Error('That recipient is not an address.')
-  const symbol = asset.toUpperCase()
-  const signer = await signerFor(wallets, HOOD)
-  if (symbol === 'ETH') {
-    const sent = await signer.sendTransaction({ to, value: ethers.parseEther(String(amount)) })
+  const signer = await signerFor(wallets, spec.chainId)
+  if (spec.kind === 'native') {
+    const sent = await signer.sendTransaction({ to, value: ethers.parseUnits(String(amount), spec.decimals) })
     const receipt = await sent.wait()
-    return { txHash: receipt?.hash, explorer: explorer(HOOD, receipt?.hash || '') }
+    return { txHash: receipt?.hash, explorer: explorer(spec.chainId, receipt?.hash || '') }
   }
-  const token = TOKENS[symbol]
-  if (!token) throw new Error(symbol + ' is not in this wallet.')
-  const erc20 = new ethers.Contract(token.address, ['function transfer(address,uint256) returns (bool)'], signer)
-  const sent = await erc20.transfer(to, ethers.parseUnits(String(amount), token.decimals))
+  if (!spec.address) throw new Error(spec.symbol + ' is not on this chain.')
+  const erc20 = new ethers.Contract(spec.address, ['function transfer(address,uint256) returns (bool)'], signer)
+  const sent = await erc20.transfer(to, ethers.parseUnits(String(amount), spec.decimals))
   const receipt = await sent.wait()
-  return { txHash: receipt?.hash, explorer: explorer(HOOD, receipt?.hash || '') }
+  return { txHash: receipt?.hash, explorer: explorer(spec.chainId, receipt?.hash || '') }
 }
 
 export async function sendUsdc(wallets: ConnectedWallet[], chain: 'base' | 'arc', amount: number, to: string) {

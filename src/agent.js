@@ -142,9 +142,16 @@ async function getUnifiedHistory(userAddress, limit = 50) {
   return await getHistory(userAddress, limit);
 }
 
-async function chat(message, walletId, userAddress) {
-  const balance = await walletService.getWalletBalance(walletId);
-  const address = await walletService.getWalletAddress(walletId);
+async function chat(message, walletId, userId) {
+  const record = await require('./walletStore').getWallet(userId);
+  let address = record && record.address;
+  let balance = '0.00';
+  if (!address && walletId) {
+    address = await walletService.getWalletAddress(walletId);
+  }
+  if (walletId) {
+    try { balance = await walletService.getWalletBalance(walletId); } catch (_) {}
+  }
   const intent = await parseIntent(message, address, balance);
   if (intent.action === "balance") {
     let vaultBalance = null;
@@ -163,28 +170,28 @@ async function chat(message, walletId, userAddress) {
     intent.address = address;
     intent.data = { balances: { USDC: balance }, vault: vaultBalance };
     try {
-      const record = await require('./walletStore').getWallet(userAddress);
-      const baseAddress = record && record.chainWallets && record.chainWallets.base && record.chainWallets.base.address;
+      const record = await require('./walletStore').getWallet(userId);
+      const baseAddress = address || (record && record.address);
       if (baseAddress) {
         const pos = await require('./baseBalance').readBasePosition(baseAddress);
         if (pos) {
           const vaultAmt = Number(pos.vault).toFixed(2);
           const walletAmt = Number(pos.wallet).toFixed(2);
-          intent.message = "Base Sepolia vault: " + vaultAmt + " USDC. Wallet: " + walletAmt + " USDC. Arc wallet: " + balance + " USDC.";
+          intent.message = "Base Sepolia: " + walletAmt + " USDC in the wallet, " + Number(pos.eth).toFixed(4) + " ETH. Vault: " + vaultAmt + ".";
           intent.data = {
             balances: {
-              'Base Sepolia vault': vaultAmt,
               'Base Sepolia wallet': walletAmt,
-              'Arc wallet': balance,
+              'Base Sepolia ETH': pos.eth,
+              'Base Sepolia vault': vaultAmt,
             },
             vault: vaultAmt,
           };
         }
       }
-      const hood = await require('./robinhoodBalance').readRobinhoodPosition();
+      const hood = await require('./robinhoodBalance').readRobinhoodPosition(baseAddress);
       if (hood) {
         const lines = hood.tokens.map((token) => token.symbol + ' ' + token.amount).join(', ');
-        intent.message += ' Robinhood testnet: ' + hood.eth + ' ETH, vault ' + hood.vault + ' TSLA, wallet ' + lines + '.';
+        intent.message += ' Robinhood testnet: ' + hood.eth + ' ETH, vault ' + hood.vault + ' ' + hood.token + ', wallet ' + lines + '.';
         intent.data.balances['Robinhood ETH'] = hood.eth;
         intent.data.balances['Robinhood vault'] = hood.vault + ' TSLA';
         for (const token of hood.tokens) intent.data.balances['Robinhood ' + token.symbol] = token.amount;

@@ -1139,22 +1139,26 @@ async function handleVaultBalance(req, res) {
   try {
     const wallet = await getOrCreateWallet(userId);
     const agentAddress = wallet.address;
-    const baseAddress = wallet.chainWallets && wallet.chainWallets.base && wallet.chainWallets.base.address;
-    let base = null;
-    if (baseAddress) {
-      try { base = await require('./baseBalance').readBasePosition(baseAddress); } catch (err) {
-        console.error('[vault] base balance:', err.message);
-      }
-    }
+    const base = await require('./baseBalance').readBasePosition(agentAddress).catch((err) => {
+      console.error('[vault] base balance:', err.message);
+      return null;
+    });
     const vaultAddr = await escrow.findVault(agentAddress);
     let arcBalance = '0.0000';
     if (vaultAddr) {
       const onChain = await escrow.getOnChainPolicy(sharedProvider, agentAddress);
       arcBalance = String(onChain.vaultBalance);
     }
+    let arcWallet = '0';
+    try {
+      const arcProvider = require('./chain').getProvider('arc');
+      arcWallet = Number(require('ethers').formatEther(await arcProvider.getBalance(agentAddress))).toFixed(2);
+    } catch (err) {
+      console.error('[vault] arc balance:', err.message);
+    }
     const chains = [
       ...(base ? [base] : []),
-      { id: 'arc', name: 'Arc Testnet', token: 'USDC', vault: arcBalance, wallet: '0', address: agentAddress, vaultAddress: vaultAddr },
+      { id: 'arc', name: 'Arc Testnet', token: 'USDC', vault: arcBalance, wallet: arcWallet, address: agentAddress, vaultAddress: vaultAddr },
     ];
     try {
       const hood = await require('./robinhoodBalance').readRobinhoodPosition(agentAddress);

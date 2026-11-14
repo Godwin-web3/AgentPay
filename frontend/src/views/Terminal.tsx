@@ -2,6 +2,29 @@ import React, { useRef, useEffect } from 'react'
 import { useWallets } from '@privy-io/react-auth'
 import { sendChat, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, quoteSwap, quoteBridge, executePay } from '../api'
 import { sendFromWallet, sendUsdc, depositFromWallet, swapFromWallet, bridgeFromWallet } from '../spend'
+
+const MOVES: any[] = [
+  { id: 'hood-usdg', label: 'USDG', where: 'Robinhood', mode: 'send', chainId: 46630, symbol: 'USDG', kind: 'erc20' as const, address: '0x42fa9A8085c0bc633Afa4e19a1f491db9a4dC0fE', decimals: 6 },
+  { id: 'hood-eth', label: 'ETH', where: 'Robinhood', mode: 'send', chainId: 46630, symbol: 'ETH', kind: 'native' as const, decimals: 18 },
+  { id: 'hood-tsla', label: 'TSLA', where: 'Robinhood', mode: 'send', chainId: 46630, symbol: 'TSLA', kind: 'erc20' as const, address: '0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E', decimals: 18 },
+  { id: 'hood-amd', label: 'AMD', where: 'Robinhood', mode: 'send', chainId: 46630, symbol: 'AMD', kind: 'erc20' as const, address: '0x71178BAc73cBeb415514eB542a8995b82669778d', decimals: 18 },
+  { id: 'hood-amzn', label: 'AMZN', where: 'Robinhood', mode: 'send', chainId: 46630, symbol: 'AMZN', kind: 'erc20' as const, address: '0x5884aD2f920c162CFBbACc88C9C51AA75eC09E02', decimals: 18 },
+  { id: 'hood-nflx', label: 'NFLX', where: 'Robinhood', mode: 'send', chainId: 46630, symbol: 'NFLX', kind: 'erc20' as const, address: '0x3b8262A63d25f0477c4DDE23F83cfe22Cb768C93', decimals: 18 },
+  { id: 'hood-pltr', label: 'PLTR', where: 'Robinhood', mode: 'send', chainId: 46630, symbol: 'PLTR', kind: 'erc20' as const, address: '0x1FBE1a0e43594b3455993B5dE5Fd0A7A266298d0', decimals: 18 },
+  { id: 'base-usdc', label: 'USDC', where: 'Base', mode: 'send', chainId: 84532, symbol: 'USDC', kind: 'erc20' as const, address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', decimals: 6 },
+  { id: 'base-eth', label: 'ETH', where: 'Base', mode: 'send', chainId: 84532, symbol: 'ETH', kind: 'native' as const, decimals: 18 },
+  { id: 'arc-usdc', label: 'USDC', where: 'Arc', mode: 'send', chainId: 5042002, symbol: 'USDC', kind: 'native' as const, decimals: 18 },
+  { id: 'swap-base', label: 'Swap to ETH', where: 'Base', mode: 'swap', chain: 'base' },
+  { id: 'bridge-out', label: 'Bridge', where: 'Base to Arc', mode: 'bridge', from: 'base', to: 'arc' },
+  { id: 'bridge-back', label: 'Bridge', where: 'Arc to Base', mode: 'bridge', from: 'arc', to: 'base' },
+  { id: 'dep-hood', label: 'Deposit USDG', where: 'Robinhood', mode: 'deposit', chain: 'robinhood-testnet' },
+  { id: 'dep-base', label: 'Deposit USDC', where: 'Base', mode: 'deposit', chain: 'base' },
+  { id: 'dep-arc', label: 'Deposit USDC', where: 'Arc', mode: 'deposit', chain: 'arc' },
+]
+
+function moveById(id: string) {
+  return MOVES.find((item) => item.id === id) || MOVES[0]
+}
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -122,7 +145,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
   const { wallets } = useWallets()
   const [amount, setAmount] = React.useState('')
   const [who, setWho] = React.useState('')
-  const [want, setWant] = React.useState<'usdg' | 'eth' | 'tsla' | 'amd' | 'amzn' | 'nflx' | 'pltr' | 'base-eth'>('usdg')
+  const [want, setWant] = React.useState('hood-usdg')
   const [where, setWhere] = React.useState('')
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
@@ -195,7 +218,8 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
       let res
       if (prop.status === 'proposing_pay') {
         if (prop.to && prop.to.startsWith('0x')) {
-          const paid = await sendUsdc(wallets, 'arc', Number(prop.amount), prop.to)
+          const chain = prop.chain === 'base' ? 'base' : 'arc'
+          const paid = await sendUsdc(wallets, chain, Number(prop.amount), prop.to)
           res = { status: 'executed', txHash: paid.txHash, explorer: paid.explorer, type: 'pay', to: prop.to, amount: prop.amount, token: 'USDC' }
         } else {
           const requestId = generateRequestId()
@@ -206,11 +230,15 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         const api = await getVaultBalanceApi(userId)
         const chainKey = prop.chain || 'robinhood-testnet'
         const row = api.chains?.find((item) => item.id === chainKey)
-        const hood = chainKey !== 'base' && chainKey !== 'arc'
+        const tokenAddress = chainKey === 'base'
+          ? '0x036CbD53842c5426634e7929541eC2318f3dCF7e'
+          : chainKey === 'arc'
+            ? '0x3600000000000000000000000000000000000000'
+            : '0x42fa9A8085c0bc633Afa4e19a1f491db9a4dC0fE'
         const paid = await depositFromWallet(
           wallets,
-          hood ? 46630 : chainKey === 'base' ? 84532 : 5042002,
-          hood ? '0x42fa9A8085c0bc633Afa4e19a1f491db9a4dC0fE' : '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+          chainKey === 'base' ? 84532 : chainKey === 'arc' ? 5042002 : 46630,
+          tokenAddress,
           6,
           row?.vaultAddress || '',
           prop.status === 'proposing_mint' ? 100 : Number(prop.amount),
@@ -241,7 +269,13 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
           chainName: prop.chainName,
         }
       } else if (prop.status === 'proposing_transfer') {
-        const sent = await sendFromWallet(wallets, prop.token, Number(prop.amount), prop.to)
+        const sent = await sendFromWallet(wallets, {
+          chainId: prop.chainId,
+          symbol: prop.token,
+          kind: prop.kind,
+          address: prop.tokenAddress,
+          decimals: prop.decimals,
+        }, Number(prop.amount), prop.to)
         res = {
           status: 'executed',
           txHash: sent.txHash,
@@ -366,30 +400,56 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
   function submitMove() {
     const n = Number(amount)
     if (!Number.isFinite(n) || n <= 0) return
-    if (want === 'base-eth') {
-      setAmount('')
+    const move = moveById(want)
+    setAmount('')
+    if (move.mode === 'swap') {
       handleSend(`Swap ${n} USDC for ETH on Base Sepolia`)
       return
     }
+    if (move.mode === 'bridge') {
+      const userMsg = { role: 'user' as const, content: `Bridge ${n} USDC, ${move.where}`, timestamp: Date.now() }
+      const assistantMsg = { role: 'assistant' as const, content: `Bridge ${n} USDC, ${move.where}.`, timestamp: Date.now() }
+      setMessages((prev) => {
+        const next = [...prev, userMsg, assistantMsg]
+        const idx = next.length - 1
+        setTimeout(() => setTxResults((r) => ({ ...r, [idx]: { status: 'proposing_bridge', amount: n, from: move.from, to: move.to, fromName: String(move.where).split(' to ')[0], toName: String(move.where).split(' to ')[1] } })), 0)
+        return next
+      })
+      return
+    }
+    if (move.mode === 'deposit') {
+      const userMsg = { role: 'user' as const, content: `Deposit ${n} on ${move.where}`, timestamp: Date.now() }
+      const assistantMsg = { role: 'assistant' as const, content: `Deposit ${n} into the vault on ${move.where}.`, timestamp: Date.now() }
+      setMessages((prev) => {
+        const next = [...prev, userMsg, assistantMsg]
+        const idx = next.length - 1
+        setTimeout(() => setTxResults((r) => ({ ...r, [idx]: { status: 'proposing_deposit', amount: n, chain: move.chain, chainName: move.where } })), 0)
+        return next
+      })
+      return
+    }
     if (!who.trim()) return
-    const token = want.toUpperCase()
-    const userMsg = { role: 'user' as const, content: `Send ${n} ${token} to ${who.trim()}`, timestamp: Date.now() }
-    const assistantMsg = { role: 'assistant' as const, content: `Send ${n} ${token} from Robinhood.`, timestamp: Date.now() }
+    const userMsg = { role: 'user' as const, content: `Send ${n} ${move.symbol} on ${move.where} to ${who.trim()}`, timestamp: Date.now() }
+    const assistantMsg = { role: 'assistant' as const, content: `Send ${n} ${move.symbol} from your ${move.where} wallet.`, timestamp: Date.now() }
     setMessages((prev) => {
       const next = [...prev, userMsg, assistantMsg]
       const idx = next.length - 1
       setTimeout(() => {
-        setTxResults((r) => ({ ...r, [idx]: { status: 'proposing_transfer', amount: n, token, to: who.trim() } }))
+        setTxResults((r) => ({ ...r, [idx]: { status: 'proposing_transfer', amount: n, token: move.symbol, to: who.trim(), chainId: move.chainId, kind: move.kind, tokenAddress: move.address, decimals: move.decimals } }))
       }, 0)
       return next
     })
-    setAmount('')
     setWho('')
   }
 
-  const routeLine = want === 'base-eth'
-    ? 'Uniswap on Base. It spends USDC to buy ETH.'
-    : `Sends ${want.toUpperCase()} from the Robinhood wallet.`
+  const selected = moveById(want)
+  const routeLine = selected.mode === 'swap'
+    ? 'Swaps your Base USDC for ETH.'
+    : selected.mode === 'bridge'
+      ? `Bridges USDC, ${selected.where}.`
+      : selected.mode === 'deposit'
+        ? `Deposits into the vault on ${selected.where}.`
+        : `Sends ${selected.symbol} from your ${selected.where} wallet.`
 
   if (!userAddress) return (
     <div className="terminal">
@@ -446,24 +506,15 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
           Deposit 100 USDG
         </button>
         <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
-          {([
-            ['usdg', 'USDG'],
-            ['eth', 'ETH'],
-            ['tsla', 'TSLA'],
-            ['amd', 'AMD'],
-            ['amzn', 'AMZN'],
-            ['nflx', 'NFLX'],
-            ['pltr', 'PLTR'],
-            ['base-eth', 'Base ETH'],
-          ] as const).map(([id, label]) => (
-            <button key={id} type="button" disabled={loading} onClick={() => setWant(id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', whiteSpace: 'nowrap', color: want === id ? 'var(--text)' : 'var(--muted)', fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 500 }}>
-              {label}
+          {MOVES.map((move) => (
+            <button key={move.id} type="button" disabled={loading} onClick={() => setWant(move.id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', whiteSpace: 'nowrap', color: want === move.id ? 'var(--text)' : 'var(--muted)', fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 500 }}>
+              {move.label} · {move.where}
             </button>
           ))}
         </div>
         <div style={{ color: 'var(--muted)', fontSize: 13, margin: '4px 0 8px' }}>{routeLine}</div>
         <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" style={fieldStyle} />
-        {want !== 'base-eth' && <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Recipient address" style={fieldStyle} />}
+        {selected.mode === 'send' && <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Recipient address" style={fieldStyle} />}
         <button type="button" onClick={submitMove} disabled={loading} style={{ marginTop: 10, width: '100%', background: 'var(--text)', color: '#f3f0e8', border: 'none', padding: '12px 14px', fontFamily: 'var(--font-head)', fontSize: 16 }}>
           Review
         </button>
