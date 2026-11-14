@@ -10,6 +10,14 @@ interface Props {
   onActionSuccess?: () => void
 }
 
+function plainReason(reason?: string) {
+  if (!reason) return 'That did not go through. Nothing else was moved.'
+  if (/appendSpend|is not defined|Cannot read propert/i.test(reason)) {
+    return 'That did not finish. Check Account before you try again.'
+  }
+  return reason
+}
+
 function formatTime(ts: number) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
@@ -30,13 +38,13 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
   if (!result) return null
   const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_deposit' || result.status === 'proposing_swap' || result.status === 'proposing_bridge'
   if (isProposal) {
-    let title = 'TX PROPOSAL'
+    let title = 'Check this'
     let detail = ''
-    if (result.status === 'proposing_pay') { title = 'PAYMENT PROPOSAL'; detail = `${result.amount} ${result.token || 'USDC'} -> ${result.to?.slice(0, 10)}...` }
-    else if (result.status === 'proposing_schedule') { title = 'SCHEDULE PAYMENT'; detail = `${result.amount} USDC to ${result.to?.slice(0, 10)}... / ${result.interval}` }
-    else if (result.status === 'proposing_deposit') { title = 'VAULT DEPOSIT'; detail = `${result.amount} ${result.token || 'USDC'} on ${result.chainName || 'Arc'}` }
-    else if (result.status === 'proposing_swap') { title = 'Swap'; detail = `${result.amount} ${result.fromAsset} for about ${result.amountOut} ${result.toAsset} on ${result.chainName}` }
-    else if (result.status === 'proposing_bridge') { title = 'Bridge'; detail = `${result.amount} USDC from ${result.fromName} to ${result.toName}` }
+    if (result.status === 'proposing_pay') { title = `Send ${result.amount} USDC`; detail = `To ${result.to}` }
+    else if (result.status === 'proposing_schedule') { title = `Repeat ${result.amount} USDC`; detail = `To ${result.to}, every ${result.interval}` }
+    else if (result.status === 'proposing_deposit') { title = `Deposit ${result.amount} ${result.token || 'USDC'}`; detail = `Into your vault on ${result.chainName || 'Arc'}` }
+    else if (result.status === 'proposing_swap') { title = `Swap ${result.amount} ${result.fromAsset}`; detail = `You get about ${result.amountOut} ${result.toAsset} on ${result.chainName}` }
+    else if (result.status === 'proposing_bridge') { title = `Bridge ${result.amount} USDC`; detail = `${result.fromName} to ${result.toName}. This leaves the wallet, not the vault.` }
     return (
       <div style={{ marginTop: 10, border: '1px solid var(--cyan)', background: 'rgba(79,219,200,0.04)', padding: '12px 14px', fontFamily: 'var(--font-mono)' }}>
         <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2, marginBottom: 6 }}>{title}</div>
@@ -55,9 +63,9 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
   if (result.status === 'burned') {
     return (
       <div style={{ marginTop: 10, fontSize: 14 }}>
-        <div>Burned {result.amount} USDC on {result.fromName}. Circle has not attested yet.</div>
+        <div>Sent on {result.fromName}. Arc has not received it yet.</div>
         {result.txHash && <div style={{ color: 'var(--muted)', marginTop: 4 }}>{result.txHash.slice(0, 18)}…</div>}
-        <div style={{ color: 'var(--muted)', marginTop: 4 }}>Say “finish the bridge” in a minute to mint it.</div>
+        <div style={{ color: 'var(--muted)', marginTop: 4 }}>It will show up on its own. Do not bridge it again.</div>
       </div>
     )
   }
@@ -74,10 +82,10 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
       </div>
     )
   }
-  if (result.status === 'cancelled') return <div style={{ marginTop: 10, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', padding: '8px 0' }}>CANCELLED</div>
-  if (result.status === 'rejected') return <div style={{ marginTop: 10, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--danger)', padding: '10px 14px', border: '1px solid rgba(255,59,92,0.2)', background: 'rgba(255,59,92,0.04)' }}>BLOCKED — {result.reason}</div>
-  if (result.status === 'policy_updated') return <div style={{ marginTop: 10, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--cyan)', padding: '10px 14px', border: '1px solid rgba(79,219,200,0.2)' }}>POLICY UPDATED</div>
-  if (result.status === 'failed') return <div style={{ marginTop: 10, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--warning)', padding: '10px 14px', border: '1px solid rgba(255,107,53,0.2)', background: 'rgba(255,107,53,0.04)' }}>ERROR — {result.reason}</div>
+  if (result.status === 'cancelled') return <div style={{ marginTop: 10, fontSize: 14, color: 'var(--muted)' }}>Cancelled. Nothing moved.</div>
+  if (result.status === 'rejected') return <div style={{ marginTop: 10, fontSize: 14, color: 'var(--danger)' }}>{plainReason(result.reason)}</div>
+  if (result.status === 'policy_updated') return <div style={{ marginTop: 10, fontSize: 14 }}>Limits updated.</div>
+  if (result.status === 'failed') return <div style={{ marginTop: 10, fontSize: 14, color: 'var(--danger)' }}>{plainReason(result.reason)}</div>
   return null
 }
 function BalanceCard({ data }: { data: any }) {
@@ -110,6 +118,12 @@ function PolicyCard({ data }: { data: any }) {
 }
 
 export default function Terminal({ messages, setMessages, userAddress, userId, onActionSuccess }: Props) {
+  const [sheet, setSheet] = React.useState<null | 'send' | 'swap' | 'bridge' | 'deposit'>(null)
+  const [amount, setAmount] = React.useState('')
+  const [who, setWho] = React.useState('')
+  const [direction, setDirection] = React.useState<'to-arc' | 'to-base'>('to-arc')
+  const [depositWhere, setDepositWhere] = React.useState<'base' | 'arc' | 'robinhood'>('base')
+  const [where, setWhere] = React.useState('')
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
   const [txResults, setTxResultsRaw] = React.useState<Record<number, any>>({})
@@ -149,6 +163,15 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages, loading])
+
+  useEffect(() => {
+    if (!userId) return
+    getVaultBalanceApi(userId).then((res) => {
+      const base = res.chains?.find((c) => c.id === 'base')
+      if (!base) return
+      setWhere(`${Number(base.wallet || 0).toFixed(2)} in your Base wallet · ${Number(base.vault || 0).toFixed(2)} in the vault`)
+    }).catch(() => {})
+  }, [userId, messages.length])
 
   function parseInterval(str: string) {
     if (!str) return 86400
@@ -252,7 +275,12 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         const msgIndex = next.length - 1
         setTimeout(async () => {
           if (intent.action === 'pay' && intent.to && intent.amount) setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_pay', to: intent.to, amount: intent.amount, token: 'USDC', reason: intent.reason } }))
-          if (intent.action === 'deposit' && intent.amount) setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_deposit', amount: intent.amount, chain: intent.chain || 'arc', chainName: intent.chain === 'base' ? 'Base Sepolia' : 'Arc', token: intent.chain === 'base' ? 'USDC' : 'USDC' } }))
+          if (intent.action === 'deposit' && intent.amount) {
+            const chain = intent.chain || 'arc'
+            const chainName = chain === 'base' ? 'Base Sepolia' : chain === 'robinhood' || chain === 'robinhood-testnet' ? 'Robinhood testnet' : 'Arc'
+            const token = chainName.startsWith('Robinhood') ? 'TSLA' : 'USDC'
+            setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_deposit', amount: intent.amount, chain, chainName, token } }))
+          }
           if (intent.action === 'schedule' && intent.to && intent.amount && intent.interval) setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_schedule', to: intent.to, amount: intent.amount, interval: intent.interval, reason: intent.reason, conditions: intent.conditions } }))
           if (intent.action === 'swap' && intent.data?.quote) {
             const q = intent.data.quote
@@ -298,6 +326,33 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
+  function submitSheet() {
+    const n = Number(amount)
+    if (!Number.isFinite(n) || n <= 0) return
+    let text = ''
+    if (sheet === 'send') {
+      if (!who.trim()) return
+      text = `Send ${n} USDC to ${who.trim()}`
+    } else if (sheet === 'swap') {
+      text = `Swap ${n} USDC for ETH on Base Sepolia`
+    } else if (sheet === 'bridge') {
+      text = direction === 'to-arc'
+        ? `Bridge ${n} USDC from Base Sepolia to Arc`
+        : `Bridge ${n} USDC from Arc to Base Sepolia`
+    } else if (sheet === 'deposit') {
+      text = depositWhere === 'robinhood'
+        ? `Deposit ${n} TSLA on Robinhood`
+        : depositWhere === 'base'
+          ? `Deposit ${n} USDC on Base Sepolia`
+          : `Deposit ${n} USDC on Arc`
+    }
+    if (!text) return
+    setSheet(null)
+    setAmount('')
+    setWho('')
+    handleSend(text)
+  }
+
   if (!userAddress) return (
     <div className="terminal">
       <div className="messages">
@@ -310,7 +365,13 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
 
   return (
     <div className="terminal">
+      {where && <div style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>{where}</div>}
       <div className="messages" ref={scrollRef}>
+        {messages.length === 0 && (
+          <div className="message assistant">
+            <div className="message-bubble">Pick Send, Swap, Bridge, or Deposit. Nothing moves until you confirm.</div>
+          </div>
+        )}
         {messages.map((msg, i) => (
           <div key={i} className={`message ${msg.role}`}>
             <div style={{ fontSize: 12, marginBottom: 4, color: 'var(--muted)', fontFamily: 'var(--font-body)', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
@@ -337,16 +398,52 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         )}
       </div>
       <div className="quick-actions">
-        {[{ label: 'Send', value: 'Send 1 USDC to ', auto: false }, { label: 'Swap', value: 'Swap 10 USDC for ETH on Base Sepolia', auto: true }, { label: 'Bridge', value: 'Bridge 1 USDC from Base Sepolia to Arc', auto: true }, { label: 'Robinhood', value: 'What do I hold on Robinhood?', auto: true }].map(btn => (
-          <button key={btn.label} className="quick-btn" disabled={loading} onClick={() => { if (btn.auto) { handleSend(btn.value) } else { setInput(btn.value); inputRef.current?.focus() } }}>
-            {btn.label}
+        {(['send', 'swap', 'bridge', 'deposit'] as const).map((id) => (
+          <button key={id} className="quick-btn" disabled={loading} onClick={() => setSheet(sheet === id ? null : id)} style={{ color: sheet === id ? 'var(--text)' : undefined }}>
+            {id[0].toUpperCase() + id.slice(1)}
           </button>
         ))}
       </div>
+      {sheet && (
+        <div style={{ padding: '8px 0 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" style={fieldStyle} />
+          {sheet === 'send' && <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Name or address" style={fieldStyle} />}
+          {sheet === 'bridge' && (
+            <button type="button" onClick={() => setDirection(direction === 'to-arc' ? 'to-base' : 'to-arc')} style={{ ...fieldStyle, textAlign: 'left' }}>
+              {direction === 'to-arc' ? 'Base Sepolia to Arc' : 'Arc to Base Sepolia'}
+            </button>
+          )}
+          {sheet === 'deposit' && (
+            <div style={{ display: 'flex', gap: 14 }}>
+              {(['base', 'arc', 'robinhood'] as const).map((id) => (
+                <button key={id} type="button" onClick={() => setDepositWhere(id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: depositWhere === id ? 'var(--text)' : 'var(--muted)', font: 'inherit' }}>
+                  {id === 'base' ? 'Base' : id === 'arc' ? 'Arc' : 'Robinhood'}
+                </button>
+              ))}
+            </div>
+          )}
+          <button type="button" onClick={submitSheet} disabled={loading} style={{ background: 'var(--text)', color: '#f3f0e8', border: 'none', padding: '12px 14px', fontFamily: 'var(--font-head)', fontSize: 16 }}>
+            Review
+          </button>
+        </div>
+      )}
       <div className="input-area">
-        <textarea ref={inputRef} className="chat-input" placeholder="Say what should happen" value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '120px' }} />
-        <button className="send-btn icon-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>Send</button>
+        <textarea ref={inputRef} className="chat-input" placeholder="Or type it" value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '120px' }} />
+        <button className="send-btn icon-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>Go</button>
       </div>
     </div>
   )
+}
+
+const fieldStyle: React.CSSProperties = {
+  width: '100%',
+  background: 'transparent',
+  border: 'none',
+  borderBottom: '1px solid var(--border)',
+  color: 'var(--text)',
+  font: 'inherit',
+  fontSize: 16,
+  padding: '10px 0',
+  outline: 'none',
+  borderRadius: 0,
 }
