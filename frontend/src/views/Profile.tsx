@@ -7,7 +7,6 @@ interface Props {
   userAddress: string
   tag?: string | null
   vaultBalance: string
-  vaultChain?: string
   positions?: { label: string; amount: string }[]
   walletBalance: string
   tokenBalances: Record<string, string>
@@ -26,7 +25,7 @@ const ChevronRight = () => (
   </svg>
 )
 
-export default function Profile({ userAddress, userId, vaultBalance, vaultChain, positions = [], walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, tag }: Props) {
+export default function Profile({ userAddress, userId, vaultBalance, positions = [], walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, tag }: Props) {
   const [subView, setSubView] = useState<SubView>(null)
 
   if (!userAddress) {
@@ -71,7 +70,7 @@ export default function Profile({ userAddress, userId, vaultBalance, vaultChain,
       <div style={{ fontFamily: 'var(--font-body)', fontSize: 40, fontWeight: 500, letterSpacing: '-0.03em', lineHeight: 1, margin: '8px 0 4px' }}>
         {vaultBalance}
       </div>
-      <div style={{ color: 'var(--muted)', marginBottom: 20 }}>{vaultChain ? `USDC in the ${vaultChain} vault` : 'USDC in the vault'}</div>
+      <div style={{ color: 'var(--muted)', marginBottom: 20 }}>Total USDC</div>
 
       <div style={{ borderTop: '1px solid var(--border)' }}>
         {(positions.length ? positions : [{ label: 'Vault', amount: vaultBalance }]).map((row) => (

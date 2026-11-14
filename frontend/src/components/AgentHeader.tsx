@@ -128,6 +128,12 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
             </svg>
             Account
           </div>
+          <div className={`drawer-nav-item ${currentView === 'history' ? 'active' : ''}`} onClick={() => navigate('history')}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            History
+          </div>
         </div>
 
         <div className="drawer-divider" />

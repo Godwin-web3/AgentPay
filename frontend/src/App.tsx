@@ -36,47 +36,10 @@ const HistoryIcon = () => (
     <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
   </svg>
 )
-const GoalIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 2v20"/>
-    <path d="M4 4h13l-3 4 3 4H4"/>
-  </svg>
-)
-const PoolIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3"/>
-    <circle cx="5" cy="6" r="2.2"/>
-    <circle cx="19" cy="6" r="2.2"/>
-    <circle cx="5" cy="18" r="2.2"/>
-    <circle cx="19" cy="18" r="2.2"/>
-    <line x1="9.5" y1="10" x2="6.5" y2="7.5"/>
-    <line x1="14.5" y1="10" x2="17.5" y2="7.5"/>
-    <line x1="9.5" y1="14" x2="6.5" y2="16.5"/>
-    <line x1="14.5" y1="14" x2="17.5" y2="16.5"/>
-  </svg>
-)
-const AgentIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="4" y="8" width="16" height="12" rx="2" ry="2"/>
-    <line x1="12" y1="2" x2="12" y2="8"/>
-    <circle cx="9" cy="14" r="1"/>
-    <circle cx="15" cy="14" r="1"/>
-  </svg>
-)
-const RequestIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 2v20"/>
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-  </svg>
-)
 const navItems = [
   { id: 'terminal', icon: TerminalIcon, label: 'Terminal' },
-  { id: 'requests', icon: RequestIcon, label: 'Requests' },
-  { id: 'goals', icon: GoalIcon, label: 'Goals' },
-  { id: 'pools', icon: PoolIcon, label: 'Pools' },
-  { id: 'agent', icon: AgentIcon, label: 'Agent' },
-  { id: 'history',   icon: HistoryIcon,  label: 'History'   },
-  { id: 'account',   icon: AccountIcon,  label: 'Account'   },
+  { id: 'account', icon: AccountIcon, label: 'Account' },
+  { id: 'history', icon: HistoryIcon, label: 'History' },
 ] as const
 
 function App({ tag }: { tag: string | null }) {
@@ -85,8 +48,8 @@ function App({ tag }: { tag: string | null }) {
   const [view, setView] = useState<View>(() => {
     const stored = localStorage.getItem('agentpay_view')
     // Schedules was folded into Goals — a stale stored value would otherwise render a blank view.
-    if (stored === 'schedules') return 'goals'
-    if (stored === 'jobs' || stored === 'marketplace') return 'terminal'
+    const allowed = ['terminal', 'account', 'history', 'landing', 'login']
+    if (!stored || !allowed.includes(stored)) return 'terminal'
     return (stored as View) || 'landing'
   })
 
@@ -152,7 +115,6 @@ function App({ tag }: { tag: string | null }) {
   }, [userAddress, userId])
 
   const [vaultBalance, setVaultBalance] = useState('0')
-  const [vaultChain, setVaultChain] = useState('')
   const [positions, setPositions] = useState<{ label: string; amount: string }[]>([])
   const [activeProvider, setActiveProvider] = useState<any>(null)
   const [walletBalance, setWalletBalance] = useState('0')
@@ -180,10 +142,12 @@ function App({ tag }: { tag: string | null }) {
     setHistoryKey(k => k + 1)
     if (!userAddress) return
     if (delay) await new Promise(r => setTimeout(r, delay))
+    let arcWallet = walletBalance
     try {
       const balances = await getTokenBalances(userAddress)
       setTokenBalances(balances)
-      setWalletBalance(balances.USDC || '0')
+      arcWallet = balances.USDC || '0'
+      setWalletBalance(arcWallet)
     } catch (e) {
       console.error('Failed to refresh real wallet balance', e)
     }
@@ -197,15 +161,20 @@ function App({ tag }: { tag: string | null }) {
       const api = await getVaultBalanceApi(userId)
       const rows: { label: string; amount: string }[] = []
       const base = api.chains?.find((c) => c.id === 'base')
+      const arc = api.chains?.find((c) => c.id === 'arc')
       if (base) {
         rows.push({ label: 'Base Sepolia vault', amount: Number(base.vault).toFixed(2) })
         rows.push({ label: 'Base Sepolia wallet', amount: Number(base.wallet).toFixed(2) })
-        setVaultBalance(Number(base.vault).toFixed(2))
-        setVaultChain(base.name)
-      } else if (api.balance) {
-        setVaultBalance(Number(api.balance).toFixed(2))
       }
+      if (arc && Number(arc.vault) > 0) {
+        rows.push({ label: 'Arc vault', amount: Number(arc.vault).toFixed(2) })
+      }
+      if (Number(arcWallet) > 0 && !rows.some((row) => row.label === 'Arc wallet')) {
+        rows.push({ label: 'Arc wallet', amount: Number(arcWallet).toFixed(2) })
+      }
+      const total = rows.reduce((sum, row) => sum + Number(row.amount), 0)
       setPositions(rows)
+      setVaultBalance((rows.length ? total : Number(api.balance || 0)).toFixed(2))
     } catch (e) {
       console.error('Failed to refresh vault balance', e)
     }
@@ -302,7 +271,7 @@ function App({ tag }: { tag: string | null }) {
             {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} userId={userId} onActionSuccess={refreshBalances} />}
             {view === 'requests' && <PaymentRequestView />}
             {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} userId={userId} />}
-            {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} vaultChain={vaultChain} positions={positions} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
+            {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} positions={positions} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
             {view === 'goals' && <Goals userAddress={userAddress} userId={userId} />}
             {view === 'pools' && <Pools userAddress={userAddress} userId={userId} />}

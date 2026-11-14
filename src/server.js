@@ -1073,7 +1073,10 @@ async function handleVaultBalance(req, res) {
       chain: base ? 'base' : 'arc',
       address: base ? base.vaultAddress : vaultAddr,
       agentAddress: base ? base.address : agentAddress,
-      chains: base ? [base] : [],
+      chains: [
+        ...(base ? [base] : []),
+        { id: 'arc', name: 'Arc Testnet', token: 'USDC', vault: arcBalance, wallet: '0', address: agentAddress, vaultAddress: vaultAddr },
+      ],
     });
   } catch (err) {
     return send(res, 500, { error: err.message });
