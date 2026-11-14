@@ -206,7 +206,7 @@ contract PoolVault is ReentrancyGuard {
     function proposeSpend(
         uint256 poolId, address proposer, address to, uint256 amount, string calldata reason,
         uint256 deadline, bytes calldata signature
-    ) external returns (uint256 proposalId) {
+    ) external nonReentrant returns (uint256 proposalId) {
         Pool storage p = pools[poolId];
         if (!p.active) revert PoolInactive();
         if (p.paused) revert PoolPausedError();
