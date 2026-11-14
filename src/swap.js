@@ -46,14 +46,24 @@ function deploymentPath(chain) {
   return path.join(__dirname, '../artifacts', `AgentVault-${chain.chainId}.json`);
 }
 
+function remembered(chain) {
+  try {
+    return require('./chainRegistry').recall(chain.id);
+  } catch (_) {
+    return null;
+  }
+}
+
 function vaultAddressFor(chain) {
   const envKey = `VAULT_ADDRESS_${chain.id.toUpperCase()}`;
   if (process.env[envKey]) return process.env[envKey];
   if (chain.id === activeId() && process.env.VAULT_ADDRESS) return process.env.VAULT_ADDRESS;
+  const saved = remembered(chain);
+  if (saved && saved.vault) return saved.vault;
   const file = deploymentPath(chain);
   if (fs.existsSync(file)) {
-    const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
-    if (saved.address) return saved.address;
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (parsed.address) return parsed.address;
   }
   if (chain.id === 'arc') {
     const legacy = path.join(__dirname, '../artifacts/AgentVault-deployment.json');
@@ -68,10 +78,12 @@ function executorAddressFor(chain) {
   const envKey = `SWAP_EXECUTOR_${chain.id.toUpperCase()}`;
   if (process.env[envKey]) return process.env[envKey];
   if (chain.id === activeId() && process.env.SWAP_EXECUTOR) return process.env.SWAP_EXECUTOR;
+  const saved = remembered(chain);
+  if (saved && saved.executor) return saved.executor;
   const file = path.join(__dirname, '../artifacts', `SwapExecutor-${chain.chainId}.json`);
   if (fs.existsSync(file)) {
-    const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
-    if (saved.address) return saved.address;
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (parsed.address) return parsed.address;
   }
   return null;
 }

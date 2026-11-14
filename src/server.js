@@ -117,6 +117,7 @@ async function getOrCreateWallet(userId) {
 // GET /health
 function handleHealth(req, res) {
   const chain = getChain();
+  const base = require('./chainRegistry').recall('base');
   return send(res, 200, {
     status: 'ok',
     agent: 'AgentPay',
@@ -124,6 +125,12 @@ function handleHealth(req, res) {
     network: chain.name,
     chainId: chain.chainId,
     chain: chain.id,
+    base: base ? {
+      status: base.status,
+      vault: base.vault || null,
+      executor: base.executor || null,
+      reason: base.reason || null,
+    } : { status: 'pending' },
     time: new Date().toISOString()
   });
 }
@@ -1274,6 +1281,11 @@ function startServer() {
 }
 
 module.exports = { startServer };
+
+// Boot: deploy the Base vault once if the server key has gas.
+require('./bootstrapBase').bootstrapBase().catch((err) => {
+  console.error('[base] bootstrap failed:', err.message);
+});
 
 // Boot: restart timers for all active scheduled jobs
 (async () => {

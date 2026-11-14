@@ -22,4 +22,16 @@ assert.throws(
   /positive "amount"/
 );
 
+const { decideClaim } = require('../src/chainRegistry');
+
+const deployed = { status: 'deployed', vault: '0x1', executor: '0x2' };
+assert.equal(decideClaim(deployed, Date.now()).won, false);
+
+const fresh = { status: 'deploying', startedAt: Date.now() };
+assert.equal(decideClaim(fresh, Date.now()).won, false);
+
+const stale = { status: 'deploying', startedAt: Date.now() - 21 * 60 * 1000 };
+assert.equal(decideClaim(stale, Date.now()).won, true);
+assert.equal(decideClaim(null, Date.now()).won, true);
+
 console.log('chains and swap plan ok');
