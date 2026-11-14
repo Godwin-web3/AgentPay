@@ -290,8 +290,9 @@ function AppWithAuth() {
   }, [user]);
 
   if (loading || tagLoading) return (
-    <div style={{ minHeight: '100vh', background: '#0A0A0A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#4fdbc8' }}>Loading...</p>
+    <div className="sheet" style={{ justifyContent: 'flex-end' }}>
+      <p className="kicker">AgentPay</p>
+      <h1 className="display display-tight">Loading<span className="display-em">your wallet.</span></h1>
     </div>
   );
   if (!user) return authView === 'landing'

@@ -7,6 +7,7 @@ export default function ClaimTag({ onClaimed }: { onClaimed: (tag: string) => vo
   const [tag, setTag] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const ready = tag.length >= 3 && !loading
 
   const handleClaim = async () => {
     if (!tag || !user) return
@@ -23,94 +24,40 @@ export default function ClaimTag({ onClaimed }: { onClaimed: (tag: string) => vo
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#0A0A0A',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
-      gap: '32px'
-    }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: '48px', marginBottom: '8px' }}>⚡</div>
-        <h1 style={{ color: '#4fdbc8', fontSize: '24px', fontWeight: 700, margin: 0 }}>Claim your tag</h1>
-        <p style={{ color: '#666', marginTop: '8px', fontSize: '13px' }}>
-          This is how people find you.
-        </p>
-      </div>
-
-      <div style={{
-        background: '#141414',
-        border: '1px solid #222',
-        borderRadius: '4px',
-        padding: '32px',
-        width: '100%',
-        maxWidth: '360px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          border: '1px solid #333',
-          background: '#0A0A0A',
-          padding: '12px',
-          gap: '4px'
-        }}>
-          <span style={{ color: '#4fdbc8', fontFamily: 'monospace', fontSize: '16px' }}>@</span>
+    <div className="sheet">
+      <header className="sheet-bar">
+        <span className="mark">AgentPay</span>
+        <span className="kicker" style={{ margin: 0 }}>Tag</span>
+      </header>
+      <main className="sheet-main">
+        <h1 className="display display-tight">
+          Claim a tag.
+          <span className="display-em">Optional.</span>
+        </h1>
+        <p className="lede">This is how people find you. You can skip it.</p>
+        <label className="rule-field">
+          <span className="chain-name">@</span>
           <input
             value={tag}
             onChange={e => setTag(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
             placeholder="yourtag"
             maxLength={20}
-            style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: '#fff',
-              fontSize: '16px',
-              fontFamily: 'monospace'
-            }}
+            aria-label="Tag"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
           />
+        </label>
+        {error && <p className="fine" style={{ color: '#8d3b2c' }}>{error}</p>}
+        <div className="stack-actions">
+          <button type="button" onClick={handleClaim} disabled={!ready} className="ink-btn">
+            {loading ? 'Claiming' : 'Claim @' + (tag || 'yourtag')}
+          </button>
+          <button type="button" onClick={() => onClaimed('')} className="text-link">
+            Skip for now
+          </button>
         </div>
-
-        {error && <p style={{ color: 'var(--danger)', fontSize: '12px', margin: 0 }}>{error}</p>}
-
-        <button
-          onClick={handleClaim}
-          disabled={loading || tag.length < 3}
-          style={{
-            background: tag.length >= 3 ? '#4fdbc8' : '#1a1a1a',
-            color: tag.length >= 3 ? '#0A0A0A' : '#444',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '14px',
-            fontSize: '15px',
-            fontWeight: 700,
-            cursor: tag.length >= 3 ? 'pointer' : 'not-allowed',
-          }}
-        >
-          {loading ? 'Claiming...' : 'Claim @' + (tag || 'yourtag')}
-        </button>
-
-        <button
-          onClick={() => onClaimed('')}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: '#444',
-            fontSize: '12px',
-            cursor: 'pointer',
-            padding: '4px'
-          }}
-        >
-          Skip for now
-        </button>
-      </div>
+      </main>
     </div>
   )
 }

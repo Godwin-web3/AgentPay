@@ -59,53 +59,56 @@ export default function Profile({ userAddress, userId, vaultBalance, positions =
     )
   }
 
-  return (
-    <div className="reveal" style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
-      <p className="eyebrow">{tag && tag !== 'skip' ? `@${tag}` : 'Account'}</p>
-      <div className="money" style={{ margin: '10px 0 8px' }}>
-        {vaultBalance}
-      </div>
-      <div style={{ color: 'var(--muted)', marginBottom: 20 }}>Balance</div>
+  const address = agentWalletAddress || userAddress
 
-      <div style={{ borderTop: '1px solid var(--border)' }}>
-        {(positions.length ? positions : [{ label: 'Vault', amount: vaultBalance }]).map((row) => (
-          <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '12px 0', borderBottom: '1px solid var(--border)', fontSize: 14 }}>
-            <span style={{ color: 'var(--muted)' }}>{row.label}</span>
-            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{row.amount}</span>
+  return (
+    <div className="reveal" style={{ padding: '8px 16px 32px', maxWidth: 560, margin: '0 auto' }}>
+      <p className="kicker">{tag && tag !== 'skip' ? `@${tag}` : 'Account'}</p>
+      <h2 className="page-title" style={{ fontSize: 'clamp(40px, 10vw, 56px)', marginBottom: 8 }}>Holdings</h2>
+      <p className="lede" style={{ marginTop: 0 }}>One address. Robinhood, Base, and Arc.</p>
+
+      <button
+        type="button"
+        className="addr"
+        onClick={() => navigator.clipboard.writeText(address).catch(() => {})}
+        aria-label="Copy address"
+      >
+        {address}
+      </button>
+
+      <div style={{ marginTop: 22, borderTop: '1px solid #161513' }}>
+        {(positions.length ? positions : [{ label: 'Nothing claimed yet', amount: '—' }]).map((row) => (
+          <div key={row.label} className="hold-row">
+            <span>{row.label}</span>
+            <span>{row.amount}</span>
           </div>
         ))}
-        {walletBalance && !positions.some((row) => row.label === 'Arc wallet') && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '12px 0', borderBottom: '1px solid var(--border)', fontSize: 14 }}>
-            <span style={{ color: 'var(--muted)' }}>Arc wallet</span>
-            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{walletBalance}</span>
-          </div>
-        )}
       </div>
 
       {stocks.length > 0 && (
         <div style={{ marginTop: 28 }}>
-          <p className="eyebrow">Robinhood testnet</p>
-          {stocks.map((token) => (
-            <div key={token.symbol} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '12px 0', borderBottom: '1px solid var(--border)', fontSize: 14 }}>
-              <span style={{ color: 'var(--muted)' }}>{token.symbol}</span>
-              <span style={{ fontVariantNumeric: 'tabular-nums' }}>{token.amount}</span>
-            </div>
-          ))}
+          <p className="kicker">Robinhood stocks</p>
+          <div style={{ borderTop: '1px solid var(--border)' }}>
+            {stocks.map((token) => (
+              <div key={token.symbol} className="hold-row">
+                <span>{token.symbol}</span>
+                <span>{token.amount}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 16, margin: '16px 0 24px' }}>
-        <button onClick={() => setSubView('vault')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text)', cursor: 'pointer', font: 'inherit' }}>Deposit</button>
-        <button onClick={() => setSubView('vault')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--muted)', cursor: 'pointer', font: 'inherit' }}>Withdraw</button>
-      </div>
-
-      <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--muted)', marginTop: 22 }}>
-        {(agentWalletAddress || userAddress).slice(0, 6)}…{(agentWalletAddress || userAddress).slice(-4)}
+      <div style={{ display: 'flex', gap: 22, marginTop: 22 }}>
+        <button type="button" onClick={() => setSubView('vault')} className="text-link">Deposit</button>
+        <button type="button" onClick={() => setSubView('vault')} className="text-link">Withdraw</button>
       </div>
 
       <button
+        type="button"
         onClick={() => setSubView('policy')}
-        style={{ display: 'block', marginTop: 18, padding: 0, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--text)', font: 'inherit', fontSize: 16 }}
+        className="text-link"
+        style={{ marginTop: 8, fontFamily: 'var(--font-head)', fontSize: 18 }}
       >
         Spending limits
       </button>

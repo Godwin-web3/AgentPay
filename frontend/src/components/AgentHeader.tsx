@@ -2,7 +2,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { useEffect, useState, useCallback } from 'react'
 import { getHealth, getPausedState, pauseAgent, resumeAgent } from '../api'
 import type { HealthData } from '../types'
-import WalletConnect from './WalletConnect'
 
 interface Props {
   onAddressChange: (addr: string) => void
@@ -17,7 +16,7 @@ interface Props {
   tag?: string | null
 }
 
-export default function AgentHeader({ onAddressChange, onBalanceChange, onProviderChange, currentView, onNavigate, onClearMemory, refreshTrigger, userAddress, tag }: Props) {
+export default function AgentHeader({ currentView, onNavigate, onClearMemory, refreshTrigger, userAddress, tag }: Props) {
   const [health, setHealth] = useState<HealthData | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const { logout } = useAuth()
@@ -135,9 +134,15 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
         </div>
 
         <div className="drawer-divider" />
-        <div className="drawer-section-label">Wallet</div>
-        <div className="drawer-wallet">
-          <WalletConnect onAddressChange={onAddressChange} onBalanceChange={onBalanceChange} onProviderChange={onProviderChange} refreshTrigger={refreshTrigger} />
+        <div className="drawer-section-label">Address</div>
+        <div style={{ padding: '0 16px 16px' }}>
+          <button
+            type="button"
+            className="addr"
+            onClick={() => userAddress && navigator.clipboard.writeText(userAddress).catch(() => {})}
+          >
+            {userAddress || 'Signing in'}
+          </button>
         </div>
 
         <div className="drawer-divider" />
@@ -174,27 +179,22 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
                 onClick={handleTogglePause}
                 disabled={pauseLoading}
                 style={{
-                  padding: '4px 10px',
-                  borderRadius: 4,
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: 1,
+                  padding: '8px 0',
+                  border: 'none',
+                  background: 'none',
+                  fontFamily: 'var(--font-head)',
+                  fontSize: 16,
                   cursor: pauseLoading ? 'not-allowed' : 'pointer',
-                  border: '1px solid',
-                  borderColor: isPaused ? 'var(--danger-a2)' : 'var(--cyan-a2)',
-                  background: isPaused ? 'var(--danger-a1)' : 'var(--cyan-a1)',
-                  color: isPaused ? 'var(--danger)' : 'var(--cyan)',
+                  color: isPaused ? 'var(--danger)' : 'var(--text)',
                   opacity: pauseLoading ? 0.5 : 1,
-                  whiteSpace: 'nowrap',
                 }}
               >
-                {pauseLoading ? '...' : isPaused ? 'RESUME' : 'PAUSE'}
+                {pauseLoading ? '…' : isPaused ? 'Resume' : 'Pause'}
               </button>
             )}
           </div>
           <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
-            ARC TESTNET
+            Three testnets
           </div>
         </div>
       </div>

@@ -106,7 +106,7 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
   if (txs.length === 0) return (
     <div className="history-view">
       <p className="eyebrow">Activity</p>
-      <h2 className="page-title">Nothing yet</h2>
+      <h2 className="page-title" style={{ fontSize: 'clamp(40px, 10vw, 56px)' }}>Nothing yet</h2>
     </div>
   )
 
@@ -116,7 +116,7 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
     <div className="history-view" style={{ paddingBottom: 80 }}>
       <div className="reveal" style={{ marginBottom: 28 }}>
         <p className="eyebrow">Activity</p>
-        <h2 className="page-title" style={{ marginBottom: 8 }}>History</h2>
+        <h2 className="page-title" style={{ fontSize: 'clamp(40px, 10vw, 56px)', marginBottom: 8 }}>History</h2>
       </div>
 
       <div className="card-deep reveal" style={{ padding: '4px 20px' }}>
@@ -166,15 +166,12 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
                       </div>
                       {entry.badge && (
                         <span className="mono-data" style={{
-                          fontSize: 9,
+                          fontSize: 11,
                           letterSpacing: '0.08em',
-                          padding: '2px 6px',
-                          borderRadius: 4,
-                          border: '1px solid var(--wire)',
-                          color: 'var(--wire)',
+                          color: 'var(--muted)',
                           textTransform: 'uppercase',
                         }}>
-                          ⚡ {entry.badge}
+                          {entry.badge}
                         </span>
                       )}
                     </div>

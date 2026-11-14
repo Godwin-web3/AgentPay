@@ -26,7 +26,7 @@ export default function ClaimFunds({ userId, onDone }: { userId: string; onDone:
     }
   }
 
-  async function openCircle() {
+  async function openFaucet() {
     if (walletAddress) {
       try {
         await navigator.clipboard.writeText(walletAddress)
@@ -39,40 +39,50 @@ export default function ClaimFunds({ userId, onDone }: { userId: string; onDone:
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#f3f0e8', color: '#161513', display: 'flex', flexDirection: 'column', padding: '28px 22px' }}>
-      <span style={{ fontFamily: 'var(--font-head)', fontSize: 18 }}>AgentPay</span>
-      <div style={{ marginTop: 'auto', maxWidth: 520 }}>
-        <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 500, fontSize: 56, lineHeight: 0.9, letterSpacing: '-0.04em', margin: '0 0 16px' }}>
-          Claim the testnet.
+    <div className="sheet">
+      <header className="sheet-bar">
+        <span className="mark">AgentPay</span>
+        <span className="kicker" style={{ margin: 0 }}>Test funds</span>
+      </header>
+      <main className="sheet-main">
+        <h1 className="display display-tight">
+          Claim the
+          <span className="display-em">testnet.</span>
         </h1>
         {!landed ? (
           <>
-            <p style={{ margin: 0, fontSize: 17, lineHeight: 1.4, maxWidth: '36ch' }}>
-              One tap sends test USDG, the stock tokens, and gas. Base and Arc USDC need Circle’s own captcha.
+            <p className="lede">
+              One tap sends test USDG, the stock tokens, and gas to your address. Base and Arc USDC still need a captcha on the public faucet.
             </p>
-            {error && <p style={{ color: '#8a3b2c', marginTop: 16 }}>{error}</p>}
-            <button type="button" onClick={claim} disabled={loading} style={{ marginTop: 28, background: '#161513', color: '#f3f0e8', border: 'none', padding: '14px 22px', fontFamily: 'var(--font-head)', fontSize: 16, cursor: 'pointer' }}>
+            {error && <p className="fine" style={{ color: '#8d3b2c' }}>{error}</p>}
+            <button type="button" onClick={claim} disabled={loading} className="ink-btn">
               {loading ? 'Claiming' : 'Claim test funds'}
             </button>
           </>
         ) : (
           <>
-            <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
+            <ul className="landed">
               {landed.map((item) => <li key={item}>{item}</li>)}
             </ul>
-            <p style={{ margin: '18px 0 0', maxWidth: '36ch', lineHeight: 1.4 }}>
-              Your address is copied. On Circle, pick Base Sepolia, then Arc Testnet, and pass the captcha. Each sends 20 USDC.
+            <p className="lede">
+              {copied
+                ? 'Address copied. On the faucet, pick Base Sepolia, then Arc Testnet. Each sends 20 USDC.'
+                : 'On the faucet, pick Base Sepolia, then Arc Testnet. Each sends 20 USDC. Tap your address to copy it.'}
             </p>
-            {walletAddress && <p style={{ fontFamily: 'var(--font-mono)', fontSize: 12, wordBreak: 'break-all' }}>{walletAddress}</p>}
-            <button type="button" onClick={openCircle} style={{ marginTop: 18, background: 'transparent', color: '#161513', border: '1px solid #161513', padding: '14px 22px', fontFamily: 'var(--font-head)', fontSize: 16, cursor: 'pointer' }}>
-              {copied ? 'Address copied. Open Circle' : 'Claim Base and Arc USDC'}
-            </button>
-            <button type="button" onClick={onDone} style={{ marginTop: 12, marginLeft: 12, background: '#161513', color: '#f3f0e8', border: 'none', padding: '14px 22px', fontFamily: 'var(--font-head)', fontSize: 16, cursor: 'pointer' }}>
-              Continue
-            </button>
+            {walletAddress && (
+              <button type="button" className="addr" onClick={openFaucet}>
+                {walletAddress}
+              </button>
+            )}
+            <div className="stack-actions">
+              <button type="button" onClick={openFaucet} className="ghost-btn">
+                {copied ? 'Address copied. Open faucet' : 'Claim Base and Arc USDC'}
+              </button>
+              <button type="button" onClick={onDone} className="ink-btn">Continue</button>
+            </div>
           </>
         )}
-      </div>
+      </main>
     </div>
   )
 }

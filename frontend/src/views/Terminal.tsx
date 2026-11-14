@@ -45,11 +45,9 @@ function plainReason(reason?: string) {
 
 function ProofBadge({ requestId }: { requestId: string }) {
   return (
-    <div style={{ marginTop: 10, padding: '6px 10px', background: 'rgba(79,219,200,0.04)', border: '1px solid rgba(79,219,200,0.15)', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div>
-        <div style={{ color: 'var(--cyan)', marginBottom: 2, letterSpacing: 1 }}>REQUEST ID</div>
-        <div>{requestId.slice(0, 24)}...</div>
-      </div>
+    <div style={{ marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--muted)' }}>
+      <div style={{ letterSpacing: '0.12em', textTransform: 'uppercase', fontSize: 11, marginBottom: 4 }}>Request</div>
+      <div>{requestId.slice(0, 24)}...</div>
     </div>
   )
 }
@@ -69,15 +67,15 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     else if (result.status === 'proposing_transfer') { title = `Send ${result.amount} ${result.token}`; detail = `From your wallet to ${result.to}.` }
     else if (result.status === 'proposing_mint') { title = 'Deposit 100 test USDG'; detail = 'From the USDG already in your wallet.' }
     return (
-      <div style={{ marginTop: 10, border: '1px solid var(--cyan)', background: 'rgba(79,219,200,0.04)', padding: '12px 14px', fontFamily: 'var(--font-mono)' }}>
-        <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2, marginBottom: 6 }}>{title}</div>
-        <div style={{ fontSize: 12, color: 'var(--text)', marginBottom: 12 }}>{detail}</div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button disabled={confirming} onClick={async () => { setConfirming(true); if (onConfirm) await onConfirm(); setConfirming(false) }} style={{ flex: 2, background: 'var(--text)', color: '#f3f0e8', border: 'none', padding: '12px 14px', fontSize: 14, cursor: 'pointer', fontFamily: 'var(--font-head)', fontWeight: 500, letterSpacing: '-0.02em' }}>
+      <div style={{ marginTop: 12, borderTop: '1px solid var(--text)', paddingTop: 12 }}>
+        <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, letterSpacing: '-0.03em', marginBottom: 4 }}>{title}</div>
+        <div style={{ fontSize: 15, color: 'var(--muted)', marginBottom: 14 }}>{detail}</div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button disabled={confirming} onClick={async () => { setConfirming(true); if (onConfirm) await onConfirm(); setConfirming(false) }} style={{ flex: 2, background: 'var(--text)', color: '#f4f1ea', border: 'none', minHeight: 48, padding: '12px 14px', fontSize: 16, cursor: 'pointer', fontFamily: 'var(--font-head)' }}>
             {confirming ? 'Sending' : 'Confirm'}
           </button>
-          <button disabled={confirming} onClick={onCancel} style={{ flex: 1, background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)', padding: '8px 12px', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>
-            CANCEL
+          <button disabled={confirming} onClick={onCancel} style={{ flex: 1, background: 'transparent', color: 'var(--text)', border: '1px solid var(--border-hot)', minHeight: 48, padding: '8px 12px', fontSize: 15, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+            Cancel
           </button>
         </div>
       </div>
@@ -129,12 +127,12 @@ function BalanceCard({ data }: { data: any }) {
 function PolicyCard({ data }: { data: any }) {
   if (!data?.perTxCap) return null
   return (
-    <div style={{ marginTop: 10, border: '1px solid var(--border)', padding: '12px 14px', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-      <div style={{ color: 'var(--cyan)', marginBottom: 8, fontSize: 9, letterSpacing: 2 }}>POLICY</div>
-      {[['PER_TX_CAP', `${data.perTxCap} USDC`], ['DAILY_CAP', `${data.dailyCap} USDC`], ['SPENT_TODAY', `${data.dailySpendSoFar} USDC`], ['REMAINING', `${data.dailyRemaining} USDC`], ['STATUS', data.active ? 'ACTIVE' : 'PAUSED']].map(([k, v]) => (
-        <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+    <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10, fontSize: 14 }}>
+      <div style={{ letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontSize: 11, marginBottom: 8 }}>Limits</div>
+      {[['Per transfer', `${data.perTxCap} USDC`], ['Daily cap', `${data.dailyCap} USDC`], ['Spent today', `${data.dailySpendSoFar} USDC`], ['Remaining', `${data.dailyRemaining} USDC`], ['Status', data.active ? 'Active' : 'Paused']].map(([k, v]) => (
+        <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
           <span style={{ color: 'var(--muted)' }}>{k}</span>
-          <span style={{ color: k === 'STATUS' ? (data.active ? 'var(--cyan)' : 'var(--danger)') : 'var(--text)' }}>{v}</span>
+          <span>{v}</span>
         </div>
       ))}
     </div>
@@ -487,7 +485,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         ))}
         {loading && (
           <div className="message assistant">
-            <div style={{ fontSize: 9, letterSpacing: 1, marginBottom: 4, color: 'var(--cyan)', fontFamily: 'var(--font-mono)' }}>AP</div>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>Working</div>
             <div className="typing"><span /><span /><span /></div>
           </div>
         )}
@@ -502,15 +500,25 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
             setTimeout(() => setTxResults((r) => ({ ...r, [idx]: { status: 'proposing_mint' } })), 0)
             return next
           })
-        }} style={{ background: 'none', border: 'none', padding: '0 0 10px', color: 'var(--text)', fontFamily: 'var(--font-head)', fontSize: 16, cursor: 'pointer' }}>
+        }} className="text-link" style={{ padding: '4px 0 12px', fontFamily: 'var(--font-head)', fontSize: 16 }}>
           Deposit 100 USDG
         </button>
-        <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
-          {MOVES.map((move) => (
-            <button key={move.id} type="button" disabled={loading} onClick={() => setWant(move.id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', whiteSpace: 'nowrap', color: want === move.id ? 'var(--text)' : 'var(--muted)', fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 500 }}>
-              {move.label} · {move.where}
-            </button>
-          ))}
+        <div className="move-book">
+          {['Robinhood', 'Base', 'Arc'].map((group) => {
+            const items = MOVES.filter((move) => move.where === group || String(move.where).startsWith(group))
+            return (
+              <div key={group} className="move-group">
+                <div className="move-group-name">{group}</div>
+                <div className="move-group-items">
+                  {items.map((move) => (
+                    <button key={move.id} type="button" disabled={loading} onClick={() => setWant(move.id)} className={want === move.id ? 'move-chip on' : 'move-chip'} aria-pressed={want === move.id}>
+                      {move.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
         <div style={{ color: 'var(--muted)', fontSize: 13, margin: '4px 0 8px' }}>{routeLine}</div>
         <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" style={fieldStyle} />
