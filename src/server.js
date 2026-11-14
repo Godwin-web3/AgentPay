@@ -741,9 +741,9 @@ async function handleIntelligence(req, res) {
 // A pool is a shared-money group (roommates, small teams, trip funds) a user
 // opts into creating — personal AgentVault usage is completely unaffected.
 // Member-facing calls (create/accept/leave/contribute/withdraw/veto) are
-// signed by the member's own Circle wallet (src/poolVault.js); the agent's
-// operator key only ever proposes/resolves, and PoolVault.sol enforces that
-// a veto blocks execution no matter what.
+// signed by the member's own Circle wallet (src/poolVault.js). The operator
+// key can relay only with a valid member EIP-712 signature; the normal product
+// path submits directly from the member wallet.
 
 async function resolveInvite(raw) {
   if (typeof raw === 'string' && raw.startsWith('0x')) return raw;
@@ -898,7 +898,7 @@ async function handleProposeSpend(req, res) {
   try {
     const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
-    const { proposalId, txHash } = await poolVault.proposeSpend(getAgentWallet(), req.params.poolId, wallet.address, to, amount, reason || '');
+    const { proposalId, txHash } = await poolVault.proposeSpend(wallet.walletId, req.params.poolId, wallet.address, to, amount, reason || '');
     const onChainProposal = await poolVault.getProposal(sharedProvider, proposalId);
     const poolStore = require('./poolStore');
     await poolStore.recordProposal({ proposalId, poolId: req.params.poolId, kind: 'Spend', windowEnds: onChainProposal.windowEnds, proposer: wallet.address });
@@ -925,7 +925,7 @@ async function handleProposeAmend(req, res) {
   try {
     const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
-    const { proposalId, txHash } = await poolVault.proposeAmendConstitution(getAgentWallet(), req.params.poolId, wallet.address, constitution);
+    const { proposalId, txHash } = await poolVault.proposeAmendConstitution(wallet.walletId, req.params.poolId, wallet.address, constitution);
     const onChainProposal = await poolVault.getProposal(sharedProvider, proposalId);
     const poolStore = require('./poolStore');
     await poolStore.recordProposal({ proposalId, poolId: req.params.poolId, kind: 'AmendConstitution', windowEnds: onChainProposal.windowEnds });
@@ -944,7 +944,7 @@ async function handleProposeRemove(req, res) {
     const wallet = await getOrCreateWallet(userId);
     const resolvedTarget = await resolveInvite(targetMember);
     const poolVault = require('./poolVault');
-    const { proposalId, txHash } = await poolVault.proposeRemoveMember(getAgentWallet(), req.params.poolId, wallet.address, resolvedTarget);
+    const { proposalId, txHash } = await poolVault.proposeRemoveMember(wallet.walletId, req.params.poolId, wallet.address, resolvedTarget);
     const onChainProposal = await poolVault.getProposal(sharedProvider, proposalId);
     const poolStore = require('./poolStore');
     await poolStore.recordProposal({ proposalId, poolId: req.params.poolId, kind: 'RemoveMember', windowEnds: onChainProposal.windowEnds });
