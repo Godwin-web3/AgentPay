@@ -153,16 +153,15 @@ async function quoteSwap({ chain: chainName, fromAsset, toAsset, amount }) {
 }
 
 async function executeSwap({ chain: chainName, fromAsset, toAsset, amount, userAddress, recipient }) {
-  const quote = await quoteSwap({ chain: chainName, fromAsset, toAsset, amount });
-  const chain = getChain(quote.chain);
+  const chain = getChain(chainName);
   if (!chain.testnet && process.env.ALLOW_MAINNET !== '1') {
     return {
       success: false,
       executed: false,
-      quote,
       reason: chain.name + ' is mainnet. Settlement stays on testnet until you explicitly allow mainnet. Funds were not moved.',
     };
   }
+  const quote = await quoteSwap({ chain: chainName, fromAsset, toAsset, amount });
   const vault = vaultAddressFor(chain);
   const executor = executorAddressFor(chain);
 

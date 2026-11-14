@@ -5,7 +5,10 @@
 const { ethers } = require('ethers');
 const { getChain } = require('./chain');
 const walletService = require('./walletService');
-const walletStore = require('./walletStore');
+
+function walletStore() {
+  return require('./walletStore');
+}
 
 const MESSENGER = 'depositForBurn(uint256,uint32,bytes32,address,bytes32,uint256,uint32)';
 const RECEIVE = 'receiveMessage(bytes,bytes)';
@@ -97,14 +100,14 @@ async function waitForAttestation(domain, txHash) {
 }
 
 async function signerFor(userId, chain) {
-  const record = await walletStore.getWallet(userId);
+  const record = await walletStore().getWallet(userId);
   if (!record || !record.walletId) throw new Error('No wallet yet.');
   if (!chain.circle || chain.circle === 'ARC-TESTNET') return record;
   const saved = record.chainWallets && record.chainWallets[chain.id];
   if (saved && saved.walletId) return { ...record, walletId: saved.walletId, address: saved.address };
   const created = await walletService.createWalletOnChain(chain.circle);
   const chainWallets = { ...(record.chainWallets || {}), [chain.id]: created };
-  await walletStore.setWallet(userId, { chainWallets });
+  await walletStore().setWallet(userId, { chainWallets });
   return { walletId: created.walletId, address: created.address };
 }
 
@@ -118,7 +121,7 @@ async function mint(userId, pending, msg) {
     RECEIVE,
     [msg.message, msg.attestation]
   );
-  await walletStore.setWallet(userId, { pendingBridge: null });
+  await walletStore().setWallet(userId, { pendingBridge: null });
   return mintTx;
 }
 
@@ -150,7 +153,7 @@ async function executeBridge({ userId, from, to, amount }) {
     amount: quoted.amount,
     domain: source.cctp.domain,
   };
-  await walletStore.setWallet(userId, { pendingBridge: pending });
+  await walletStore().setWallet(userId, { pendingBridge: pending });
   const msg = await waitForAttestation(source.cctp.domain, burnTx);
   if (!msg) {
     return { success: true, status: 'burned', burnTx, quote: quoted };
@@ -160,7 +163,7 @@ async function executeBridge({ userId, from, to, amount }) {
 }
 
 async function completeBridge(userId) {
-  const record = await walletStore.getWallet(userId);
+  const record = await walletStore().getWallet(userId);
   const pending = record && record.pendingBridge;
   if (!pending || !pending.burnTx) throw new Error('No bridge is waiting. Start one from the chat.');
   const msg = await attestation(pending.domain, pending.burnTx);
@@ -170,7 +173,7 @@ async function completeBridge(userId) {
 }
 
 async function resumePendingBridges() {
-  const wallets = await walletStore.getAllWallets();
+  const wallets = await walletStore().getAllWallets();
   for (const [userId, record] of Object.entries(wallets)) {
     if (!record.pendingBridge || !record.pendingBridge.burnTx) continue;
     try {
