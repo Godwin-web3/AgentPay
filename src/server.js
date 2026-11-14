@@ -10,7 +10,7 @@ const { gateway } = require('./gatewayMiddleware');
 const escrow = require('./escrow');
 const express = require('express');
 const app = express();
-const { getProvider, getChain, listChains } = require('./chain');
+const { getProvider, getChain, listChains, txUrl } = require('./chain');
 
 // Express 5 (path-to-regexp v8) requires routes here to be matched with a
 // trailing slash that Express 4 treated as optional. Normalize incoming
@@ -454,6 +454,50 @@ async function handleSwap(req, res) {
     return send(res, 200, result);
   } catch (err) {
     return send(res, 200, { success: false, executed: false, reason: err.message });
+  }
+}
+
+async function handleBridge(req, res) {
+  const userId = getUserId(req);
+  const { from, to, amount } = req.body || {};
+  if (!amount) return send(res, 400, { error: 'Missing amount' });
+  try {
+    await getOrCreateWallet(userId);
+    const { executeBridge } = require('./bridge');
+    const result = await executeBridge({ userId, from, to, amount });
+    const source = getChain(result.quote.from);
+    if (result.burnTx) {
+      await appendSpend({
+        userAddress: userId,
+        to: result.quote.to,
+        amount: Number(result.quote.amount),
+        reason: `${result.quote.fromName} to ${result.quote.toName}`,
+        txHash: result.burnTx,
+        token: 'USDC',
+        type: 'bridge',
+      });
+    }
+    return send(res, 200, {
+      ...result,
+      explorer: txUrl(source, result.burnTx),
+      mintExplorer: result.mintTx ? txUrl(getChain(result.quote.to), result.mintTx) : null,
+    });
+  } catch (err) {
+    return send(res, 200, { success: false, status: 'failed', reason: err.message });
+  }
+}
+
+async function handleBridgeComplete(req, res) {
+  const userId = getUserId(req);
+  try {
+    const { completeBridge } = require('./bridge');
+    const result = await completeBridge(userId);
+    return send(res, 200, {
+      ...result,
+      explorer: txUrl(getChain(result.toChain), result.mintTx),
+    });
+  } catch (err) {
+    return send(res, 200, { success: false, status: 'failed', reason: err.message });
   }
 }
 
@@ -1347,6 +1391,8 @@ app.get('/chat', handleGetChatHistory);
 app.delete('/chat', handleDeleteChat);
 app.post('/pay', handlePay);
 app.post('/swap', handleSwap);
+app.post('/bridge', handleBridge);
+app.post('/bridge/complete', handleBridgeComplete);
 app.get('/chains', handleChains);
 app.get('/schedules', handleGetSchedules);
 app.post('/schedules', handleCreateSchedule);

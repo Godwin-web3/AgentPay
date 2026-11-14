@@ -69,6 +69,16 @@ export async function executeSwap(
   }, userId)
 }
 
+export async function executeBridge(
+  body: { from?: string; to?: string; amount: number },
+  userId: string
+): Promise<any> {
+  return request<any>('/bridge', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  }, userId)
+}
+
 export async function executePay(
   to: string,
   amount: number,

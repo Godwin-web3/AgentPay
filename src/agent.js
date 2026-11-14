@@ -220,6 +220,31 @@ async function chat(message, walletId, userAddress) {
       intent.message = e.message;
     }
   }
+  if (intent.action === "bridge") {
+    try {
+      const { quoteBridge } = require('./bridge');
+      const quote = quoteBridge({
+        from: intent.fromChain || intent.from || 'base',
+        to: intent.toChain || intent.to || 'arc',
+        amount: intent.amount,
+      });
+      intent.data = { quote };
+      intent.message = `Bridge ${quote.amount} USDC from ${quote.fromName} to ${quote.toName}. Circle burns it on the source wallet and mints the same amount on the destination. This is not a vault deposit. Confirm to start.`;
+    } catch (e) {
+      intent.data = { quoteError: e.message };
+      intent.message = e.message;
+    }
+  }
+  if (intent.action === "bridge_complete") {
+    try {
+      const { completeBridge } = require('./bridge');
+      const done = await completeBridge(userAddress);
+      intent.data = { result: done };
+      intent.message = `Minted ${done.amount} USDC on ${done.toChain}. ${done.mintTx}`;
+    } catch (e) {
+      intent.message = e.message;
+    }
+  }
   if (intent.action === "goals_status") {
     try {
       const intentEngine = require('./intentEngine');

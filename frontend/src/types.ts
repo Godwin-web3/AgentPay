@@ -17,7 +17,7 @@ export interface ChatMessage {
 }
 
 export interface Intent {
-  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown' | 'fetch_and_pay' | 'deposit' | 'swap'
+  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown' | 'fetch_and_pay' | 'deposit' | 'swap' | 'bridge' | 'bridge_complete'
   requestId?: string
   to?: string
   amount?: number
@@ -33,7 +33,7 @@ export interface Intent {
   toAsset?: string
   chain?: string
   data?: {
-    quote?: { from: string; to: string; amountIn: number; amountOut: number; chain: string; chainName: string }
+    quote?: { from: string; to: string; amountIn?: number; amountOut?: number; amount?: string; chain?: string; chainName?: string; fromName?: string; toName?: string }
     quoteError?: string
   }
   conditions?: {

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, depositToVault, executeSwap } from '../api'
+import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, depositToVault, executeSwap, executeBridge } from '../api'
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -28,21 +28,22 @@ function ProofBadge({ requestId }: { requestId: string }) {
 function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: () => void, onCancel?: () => void }) {
   const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
-  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_deposit' || result.status === 'proposing_swap'
+  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_deposit' || result.status === 'proposing_swap' || result.status === 'proposing_bridge'
   if (isProposal) {
     let title = 'TX PROPOSAL'
     let detail = ''
     if (result.status === 'proposing_pay') { title = 'PAYMENT PROPOSAL'; detail = `${result.amount} ${result.token || 'USDC'} -> ${result.to?.slice(0, 10)}...` }
     else if (result.status === 'proposing_schedule') { title = 'SCHEDULE PAYMENT'; detail = `${result.amount} USDC to ${result.to?.slice(0, 10)}... / ${result.interval}` }
     else if (result.status === 'proposing_deposit') { title = 'VAULT DEPOSIT'; detail = `${result.amount} ${result.token || 'USDC'} on ${result.chainName || 'Arc'}` }
-    else if (result.status === 'proposing_swap') { title = 'SWAP'; detail = `${result.amount} ${result.fromAsset} → about ${result.amountOut} ${result.toAsset} on ${result.chainName}` }
+    else if (result.status === 'proposing_swap') { title = 'Swap'; detail = `${result.amount} ${result.fromAsset} for about ${result.amountOut} ${result.toAsset} on ${result.chainName}` }
+    else if (result.status === 'proposing_bridge') { title = 'Bridge'; detail = `${result.amount} USDC from ${result.fromName} to ${result.toName}` }
     return (
       <div style={{ marginTop: 10, border: '1px solid var(--cyan)', background: 'rgba(79,219,200,0.04)', padding: '12px 14px', fontFamily: 'var(--font-mono)' }}>
         <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2, marginBottom: 6 }}>{title}</div>
         <div style={{ fontSize: 12, color: 'var(--text)', marginBottom: 12 }}>{detail}</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button disabled={confirming} onClick={async () => { setConfirming(true); if (onConfirm) await onConfirm(); setConfirming(false) }} style={{ flex: 2, background: 'var(--cyan)', color: '#000', border: 'none', padding: '8px 12px', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: 1 }}>
-            {confirming ? 'EXECUTING...' : 'CONFIRM'}
+            {confirming ? 'Sending' : 'Confirm'}
           </button>
           <button disabled={confirming} onClick={onCancel} style={{ flex: 1, background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)', padding: '8px 12px', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>
             CANCEL
@@ -51,18 +52,25 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
       </div>
     )
   }
-  if (result.status === 'executed' || result.status === 'success') {
-    let label = 'EXECUTED'
-    if (result.type === 'schedule') label = `SCHEDULED — ${result.amount} ${result.token || 'USDC'} to ${result.to?.slice(0, 10)}...`
-    else if (result.type === 'pay' || result.to) label = `SENT — ${result.amount} ${result.token || 'USDC'} to ${result.to?.slice(0, 10)}...`
-    else if (result.type === 'deposit') label = `DEPOSITED — ${result.amount} USDC`
+  if (result.status === 'burned') {
     return (
-      <div style={{ marginTop: 10 }}>
-        <a href={result.explorer} target="_blank" rel="noreferrer" style={{ display: 'block', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: 11, padding: '10px 14px', border: '1px solid rgba(79,219,200,0.3)', background: 'rgba(79,219,200,0.04)', color: 'var(--cyan)' }}>
-          <div style={{ letterSpacing: 1, marginBottom: 4 }}>+ {label}</div>
-          {result.txHash && <div style={{ fontSize: 10, color: 'var(--muted)' }}>TX {result.txHash.slice(0, 18)}... -&gt;</div>}
-          <div style={{ marginTop: 4, fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>FINALIZED — {result.chainName || 'ARC TESTNET'}</div>
-        </a>
+      <div style={{ marginTop: 10, fontSize: 14 }}>
+        <div>Burned {result.amount} USDC on {result.fromName}. Circle has not attested yet.</div>
+        {result.txHash && <div style={{ color: 'var(--muted)', marginTop: 4 }}>{result.txHash.slice(0, 18)}…</div>}
+        <div style={{ color: 'var(--muted)', marginTop: 4 }}>Say “finish the bridge” in a minute to mint it.</div>
+      </div>
+    )
+  }
+  if (result.status === 'executed' || result.status === 'success') {
+    let label = 'Done'
+    if (result.type === 'bridge') label = `Bridged ${result.amount} USDC to ${result.toName}`
+    else if (result.type === 'deposit') label = `Deposited ${result.amount} USDC`
+    else if (result.type === 'schedule') label = `Scheduled ${result.amount} USDC`
+    else if (result.amount) label = `Sent ${result.amount} USDC`
+    return (
+      <div style={{ marginTop: 10, fontSize: 14 }}>
+        <div>{label}</div>
+        {result.txHash && <div style={{ color: 'var(--muted)', marginTop: 4 }}>{String(result.txHash).slice(0, 18)}…</div>}
       </div>
     )
   }
@@ -182,6 +190,21 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
           amount: prop.amount,
           reason: swapRes.reason,
           amountOut: swapRes.quote?.amountOut || prop.amountOut,
+          fromAsset: prop.fromAsset,
+          toAsset: prop.toAsset,
+          chainName: prop.chainName,
+        }
+      } else if (prop.status === 'proposing_bridge') {
+        const bridgeRes = await executeBridge({ from: prop.from, to: prop.to, amount: Number(prop.amount) }, userId)
+        res = {
+          status: bridgeRes.status === 'complete' ? 'executed' : bridgeRes.status === 'burned' ? 'burned' : 'failed',
+          txHash: bridgeRes.burnTx || bridgeRes.mintTx,
+          explorer: bridgeRes.explorer,
+          type: 'bridge',
+          amount: prop.amount,
+          fromName: prop.fromName,
+          toName: prop.toName,
+          reason: bridgeRes.reason,
         }
       }
       if (res) {
@@ -234,6 +257,10 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
           if (intent.action === 'swap' && intent.data?.quote) {
             const q = intent.data.quote
             setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_swap', fromAsset: q.from, toAsset: q.to, amount: q.amountIn, amountOut: q.amountOut, chain: q.chain, chainName: q.chainName } }))
+          }
+          if (intent.action === 'bridge' && intent.data?.quote) {
+            const q = intent.data.quote
+            setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_bridge', amount: q.amount, from: q.from, to: q.to, fromName: q.fromName, toName: q.toName } }))
           }
           if (intent.action === 'update_policy' && intent.policyUpdate) {
             const up = intent.policyUpdate
@@ -310,7 +337,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         )}
       </div>
       <div className="quick-actions">
-        {[{ label: 'Send', value: 'Send 1 USDC to ', auto: false }, { label: 'Swap', value: 'Swap 10 USDC for ETH on Base Sepolia', auto: true }, { label: 'Balance', value: 'What is my vault balance?', auto: true }, { label: 'Schedule', value: 'Pay 1 USDC every day to ', auto: false }].map(btn => (
+        {[{ label: 'Send', value: 'Send 1 USDC to ', auto: false }, { label: 'Swap', value: 'Swap 10 USDC for ETH on Base Sepolia', auto: true }, { label: 'Bridge', value: 'Bridge 1 USDC from Base Sepolia to Arc', auto: true }, { label: 'Balance', value: 'What is my vault balance?', auto: true }].map(btn => (
           <button key={btn.label} className="quick-btn" disabled={loading} onClick={() => { if (btn.auto) { handleSend(btn.value) } else { setInput(btn.value); inputRef.current?.focus() } }}>
             {btn.label}
           </button>

@@ -43,6 +43,8 @@ function describeEntry(tx: any) {
       return { title: 'Job fulfilled', sub: tx.reason || 'Deliverable submitted', amount, sign: '+' as const, badge: null }
     case 'swap':
       return { title: 'Swapped', sub: `${tx.fromToken || ''} → ${tx.toToken || ''}`, amount, sign: null, badge: null }
+    case 'bridge':
+      return { title: 'Bridge', sub: tx.reason || 'USDC', amount, sign: '−' as const, badge: null }
     case 'pool_contribute':
       return { title: 'Contributed to pool', sub: tx.reason || '', amount, sign: '−' as const, badge: null }
     case 'pool_withdraw_personal':

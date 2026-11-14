@@ -26,6 +26,11 @@ const CHAINS = {
       minter: '0x0022222ABE238Cc2C7Bb1f21003F0a260052475B',
     },
     circle: 'ARC-TESTNET',
+    cctp: {
+      domain: 26,
+      tokenMessenger: '0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA',
+      messageTransmitter: '0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275',
+    },
   },
   base: {
     id: 'base',
@@ -47,6 +52,11 @@ const CHAINS = {
     quoter: '0xC5290058841028F1614F3A6F0F5816cAd0df5E27',
     gateway: null,
     circle: 'BASE-SEPOLIA',
+    cctp: {
+      domain: 6,
+      tokenMessenger: '0x8FE6B999Dc680CcFDD5Bf7EB0974218be2542DAA',
+      messageTransmitter: '0xE737e5cEBEEBa77EFE34D4aa090756590b1CE275',
+    },
   },
   'base-mainnet': {
     id: 'base-mainnet',

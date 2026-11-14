@@ -70,7 +70,7 @@ async function sendUSDC(walletId, toAddress, amountUSDC) {
   return txId; // fallback to Circle ID if polling times out
 }
 
-module.exports = { createUserWallet, getWalletBalance, getWalletAddress, sendUSDC, createWalletOnChain, depositOnChain, setPolicyOnChain };
+module.exports = { createUserWallet, getWalletBalance, getWalletAddress, sendUSDC, createWalletOnChain, depositOnChain, setPolicyOnChain, runContract };
 
 async function createWalletOnChain(blockchain) {
   const setId = await ensureWalletSet();
