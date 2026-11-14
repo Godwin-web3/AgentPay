@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { claimTestnet } from '../api'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function ClaimFunds({ userId, onDone }: { userId: string; onDone: () => void }) {
+  const { walletAddress } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [landed, setLanded] = useState<string[] | null>(null)
-  const [skipped, setSkipped] = useState<string[]>([])
+  const [copied, setCopied] = useState(false)
 
   async function claim() {
     setLoading(true)
@@ -17,12 +19,23 @@ export default function ClaimFunds({ userId, onDone }: { userId: string; onDone:
         return
       }
       setLanded(result.landed || [])
-      setSkipped(result.skipped || [])
     } catch (err: any) {
       setError(err.message || 'Nothing was claimed.')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function openCircle() {
+    if (walletAddress) {
+      try {
+        await navigator.clipboard.writeText(walletAddress)
+        setCopied(true)
+      } catch {
+        setCopied(false)
+      }
+    }
+    window.open('https://faucet.circle.com/', '_blank', 'noopener')
   }
 
   return (
@@ -34,8 +47,8 @@ export default function ClaimFunds({ userId, onDone }: { userId: string; onDone:
         </h1>
         {!landed ? (
           <>
-            <p style={{ margin: 0, fontSize: 17, lineHeight: 1.4, maxWidth: '34ch' }}>
-              One tap sends test USDG, the stock tokens, and gas to your wallet.
+            <p style={{ margin: 0, fontSize: 17, lineHeight: 1.4, maxWidth: '36ch' }}>
+              One tap sends test USDG, the stock tokens, and gas. Base and Arc USDC need Circle’s own captcha.
             </p>
             {error && <p style={{ color: '#8a3b2c', marginTop: 16 }}>{error}</p>}
             <button type="button" onClick={claim} disabled={loading} style={{ marginTop: 28, background: '#161513', color: '#f3f0e8', border: 'none', padding: '14px 22px', fontFamily: 'var(--font-head)', fontSize: 16, cursor: 'pointer' }}>
@@ -47,8 +60,14 @@ export default function ClaimFunds({ userId, onDone }: { userId: string; onDone:
             <ul style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
               {landed.map((item) => <li key={item}>{item}</li>)}
             </ul>
-            {skipped.length > 0 && <p style={{ color: '#6d675e', marginTop: 16 }}>{skipped[skipped.length - 1]}</p>}
-            <button type="button" onClick={onDone} style={{ marginTop: 28, background: '#161513', color: '#f3f0e8', border: 'none', padding: '14px 22px', fontFamily: 'var(--font-head)', fontSize: 16, cursor: 'pointer' }}>
+            <p style={{ margin: '18px 0 0', maxWidth: '36ch', lineHeight: 1.4 }}>
+              Your address is copied. On Circle, pick Base Sepolia, then Arc Testnet, and pass the captcha. Each sends 20 USDC.
+            </p>
+            {walletAddress && <p style={{ fontFamily: 'var(--font-mono)', fontSize: 12, wordBreak: 'break-all' }}>{walletAddress}</p>}
+            <button type="button" onClick={openCircle} style={{ marginTop: 18, background: 'transparent', color: '#161513', border: '1px solid #161513', padding: '14px 22px', fontFamily: 'var(--font-head)', fontSize: 16, cursor: 'pointer' }}>
+              {copied ? 'Address copied. Open Circle' : 'Claim Base and Arc USDC'}
+            </button>
+            <button type="button" onClick={onDone} style={{ marginTop: 12, marginLeft: 12, background: '#161513', color: '#f3f0e8', border: 'none', padding: '14px 22px', fontFamily: 'var(--font-head)', fontSize: 16, cursor: 'pointer' }}>
               Continue
             </button>
           </>

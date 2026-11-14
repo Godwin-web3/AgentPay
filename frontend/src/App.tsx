@@ -270,7 +270,7 @@ function AppWithAuth() {
       setClaimed(false);
       return;
     }
-    setClaimed(localStorage.getItem('agentpay_test_claimed_v2_' + user.uid) === '1');
+    setClaimed(localStorage.getItem('agentpay_test_claimed_v3_' + user.uid) === '1');
     setTagLoading(true);
     const fetchWithTimeout = (ms: number) => {
       const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
@@ -298,7 +298,7 @@ function AppWithAuth() {
     ? <Landing onLaunch={() => setAuthView('login')} />
     : <Login onBack={() => setAuthView('landing')} />;
   if (tagChecked && !tag) return <ClaimTag onClaimed={(t) => { localStorage.setItem('agentpay_view', 'terminal'); setTag(t || 'skip'); }} />;
-  if (!claimed) return <ClaimFunds userId={user.uid} onDone={() => { localStorage.setItem('agentpay_test_claimed_v2_' + user.uid, '1'); setClaimed(true); }} />;
+  if (!claimed) return <ClaimFunds userId={user.uid} onDone={() => { localStorage.setItem('agentpay_test_claimed_v3_' + user.uid, '1'); setClaimed(true); }} />;
   return <App tag={tag} />;
 }
 
