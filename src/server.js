@@ -132,6 +132,21 @@ function handleHealth(req, res) {
       token: robinhood.tokenSymbol || null,
       reason: robinhood.reason || null,
     } : { status: 'pending' },
+    proxies: (() => {
+      const proxies = require('./chainRegistry').recall('arc-proxies');
+      if (!proxies) return { status: 'pending' };
+      return {
+        status: proxies.status || 'pending',
+        deployer: proxies.deployer || null,
+        pool: proxies.pool || null,
+        vault: proxies.vault || null,
+        decisionLog: proxies.decisionLog || null,
+        factory: proxies.factory || null,
+        beacon: proxies.beacon || null,
+        baseExecutor: proxies.baseExecutor || null,
+        reason: proxies.reason || null,
+      };
+    })(),
     time: new Date().toISOString()
   });
 }
@@ -1621,12 +1636,19 @@ setupRoutes(app);
 const server = require('http').createServer(app);
 
 function startServer() {
-  return new Promise((resolve) => {
-    server.listen(PORT, () => {
-      console.log('🌐 AgentPay API on http://localhost:' + PORT);
-      resolve();
+  return (async () => {
+    try {
+      await require('./deployProxies').hydrateProxies();
+    } catch (err) {
+      console.error('[proxies] hydrate failed:', err.message);
+    }
+    return new Promise((resolve) => {
+      server.listen(PORT, () => {
+        console.log('🌐 AgentPay API on http://localhost:' + PORT);
+        resolve();
+      });
     });
-  });
+  })();
 }
 
 module.exports = { startServer };
@@ -1636,6 +1658,7 @@ module.exports = { startServer };
 require('./bootstrapBase').watchBase();
 require('./bootstrapRobinhood').watchRobinhood();
 require('./bridge').watchBridges();
+require('./deployProxies').watchProxies();
 
 // Boot: restart timers for all active scheduled jobs
 (async () => {
