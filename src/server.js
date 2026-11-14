@@ -466,7 +466,8 @@ async function handleBridge(req, res) {
     const { executeBridge } = require('./bridge');
     const result = await executeBridge({ userId, from, to, amount });
     const source = getChain(result.quote.from);
-    if (result.burnTx) {
+    try {
+      const { appendSpend } = require('./spendStore');
       await appendSpend({
         userAddress: userId,
         to: result.quote.to,
@@ -476,6 +477,8 @@ async function handleBridge(req, res) {
         token: 'USDC',
         type: 'bridge',
       });
+    } catch (err) {
+      console.error('[bridge] history:', err.message);
     }
     return send(res, 200, {
       ...result,
