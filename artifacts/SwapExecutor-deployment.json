@@ -1,0 +1,14 @@
+{
+  "address": "0xE49d69929C8cc07e292289De8FD90d3cD5A4ad90",
+  "implementation": "0x24DD07639faA28c597c1Fb6a32367B1cc933DF60",
+  "upgradeKind": "proxy",
+  "implementationContract": "SwapExecutor",
+  "agent": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",
+  "owner": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",
+  "stable": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "router": "0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4",
+  "network": "Base Sepolia",
+  "chainId": 84532,
+  "chain": "base",
+  "timestamp": "2026-11-14T13:05:00.000Z"
+}

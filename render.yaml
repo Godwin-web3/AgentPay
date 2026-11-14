@@ -10,6 +10,14 @@ services:
       - key: ARC_RPC
         value: https://rpc.testnet.arc.network
       - key: VAULT_ADDRESS
-        value: 0xaB130f3f915AB9722AC6cd17E0d360f971970817
+        value: 0xDED74FD77717A31c6582C791c4A4Bd3205884d8C
+      - key: VAULT_FACTORY_ADDRESS
+        value: 0x85A85b6FE0f36e8A1aBa5cA34F3c7A210C6D2dC0
+      - key: POOL_VAULT_ADDRESS
+        value: 0xb5EF02e8261c477E74A4830d21AA81373C564C4D
+      - key: DECISION_LOG_ADDRESS
+        value: 0x95D12294350B80239C79A0A4B1fEC849878DAEe3
+      - key: SWAP_EXECUTOR_BASE
+        value: 0xE49d69929C8cc07e292289De8FD90d3cD5A4ad90
       - key: PORT
         value: 3000

@@ -1,0 +1,10 @@
+{
+  "address": "0x27d93D0Be6A2E506b8B91D4BdE972bD1dF205b4A",
+  "implementation": "0xcb9eFfb9CC39D7D8e0a9Ab14E56eEE42173F3C10",
+  "upgradeKind": "beacon",
+  "implementationContract": "AgentVault",
+  "factory": "0x85A85b6FE0f36e8A1aBa5cA34F3c7A210C6D2dC0",
+  "network": "Arc Testnet",
+  "chainId": 5042002,
+  "timestamp": "2026-11-14T13:05:00.000Z"
+}

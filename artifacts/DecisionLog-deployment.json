@@ -1,0 +1,12 @@
+{
+  "address": "0x95D12294350B80239C79A0A4B1fEC849878DAEe3",
+  "implementation": "0x9C678AEdf4785C2BF2a1174D029373f9d1b7aC90",
+  "upgradeKind": "proxy",
+  "implementationContract": "DecisionLog",
+  "deployer": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",
+  "agent": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",
+  "owner": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",
+  "network": "Arc Testnet",
+  "chainId": 5042002,
+  "timestamp": "2026-11-14T13:05:00.000Z"
+}
