@@ -128,4 +128,34 @@ async function bootstrapBase() {
   }
 }
 
-module.exports = { bootstrapBase, MIN_ETH };
+let running = false;
+let timer = null;
+
+function watchBase() {
+  if (running) return;
+  running = true;
+  bootstrapBase()
+    .then((record) => {
+      if (record && (record.status === 'deployed' || record.status === 'disabled')) return;
+      if (!timer) {
+        timer = setTimeout(() => {
+          timer = null;
+          watchBase();
+        }, 10 * 60 * 1000);
+      }
+    })
+    .catch((err) => {
+      console.error('[base] bootstrap failed:', err.message);
+      if (!timer) {
+        timer = setTimeout(() => {
+          timer = null;
+          watchBase();
+        }, 10 * 60 * 1000);
+      }
+    })
+    .finally(() => {
+      running = false;
+    });
+}
+
+module.exports = { bootstrapBase, watchBase, MIN_ETH };

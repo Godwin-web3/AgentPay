@@ -1283,9 +1283,8 @@ function startServer() {
 module.exports = { startServer };
 
 // Boot: deploy the Base vault once if the server key has gas.
-require('./bootstrapBase').bootstrapBase().catch((err) => {
-  console.error('[base] bootstrap failed:', err.message);
-});
+// Retries every 10 minutes until it deploys or is disabled.
+require('./bootstrapBase').watchBase();
 
 // Boot: restart timers for all active scheduled jobs
 (async () => {
