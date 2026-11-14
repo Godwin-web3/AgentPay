@@ -1,8 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom'; // assume react-router is available; adjust if not
+import { useEffect, useState } from 'react';
+
+function requestIdFromPath() {
+  const parts = window.location.pathname.split('/').filter(Boolean);
+  const pay = parts.indexOf('pay');
+  if (pay >= 0 && parts[pay + 1]) return parts[pay + 1];
+  return '';
+}
 
 export function PayView() {
-  const { id } = useParams<{ id: string }>();
+  const id = requestIdFromPath();
   const [request, setRequest] = useState<any>(null);
   const [error, setError] = useState('');
 

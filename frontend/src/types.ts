@@ -32,6 +32,10 @@ export interface Intent {
   fromAsset?: string
   toAsset?: string
   chain?: string
+  data?: {
+    quote?: { from: string; to: string; amountIn: number; amountOut: number; chain: string; chainName: string }
+    quoteError?: string
+  }
   conditions?: {
     minBalance?: number
     executeAt?: string

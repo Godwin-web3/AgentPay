@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 // Skeleton. Wire to a backend endpoint that calls src/settlement/verify.js
 // with a real vault contract instance. This component does not authorize.
