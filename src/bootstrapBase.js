@@ -7,6 +7,7 @@ const path = require('path');
 const { ethers } = require('ethers');
 const { getChain, getProvider } = require('./chain');
 const registry = require('./chainRegistry');
+const { deployImplementation, deployProxy } = require('../scripts/proxyDeploy');
 
 const MIN_ETH = '0.0008';
 
@@ -16,13 +17,14 @@ function readArtifact(name) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
-async function deployContract(wallet, artifact, args) {
-  const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
-  const contract = await factory.deploy(...args);
-  await contract.waitForDeployment();
+async function deployUpgradeable(wallet, name, initArgs) {
+  const implementation = await deployImplementation(wallet, name);
+  const deployed = await deployProxy(wallet, implementation, 'initialize', initArgs);
   return {
-    address: await contract.getAddress(),
-    txHash: contract.deploymentTransaction().hash,
+    address: deployed.address,
+    implementation: deployed.implementation,
+    upgradeKind: 'proxy',
+    txHash: deployed.txHash,
   };
 }
 
@@ -101,17 +103,24 @@ async function bootstrapBase() {
     let executorTx = stored.executorTx || null;
 
     if (!vaultAddress) {
-      const vaultArtifact = readArtifact('AgentVault');
-      const vault = await deployContract(wallet, vaultArtifact, [wallet.address, chain.stable.address]);
+      const vault = await deployUpgradeable(wallet, 'AgentVault', [wallet.address, chain.stable.address]);
       vaultAddress = vault.address;
       vaultTx = vault.txHash;
-      await registry.save('base', { status: 'deploying', vault: vaultAddress, vaultTx, agent: wallet.address, chainId: chain.chainId });
+      await registry.save('base', {
+        status: 'deploying',
+        vault: vaultAddress,
+        vaultTx,
+        vaultImplementation: vault.implementation,
+        upgradeKind: 'proxy',
+        agent: wallet.address,
+        chainId: chain.chainId,
+      });
     }
     if (!executorAddress) {
-      const executorArtifact = readArtifact('SwapExecutor');
-      const executor = await deployContract(wallet, executorArtifact, [wallet.address, chain.stable.address, chain.swapRouter]);
+      const executor = await deployUpgradeable(wallet, 'SwapExecutor', [wallet.address, chain.stable.address, chain.swapRouter]);
       executorAddress = executor.address;
       executorTx = executor.txHash;
+      stored.executorImplementation = executor.implementation;
     }
     const record = await registry.save('base', {
       status: 'deployed',
@@ -119,6 +128,7 @@ async function bootstrapBase() {
       executor: executorAddress,
       vaultTx,
       executorTx,
+      executorImplementation: stored.executorImplementation || null,
       agent: wallet.address,
       chainId: chain.chainId,
       deployedAt: new Date().toISOString(),
@@ -164,4 +174,4 @@ function watchBase() {
     });
 }
 
-module.exports = { bootstrapBase, watchBase, MIN_ETH, readArtifact, deployContract };
+module.exports = { bootstrapBase, watchBase, MIN_ETH, readArtifact, deployUpgradeable };

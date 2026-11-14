@@ -2,17 +2,11 @@ require('dotenv').config();
 const { ethers } = require('ethers');
 const fs = require('fs');
 const path = require('path');
+const { deployImplementation, deployProxy } = require('./proxyDeploy');
 
 async function main() {
   const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-
-  const artifactPath = path.join(__dirname, '../artifacts/PoolVault.json');
-  if (!fs.existsSync(artifactPath)) {
-    console.error('❌ Artifact not found. Run "node scripts/compile.js" first.');
-    process.exit(1);
-  }
-  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
 
   const agentAddress = process.env.AGENT_ADDRESS || wallet.address;
   const usdcAddress = process.env.USDC_CONTRACT;
@@ -26,20 +20,18 @@ async function main() {
   console.log('🤖 Agent:    ' + agentAddress);
   console.log('💵 USDC:     ' + usdcAddress);
 
-  const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
-  const contract = await factory.deploy(agentAddress, usdcAddress);
-
-  console.log('⏳ Waiting for deployment...');
-  await contract.waitForDeployment();
-
-  const address = await contract.getAddress();
-  const txHash = contract.deploymentTransaction().hash;
+  const implementation = await deployImplementation(wallet, 'PoolVault');
+  const deployed = await deployProxy(wallet, implementation, 'initialize', [agentAddress, usdcAddress]);
+  const contract = deployed.contract;
+  const address = deployed.address;
+  const txHash = deployed.txHash;
   console.log('✅ PoolVault deployed to: ' + address);
   console.log('🔗 Explorer: https://testnet.arcscan.arc.network/tx/' + txHash);
 
   let ownershipTransferTxHash = null;
   if (agentAddress.toLowerCase() !== wallet.address.toLowerCase()) {
-    console.log('🔐 Handing ownership to the agent...');
+    console.log('🔐 Handing operational ownership to the agent...');
+    console.log('🔐 Upgrade admin stays ' + wallet.address);
     const handoff = await contract.transferOwnership(agentAddress);
     const handoffReceipt = await handoff.wait();
     if (!handoffReceipt || handoffReceipt.status !== 1) {
@@ -63,6 +55,9 @@ async function main() {
     path.join(__dirname, '../artifacts/PoolVault-deployment.json'),
     JSON.stringify({
       address,
+      implementation: deployed.implementation,
+      upgradeKind: 'proxy',
+      implementationContract: 'PoolVault',
       deployer: wallet.address,
       agent: agentOnChain,
       owner: ownerOnChain,
@@ -73,11 +68,13 @@ async function main() {
       txHash,
       ownershipTransferTxHash,
       finalOwner: ownerOnChain,
+      upgradeAdmin: wallet.address,
     }, null, 2)
   );
 
   console.log('📝 Saved to artifacts/PoolVault-deployment.json');
   console.log('👉 Add to .env: POOL_VAULT_ADDRESS=' + address);
+  console.log('👉 Later logic changes: node scripts/upgrade.js PoolVault');
 }
 
 main().catch((error) => {

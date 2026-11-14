@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { deployProxied } = require('./deployProxy');
 
 /**
  * Proves, against a real local EVM (not a mock), that AgentVault's on-chain
@@ -19,9 +20,7 @@ describe('AgentVault — attack survival', function () {
     usdc = await MockUSDC.deploy();
     await usdc.waitForDeployment();
 
-    const AgentVault = await ethers.getContractFactory('AgentVault');
-    vault = await AgentVault.deploy(agent.address, await usdc.getAddress());
-    await vault.waitForDeployment();
+    vault = await deployProxied('AgentVault', [agent.address, await usdc.getAddress()]);
 
     await usdc.mint(user.address, ethers.parseUnits('1000', 6));
     await usdc.connect(user).approve(await vault.getAddress(), ethers.parseUnits('1000', 6));

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "./Upgradeable.sol";
+
 /**
  * @title DecisionLog
  * @dev On-chain provenance log for AgentPay's off-chain AI decisions.
@@ -28,7 +30,7 @@ pragma solidity ^0.8.20;
  * In short: verifiable decision PROVENANCE, not verifiable INFERENCE. The
  * two are different claims and this contract only makes the first one.
  */
-contract DecisionLog {
+contract DecisionLog is Upgradeable {
     address public owner;
     address public agent;
     address public pendingAgent;
@@ -68,10 +70,18 @@ contract DecisionLog {
         _;
     }
 
-    constructor(address _agent) {
+    constructor() {
+        _lockImplementation();
+    }
+
+    function initialize(address _agent) external initializer {
         if (_agent == address(0)) revert ZeroAddress();
         owner = msg.sender;
         agent = _agent;
+    }
+
+    function upgradeTo(address next) external onlyOwner {
+        _upgradeTo(next);
     }
 
     // ── Agent rotation (mirrors AgentVault's two-step pattern) ─────────────

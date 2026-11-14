@@ -3,6 +3,7 @@ const { ethers } = require('ethers');
 const fs = require('fs');
 const path = require('path');
 const { getChain, getProvider, activeId } = require('../src/chain');
+const { deployImplementation, deployProxy } = require('./proxyDeploy');
 
 async function main() {
   const chain = getChain(process.env.CHAIN || activeId());
@@ -18,7 +19,6 @@ async function main() {
     process.exit(1);
   }
 
-  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
   const agentAddress = process.env.AGENT_ADDRESS || wallet.address;
   const usdc = chain.stable.address;
 
@@ -27,17 +27,18 @@ async function main() {
   console.log('Agent:    ' + agentAddress);
   console.log('Stable:   ' + chain.stable.symbol + ' ' + usdc);
 
-  const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
-  const contract = await factory.deploy(agentAddress, usdc);
-  await contract.waitForDeployment();
-
-  const address = await contract.getAddress();
-  const txHash = contract.deploymentTransaction().hash;
+  const implementation = await deployImplementation(wallet, 'AgentVault');
+  const deployed = await deployProxy(wallet, implementation, 'initialize', [agentAddress, usdc]);
+  const address = deployed.address;
+  const txHash = deployed.txHash;
   console.log('AgentVault deployed to: ' + address);
   console.log('Explorer: ' + chain.explorer + '/tx/' + txHash);
 
   const deployment = {
     address,
+    implementation: deployed.implementation,
+    upgradeKind: 'proxy',
+    implementationContract: 'AgentVault',
     deployer: wallet.address,
     agent: agentAddress,
     usdc,

@@ -41,7 +41,7 @@ CHAIN=base node scripts/deploy.js
 CHAIN=base node scripts/deploySwapExecutor.js
 ```
 
-`deploy.js` passes the chain's stable token into the `AgentVault` constructor and writes `artifacts/AgentVault-<chainId>.json`. It does not overwrite the Arc deployment record unless `CHAIN=arc`.
+`deploy.js` deploys `AgentVault` behind a proxy and writes `artifacts/AgentVault-<chainId>.json`. It does not overwrite the Arc deployment record unless `CHAIN=arc`. The address stays. A later change is `node scripts/upgrade.js AgentVault artifacts/AgentVault-<chainId>.json`, signed by the proxy owner. The contract already on Arc is not a proxy. One new deploy is required. After that, `node scripts/upgrade.js PoolVault` replaces the logic without a new address. Pool operational ownership can move to the agent. Upgrade rights stay with the deployer.
 
 In the terminal, "swap 10 USDC for ETH on Base Sepolia" quotes Uniswap and waits for confirm. Confirm calls `POST /swap`, which re-quotes, then `AgentVault.execute` sends the stable to `SwapExecutor`, which calls the router. If either contract is missing on that chain, the quote still returns and no funds move.
 

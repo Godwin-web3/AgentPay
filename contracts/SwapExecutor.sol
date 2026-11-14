@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "./Upgradeable.sol";
+
 /// @notice Pulls USDC the vault already transferred here and swaps it on Uniswap SwapRouter02.
 /// The vault remains the policy check. This contract cannot move funds the vault did not send.
 interface IERC20 {
@@ -23,12 +25,14 @@ interface ISwapRouter02 {
     function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);
 }
 
-contract SwapExecutor {
+contract SwapExecutor is Upgradeable {
     address public agent;
     address public stable;
     address public router;
+    address public owner;
 
     error NotAgent();
+    error NotOwner();
     error ZeroAddress();
     error StableNotReceived();
     error TransferFailed();
@@ -38,11 +42,21 @@ contract SwapExecutor {
         _;
     }
 
-    constructor(address _agent, address _stable, address _router) {
+    constructor() {
+        _lockImplementation();
+    }
+
+    function initialize(address _agent, address _stable, address _router) external initializer {
         if (_agent == address(0) || _stable == address(0) || _router == address(0)) revert ZeroAddress();
+        owner = msg.sender;
         agent = _agent;
         stable = _stable;
         router = _router;
+    }
+
+    function upgradeTo(address next) external {
+        if (msg.sender != owner) revert NotOwner();
+        _upgradeTo(next);
     }
 
     /// @param amountIn must already sit on this contract, sent by AgentVault.execute.

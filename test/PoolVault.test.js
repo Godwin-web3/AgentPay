@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { deployProxied } = require('./deployProxy');
 
 describe('PoolVault — authorization and objection-window hardening', function () {
   let usdc, pool, owner, agent, founder, mike, sarah, outsider, vendor;
@@ -30,9 +31,7 @@ describe('PoolVault — authorization and objection-window hardening', function 
     const MockUSDC = await ethers.getContractFactory('MockUSDC');
     usdc = await MockUSDC.deploy();
     await usdc.waitForDeployment();
-    const PoolVault = await ethers.getContractFactory('PoolVault');
-    pool = await PoolVault.deploy(agent.address, await usdc.getAddress());
-    await pool.waitForDeployment();
+    pool = await deployProxied('PoolVault', [agent.address, await usdc.getAddress()]);
     for (const signer of [founder, mike, sarah]) {
       await usdc.mint(signer.address, ethers.parseUnits('3000', 6));
       await usdc.connect(signer).approve(await pool.getAddress(), ethers.parseUnits('3000', 6));

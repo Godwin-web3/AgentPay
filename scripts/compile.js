@@ -4,7 +4,7 @@ const solc = require('solc');
 
 async function compile() {
   const contractsDir = path.join(__dirname, '../contracts');
-  const files = fs.readdirSync(contractsDir).filter(f => f.endsWith('.sol'));
+  const files = fs.readdirSync(contractsDir).filter(f => f.endsWith('.sol')).sort();
   
   const sources = {};
   for (const file of files) {
@@ -46,8 +46,14 @@ async function compile() {
   const artifactDir = path.join(__dirname, '../artifacts');
   if (!fs.existsSync(artifactDir)) fs.mkdirSync(artifactDir);
 
+  const seen = new Set();
   for (const fileName in output.contracts) {
     for (const contractName in output.contracts[fileName]) {
+      if (seen.has(contractName)) {
+        console.log(`Skipping duplicate ${contractName} from ${fileName}`);
+        continue;
+      }
+      seen.add(contractName);
       const contract = output.contracts[fileName][contractName];
       fs.writeFileSync(
         path.join(artifactDir, `${contractName}.json`),

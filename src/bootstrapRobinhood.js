@@ -5,7 +5,7 @@
 const { ethers } = require('ethers');
 const { getChain, getProvider } = require('./chain');
 const registry = require('./chainRegistry');
-const { readArtifact, deployContract } = require('./bootstrapBase');
+const { deployUpgradeable } = require('./bootstrapBase');
 
 const CHAIN_KEY = 'robinhood-testnet';
 const MIN_ETH = '0.0003';
@@ -106,15 +106,18 @@ async function bootstrapRobinhood() {
     }
     if (!vaultAddress) {
       console.log('[robinhood-testnet] deploying vault from ' + wallet.address);
-      const vaultArtifact = readArtifact('AgentVault');
-      const vault = await deployContract(wallet, vaultArtifact, [wallet.address, chain.stable.address]);
+      const vault = await deployUpgradeable(wallet, 'AgentVault', [wallet.address, chain.stable.address]);
       vaultAddress = vault.address;
       vaultTx = vault.txHash;
+      prior.vaultImplementation = vault.implementation;
+      prior.upgradeKind = 'proxy';
     }
     const record = await registry.save(CHAIN_KEY, {
       status: 'deployed',
       vault: vaultAddress,
       vaultTx,
+      vaultImplementation: prior.vaultImplementation || null,
+      upgradeKind: prior.upgradeKind || null,
       executor: null,
       executorSkipped: true,
       reason: 'No Uniswap router on Robinhood testnet, so the swap contract was not deployed.',

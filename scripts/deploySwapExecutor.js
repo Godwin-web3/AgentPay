@@ -3,6 +3,7 @@ const { ethers } = require('ethers');
 const fs = require('fs');
 const path = require('path');
 const { getChain, getProvider } = require('../src/chain');
+const { deployImplementation, deployProxy } = require('./proxyDeploy');
 
 async function main() {
   const chain = getChain(process.env.CHAIN);
@@ -16,7 +17,6 @@ async function main() {
     console.error('Artifact not found. Run node scripts/compile.js first.');
     process.exit(1);
   }
-  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
   const provider = getProvider(chain.id);
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
   const agentAddress = process.env.AGENT_ADDRESS || wallet.address;
@@ -26,14 +26,16 @@ async function main() {
   console.log('Stable: ' + chain.stable.symbol + ' ' + chain.stable.address);
   console.log('Router: ' + chain.swapRouter);
 
-  const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
-  const contract = await factory.deploy(agentAddress, chain.stable.address, chain.swapRouter);
-  await contract.waitForDeployment();
-  const address = await contract.getAddress();
-  const txHash = contract.deploymentTransaction().hash;
+  const implementation = await deployImplementation(wallet, 'SwapExecutor');
+  const deployed = await deployProxy(wallet, implementation, 'initialize', [agentAddress, chain.stable.address, chain.swapRouter]);
+  const address = deployed.address;
+  const txHash = deployed.txHash;
 
   const deployment = {
     address,
+    implementation: deployed.implementation,
+    upgradeKind: 'proxy',
+    implementationContract: 'SwapExecutor',
     agent: agentAddress,
     stable: chain.stable.address,
     router: chain.swapRouter,
@@ -45,8 +47,13 @@ async function main() {
   };
   const file = path.join(__dirname, `../artifacts/SwapExecutor-${chain.chainId}.json`);
   fs.writeFileSync(file, JSON.stringify(deployment, null, 2));
+  fs.writeFileSync(
+    path.join(__dirname, '../artifacts/SwapExecutor-deployment.json'),
+    JSON.stringify(deployment, null, 2)
+  );
   console.log('SwapExecutor: ' + address);
   console.log('Set SWAP_EXECUTOR_' + chain.id.toUpperCase() + '=' + address);
+  console.log('Upgrade later with: node scripts/upgrade.js SwapExecutor ' + file);
   console.log(chain.explorer + '/tx/' + txHash);
 }
 

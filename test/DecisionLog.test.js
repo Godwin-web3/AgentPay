@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { deployProxied } = require('./deployProxy');
 
 describe('DecisionLog — decision provenance', function () {
   let log, owner, agent, newAgent, outsider;
@@ -9,9 +10,7 @@ describe('DecisionLog — decision provenance', function () {
 
   beforeEach(async function () {
     [owner, agent, newAgent, outsider] = await ethers.getSigners();
-    const DecisionLog = await ethers.getContractFactory('DecisionLog');
-    log = await DecisionLog.deploy(agent.address);
-    await log.waitForDeployment();
+    log = await deployProxied('DecisionLog', [agent.address]);
   });
 
   it('lets the agent commit a decision before execution and exposes it for verification', async function () {

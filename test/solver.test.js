@@ -14,7 +14,7 @@ describe('solver — validatePlan', function () {
   });
 
   it('rejects an invented primitive', function () {
-    expect(() => validatePlan({ steps: [{ type: 'swap', to: '0x1' }] })).to.throw(/unsupported type/);
+    expect(() => validatePlan({ steps: [{ type: 'teleport', to: '0x1' }] })).to.throw(/unsupported type/);
   });
 
   it('rejects a pay step missing an amount', function () {

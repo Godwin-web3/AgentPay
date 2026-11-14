@@ -2,6 +2,7 @@ require('dotenv').config();
 const { ethers } = require('ethers');
 const fs = require('fs');
 const path = require('path');
+const { deployImplementation, deployProxy, loadArtifact } = require('./proxyDeploy');
 
 async function main() {
   const rpc = process.env.ARC_RPC_URL || 'https://rpc.testnet.arc.network';
@@ -15,7 +16,6 @@ async function main() {
     process.exit(1);
   }
 
-  const artifact = JSON.parse(fs.readFileSync(artifactPath, 'utf8'));
   const agentAddress = process.env.AGENT_ADDRESS || wallet.address;
   const usdcAddress = process.env.USDC_CONTRACT;
 
@@ -29,14 +29,16 @@ async function main() {
   console.log('🤖 Agent:    ' + agentAddress);
   console.log('💵 USDC:     ' + usdcAddress);
 
-  const factory = new ethers.ContractFactory(artifact.abi, artifact.bytecode, wallet);
-  const contract = await factory.deploy(agentAddress, usdcAddress);
+  const vaultImpl = await deployImplementation(wallet, 'AgentVault');
+  const beaconArtifact = loadArtifact('UpgradeableBeacon');
+  const beaconFactory = new ethers.ContractFactory(beaconArtifact.abi, beaconArtifact.bytecode, wallet);
+  const beacon = await beaconFactory.deploy(await vaultImpl.getAddress(), wallet.address);
+  await beacon.waitForDeployment();
 
-  console.log('⏳ Waiting for deployment...');
-  await contract.waitForDeployment();
-
-  const address = await contract.getAddress();
-  const txHash = contract.deploymentTransaction().hash;
+  const implementation = await deployImplementation(wallet, 'VaultFactory');
+  const deployed = await deployProxy(wallet, implementation, 'initialize', [agentAddress, usdcAddress, await beacon.getAddress()]);
+  const address = deployed.address;
+  const txHash = deployed.txHash;
 
   // P2-14: factory operator defaults to the deployer (wallet) above. If the
   // backend creates vaults via a different Circle SCA, call setOperator(that)
@@ -52,6 +54,11 @@ async function main() {
     path.join(__dirname, '../artifacts/VaultFactory-deployment.json'),
     JSON.stringify({
       address,
+      implementation: deployed.implementation,
+      upgradeKind: 'proxy',
+      implementationContract: 'VaultFactory',
+      beacon: await beacon.getAddress(),
+      vaultImplementation: await vaultImpl.getAddress(),
       agent: agentAddress,
       usdc: usdcAddress,
       network: 'Arc Testnet',
@@ -61,7 +68,23 @@ async function main() {
     }, null, 2)
   );
 
+  fs.writeFileSync(
+    path.join(__dirname, '../artifacts/UserVaults-deployment.json'),
+    JSON.stringify({
+      address: await beacon.getAddress(),
+      implementation: await vaultImpl.getAddress(),
+      upgradeKind: 'beacon',
+      implementationContract: 'AgentVault',
+      factory: address,
+      network: 'Arc Testnet',
+      chainId: 5042002,
+      timestamp: new Date().toISOString(),
+    }, null, 2)
+  );
+
   console.log('📝 Saved to artifacts/VaultFactory-deployment.json');
+  console.log('📝 User vault beacon saved to artifacts/UserVaults-deployment.json');
+  console.log('👉 Upgrade every user vault later with: node scripts/upgrade.js UserVaults');
 }
 
 main().catch((error) => {

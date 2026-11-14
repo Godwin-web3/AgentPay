@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "./AgentVault.sol";
+import "./Upgradeable.sol";
 
 /**
  * @title VaultFactory
@@ -12,11 +13,12 @@ import "./AgentVault.sol";
  * Anyone could previously create a vault for an arbitrary owner; now only the
  * operator can bootstrap a user's vault.
  */
-contract VaultFactory {
+contract VaultFactory is Upgradeable {
     address public agent;
     address public usdc;
     address public operator;
     address public owner;
+    address public beacon;
     mapping(address => address) public userVaults;
 
     event VaultCreated(address indexed owner, address indexed vault);
@@ -26,11 +28,28 @@ contract VaultFactory {
     error ZeroAddress();
     error VaultExists();
 
-    constructor(address _agent, address _usdc) {
+    constructor() {
+        _lockImplementation();
+    }
+
+    function initialize(address _agent, address _usdc, address _beacon) external initializer {
+        if (_agent == address(0) || _usdc == address(0) || _beacon == address(0)) revert ZeroAddress();
         agent = _agent;
         usdc = _usdc;
+        beacon = _beacon;
         owner = msg.sender;
         operator = msg.sender;
+    }
+
+    function upgradeTo(address next) external {
+        if (msg.sender != owner) revert NotOperator();
+        _upgradeTo(next);
+    }
+
+    function transferOwnership(address next) external {
+        if (msg.sender != owner) revert NotOperator();
+        if (next == address(0)) revert ZeroAddress();
+        owner = next;
     }
 
     modifier onlyOperator() {
@@ -47,10 +66,10 @@ contract VaultFactory {
 
     function createVault() external returns (address) {
         if (userVaults[msg.sender] != address(0)) revert VaultExists();
-        AgentVault vault = new AgentVault(agent, usdc);
-        userVaults[msg.sender] = address(vault);
-        emit VaultCreated(msg.sender, address(vault));
-        return address(vault);
+        BeaconProxy proxy = new BeaconProxy(beacon, abi.encodeCall(AgentVault.initialize, (agent, usdc)));
+        userVaults[msg.sender] = address(proxy);
+        emit VaultCreated(msg.sender, address(proxy));
+        return address(proxy);
     }
 
     function getVault(address owner) external view returns (address) {

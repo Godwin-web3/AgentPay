@@ -13,6 +13,8 @@ pragma solidity ^0.8.20;
  *  - `executeSchedule` is now agent-only (no permissionless force-execution).
  */
 
+import "./Upgradeable.sol";
+
 interface IERC20 {
     function transfer(address to, uint256 amount) external returns (bool);
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
@@ -23,7 +25,9 @@ abstract contract ReentrancyGuard {
     uint256 private constant _NOT_ENTERED = 1;
     uint256 private constant _ENTERED = 2;
     uint256 private _status;
-    constructor() { _status = _NOT_ENTERED; }
+    function _initGuard() internal {
+        _status = _NOT_ENTERED;
+    }
     modifier nonReentrant() {
         require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
         _status = _ENTERED;
@@ -32,7 +36,7 @@ abstract contract ReentrancyGuard {
     }
 }
 
-contract AgentVault is ReentrancyGuard {
+contract AgentVault is ReentrancyGuard, Upgradeable {
     address public owner;
     address public agent;
     address public pendingAgent;
@@ -100,6 +104,7 @@ contract AgentVault is ReentrancyGuard {
     error InvalidSignature();
     error SignatureExpired();
     error ZeroAddress();
+    error UseBeacon(address beacon);
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
@@ -116,11 +121,27 @@ contract AgentVault is ReentrancyGuard {
         _;
     }
 
-    constructor(address _agent, address _usdc) {
+    constructor() {
+        _lockImplementation();
+    }
+
+    function initialize(address _agent, address _usdc) external initializer {
         if (_agent == address(0) || _usdc == address(0)) revert ZeroAddress();
         owner = msg.sender;
         agent = _agent;
         usdc = _usdc;
+        _initGuard();
+    }
+
+    /// @notice Swaps the logic behind an ERC-1967 proxy. Beacon proxies revert:
+    /// those vaults move together through UpgradeableBeacon.upgradeTo.
+    function upgradeTo(address next) external onlyOwner {
+        (bool ok, bytes memory data) = address(this).staticcall(abi.encodeWithSignature("beacon()"));
+        if (ok && data.length >= 32) {
+            address found = abi.decode(data, (address));
+            if (found != address(0)) revert UseBeacon(found);
+        }
+        _upgradeTo(next);
     }
 
     // ── Agent rotation (two-step) ────────────────────────────────────────────

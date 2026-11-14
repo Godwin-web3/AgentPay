@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "./AgentVault.sol"; // reuses IERC20 + ReentrancyGuard declared there
+import "./Upgradeable.sol";
 
 /**
  * @title PoolVault
@@ -11,7 +12,7 @@ import "./AgentVault.sol"; // reuses IERC20 + ReentrancyGuard declared there
  * may relay that signature, but it cannot manufacture one. Every shared spend
  * waits out the objection window. Pausing a pool freezes that window.
  */
-contract PoolVault is ReentrancyGuard {
+contract PoolVault is ReentrancyGuard, Upgradeable {
     address public owner;
     address public agent;
     address public usdc;
@@ -63,15 +64,18 @@ contract PoolVault is ReentrancyGuard {
         bool executed;
     }
 
-    uint256 public nextPoolId = 1;
+    uint256 public nextPoolId;
     mapping(uint256 => Pool) private pools;
     mapping(uint256 => mapping(address => MemberStatus)) public memberStatus;
     mapping(uint256 => mapping(address => uint256)) public personalBalance;
     mapping(uint256 => mapping(address => uint256)) public proposalNonces;
 
-    uint256 public nextProposalId = 1;
+    uint256 public nextProposalId;
     mapping(uint256 => Proposal) public proposals;
     mapping(uint256 => mapping(address => bool)) public hasVetoed;
+
+    /// @notice May replace the logic behind this proxy. transferOwnership does not move it.
+    address public upgradeAdmin;
 
     event PoolCreated(uint256 indexed poolId, address indexed founder);
     event MemberInvited(uint256 indexed poolId, address indexed member);
@@ -86,6 +90,7 @@ contract PoolVault is ReentrancyGuard {
     event PoolResumed(uint256 indexed poolId);
     event AgentUpdated(address indexed newAgent);
     event OwnerUpdated(address indexed newOwner);
+    event UpgradeAdminUpdated(address indexed upgradeAdmin);
 
     error NotOwner();
     error NotAgent();
@@ -126,11 +131,33 @@ contract PoolVault is ReentrancyGuard {
         _;
     }
 
-    constructor(address _agent, address _usdc) {
+    constructor() {
+        _lockImplementation();
+    }
+
+    function initialize(address _agent, address _usdc) external initializer {
         if (_agent == address(0) || _usdc == address(0)) revert ZeroAddress();
         owner = msg.sender;
+        upgradeAdmin = msg.sender;
         agent = _agent;
         usdc = _usdc;
+        nextPoolId = 1;
+        nextProposalId = 1;
+        _initGuard();
+    }
+
+    /// @notice Swaps the logic behind this proxy. The pool address does not change.
+    /// Operational ownership can sit with the agent. Upgrade rights stay here.
+    function upgradeTo(address next) external {
+        if (msg.sender != upgradeAdmin) revert NotUpgradeOwner();
+        _upgradeTo(next);
+    }
+
+    function transferUpgradeAdmin(address next) external {
+        if (msg.sender != upgradeAdmin) revert NotUpgradeOwner();
+        if (next == address(0)) revert ZeroAddress();
+        upgradeAdmin = next;
+        emit UpgradeAdminUpdated(next);
     }
 
     function domainSeparator() public view returns (bytes32) {
