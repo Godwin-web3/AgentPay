@@ -5,39 +5,35 @@ import "./AgentVault.sol"; // reuses IERC20 + ReentrancyGuard declared there
 
 /**
  * @title PoolVault
- * @dev Singleton multi-tenant vault for shared-money pools (roommates, small
- * teams, trip funds, whoever). Deliberately NOT a factory that deploys a new
- * contract per pool — every pool is an internal record in this one contract's
- * storage, keyed by poolId. Creating a pool is a cheap state write, not a
- * ~500k+ gas contract deployment, and every pool shares one audited core
- * instead of N separately-deployed copies that all have to be trusted
- * individually. (Personal AgentVault instances are untouched — this is a
- * separate, additive system for pools only.)
+ * @dev Singleton multi-tenant vault for shared-money pools.
  *
- * One governance primitive, reused three ways: propose() -> members are
- * notified off-chain -> silence within the objection window is consent,
- * OR any member calls veto() and it's blocked on-chain (the operator/agent
- * cannot execute past a real veto, same trust-minimization principle as
- * AgentVault's per-tx/daily caps, extended from one owner to many members).
- * The same propose/veto/resolve path handles a discretionary spend, a
- * constitution amendment, and a member removal.
- *
- * Every member's personal allowance is a separate, untouchable bucket: no
- * proposal, no veto, no agent involvement needed to spend your own personal
- * balance — it is simply yours.
+ * Governance proposals are relayed by the agent but authorized by the member
+ * whose address is supplied as proposer. EIP-712 signatures bind every
+ * proposal field, pool, chain, contract, nonce and deadline. The agent cannot
+ * manufacture member consent or alter a signed proposal.
  */
 contract PoolVault is ReentrancyGuard {
     address public owner;
     address public agent;
     address public usdc;
 
+    bytes32 private constant _DOMAIN_TYPEHASH =
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 private constant _PROPOSAL_TYPEHASH = keccak256(
+        "PoolProposal(uint256 poolId,address proposer,uint8 kind,address to,uint256 amount,bytes32 reasonHash,uint256 discretionaryThreshold,uint256 objectionWindow,uint256 maxSingleProposal,address targetMember,uint256 nonce,uint256 deadline)"
+    );
+    bytes32 private constant _NAME_HASH = keccak256("PoolVault");
+    bytes32 private constant _VERSION_HASH = keccak256("1");
+    uint256 private constant _SECP256K1N_HALF =
+        0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0;
+
     enum ProposalKind { Spend, AmendConstitution, RemoveMember, AddMember }
     enum MemberStatus { None, Invited, Active }
 
     struct Constitution {
-        uint256 discretionaryThreshold; // spend from the shared pool above this needs a proposal
-        uint256 objectionWindow;        // seconds a proposal sits before it can be resolved
-        uint256 maxSingleProposal;      // hard backstop cap; no proposal, ever, can exceed this
+        uint256 discretionaryThreshold;
+        uint256 objectionWindow;
+        uint256 maxSingleProposal;
     }
 
     struct Pool {
@@ -47,17 +43,18 @@ contract PoolVault is ReentrancyGuard {
         uint256 sharedBalance;
         uint256 nextProposalId;
         bool active;
+        bool paused;
     }
 
     struct Proposal {
         uint256 poolId;
         address proposer;
         ProposalKind kind;
-        address to;              // Spend target
-        uint256 amount;          // Spend amount / unused for others
+        address to;
+        uint256 amount;
         string reason;
-        Constitution newConstitution; // AmendConstitution payload
-        address targetMember;    // RemoveMember / AddMember payload
+        Constitution newConstitution;
+        address targetMember;
         uint256 createdAt;
         uint256 windowEnds;
         bool vetoed;
@@ -69,6 +66,7 @@ contract PoolVault is ReentrancyGuard {
     mapping(uint256 => Pool) private pools;
     mapping(uint256 => mapping(address => MemberStatus)) public memberStatus;
     mapping(uint256 => mapping(address => uint256)) public personalBalance;
+    mapping(uint256 => mapping(address => uint256)) public proposalNonces;
 
     uint256 public nextProposalId = 1;
     mapping(uint256 => Proposal) public proposals;
@@ -83,25 +81,31 @@ contract PoolVault is ReentrancyGuard {
     event ProposalCreated(uint256 indexed poolId, uint256 indexed proposalId, ProposalKind kind, uint256 windowEnds);
     event ProposalVetoed(uint256 indexed proposalId, address indexed by);
     event ProposalResolved(uint256 indexed proposalId, bool executed);
+    event PoolPaused(uint256 indexed poolId);
+    event PoolResumed(uint256 indexed poolId);
     event AgentUpdated(address indexed newAgent);
     event OwnerUpdated(address indexed newOwner);
 
     error NotOwner();
     error NotAgent();
     error NotMember();
-    error NotFounder();
     error NotInvited();
-    error AlreadyMember();
     error PoolInactive();
+    error PoolPausedError();
     error ZeroAddress();
     error InsufficientBalance();
     error ExceedsBackstopCap();
     error TransferFailed();
     error WindowNotElapsed();
+    error VetoWindowClosed();
     error AlreadyResolved();
     error ProposalVetoedError();
     error AlreadyVetoed();
     error ProposerNotMember();
+    error InvalidSignature();
+    error SignatureExpired();
+    error ProposalNotFound();
+    error InvalidConstitution();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
@@ -115,6 +119,7 @@ contract PoolVault is ReentrancyGuard {
 
     modifier onlyActiveMember(uint256 poolId) {
         if (!pools[poolId].active) revert PoolInactive();
+        if (pools[poolId].paused) revert PoolPausedError();
         if (memberStatus[poolId][msg.sender] != MemberStatus.Active) revert NotMember();
         _;
     }
@@ -126,9 +131,16 @@ contract PoolVault is ReentrancyGuard {
         usdc = _usdc;
     }
 
-    // ── Pool lifecycle ───────────────────────────────────────────────────
+    function domainSeparator() public view returns (bytes32) {
+        return keccak256(abi.encode(
+            _DOMAIN_TYPEHASH, _NAME_HASH, _VERSION_HASH, block.chainid, address(this)
+        ));
+    }
 
-    function createPool(address[] calldata invites, Constitution calldata constitution) external returns (uint256 poolId) {
+    function createPool(address[] calldata invites, Constitution calldata constitution)
+        external returns (uint256 poolId)
+    {
+        _validateConstitution(constitution);
         poolId = nextPoolId++;
         Pool storage p = pools[poolId];
         p.founder = msg.sender;
@@ -138,58 +150,52 @@ contract PoolVault is ReentrancyGuard {
         memberStatus[poolId][msg.sender] = MemberStatus.Active;
 
         for (uint256 i = 0; i < invites.length; i++) {
-            if (invites[i] == address(0)) revert ZeroAddress();
-            memberStatus[poolId][invites[i]] = MemberStatus.Invited;
-            emit MemberInvited(poolId, invites[i]);
+            address invite = invites[i];
+            if (invite == address(0) || invite == msg.sender) revert ZeroAddress();
+            if (memberStatus[poolId][invite] != MemberStatus.None) revert InvalidSignature();
+            memberStatus[poolId][invite] = MemberStatus.Invited;
+            emit MemberInvited(poolId, invite);
         }
-
         emit PoolCreated(poolId, msg.sender);
     }
 
-    // Invitees must explicitly opt in — nobody is ever silently bound to a
-    // pool's constitution.
     function acceptInvite(uint256 poolId) external {
+        if (!pools[poolId].active) revert PoolInactive();
+        if (pools[poolId].paused) revert PoolPausedError();
         if (memberStatus[poolId][msg.sender] != MemberStatus.Invited) revert NotInvited();
         memberStatus[poolId][msg.sender] = MemberStatus.Active;
         pools[poolId].memberList.push(msg.sender);
         emit MemberJoined(poolId, msg.sender);
     }
 
-    // Leaving is always unilateral: withdraw your own personal balance first,
-    // then leave. No permission needed from anyone else.
     function leavePool(uint256 poolId) external onlyActiveMember(poolId) {
         memberStatus[poolId][msg.sender] = MemberStatus.None;
         emit MemberLeft(poolId, msg.sender);
     }
 
     function getPool(uint256 poolId) external view returns (
-        address founder,
-        address[] memory memberList,
-        Constitution memory constitution,
-        uint256 sharedBalance,
-        bool active
+        address founder, address[] memory memberList, Constitution memory constitution,
+        uint256 sharedBalance, bool active
     ) {
         Pool storage p = pools[poolId];
-        return (p.founder, p.memberList, p.constitution, p.sharedBalance, p.active);
+        return (p.founder, p.memberList, p.constitution, p.sharedBalance, p.active && !p.paused);
     }
 
-    // ── Funding ──────────────────────────────────────────────────────────
-
-    function contribute(uint256 poolId, uint256 amount, bool toShared) external nonReentrant onlyActiveMember(poolId) {
+    function contribute(uint256 poolId, uint256 amount, bool toShared)
+        external nonReentrant onlyActiveMember(poolId)
+    {
+        uint256 beforeBalance = IERC20(usdc).balanceOf(address(this));
         bool ok = IERC20(usdc).transferFrom(msg.sender, address(this), amount);
         if (!ok) revert TransferFailed();
-
-        if (toShared) {
-            pools[poolId].sharedBalance += amount;
-        } else {
-            personalBalance[poolId][msg.sender] += amount;
-        }
-        emit Contributed(poolId, msg.sender, amount, toShared);
+        uint256 received = IERC20(usdc).balanceOf(address(this)) - beforeBalance;
+        if (toShared) pools[poolId].sharedBalance += received;
+        else personalBalance[poolId][msg.sender] += received;
+        emit Contributed(poolId, msg.sender, received, toShared);
     }
 
-    // Your personal allowance is simply yours: no proposal, no veto, no
-    // agent involvement required to take it back out.
-    function withdrawPersonal(uint256 poolId, uint256 amount) external nonReentrant onlyActiveMember(poolId) {
+    function withdrawPersonal(uint256 poolId, uint256 amount)
+        external nonReentrant onlyActiveMember(poolId)
+    {
         if (personalBalance[poolId][msg.sender] < amount) revert InsufficientBalance();
         personalBalance[poolId][msg.sender] -= amount;
         bool ok = IERC20(usdc).transfer(msg.sender, amount);
@@ -197,50 +203,111 @@ contract PoolVault is ReentrancyGuard {
         emit PersonalWithdrawn(poolId, msg.sender, amount);
     }
 
-    // ── The one governance primitive, used three ways ──────────────────────
-
-    function proposeSpend(uint256 poolId, address proposer, address to, uint256 amount, string calldata reason)
-        external onlyAgent returns (uint256 proposalId)
-    {
+    function proposeSpend(
+        uint256 poolId, address proposer, address to, uint256 amount, string calldata reason,
+        uint256 deadline, bytes calldata signature
+    ) external onlyAgent returns (uint256 proposalId) {
         Pool storage p = pools[poolId];
         if (!p.active) revert PoolInactive();
+        if (p.paused) revert PoolPausedError();
         if (memberStatus[poolId][proposer] != MemberStatus.Active) revert ProposerNotMember();
-        if (amount > p.constitution.maxSingleProposal) revert ExceedsBackstopCap();
+        if (to == address(0)) revert ZeroAddress();
+        if (amount == 0 || amount > p.constitution.maxSingleProposal) revert ExceedsBackstopCap();
         if (amount > p.sharedBalance) revert InsufficientBalance();
 
+        _authorizeProposal(
+            poolId, proposer, ProposalKind.Spend, to, amount, keccak256(bytes(reason)),
+            0, 0, 0, address(0), deadline, signature
+        );
         proposalId = _createProposal(poolId, proposer, ProposalKind.Spend, p.constitution.objectionWindow);
         Proposal storage prop = proposals[proposalId];
         prop.to = to;
         prop.amount = amount;
         prop.reason = reason;
 
-        // Below the discretionary threshold: no waiting, resolves immediately.
+        // Instant execution is allowed only because the member signed this exact spend.
         if (amount <= p.constitution.discretionaryThreshold) {
             _executeSpend(poolId, proposalId, to, amount);
         }
     }
 
-    function proposeAmendConstitution(uint256 poolId, address proposer, Constitution calldata newConstitution)
-        external onlyAgent returns (uint256 proposalId)
-    {
+    function proposeAmendConstitution(
+        uint256 poolId, address proposer, Constitution calldata newConstitution,
+        uint256 deadline, bytes calldata signature
+    ) external onlyAgent returns (uint256 proposalId) {
         Pool storage p = pools[poolId];
         if (!p.active) revert PoolInactive();
+        if (p.paused) revert PoolPausedError();
         if (memberStatus[poolId][proposer] != MemberStatus.Active) revert ProposerNotMember();
+        _validateConstitution(newConstitution);
+        _authorizeProposal(
+            poolId, proposer, ProposalKind.AmendConstitution, address(0), 0, bytes32(0),
+            newConstitution.discretionaryThreshold, newConstitution.objectionWindow,
+            newConstitution.maxSingleProposal, address(0), deadline, signature
+        );
         proposalId = _createProposal(poolId, proposer, ProposalKind.AmendConstitution, p.constitution.objectionWindow);
         proposals[proposalId].newConstitution = newConstitution;
     }
 
-    function proposeRemoveMember(uint256 poolId, address proposer, address targetMember)
-        external onlyAgent returns (uint256 proposalId)
-    {
+    function proposeRemoveMember(
+        uint256 poolId, address proposer, address targetMember,
+        uint256 deadline, bytes calldata signature
+    ) external onlyAgent returns (uint256 proposalId) {
         Pool storage p = pools[poolId];
         if (!p.active) revert PoolInactive();
+        if (p.paused) revert PoolPausedError();
         if (memberStatus[poolId][proposer] != MemberStatus.Active) revert ProposerNotMember();
+        if (memberStatus[poolId][targetMember] != MemberStatus.Active || targetMember == p.founder) revert NotMember();
+        _authorizeProposal(
+            poolId, proposer, ProposalKind.RemoveMember, address(0), 0, bytes32(0),
+            0, 0, 0, targetMember, deadline, signature
+        );
         proposalId = _createProposal(poolId, proposer, ProposalKind.RemoveMember, p.constitution.objectionWindow);
         proposals[proposalId].targetMember = targetMember;
     }
 
-    function _createProposal(uint256 poolId, address proposer, ProposalKind kind, uint256 window) internal returns (uint256 proposalId) {
+    function _authorizeProposal(
+        uint256 poolId, address proposer, ProposalKind kind, address to, uint256 amount,
+        bytes32 reasonHash, uint256 discretionaryThreshold, uint256 objectionWindow,
+        uint256 maxSingleProposal, address targetMember, uint256 deadline, bytes calldata signature
+    ) internal {
+        if (block.timestamp > deadline) revert SignatureExpired();
+        uint256 nonce = proposalNonces[poolId][proposer];
+        bytes32 structHash = keccak256(abi.encode(
+            _PROPOSAL_TYPEHASH, poolId, proposer, uint8(kind), to, amount, reasonHash,
+            discretionaryThreshold, objectionWindow, maxSingleProposal, targetMember, nonce, deadline
+        ));
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator(), structHash));
+        if (!_validSignature(digest, proposer, signature)) revert InvalidSignature();
+        proposalNonces[poolId][proposer] = nonce + 1;
+    }
+
+    function _validSignature(bytes32 digest, address expected, bytes calldata signature)
+        internal pure returns (bool)
+    {
+        if (signature.length != 65) return false;
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+        assembly {
+            r := calldataload(signature.offset)
+            s := calldataload(add(signature.offset, 32))
+            v := byte(0, calldataload(add(signature.offset, 64)))
+        }
+        if (v != 27 && v != 28) return false;
+        if (uint256(s) > _SECP256K1N_HALF) return false;
+        address signer = ecrecover(digest, v, r, s);
+        return signer != address(0) && signer == expected;
+    }
+
+    function _validateConstitution(Constitution calldata c) internal pure {
+        if (c.objectionWindow == 0 || c.maxSingleProposal == 0 ||
+            c.discretionaryThreshold > c.maxSingleProposal) revert InvalidConstitution();
+    }
+
+    function _createProposal(uint256 poolId, address proposer, ProposalKind kind, uint256 window)
+        internal returns (uint256 proposalId)
+    {
         proposalId = nextProposalId++;
         Proposal storage prop = proposals[proposalId];
         prop.poolId = poolId;
@@ -251,38 +318,39 @@ contract PoolVault is ReentrancyGuard {
         emit ProposalCreated(poolId, proposalId, kind, prop.windowEnds);
     }
 
-    // Any active member can veto within the window. Real on-chain block —
-    // the agent cannot execute past this no matter what the off-chain UI shows.
     function veto(uint256 proposalId) external {
         Proposal storage prop = proposals[proposalId];
+        if (prop.createdAt == 0) revert ProposalNotFound();
         if (memberStatus[prop.poolId][msg.sender] != MemberStatus.Active) revert NotMember();
         if (prop.resolved) revert AlreadyResolved();
+        if (block.timestamp >= prop.windowEnds) revert VetoWindowClosed();
         if (hasVetoed[proposalId][msg.sender]) revert AlreadyVetoed();
         hasVetoed[proposalId][msg.sender] = true;
         prop.vetoed = true;
         emit ProposalVetoed(proposalId, msg.sender);
     }
 
-    // Called by the agent/keeper once the objection window has elapsed.
-    // Reverts if vetoed — there is no path to execute a vetoed proposal.
     function resolveProposal(uint256 proposalId) external onlyAgent nonReentrant {
         Proposal storage prop = proposals[proposalId];
+        if (prop.createdAt == 0) revert ProposalNotFound();
         if (prop.resolved) revert AlreadyResolved();
         if (block.timestamp < prop.windowEnds) revert WindowNotElapsed();
         if (prop.vetoed) revert ProposalVetoedError();
+        Pool storage p = pools[prop.poolId];
+        if (!p.active) revert PoolInactive();
+        if (p.paused) revert PoolPausedError();
 
         prop.resolved = true;
-
         if (prop.kind == ProposalKind.Spend) {
             _executeSpend(prop.poolId, proposalId, prop.to, prop.amount);
         } else if (prop.kind == ProposalKind.AmendConstitution) {
-            pools[prop.poolId].constitution = prop.newConstitution;
+            p.constitution = prop.newConstitution;
             prop.executed = true;
         } else if (prop.kind == ProposalKind.RemoveMember) {
+            if (memberStatus[prop.poolId][prop.targetMember] != MemberStatus.Active) revert NotMember();
             memberStatus[prop.poolId][prop.targetMember] = MemberStatus.None;
             prop.executed = true;
         }
-
         emit ProposalResolved(proposalId, prop.executed);
     }
 
@@ -292,7 +360,6 @@ contract PoolVault is ReentrancyGuard {
         p.sharedBalance -= amount;
         bool ok = IERC20(usdc).transfer(to, amount);
         if (!ok) revert TransferFailed();
-
         Proposal storage prop = proposals[proposalId];
         prop.resolved = true;
         prop.executed = true;
@@ -300,21 +367,24 @@ contract PoolVault is ReentrancyGuard {
     }
 
     function getProposal(uint256 proposalId) external view returns (
-        uint256 poolId,
-        ProposalKind kind,
-        address to,
-        uint256 amount,
-        string memory reason,
-        uint256 windowEnds,
-        bool vetoed,
-        bool resolved,
-        bool executed
+        uint256 poolId, ProposalKind kind, address to, uint256 amount, string memory reason,
+        uint256 windowEnds, bool vetoed, bool resolved, bool executed
     ) {
         Proposal storage p = proposals[proposalId];
         return (p.poolId, p.kind, p.to, p.amount, p.reason, p.windowEnds, p.vetoed, p.resolved, p.executed);
     }
 
-    // ── Admin ────────────────────────────────────────────────────────────
+    function pausePool(uint256 poolId) external onlyOwner {
+        if (!pools[poolId].active) revert PoolInactive();
+        pools[poolId].paused = true;
+        emit PoolPaused(poolId);
+    }
+
+    function resumePool(uint256 poolId) external onlyOwner {
+        if (!pools[poolId].active) revert PoolInactive();
+        pools[poolId].paused = false;
+        emit PoolResumed(poolId);
+    }
 
     function setAgent(address _agent) external onlyOwner {
         if (_agent == address(0)) revert ZeroAddress();
@@ -322,11 +392,6 @@ contract PoolVault is ReentrancyGuard {
         emit AgentUpdated(_agent);
     }
 
-    // The deployer is `owner` (msg.sender at construction) and owner's only
-    // power is setAgent() above — no fund access, no pool control. This lets
-    // a throwaway/disposable deployer key hand that off to a durable address
-    // immediately after deployment, so losing the deployer key afterward has
-    // zero consequence.
     function transferOwnership(address newOwner) external onlyOwner {
         if (newOwner == address(0)) revert ZeroAddress();
         owner = newOwner;
