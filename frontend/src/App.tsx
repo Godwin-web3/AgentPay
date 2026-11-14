@@ -5,7 +5,6 @@ import AgentHeader from './components/AgentHeader'
 import ErrorBoundary from './components/ErrorBoundary'
 import Terminal from './views/Terminal'
 import Policy from './views/Policy'
-import Agent from './views/Agent'
 import Goals from './views/Goals'
 import Pools from './views/Pools'
 import History from './views/History'
@@ -17,7 +16,7 @@ import { PaymentRequestView } from './views/PaymentRequestView'
 import type { ChatMessage } from './types'
 import { getTokenBalances, checkVault, getWallet, getVaultBalanceApi } from './api'
 
-type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'agent' | 'goals' | 'pools' | 'requests'
+type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'goals' | 'pools' | 'requests'
 
 const TerminalIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -275,7 +274,6 @@ function App({ tag }: { tag: string | null }) {
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
             {view === 'goals' && <Goals userAddress={userAddress} userId={userId} />}
             {view === 'pools' && <Pools userAddress={userAddress} userId={userId} />}
-            {view === 'agent' && <Agent />}
           </ErrorBoundary>
         </div>
       </main>
