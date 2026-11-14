@@ -460,12 +460,12 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
   )
 
   return (
-    <div className="terminal">
-      {where && <div style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 12 }}>{where}</div>}
-      <div className="messages" ref={scrollRef}>
+    <div className="terminal" style={{ padding: '8px 0 0' }}>
+      {where && <div style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 8, letterSpacing: '0.02em' }}>{where}</div>}
+      <div className="messages" ref={scrollRef} style={{ minHeight: 120 }}>
         {messages.length === 0 && (
           <div className="message assistant">
-            <div className="message-bubble">Say the outcome, or use the form. Nothing moves until you confirm.</div>
+            <div className="message-bubble" style={{ fontSize: 14, color: 'var(--muted)' }}>Say the outcome, or use the form below. Nothing moves until you confirm.</div>
           </div>
         )}
         {messages.map((msg, i) => (
@@ -476,7 +476,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
               {msg.role === 'assistant' && (msg as any).data && (msg as any).intent?.action === 'balance' && <BalanceCard data={(msg as any).data} />}
               {msg.role === 'assistant' && (msg as any).data && (msg as any).intent?.action === 'policy' && <PolicyCard data={(msg as any).data} />}
               {msg.role === 'assistant' && (txResults[i] || (msg as any).result) && (
-                <div style={{ marginTop: 10 }}>
+                <div style={{ marginTop: 8 }}>
                   <TxBadge result={txResults[i] || (msg as any).result} onConfirm={() => handleConfirm(i)} onCancel={() => handleCancel(i)} />
                 </div>
               )}
@@ -485,12 +485,12 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         ))}
         {loading && (
           <div className="message assistant">
-            <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 6 }}>Working</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>Working</div>
             <div className="typing"><span /><span /><span /></div>
           </div>
         )}
       </div>
-      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 8 }}>
         <button type="button" disabled={loading} onClick={() => {
           const userMsg = { role: 'user' as const, content: 'Deposit 100 of my test USDG', timestamp: Date.now() }
           const assistantMsg = { role: 'assistant' as const, content: 'Deposit 100 from the USDG already in the wallet.', timestamp: Date.now() }
@@ -500,7 +500,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
             setTimeout(() => setTxResults((r) => ({ ...r, [idx]: { status: 'proposing_mint' } })), 0)
             return next
           })
-        }} className="text-link" style={{ padding: '4px 0 12px', fontFamily: 'var(--font-head)', fontSize: 16 }}>
+        }} className="text-link" style={{ padding: '2px 0 10px', fontFamily: 'var(--font-head)', fontSize: 15 }}>
           Deposit 100 USDG
         </button>
         <div className="move-book">
@@ -520,15 +520,15 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
             )
           })}
         </div>
-        <div style={{ color: 'var(--muted)', fontSize: 13, margin: '4px 0 8px' }}>{routeLine}</div>
+        <div style={{ color: 'var(--muted)', fontSize: 12, margin: '6px 0 8px' }}>{routeLine}</div>
         <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" style={fieldStyle} />
         {selected.mode === 'send' && <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Recipient address" style={fieldStyle} />}
-        <button type="button" onClick={submitMove} disabled={loading} style={{ marginTop: 10, width: '100%', background: 'var(--text)', color: '#f3f0e8', border: 'none', padding: '12px 14px', fontFamily: 'var(--font-head)', fontSize: 16 }}>
+        <button type="button" onClick={submitMove} disabled={loading} className="ink-btn" style={{ marginTop: 12, width: '100%', minHeight: 44 }}>
           Review
         </button>
       </div>
-      <div className="input-area">
-        <textarea ref={inputRef} className="chat-input" placeholder="Or type it" value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '120px' }} />
+      <div className="input-area" style={{ marginTop: 8 }}>
+        <textarea ref={inputRef} className="chat-input" placeholder="Or type it" value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '100px', fontSize: 14 }} />
         <button className="send-btn icon-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>Go</button>
       </div>
     </div>

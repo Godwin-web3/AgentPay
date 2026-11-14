@@ -1240,31 +1240,33 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
 .move-book { border-top: 1px solid #161513; margin-top: 4px; }
 .move-group {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  gap: 8px 12px;
-  padding: 12px 0;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 6px 10px;
+  padding: 10px 0;
   border-bottom: 1px solid var(--border);
   align-items: start;
 }
 .move-group-name {
   font-family: var(--font-head);
-  font-size: 16px;
-  letter-spacing: -0.03em;
+  font-size: 15px;
+  letter-spacing: -0.02em;
   padding-top: 2px;
+  font-weight: 500;
 }
-.move-group-items { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.move-group-items { display: flex; flex-wrap: wrap; gap: 6px 12px; }
 .move-chip {
   background: none;
   border: none;
-  padding: 4px 0;
+  padding: 2px 0;
   color: var(--muted);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 14px;
 }
 .move-chip.on {
   color: var(--text);
   text-decoration: underline;
-  text-underline-offset: 4px;
+  text-underline-offset: 3px;
+  font-weight: 500;
 }
 .hold-row {
   display: flex;

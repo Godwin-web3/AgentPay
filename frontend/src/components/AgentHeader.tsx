@@ -65,18 +65,13 @@ export default function AgentHeader({ currentView, onNavigate, onClearMemory, re
 
   return (
     <>
-      <div className="agent-header">
-        <div className="agent-info">
-          <div className="agent-name">AgentPay</div>
+      <div className="agent-header" style={{ height: 52, padding: '0 16px', alignItems: 'center' }}>
+        <div className="agent-info" style={{ gap: 8 }}>
+          <div className="agent-name" style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.02em' }}>AgentPay</div>
           {tag && tag !== 'skip' && (
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              fontFamily: 'var(--font-mono)',
-              fontSize: 13,
-              fontWeight: 400,
-              letterSpacing: 0,
+              fontFamily: 'var(--font-body)',
+              fontSize: 12,
               color: 'var(--muted)',
             }}>
               @{tag}
@@ -84,12 +79,12 @@ export default function AgentHeader({ currentView, onNavigate, onClearMemory, re
           )}
           {userAddress && isPaused && (
             <div style={{
-              padding: '2px 8px',
-              borderRadius: 3,
+              padding: '2px 6px',
+              borderRadius: 2,
               fontFamily: 'var(--font-mono)',
               fontSize: 9,
               fontWeight: 700,
-              letterSpacing: 1.5,
+              letterSpacing: 1,
               background: 'var(--danger-a1)',
               border: '1px solid var(--danger-a2)',
               color: 'var(--danger)',
