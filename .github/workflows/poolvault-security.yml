@@ -12,6 +12,9 @@ on:
       - "hardhat.config.js"
       - "package.json"
 
+permissions:
+  contents: write
+
 jobs:
   poolvault:
     runs-on: ubuntu-latest
@@ -21,4 +24,14 @@ jobs:
         with:
           node-version: 20
       - run: npm install --no-audit --no-fund
+      - run: node scripts/compile.js
       - run: npx hardhat test test/PoolVault.test.js
+      - name: Commit regenerated PoolVault artifact
+        run: |
+          if ! git diff --quiet -- artifacts/PoolVault.json; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add artifacts/PoolVault.json
+            git commit -m 'build: regenerate PoolVault artifact [skip ci]'
+            git push
+          fi
