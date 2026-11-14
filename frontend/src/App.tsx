@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import ClaimTag from './components/ClaimTag'
+import ClaimFunds from './components/ClaimFunds'
 import AgentHeader from './components/AgentHeader'
 import ErrorBoundary from './components/ErrorBoundary'
 import Terminal from './views/Terminal'
@@ -258,6 +259,7 @@ function App({ tag }: { tag: string | null }) {
 function AppWithAuth() {
   const { user, loading } = useAuth();
   const [tag, setTag] = useState<string | null>(null);
+  const [claimed, setClaimed] = useState(() => localStorage.getItem('agentpay_test_claimed') === '1');
   const [authView, setAuthView] = useState<'landing' | 'login'>('landing');
   const [tagLoading, setTagLoading] = useState(false);
   const [tagChecked, setTagChecked] = useState(false);
@@ -294,6 +296,7 @@ function AppWithAuth() {
     ? <Landing onLaunch={() => setAuthView('login')} />
     : <Login onBack={() => setAuthView('landing')} />;
   if (tagChecked && !tag) return <ClaimTag onClaimed={(t) => { localStorage.setItem('agentpay_view', 'terminal'); setTag(t || 'skip'); }} />;
+  if (!claimed) return <ClaimFunds userId={user.uid} onDone={() => { localStorage.setItem('agentpay_test_claimed', '1'); setClaimed(true); }} />;
   return <App tag={tag} />;
 }
 

@@ -69,6 +69,10 @@ export async function executeSwap(
   }, userId)
 }
 
+export async function claimTestnet(userId: string): Promise<{ success: boolean; already?: boolean; landed?: string[]; skipped?: string[]; reason?: string }> {
+  return request('/test/claim', { method: 'POST', body: '{}' }, userId)
+}
+
 export async function fundTestWallet(userId: string): Promise<any> {
   return request<any>('/test/fund', { method: 'POST', body: '{}' }, userId)
 }

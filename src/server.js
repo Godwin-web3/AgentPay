@@ -1481,6 +1481,25 @@ async function handleFundTest(req, res) {
 }
 
 app.post('/test/fund', handleFundTest);
+async function handleClaimTest(req, res) {
+  const userId = getUserId(req);
+  try {
+    const wallet = await walletStore.getWallet(userId);
+    if (!wallet || !wallet.address) {
+      return send(res, 200, { success: false, reason: 'Sign in again so the wallet exists.' });
+    }
+    if (wallet.testClaim && wallet.testClaim.landed) {
+      return send(res, 200, { success: true, already: true, ...wallet.testClaim });
+    }
+    const result = await require('./testClaim').claimTestnet(wallet.address);
+    await walletStore.setWallet(userId, { testClaim: result });
+    return send(res, 200, { success: true, ...result });
+  } catch (err) {
+    return send(res, 200, { success: false, reason: err.shortMessage || err.message });
+  }
+}
+
+app.post('/test/claim', handleClaimTest);
 app.get('/chains', handleChains);
 app.get('/schedules', handleGetSchedules);
 app.post('/schedules', handleCreateSchedule);
