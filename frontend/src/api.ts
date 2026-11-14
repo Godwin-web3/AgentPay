@@ -69,6 +69,16 @@ export async function executeSwap(
   }, userId)
 }
 
+export async function executeTransfer(
+  body: { asset: string; amount: number; to: string },
+  userId: string
+): Promise<any> {
+  return request<any>('/transfer', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  }, userId)
+}
+
 export async function executeBridge(
   body: { from?: string; to?: string; amount: number },
   userId: string
@@ -212,8 +222,8 @@ export async function cancelOnChainSchedule(index: number, userId: string): Prom
   return request<{ success: boolean }>('/onchain-schedules/' + index, { method: 'DELETE' }, userId)
 }
 
-export async function getVaultBalanceApi(userId: string): Promise<{ balance: string; address: string | null; agentAddress: string; chain?: string; chains?: { id: string; name: string; vault: string; wallet?: string; token: string; tokens?: { symbol: string; amount: string }[] }[] }> {
-  return request<{ balance: string; address: string | null; agentAddress: string; chain?: string; chains?: { id: string; name: string; vault: string; wallet?: string; token: string; tokens?: { symbol: string; amount: string }[] }[] }>('/vault/balance', {}, userId)
+export async function getVaultBalanceApi(userId: string): Promise<{ balance: string; address: string | null; agentAddress: string; chain?: string; chains?: { id: string; name: string; vault: string; wallet?: string; token: string; eth?: string; tokens?: { symbol: string; amount: string }[] }[] }> {
+  return request<{ balance: string; address: string | null; agentAddress: string; chain?: string; chains?: { id: string; name: string; vault: string; wallet?: string; token: string; eth?: string; tokens?: { symbol: string; amount: string }[] }[] }>('/vault/balance', {}, userId)
 }
 
 export async function getPausedState(userId: string): Promise<{ paused: boolean }> {

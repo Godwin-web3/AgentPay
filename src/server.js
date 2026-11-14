@@ -1418,6 +1418,33 @@ app.post('/pay', handlePay);
 app.post('/swap', handleSwap);
 app.post('/bridge', handleBridge);
 app.post('/bridge/complete', handleBridgeComplete);
+async function handleTransfer(req, res) {
+  const userId = getUserId(req);
+  const { asset, amount, to } = req.body || {};
+  if (!asset || !amount || !to) return send(res, 400, { error: 'asset, amount, and to are required' });
+  try {
+    const result = await require('./transfer').sendOnRobinhood({ asset, amount, to });
+    const { appendSpend } = require('./spendStore');
+    try {
+      await appendSpend({
+        userAddress: userId,
+        to,
+        amount: Number(amount),
+        reason: 'Robinhood ' + result.token,
+        txHash: result.txHash,
+        token: result.token,
+        type: 'payment',
+      });
+    } catch (err) {
+      console.error('[transfer] history:', err.message);
+    }
+    return send(res, 200, { success: true, ...result });
+  } catch (err) {
+    return send(res, 200, { success: false, reason: err.shortMessage || err.message });
+  }
+}
+
+app.post('/transfer', handleTransfer);
 app.get('/chains', handleChains);
 app.get('/schedules', handleGetSchedules);
 app.post('/schedules', handleCreateSchedule);

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, depositToVault, executeSwap, executeBridge } from '../api'
+import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, depositToVault, executeSwap, executeBridge, executeTransfer } from '../api'
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -32,7 +32,7 @@ function ProofBadge({ requestId }: { requestId: string }) {
 function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: () => void, onCancel?: () => void }) {
   const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
-  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_deposit' || result.status === 'proposing_swap' || result.status === 'proposing_bridge'
+  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_deposit' || result.status === 'proposing_swap' || result.status === 'proposing_bridge' || result.status === 'proposing_transfer'
   if (isProposal) {
     let title = 'Check this'
     let detail = ''
@@ -41,6 +41,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     else if (result.status === 'proposing_deposit') { title = `Deposit ${result.amount} ${result.token || 'USDC'}`; detail = `Into your vault on ${result.chainName || 'Arc'}` }
     else if (result.status === 'proposing_swap') { title = `Swap ${result.amount} ${result.fromAsset}`; detail = `You get about ${result.amountOut} ${result.toAsset} on ${result.chainName}` }
     else if (result.status === 'proposing_bridge') { title = `Bridge ${result.amount} USDC`; detail = `${result.fromName} to ${result.toName}. This leaves the wallet, not the vault.` }
+    else if (result.status === 'proposing_transfer') { title = `Send ${result.amount} ${result.token}`; detail = `From the Robinhood wallet to ${result.to}. No Circle, no USDC.` }
     return (
       <div style={{ marginTop: 10, border: '1px solid var(--cyan)', background: 'rgba(79,219,200,0.04)', padding: '12px 14px', fontFamily: 'var(--font-mono)' }}>
         <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2, marginBottom: 6 }}>{title}</div>
@@ -70,7 +71,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     if (result.type === 'bridge') label = `Bridged ${result.amount} USDC to ${result.toName}`
     else if (result.type === 'deposit') label = `Deposited ${result.amount} USDC`
     else if (result.type === 'schedule') label = `Scheduled ${result.amount} USDC`
-    else if (result.amount) label = `Sent ${result.amount} USDC`
+    else if (result.amount) label = `Sent ${result.amount} ${result.token || 'USDC'}`
     return (
       <div style={{ marginTop: 10, fontSize: 14 }}>
         <div>{label}</div>
@@ -116,7 +117,7 @@ function PolicyCard({ data }: { data: any }) {
 export default function Terminal({ messages, setMessages, userAddress, userId, onActionSuccess }: Props) {
   const [amount, setAmount] = React.useState('')
   const [who, setWho] = React.useState('')
-  const [want, setWant] = React.useState<'arc' | 'base' | 'eth' | 'send' | 'stock'>('arc')
+  const [want, setWant] = React.useState<'eth' | 'tsla' | 'amd' | 'amzn' | 'nflx' | 'pltr' | 'base-eth'>('eth')
   const [where, setWhere] = React.useState('')
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
@@ -161,6 +162,12 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
   useEffect(() => {
     if (!userId) return
     getVaultBalanceApi(userId).then((res) => {
+      const hood = res.chains?.find((c) => c.id === 'robinhood-testnet')
+      if (hood) {
+        const stocks = (hood.tokens || []).map((token) => `${token.symbol} ${token.amount}`).join(' · ')
+        setWhere(`${hood.eth} ETH on Robinhood${stocks ? ' · ' + stocks : ''}`)
+        return
+      }
       const base = res.chains?.find((c) => c.id === 'base')
       if (!base) return
       setWhere(`${Number(base.wallet || 0).toFixed(2)} in your Base wallet · ${Number(base.vault || 0).toFixed(2)} in the vault`)
@@ -210,6 +217,16 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
           fromAsset: prop.fromAsset,
           toAsset: prop.toAsset,
           chainName: prop.chainName,
+        }
+      } else if (prop.status === 'proposing_transfer') {
+        const sent = await executeTransfer({ asset: prop.token, amount: Number(prop.amount), to: prop.to }, userId)
+        res = {
+          status: sent.success ? 'executed' : 'failed',
+          txHash: sent.txHash,
+          type: 'payment',
+          amount: prop.amount,
+          token: prop.token,
+          reason: sent.reason,
         }
       } else if (prop.status === 'proposing_bridge') {
         const bridgeRes = await executeBridge({ from: prop.from, to: prop.to, amount: Number(prop.amount) }, userId)
@@ -323,34 +340,30 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
   function submitMove() {
     const n = Number(amount)
     if (!Number.isFinite(n) || n <= 0) return
-    let text = ''
-    if (want === 'send') {
-      if (!who.trim()) return
-      text = `Send ${n} USDC to ${who.trim()}`
-    } else if (want === 'eth') {
-      text = `Swap ${n} USDC for ETH on Base Sepolia`
-    } else if (want === 'arc') {
-      text = `Bridge ${n} USDC from Base Sepolia to Arc`
-    } else if (want === 'base') {
-      text = `Bridge ${n} USDC from Arc to Base Sepolia`
-    } else if (want === 'stock') {
-      text = `Deposit ${n} TSLA on Robinhood`
+    if (want === 'base-eth') {
+      setAmount('')
+      handleSend(`Swap ${n} USDC for ETH on Base Sepolia`)
+      return
     }
-    if (!text) return
+    if (!who.trim()) return
+    const token = want.toUpperCase()
+    const userMsg = { role: 'user' as const, content: `Send ${n} ${token} to ${who.trim()}`, timestamp: Date.now() }
+    const assistantMsg = { role: 'assistant' as const, content: `Send ${n} ${token} from Robinhood.`, timestamp: Date.now() }
+    setMessages((prev) => {
+      const next = [...prev, userMsg, assistantMsg]
+      const idx = next.length - 1
+      setTimeout(() => {
+        setTxResults((r) => ({ ...r, [idx]: { status: 'proposing_transfer', amount: n, token, to: who.trim() } }))
+      }, 0)
+      return next
+    })
     setAmount('')
     setWho('')
-    handleSend(text)
   }
 
-  const routeLine = want === 'arc'
-    ? 'USDC leaves Base and arrives on Arc.'
-    : want === 'base'
-      ? 'USDC leaves Arc and arrives on Base.'
-      : want === 'eth'
-        ? 'Base USDC becomes ETH.'
-        : want === 'send'
-          ? 'USDC is paid from Arc.'
-          : 'TSLA moves into the Robinhood vault. This is not USDC.'
+  const routeLine = want === 'base-eth'
+    ? 'Uniswap on Base. It spends USDC to buy ETH.'
+    : `Sends ${want.toUpperCase()} from the Robinhood wallet. The chain moves it. Circle is not involved.`
 
   if (!userAddress) return (
     <div className="terminal">
@@ -396,11 +409,13 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
         <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
           {([
-            ['arc', 'USDC on Arc'],
-            ['base', 'USDC on Base'],
             ['eth', 'ETH'],
-            ['send', 'Pay someone'],
-            ['stock', 'Robinhood vault'],
+            ['tsla', 'TSLA'],
+            ['amd', 'AMD'],
+            ['amzn', 'AMZN'],
+            ['nflx', 'NFLX'],
+            ['pltr', 'PLTR'],
+            ['base-eth', 'Base ETH'],
           ] as const).map(([id, label]) => (
             <button key={id} type="button" disabled={loading} onClick={() => setWant(id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', whiteSpace: 'nowrap', color: want === id ? 'var(--text)' : 'var(--muted)', fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 500 }}>
               {label}
@@ -409,7 +424,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         </div>
         <div style={{ color: 'var(--muted)', fontSize: 13, margin: '4px 0 8px' }}>{routeLine}</div>
         <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" style={fieldStyle} />
-        {want === 'send' && <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Name or address" style={fieldStyle} />}
+        {want !== 'base-eth' && <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Recipient address" style={fieldStyle} />}
         <button type="button" onClick={submitMove} disabled={loading} style={{ marginTop: 10, width: '100%', background: 'var(--text)', color: '#f3f0e8', border: 'none', padding: '12px 14px', fontFamily: 'var(--font-head)', fontSize: 16 }}>
           Review
         </button>
