@@ -17,7 +17,7 @@ export interface ChatMessage {
 }
 
 export interface Intent {
-  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown' | 'fetch_and_pay' | 'deposit' | 'swap' | 'bridge' | 'bridge_complete'
+  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown' | 'fetch_and_pay' | 'deposit' | 'swap' | 'bridge' | 'bridge_complete' | 'pool_propose_spend'
   requestId?: string
   to?: string
   amount?: number
@@ -35,6 +35,12 @@ export interface Intent {
   data?: {
     quote?: { from: string; to: string; amountIn?: number; amountOut?: number; amount?: string; chain?: string; chainName?: string; fromName?: string; toName?: string }
     quoteError?: string
+    poolId?: string
+    signatureRequest?: {
+      action: string
+      typedData: { domain: { chainId: number }; types: Record<string, unknown>; message: { deadline: string | number } }
+      submit: { to: string; amount: number; reason: string }
+    }
   }
   conditions?: {
     minBalance?: number
@@ -186,6 +192,7 @@ export interface PoolProposal {
   resolved: boolean
   executed: boolean
   objectionWindowSeconds?: number
+  txHash?: string
 }
 
 // contracts/DecisionLog.sol — on-chain decision provenance record.

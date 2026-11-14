@@ -297,24 +297,16 @@ async function chat(message, walletId, userId) {
   if (intent.action === "pool_propose_spend") {
     try {
       const poolVault = require('./poolVault');
-      const poolStore = require('./poolStore');
       const pool = await resolvePoolByName(address, intent.poolName);
       const to = await resolveAddressOrTag(intent.to);
-      intent.to = to; // pre-resolved — keeps handleChat's generic @tag pass a no-op
-      const { proposalId, txHash } = await poolVault.proposeSpend(walletId, pool.poolId, address, to, intent.amount, intent.reason || '');
-      const { ethers } = require('ethers');
+      intent.to = to;
       const provider = getProvider();
-      const onChainProposal = await poolVault.getProposal(provider, proposalId);
-      await poolStore.recordProposal({ proposalId, poolId: pool.poolId, kind: 'Spend', windowEnds: onChainProposal.windowEnds, proposer: address });
-      if (onChainProposal.resolved) {
-        await poolStore.closeProposal(proposalId, { resolved: 'executed', txHash });
-        await appendSpend({ userAddress: address, to, amount: Number(intent.amount), reason: intent.reason || 'Pool spend', txHash, token: 'USDC', type: 'pool_spend' });
-        intent.message = `Spent ${intent.amount} USDC from "${pool.name}" — under the discretionary threshold, so it executed immediately.`;
-      } else {
-        const hoursLeft = onChainProposal.windowEnds ? Math.max(0, Math.round((onChainProposal.windowEnds * 1000 - Date.now()) / 3600000)) : null;
-        intent.message = `Proposed spending ${intent.amount} USDC from "${pool.name}". Other members have ${hoursLeft != null ? hoursLeft + 'h' : 'the objection window'} to veto before it executes.`;
-      }
-      intent.data = { poolId: pool.poolId, proposalId, txHash };
+      const deadline = Math.floor(Date.now() / 1000) + 60 * 60;
+      const typedData = await poolVault.spendTypedData(provider, {
+        poolId: pool.poolId, proposer: address, to, amount: intent.amount, reason: intent.reason || '', deadline,
+      });
+      intent.message = `Sign to propose ${intent.amount} USDC from "${pool.name}". Nothing moves until you sign, and the objection window still has to pass.`;
+      intent.data = { poolId: pool.poolId, signatureRequest: { action: 'propose_spend', typedData, submit: { to, amount: intent.amount, reason: intent.reason || '' } } };
     } catch (e) {
       intent.message = "Could not propose that spend: " + e.message;
     }

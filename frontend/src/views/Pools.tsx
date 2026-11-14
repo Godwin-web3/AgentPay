@@ -1,16 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
+import { useWallets } from '@privy-io/react-auth'
 import {
   listMyPools, parsePoolCreation, createPool, getPool, acceptPoolInvite,
   listPoolProposals, vetoProposal, sendPoolChatMessage, getPoolChat,
+  proposeSpendInPool, proposeAmendInPool, proposeRemoveInPool,
 } from '../api'
 import type { Pool, PoolProposal, PoolChatMessage, PoolCreationDraft } from '../types'
 import LivingPool from '../components/LivingPool'
+import { signerFor } from '../spend'
 
 function formatTime(ts: string) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 export default function Pools({ userAddress, userId }: { userAddress: string, userId: string }) {
+  const { wallets } = useWallets()
   const [pools, setPools] = useState<Pool[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -151,7 +155,20 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
     setSending(true)
     setActionError('')
     try {
-      await sendPoolChatMessage(selectedId, text, userId)
+      const sent = await sendPoolChatMessage(selectedId, text, userId)
+      const request = sent.signatureRequest
+      if (request?.typedData) {
+        const signer = await signerFor(wallets, Number(request.typedData.domain.chainId))
+        const signature = await signer.signTypedData(request.typedData.domain, request.typedData.types, request.typedData.message)
+        const deadline = request.typedData.message.deadline
+        if (request.action === 'propose_spend') {
+          await proposeSpendInPool(selectedId, request.submit.to, request.submit.amount, request.submit.reason, userId, signature, deadline)
+        } else if (request.action === 'propose_amend') {
+          await proposeAmendInPool(selectedId, request.submit.constitution, userId, signature, deadline)
+        } else if (request.action === 'propose_remove') {
+          await proposeRemoveInPool(selectedId, request.submit.targetMember, userId, signature, deadline)
+        }
+      }
       await fetchSelected(selectedId)
     } catch (e: any) {
       setActionError(e.message || 'Message failed to send')
@@ -204,7 +221,7 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
                 Invites: {draft.invites.length ? draft.invites.join(', ') : 'none yet'}
               </div>
               <div className="mono-data" style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 20 }}>
-                Under {draft.constitution.discretionaryThreshold} USDC executes instantly · sealed after {draft.constitution.objectionWindowHours}h unless objected · never more than {draft.constitution.maxSingleProposal} USDC per proposal
+                Every spend waits {draft.constitution.objectionWindowHours}h for an objection · never more than {draft.constitution.maxSingleProposal} USDC per proposal
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button className="send-btn" onClick={handleConfirmCreate} disabled={creating}>{creating ? 'Creating...' : 'Looks good, create it'}</button>

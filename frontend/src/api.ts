@@ -382,8 +382,16 @@ export async function withdrawPersonalFromPool(poolId: string, amount: number, u
   return request<{ success: boolean; txHash: string }>('/pools/' + poolId + '/withdraw-personal', { method: 'POST', body: JSON.stringify({ amount }) }, userId)
 }
 
-export async function proposeSpendInPool(poolId: string, to: string, amount: number, reason: string, userId: string): Promise<PoolProposal> {
-  return request<PoolProposal>('/pools/' + poolId + '/propose-spend', { method: 'POST', body: JSON.stringify({ to, amount, reason }) }, userId)
+export async function proposeSpendInPool(poolId: string, to: string, amount: number, reason: string, userId: string, signature: string, deadline: string | number): Promise<PoolProposal> {
+  return request<PoolProposal>('/pools/' + poolId + '/propose-spend', { method: 'POST', body: JSON.stringify({ to, amount, reason, signature, deadline }) }, userId)
+}
+
+export async function proposeAmendInPool(poolId: string, constitution: { discretionaryThreshold: number; objectionWindow: number; maxSingleProposal: number }, userId: string, signature: string, deadline: string | number): Promise<PoolProposal> {
+  return request<PoolProposal>('/pools/' + poolId + '/propose-amend', { method: 'POST', body: JSON.stringify({ constitution, signature, deadline }) }, userId)
+}
+
+export async function proposeRemoveInPool(poolId: string, targetMember: string, userId: string, signature: string, deadline: string | number): Promise<PoolProposal> {
+  return request<PoolProposal>('/pools/' + poolId + '/propose-remove', { method: 'POST', body: JSON.stringify({ targetMember, signature, deadline }) }, userId)
 }
 
 export async function listPoolProposals(poolId: string, userId: string): Promise<Array<{ proposalId: string; kind: string; closed: boolean; onChain: PoolProposal | null }>> {
@@ -398,8 +406,8 @@ export async function parsePoolCreation(description: string, userId: string): Pr
   return request<PoolCreationDraft>('/pools/parse', { method: 'POST', body: JSON.stringify({ description }) }, userId)
 }
 
-export async function sendPoolChatMessage(poolId: string, message: string, userId: string): Promise<{ message: PoolChatMessage }> {
-  return request<{ message: PoolChatMessage }>('/pools/' + poolId + '/chat', { method: 'POST', body: JSON.stringify({ message }) }, userId)
+export async function sendPoolChatMessage(poolId: string, message: string, userId: string): Promise<{ message: PoolChatMessage; signatureRequest?: { action: string; typedData: any; submit: any } }> {
+  return request('/pools/' + poolId + '/chat', { method: 'POST', body: JSON.stringify({ message }) }, userId)
 }
 
 export async function getPoolChat(poolId: string, userId: string): Promise<PoolChatMessage[]> {

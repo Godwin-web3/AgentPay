@@ -6,10 +6,9 @@
 //    backend can sign with — so these go through Circle's
 //    createContractExecutionTransaction keyed by walletId, exactly like
 //    src/walletService.js's approveAndDepositToVault/withdrawFromVault.
-//  - Proposal calls are submitted by the member's own Circle wallet. The
-//    contract checks msg.sender == proposer; the optional EIP-712 relay path
-//    is reserved for agent relays with a member signature. The operator key
-//    can never manufacture member consent.
+//  - Proposal calls are never sent from the member's developer-controlled wallet.
+//    The member signs EIP-712 typed data. The operator key only relays that
+//    signature. A missing signature is refused.
 // PoolVault is a singleton (see contracts/PoolVault.sol) — one address,
 // no per-pool factory lookup like escrow.findVault needs.
 
@@ -141,39 +140,140 @@ async function veto(walletId, proposalId) {
   return await memberContractCall(walletId, 'veto(uint256)', [proposalId], 'veto');
 }
 
-// ── Member-authorized proposal calls ───────────────────────────────────────
+const PROPOSAL_TYPES = {
+  PoolProposal: [
+    { name: 'poolId', type: 'uint256' },
+    { name: 'proposer', type: 'address' },
+    { name: 'kind', type: 'uint8' },
+    { name: 'to', type: 'address' },
+    { name: 'amount', type: 'uint256' },
+    { name: 'reasonHash', type: 'bytes32' },
+    { name: 'discretionaryThreshold', type: 'uint256' },
+    { name: 'objectionWindow', type: 'uint256' },
+    { name: 'maxSingleProposal', type: 'uint256' },
+    { name: 'targetMember', type: 'address' },
+    { name: 'nonce', type: 'uint256' },
+    { name: 'deadline', type: 'uint256' },
+  ],
+};
 
-async function memberProposalCall(walletId, abiFunctionSignature, abiParameters, label) {
-  const txHash = await memberContractCall(walletId, abiFunctionSignature, abiParameters, label);
-  const receipt = await getProvider().getTransactionReceipt(txHash);
-  const iface = new ethers.Interface(artifact.abi);
+function getAgentWallet() {
+  if (!process.env.PRIVATE_KEY) throw new Error('The agent key is not configured.');
+  return new ethers.Wallet(process.env.PRIVATE_KEY, getProvider());
+}
+
+function requireMemberSignature(signature, deadline) {
+  if (!deadline || !signature || signature === '0x') {
+    const err = new Error('A member signature is required. The server will not submit this proposal.');
+    err.code = 'SIGNATURE_REQUIRED';
+    throw err;
+  }
+}
+
+async function proposalContext(provider, poolId, proposer) {
+  const contract = getReadContract(provider);
+  const pool = await contract.getPool(poolId);
+  const nonce = await contract.proposalNonces(poolId, proposer);
+  const network = await provider.getNetwork();
+  return {
+    rules: pool.constitution,
+    nonce,
+    domain: {
+      name: 'PoolVault',
+      version: '1',
+      chainId: Number(network.chainId),
+      verifyingContract: getAddress(),
+    },
+  };
+}
+
+function typedData(domain, message) {
+  return { domain, types: PROPOSAL_TYPES, primaryType: 'PoolProposal', message };
+}
+
+async function spendTypedData(provider, { poolId, proposer, to, amount, reason, deadline }) {
+  const ctx = await proposalContext(provider, poolId, proposer);
+  return typedData(ctx.domain, {
+    poolId: String(poolId),
+    proposer,
+    kind: 0,
+    to,
+    amount: toUnits(amount).toString(),
+    reasonHash: ethers.keccak256(ethers.toUtf8Bytes(reason || '')),
+    discretionaryThreshold: ctx.rules.discretionaryThreshold.toString(),
+    objectionWindow: ctx.rules.objectionWindow.toString(),
+    maxSingleProposal: ctx.rules.maxSingleProposal.toString(),
+    targetMember: ethers.ZeroAddress,
+    nonce: ctx.nonce.toString(),
+    deadline: String(deadline),
+  });
+}
+
+async function amendTypedData(provider, { poolId, proposer, constitution, deadline }) {
+  const ctx = await proposalContext(provider, poolId, proposer);
+  return typedData(ctx.domain, {
+    poolId: String(poolId),
+    proposer,
+    kind: 1,
+    to: ethers.ZeroAddress,
+    amount: '0',
+    reasonHash: ethers.ZeroHash,
+    discretionaryThreshold: toUnits(constitution.discretionaryThreshold).toString(),
+    objectionWindow: String(constitution.objectionWindow),
+    maxSingleProposal: toUnits(constitution.maxSingleProposal).toString(),
+    targetMember: ethers.ZeroAddress,
+    nonce: ctx.nonce.toString(),
+    deadline: String(deadline),
+  });
+}
+
+async function removeTypedData(provider, { poolId, proposer, targetMember, deadline }) {
+  const ctx = await proposalContext(provider, poolId, proposer);
+  return typedData(ctx.domain, {
+    poolId: String(poolId),
+    proposer,
+    kind: 2,
+    to: ethers.ZeroAddress,
+    amount: '0',
+    reasonHash: ethers.ZeroHash,
+    discretionaryThreshold: '0',
+    objectionWindow: '0',
+    maxSingleProposal: '0',
+    targetMember,
+    nonce: ctx.nonce.toString(),
+    deadline: String(deadline),
+  });
+}
+
+async function relayProposal(abi, args) {
+  const contract = getAgentContract(getAgentWallet());
+  const tx = await contract[abi](...args, { gasLimit: 400000 });
+  const receipt = await tx.wait();
   for (const log of receipt.logs) {
     try {
-      const decoded = iface.parseLog(log);
-      if (decoded.name === 'ProposalCreated') return { proposalId: decoded.args.proposalId.toString(), txHash };
+      const decoded = contract.interface.parseLog(log);
+      if (decoded && decoded.name === 'ProposalCreated') {
+        return { proposalId: decoded.args.proposalId.toString(), txHash: receipt.hash };
+      }
     } catch { continue; }
   }
   throw new Error('Could not parse ProposalCreated event');
 }
 
-async function proposeSpend(walletId, poolId, proposer, to, amountUSDC, reason) {
-  return memberProposalCall(walletId,
-    'proposeSpend(uint256,address,address,uint256,string,uint256,bytes)',
-    [poolId, proposer, to, toUnits(amountUSDC).toString(), reason || '', '0', '0x'],
-    'propose pool spend');
+async function proposeSpend(proposer, poolId, to, amountUSDC, reason, deadline, signature) {
+  requireMemberSignature(signature, deadline);
+  return relayProposal('proposeSpend', [poolId, proposer, to, toUnits(amountUSDC), reason || '', deadline, signature]);
 }
 
-async function proposeAmendConstitution(walletId, poolId, proposer, newConstitution) {
+async function proposeAmendConstitution(proposer, poolId, newConstitution, deadline, signature) {
+  requireMemberSignature(signature, deadline);
   const packed = [toUnits(newConstitution.discretionaryThreshold).toString(), String(newConstitution.objectionWindow), toUnits(newConstitution.maxSingleProposal).toString()];
-  return memberProposalCall(walletId,
-    'proposeAmendConstitution(uint256,address,(uint256,uint256,uint256),uint256,bytes)',
-    [poolId, proposer, packed, '0', '0x'], 'propose constitution change');
+  return relayProposal('proposeAmendConstitution', [poolId, proposer, packed, deadline, signature]);
 }
 
-async function proposeRemoveMember(walletId, poolId, proposer, targetMember) {
-  return memberProposalCall(walletId,
-    'proposeRemoveMember(uint256,address,address,uint256,bytes)',
-    [poolId, proposer, targetMember, '0', '0x'], 'propose member removal');
+async function proposeRemoveMember(proposer, poolId, targetMember, deadline, signature) {
+  requireMemberSignature(signature, deadline);
+  return relayProposal('proposeRemoveMember', [poolId, proposer, targetMember, deadline, signature]);
 }
 
 async function resolveProposal(agentWallet, proposalId) {
@@ -217,6 +317,9 @@ module.exports = {
   proposeSpend,
   proposeAmendConstitution,
   proposeRemoveMember,
+  spendTypedData,
+  amendTypedData,
+  removeTypedData,
   resolveProposal,
   getPool,
   getMemberStatus,

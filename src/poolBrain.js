@@ -54,7 +54,7 @@ async function parsePoolCreation(description) {
 
 const POOL_CHAT_PROMPT = (ctx) => `You are the assistant inside a shared-money pool's group chat. Everyone in the pool sees this thread.
 Pool: "${ctx.name}". Members: ${ctx.memberList.join(', ')}. Shared balance: ${ctx.sharedBalance} USDC.
-Constitution: spends under ${ctx.constitution.discretionaryThreshold} USDC execute immediately; spends up to the ${ctx.constitution.maxSingleProposal} USDC backstop cap wait ${(ctx.constitution.objectionWindow / 3600).toFixed(1)}h for objections; above the backstop cap is never allowed.
+Constitution: every shared spend waits ${(ctx.constitution.objectionWindow / 3600).toFixed(1)}h for objections, even under ${ctx.constitution.discretionaryThreshold} USDC. Nothing above ${ctx.constitution.maxSingleProposal} USDC can be proposed. Nothing is submitted until the member signs.
 
 Respond with ONLY JSON, one of:
 {"action":"contribute","amount":N,"toShared":true|false,"message":"..."}

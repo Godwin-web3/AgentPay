@@ -72,34 +72,56 @@ describe('PoolVault — authorization and objection-window hardening', function 
   async function proposeSpend(poolId, signer, to, amount, reason) {
     const auth = await authorize(signer, poolId, 0, {
       to, amount, reasonHash: ethers.keccak256(ethers.toUtf8Bytes(reason)),
+      discretionaryThreshold: defaultConstitution.discretionaryThreshold,
+      objectionWindow: defaultConstitution.objectionWindow,
+      maxSingleProposal: defaultConstitution.maxSingleProposal,
     });
     return pool.connect(agent).proposeSpend(poolId, signer.address, to, amount, reason, auth.deadline, auth.signature);
   }
 
-  it('requires a member signature even for instant discretionary spending', async function () {
+  it('requires a member signature and does not execute a spend inside the objection window', async function () {
     const poolId = await createPool();
     await pool.connect(founder).contribute(poolId, ethers.parseUnits('200', 6), true);
     await expect(
       pool.connect(agent).proposeSpend(poolId, founder.address, vendor.address, ethers.parseUnits('30', 6),
         'internet bill', Math.floor(Date.now() / 1000) + 3600, '0x')
     ).to.be.revertedWithCustomError(pool, 'InvalidSignature');
-    expect(await usdc.balanceOf(vendor.address)).to.equal(0n);
     await expect(proposeSpend(poolId, founder, vendor.address, ethers.parseUnits('30', 6), 'internet bill'))
-      .to.emit(pool, 'ProposalResolved');
-    expect(await usdc.balanceOf(vendor.address)).to.equal(ethers.parseUnits('30', 6));
+      .to.emit(pool, 'ProposalCreated');
+    expect(await usdc.balanceOf(vendor.address)).to.equal(0n);
     expect(await pool.proposalNonces(poolId, founder.address)).to.equal(1n);
   });
 
-  it('accepts a proposal submitted directly by the member wallet without an agent signature', async function () {
+  it('accepts a signed proposal submitted by the member wallet and still waits', async function () {
     const poolId = await createPool();
     await pool.connect(founder).contribute(poolId, ethers.parseUnits('200', 6), true);
+    const amount = ethers.parseUnits('25', 6);
+    const reason = 'member-submitted payment';
+    const auth = await authorize(founder, poolId, 0, {
+      to: vendor.address, amount, reasonHash: ethers.keccak256(ethers.toUtf8Bytes(reason)),
+      discretionaryThreshold: defaultConstitution.discretionaryThreshold,
+      objectionWindow: defaultConstitution.objectionWindow,
+      maxSingleProposal: defaultConstitution.maxSingleProposal,
+    });
     await expect(
       pool.connect(founder).proposeSpend(
-        poolId, founder.address, vendor.address, ethers.parseUnits('25', 6),
-        'member-submitted payment', 0, '0x'
+        poolId, founder.address, vendor.address, amount, reason, auth.deadline, auth.signature
       )
-    ).to.emit(pool, 'ProposalResolved');
-    expect(await usdc.balanceOf(vendor.address)).to.equal(ethers.parseUnits('25', 6));
+    ).to.emit(pool, 'ProposalCreated');
+    expect(await usdc.balanceOf(vendor.address)).to.equal(0n);
+  });
+
+  it('rejects a signature that does not bind the live constitution', async function () {
+    const poolId = await createPool();
+    await pool.connect(founder).contribute(poolId, ethers.parseUnits('200', 6), true);
+    const amount = ethers.parseUnits('20', 6);
+    const auth = await authorize(founder, poolId, 0, {
+      to: vendor.address, amount, reasonHash: ethers.keccak256(ethers.toUtf8Bytes('rent')),
+    });
+    await expect(
+      pool.connect(agent).proposeSpend(poolId, founder.address, vendor.address, amount, 'rent', auth.deadline, auth.signature)
+    ).to.be.revertedWithCustomError(pool, 'InvalidSignature');
+    expect(await usdc.balanceOf(vendor.address)).to.equal(0n);
   });
 
   it('does not let one member submit a proposal attributed to another member', async function () {
@@ -120,6 +142,9 @@ describe('PoolVault — authorization and objection-window hardening', function 
     const auth = await authorize(founder, poolId, 0, {
       to: vendor.address, amount: ethers.parseUnits('20', 6),
       reasonHash: ethers.keccak256(ethers.toUtf8Bytes('rent')),
+      discretionaryThreshold: defaultConstitution.discretionaryThreshold,
+      objectionWindow: defaultConstitution.objectionWindow,
+      maxSingleProposal: defaultConstitution.maxSingleProposal,
     });
     await expect(
       pool.connect(agent).proposeSpend(poolId, founder.address, outsider.address,
@@ -133,6 +158,9 @@ describe('PoolVault — authorization and objection-window hardening', function 
     const auth = await authorize(founder, poolId, 0, {
       to: vendor.address, amount: ethers.parseUnits('20', 6),
       reasonHash: ethers.keccak256(ethers.toUtf8Bytes('rent')),
+      discretionaryThreshold: defaultConstitution.discretionaryThreshold,
+      objectionWindow: defaultConstitution.objectionWindow,
+      maxSingleProposal: defaultConstitution.maxSingleProposal,
     }, 1);
     await expect(
       pool.connect(agent).proposeSpend(poolId, founder.address, vendor.address,
@@ -214,6 +242,27 @@ describe('PoolVault — authorization and objection-window hardening', function 
       .to.be.revertedWithCustomError(pool, 'PoolPausedError');
     await pool.resumePool(poolId);
     await expect(pool.connect(founder).contribute(poolId, 1, true)).not.to.be.reverted;
+  });
+
+  it('freezes the objection window while the pool is paused', async function () {
+    const poolId = await createPool();
+    await pool.connect(mike).acceptInvite(poolId);
+    await pool.connect(founder).contribute(poolId, ethers.parseUnits('200', 6), true);
+    const tx = await proposeSpend(poolId, founder, vendor.address, ethers.parseUnits('80', 6), 'rent');
+    const receipt = await tx.wait();
+    const proposalId = receipt.logs.map(l => { try { return pool.interface.parseLog(l); } catch { return null; } })
+      .find(e => e && e.name === 'ProposalCreated').args.proposalId;
+    const before = Number((await pool.getProposal(proposalId)).windowEnds);
+    await pool.pausePool(poolId);
+    await ethers.provider.send('evm_increaseTime', [Number(defaultConstitution.objectionWindow) + 10]);
+    await ethers.provider.send('evm_mine');
+    const during = Number((await pool.getProposal(proposalId)).windowEnds);
+    expect(during).to.be.greaterThan(before);
+    await expect(pool.connect(agent).resolveProposal(proposalId)).to.be.revertedWithCustomError(pool, 'PoolPausedError');
+    await expect(pool.connect(mike).veto(proposalId)).to.not.be.reverted;
+    await pool.resumePool(poolId);
+    await expect(pool.connect(agent).resolveProposal(proposalId)).to.be.revertedWithCustomError(pool, 'ProposalVetoedError');
+    expect(await usdc.balanceOf(vendor.address)).to.equal(0n);
   });
 
   it('keeps personal balances independently withdrawable while pool is active', async function () {

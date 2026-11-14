@@ -741,9 +741,9 @@ async function handleIntelligence(req, res) {
 // A pool is a shared-money group (roommates, small teams, trip funds) a user
 // opts into creating — personal AgentVault usage is completely unaffected.
 // Member-facing calls (create/accept/leave/contribute/withdraw/veto) are
-// signed by the member's own Circle wallet (src/poolVault.js). The operator
-// key can relay only with a valid member EIP-712 signature; the normal product
-// path submits directly from the member wallet.
+// signed by the member's own Circle wallet (src/poolVault.js). Shared spends,
+// rule changes, and removals are not. Those need a member EIP-712 signature,
+// which this server relays and cannot create.
 
 async function resolveInvite(raw) {
   if (typeof raw === 'string' && raw.startsWith('0x')) return raw;
@@ -885,27 +885,28 @@ async function handleWithdrawPersonal(req, res) {
   }
 }
 
-// POST /pools/:poolId/propose-spend — { to, amount, reason }
+function proposalDeadline() {
+  return Math.floor(Date.now() / 1000) + 60 * 60;
+}
+
+// POST /pools/:poolId/propose-spend — { to, amount, reason, signature, deadline }
 async function handleProposeSpend(req, res) {
   const userId = getUserId(req);
-  const { to, amount, reason } = req.body || {};
+  const { to, amount, reason, signature, deadline } = req.body || {};
   if (!to || !(Number(amount) > 0)) return send(res, 400, { error: 'to and a positive amount are required' });
   try {
     const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
-    const { proposalId, txHash } = await poolVault.proposeSpend(wallet.walletId, req.params.poolId, wallet.address, to, amount, reason || '');
+    if (!signature || !deadline) {
+      const typedData = await poolVault.spendTypedData(sharedProvider, {
+        poolId: req.params.poolId, proposer: wallet.address, to, amount, reason: reason || '', deadline: proposalDeadline(),
+      });
+      return send(res, 400, { error: 'signature required', typedData });
+    }
+    const { proposalId, txHash } = await poolVault.proposeSpend(wallet.address, req.params.poolId, to, amount, reason || '', deadline, signature);
     const onChainProposal = await poolVault.getProposal(sharedProvider, proposalId);
     const poolStore = require('./poolStore');
     await poolStore.recordProposal({ proposalId, poolId: req.params.poolId, kind: 'Spend', windowEnds: onChainProposal.windowEnds, proposer: wallet.address });
-    if (onChainProposal.resolved) {
-      // Below the discretionary threshold — already executed on-chain in the
-      // same call. Close it immediately rather than leaving it "pending"
-      // until the objection window happens to elapse, and log it to the
-      // shared history feed right away.
-      await poolStore.closeProposal(proposalId, { resolved: 'executed', txHash });
-      const { appendSpend } = require('./spendStore');
-      await appendSpend({ userAddress: wallet.address, to, amount: Number(amount), reason: reason || 'Pool spend', txHash, token: 'USDC', type: 'pool_spend' });
-    }
     return send(res, 200, { proposalId, txHash, ...onChainProposal });
   } catch (err) {
     return send(res, 500, { error: err.message });
@@ -915,12 +916,18 @@ async function handleProposeSpend(req, res) {
 // POST /pools/:poolId/propose-amend — { constitution }
 async function handleProposeAmend(req, res) {
   const userId = getUserId(req);
-  const { constitution } = req.body || {};
+  const { constitution, signature, deadline } = req.body || {};
   if (!constitution) return send(res, 400, { error: 'constitution is required' });
   try {
     const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
-    const { proposalId, txHash } = await poolVault.proposeAmendConstitution(wallet.walletId, req.params.poolId, wallet.address, constitution);
+    if (!signature || !deadline) {
+      const typedData = await poolVault.amendTypedData(sharedProvider, {
+        poolId: req.params.poolId, proposer: wallet.address, constitution, deadline: proposalDeadline(),
+      });
+      return send(res, 400, { error: 'signature required', typedData });
+    }
+    const { proposalId, txHash } = await poolVault.proposeAmendConstitution(wallet.address, req.params.poolId, constitution, deadline, signature);
     const onChainProposal = await poolVault.getProposal(sharedProvider, proposalId);
     const poolStore = require('./poolStore');
     await poolStore.recordProposal({ proposalId, poolId: req.params.poolId, kind: 'AmendConstitution', windowEnds: onChainProposal.windowEnds });
@@ -933,13 +940,19 @@ async function handleProposeAmend(req, res) {
 // POST /pools/:poolId/propose-remove — { targetMember: address|@tag }
 async function handleProposeRemove(req, res) {
   const userId = getUserId(req);
-  const { targetMember } = req.body || {};
+  const { targetMember, signature, deadline } = req.body || {};
   if (!targetMember) return send(res, 400, { error: 'targetMember is required' });
   try {
     const wallet = await getOrCreateWallet(userId);
     const resolvedTarget = await resolveInvite(targetMember);
     const poolVault = require('./poolVault');
-    const { proposalId, txHash } = await poolVault.proposeRemoveMember(wallet.walletId, req.params.poolId, wallet.address, resolvedTarget);
+    if (!signature || !deadline) {
+      const typedData = await poolVault.removeTypedData(sharedProvider, {
+        poolId: req.params.poolId, proposer: wallet.address, targetMember: resolvedTarget, deadline: proposalDeadline(),
+      });
+      return send(res, 400, { error: 'signature required', typedData });
+    }
+    const { proposalId, txHash } = await poolVault.proposeRemoveMember(wallet.address, req.params.poolId, resolvedTarget, deadline, signature);
     const onChainProposal = await poolVault.getProposal(sharedProvider, proposalId);
     const poolStore = require('./poolStore');
     await poolStore.recordProposal({ proposalId, poolId: req.params.poolId, kind: 'RemoveMember', windowEnds: onChainProposal.windowEnds });
@@ -1008,6 +1021,7 @@ async function handlePoolChatMessage(req, res) {
     let replyContent = intent.message || '';
     let proposalId = null;
     let messageType = 'text';
+    let signatureRequest = null;
 
     if (intent.action === 'contribute') {
       const txHash = await poolVault.contribute(wallet.walletId, poolId, intent.amount, intent.toShared !== false);
@@ -1016,43 +1030,36 @@ async function handlePoolChatMessage(req, res) {
       replyContent = replyContent || `Contributed ${intent.amount} USDC. Tx: ${txHash}`;
     } else if (intent.action === 'propose_spend') {
       const to = await resolveInvite(intent.to);
-      const result = await poolVault.proposeSpend(wallet.walletId, poolId, wallet.address, to, intent.amount, intent.reason || '');
-      const onChainProposal = await poolVault.getProposal(sharedProvider, result.proposalId);
-      await poolStore.recordProposal({ proposalId: result.proposalId, poolId, kind: 'Spend', windowEnds: onChainProposal.windowEnds, proposer: wallet.address });
-      proposalId = result.proposalId;
+      const typedData = await poolVault.spendTypedData(sharedProvider, {
+        poolId, proposer: wallet.address, to, amount: intent.amount, reason: intent.reason || '', deadline: proposalDeadline(),
+      });
+      signatureRequest = { action: 'propose_spend', typedData, submit: { to, amount: intent.amount, reason: intent.reason || '' } };
       messageType = 'proposal';
-      if (onChainProposal.resolved) {
-        await poolStore.closeProposal(result.proposalId, { resolved: 'executed', txHash: result.txHash });
-        const { appendSpend } = require('./spendStore');
-        await appendSpend({ userAddress: wallet.address, to, amount: Number(intent.amount), reason: intent.reason || 'Pool spend', txHash: result.txHash, token: 'USDC', type: 'pool_spend' });
-        replyContent = replyContent || `Sent ${intent.amount} USDC to ${to} immediately (under the discretionary threshold). Tx: ${result.txHash}`;
-      } else {
-        replyContent = replyContent || `Proposed ${intent.amount} USDC to ${to}. Everyone has until the objection window closes to object.`;
-      }
+      replyContent = replyContent || `Sign to propose ${intent.amount} USDC to ${to}. It waits out the objection window. Nothing is sent until you sign.`;
     } else if (intent.action === 'propose_amend') {
       const newConstitution = {
         discretionaryThreshold: intent.discretionaryThreshold ?? pool.constitution.discretionaryThreshold,
         objectionWindow: intent.objectionWindowHours != null ? Math.round(Number(intent.objectionWindowHours) * 3600) : pool.constitution.objectionWindow,
         maxSingleProposal: intent.maxSingleProposal ?? pool.constitution.maxSingleProposal,
       };
-      const result = await poolVault.proposeAmendConstitution(wallet.walletId, poolId, wallet.address, newConstitution);
-      const onChainProposal = await poolVault.getProposal(sharedProvider, result.proposalId);
-      await poolStore.recordProposal({ proposalId: result.proposalId, poolId, kind: 'AmendConstitution', windowEnds: onChainProposal.windowEnds, proposer: wallet.address });
-      proposalId = result.proposalId;
+      const typedData = await poolVault.amendTypedData(sharedProvider, {
+        poolId, proposer: wallet.address, constitution: newConstitution, deadline: proposalDeadline(),
+      });
+      signatureRequest = { action: 'propose_amend', typedData, submit: { constitution: newConstitution } };
       messageType = 'proposal';
-      replyContent = replyContent || `Proposed a rules change. Everyone has until the objection window closes to object.`;
+      replyContent = replyContent || 'Sign to propose that rules change. Nothing is sent until you sign.';
     } else if (intent.action === 'propose_remove') {
       const targetMember = await resolveInvite(intent.targetMember);
-      const result = await poolVault.proposeRemoveMember(wallet.walletId, poolId, wallet.address, targetMember);
-      const onChainProposal = await poolVault.getProposal(sharedProvider, result.proposalId);
-      await poolStore.recordProposal({ proposalId: result.proposalId, poolId, kind: 'RemoveMember', windowEnds: onChainProposal.windowEnds, proposer: wallet.address });
-      proposalId = result.proposalId;
+      const typedData = await poolVault.removeTypedData(sharedProvider, {
+        poolId, proposer: wallet.address, targetMember, deadline: proposalDeadline(),
+      });
+      signatureRequest = { action: 'propose_remove', typedData, submit: { targetMember } };
       messageType = 'proposal';
-      replyContent = replyContent || `Proposed removing ${targetMember}. Everyone has until the objection window closes to object.`;
+      replyContent = replyContent || `Sign to propose removing ${targetMember}. Nothing is sent until you sign.`;
     }
 
     const assistantMsg = await poolStore.appendPoolMessage({ poolId, role: 'assistant', content: replyContent, proposalId, messageType });
-    return send(res, 200, { message: assistantMsg });
+    return send(res, 200, { message: assistantMsg, signatureRequest });
   } catch (err) {
     try {
       const poolStore = require('./poolStore');
