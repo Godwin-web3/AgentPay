@@ -3,9 +3,8 @@ const PolicyEngine = require('./policyEngine');
 const walletService = require('./walletService');
 const x402Client = require('./x402Client');
 const escrow = require('./escrow');
-const { appendSpend, appendFailure, getHistory, getJobsCreatedBy } = require('./spendStore');
+const { appendSpend, appendFailure, getHistory } = require('./spendStore');
 const { parseIntent } = require('./brain');
-const jobService = require('./jobService');
 const { fromUnits } = require('../utils/usdc');
 
 // P1-7: off-chain PolicyEngine is now an ADVISORY pre-check only. The
@@ -176,22 +175,6 @@ async function chat(message, walletId, userAddress) {
       intent.data = { pools };
     } catch (e) {
       intent.message = "Could not load your pools: " + e.message;
-    }
-  }
-  if (intent.action === "jobs_status") {
-    try {
-      const jobIds = await getJobsCreatedBy(userAddress);
-      const results = await Promise.allSettled(jobIds.map(id => jobService.getJob(id)));
-      const jobs = results.filter(r => r.status === 'fulfilled').map(r => r.value);
-      if (jobs.length === 0) {
-        intent.message = "You haven't hired any agents yet. Try \"hire an agent to...\" or use the Jobs tab.";
-      } else {
-        const openCount = jobs.filter(j => j.status !== 'Completed' && j.status !== 'Rejected' && j.status !== 'Expired').length;
-        intent.message = `You've hired ${jobs.length} agent job${jobs.length === 1 ? '' : 's'}, ${openCount} still open. See the Jobs tab for deliverables and status.`;
-      }
-      intent.data = { jobs };
-    } catch (e) {
-      intent.message = "Could not load your jobs: " + e.message;
     }
   }
   if (intent.action === "goals_status") {
@@ -501,103 +484,4 @@ async function summarizePaidResult(description, resultData) {
   }
 }
 
-// Shared by performTask (job deliverables) and the "fetch_paid_data" chat
-// action — finds a matching Keryx tool, pays for it via x402, and logs the
-// spend. Returns null only when there's no wallet to pay with; throws
-// (carrying the model's raw tool-pick response) when nothing matched, so
-// callers see WHAT the model said instead of an opaque "no match" that
-// looks identical whether it was a correct "nothing fits" decision or a bug.
-async function payForLiveData(description, walletId, userAddress) {
-  if (!walletId) return null;
-  const picked = await findKeryxTool(description);
-  if (!picked.tool) {
-    throw new Error(`no Keryx tool matched — model said: "${picked.raw}"`);
-  }
-  const tool = picked.tool;
-  const args = await resolveToolArgs(tool, description);
-  const keryxTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Keryx call timeout')), 15000));
-  const res = await Promise.race([
-    payKeryx(tool.id, args),
-    keryxTimeout
-  ]);
-  const paidAmount = res.amount || tool.priceUsd;
-  // This data-purchase cost was previously untracked entirely — nothing
-  // recorded it as spend anywhere. Log it so the real x402 payment is
-  // visible in History, not just implied by the answer text.
-  if (userAddress) {
-    await appendSpend({ userAddress, to: tool.publisherWallet || 'keryx', amount: paidAmount, reason: `Paid data: ${tool.name}`, txHash: res.txHash, token: 'USDC', type: 'x402_fetch' });
-  }
-  // res.data is the full paid-response envelope (tool metadata, quote,
-  // settlement info); `result` is the part actually worth showing a user.
-  return { data: res.data, result: res.data?.result ?? res.data, tool, amount: paidAmount, txHash: res.txHash };
-}
-
-async function performTask(description, walletId, userAddress) {
-  try {
-    const paid = await payForLiveData(description, walletId, userAddress).catch(e => {
-      console.error('[performTask] Keryx call failed, falling back to Groq:', e.message);
-      return null;
-    });
-    if (paid) {
-      const answer = await summarizePaidResult(description, paid.result);
-      return `${answer} (sourced live via Keryx tool "${paid.tool.name}", paid ${paid.amount} USDC)`;
-    }
-    const completion = await groqCompound.chat.completions.create({
-      messages: [
-        { role: 'system', content: 'You are an autonomous agent completing a paid job. Research and answer concisely and factually. Your answer becomes the on-chain deliverable record for this job, so be accurate and brief.' },
-        { role: 'user', content: description },
-      ],
-      model: 'openai/gpt-oss-120b',
-      temperature: 0.2,
-      max_tokens: 512,
-      reasoning_effort: 'low',
-      reasoning_format: 'hidden',
-    });
-    return completion.choices[0]?.message?.content || 'Task completed — no content returned.';
-  } catch (err) {
-    return 'Task execution failed: ' + err.message;
-  }
-}
-
-async function hireAgent(clientWalletId, providerWalletId, evaluatorWalletId, providerAddress, evaluatorAddress, description, budget, userAddress) {
-  try {
-    const { jobId, txHash: createTxHash } = await jobService.createJob(clientWalletId, providerAddress, evaluatorAddress, description);
-    await jobService.setBudget(providerWalletId, jobId, budget);
-    const fundTxHash = await jobService.approveAndFund(clientWalletId, jobId, budget);
-
-    await appendSpend({ userAddress, to: providerAddress, amount: budget, reason: description, txHash: fundTxHash, token: 'USDC', jobId, type: 'job_hire' });
-
-    return { success: true, jobId, status: 'Funded', createTxHash, fundTxHash };
-  } catch (err) {
-    await appendFailure({ userAddress, to: providerAddress, amount: budget, reason: description, blockedReason: err.message });
-    return { success: false, reason: err.message };
-  }
-}
-
-async function completeHiredJob(evaluatorWalletId, jobId, providerWalletId, deliverableText) {
-  const job = await jobService.getJob(jobId);
-  if (!deliverableText || deliverableText === 'work completed') {
-    deliverableText = await performTask(job.description, providerWalletId, job.client);
-  }
-  const { txHash: submitTxHash } = await jobService.submitDeliverable(providerWalletId, jobId, deliverableText);
-  const completeTxHash = await jobService.completeJob(evaluatorWalletId, jobId);
-
-  try {
-    await appendSpend({
-      userAddress: job.client,
-      to: job.provider,
-      amount: job.budget,
-      reason: job.description,
-      txHash: completeTxHash,
-      jobId,
-      type: 'job_deliverable',
-      deliverableText
-    });
-  } catch (err) {
-    console.error('[completeHiredJob] Failed to persist deliverable text:', err.message);
-  }
-
-  return { success: true, submitTxHash, completeTxHash, job, deliverableText };
-}
-
-module.exports = { pay, fetchAndPay, getBalance, getSummary, getUnifiedHistory, chat, hireAgent, completeHiredJob, performTask };
+module.exports = { pay, fetchAndPay, getBalance, getSummary, getUnifiedHistory, chat };

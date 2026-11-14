@@ -17,7 +17,7 @@ export interface ChatMessage {
 }
 
 export interface Intent {
-  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown' | 'fetch_and_pay' | 'hire_agent' | 'deposit'
+  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown' | 'fetch_and_pay' | 'deposit'
   requestId?: string
   to?: string
   amount?: number
@@ -95,7 +95,7 @@ export interface HistoryLog {
 // distinct from the `Intent` interface above, which is the chat brain's
 // single parsed action. An IntentPlan is a multi-step goal decomposition.
 export interface IntentStep {
-  type: 'check_balance' | 'wait_for_condition' | 'pay' | 'hire_agent'
+  type: 'check_balance' | 'wait_for_condition' | 'pay'
   to?: string
   amount?: number
   reason?: string

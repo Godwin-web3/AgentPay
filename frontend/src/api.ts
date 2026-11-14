@@ -111,14 +111,6 @@ export async function cancelSchedule(jobId: string, userId: string): Promise<{ s
   return request<{ success: boolean }>('/schedules/' + jobId, { method: 'DELETE' }, userId)
 }
 
-export async function getMyJobs(userId: string): Promise<{ created: any[]; hired: any[] }> {
-  return request<{ created: any[]; hired: any[] }>('/api/jobs/mine', {}, userId)
-}
-
-export async function getMarketJobs(userId: string): Promise<any> {
-  return request<any>('/market-intel', {}, userId)
-}
-
 export async function checkVault(userId: string): Promise<{ exists: boolean; address: string | null }> {
   return request<{ exists: boolean; address: string | null }>('/vault-check', {}, userId)
 }
@@ -214,29 +206,6 @@ export async function pauseAgent(userId: string): Promise<{ success: boolean; tx
 
 export async function resumeAgent(userId: string): Promise<{ success: boolean; txHash?: string }> {
   return request<{ success: boolean; txHash: string }>('/vault/resume', { method: 'POST' }, userId)
-}
-
-export async function hireAgent(
-  description: string,
-  budget: number,
-  userId: string,
-  providerAddress?: string
-): Promise<any> {
-  return request<any>('/jobs', {
-    method: 'POST',
-    body: JSON.stringify({ description, budget, providerAddress })
-  }, userId)
-}
-
-export async function getJob(jobId: string, userId: string): Promise<any> {
-  return request<any>('/jobs/' + jobId, {}, userId)
-}
-
-export async function completeJob(jobId: string, deliverableText: string, userId: string): Promise<any> {
-  return request<any>('/jobs/' + jobId + '/complete', {
-    method: 'POST',
-    body: JSON.stringify({ deliverableText })
-  }, userId)
 }
 
 export function generateRequestId(): string {

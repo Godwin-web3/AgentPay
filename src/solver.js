@@ -14,7 +14,7 @@
  *     wires it to the real chain/LLM/store implementations.
  */
 
-const PRIMITIVES = ['check_balance', 'wait_for_condition', 'pay', 'hire_agent'];
+const PRIMITIVES = ['check_balance', 'wait_for_condition', 'pay'];
 
 function validatePlan(plan) {
   if (!plan || !Array.isArray(plan.steps) || plan.steps.length === 0) {
@@ -30,10 +30,6 @@ function validatePlan(plan) {
     if (step.type === 'pay') {
       if (typeof step.to !== 'string' || !step.to.startsWith('0x')) throw new Error(`Step ${i} (pay) needs a valid "to" address`);
       if (!(Number(step.amount) > 0)) throw new Error(`Step ${i} (pay) needs a positive "amount"`);
-    }
-    if (step.type === 'hire_agent') {
-      if (!step.description) throw new Error(`Step ${i} (hire_agent) needs a "description"`);
-      if (!(Number(step.budget) > 0)) throw new Error(`Step ${i} (hire_agent) needs a positive "budget"`);
     }
     if (step.type === 'wait_for_condition') {
       if (!step.condition || !step.condition.type) throw new Error(`Step ${i} (wait_for_condition) needs a "condition" with a "type"`);
@@ -61,7 +57,6 @@ Decompose it into a plan graph: an ordered list of steps built ONLY from these p
 - {"type":"wait_for_condition","condition":{"type":"github","repo":"owner/name","number":N,"condition":"merged"}} — block until a PR is merged.
 - {"type":"wait_for_condition","condition":{"type":"weather","city":"...","threshold":N}} — block until precipitation exceeds threshold mm.
 - {"type":"pay","to":"0x...","amount":N,"reason":"..."} — pay N USDC through the user's policy-enforced vault. This is hard-capped on-chain no matter what you plan.
-- {"type":"hire_agent","description":"...","budget":N} — post an escrowed job for another autonomous agent to complete for N USDC.
 
 Rules:
 - Steps run strictly in order; a wait/check step blocks every later step until satisfied.
@@ -99,7 +94,6 @@ async function planFromGoal(goal, walletAddress, usdcBalance) {
 /**
  * Execute one step. `deps` must provide:
  *   pay(to, amount, reason, userAddress) -> {success, txHash, reason}
- *   hireAgent(description, budget, userAddress) -> {success, jobId, reason}
  *   evaluateTrigger(condition) -> {met, proof}
  *   getVaultBalance(userAddress) -> number
  *   commitDecision(requestId, record, summary) -> void (may be a no-op)
@@ -127,15 +121,6 @@ async function runStep(step, ctx, deps) {
       const result = await deps.pay(step.to, step.amount, step.reason || ctx.goal, ctx.userAddress);
       await deps.finalizeDecision(requestId, { success: result.success, txHash: result.txHash, reason: result.reason });
       if (!result.success) throw new Error('pay step failed: ' + result.reason);
-      return { done: true, result };
-    }
-    case 'hire_agent': {
-      const requestId = deps.makeRequestId(ctx.planId, ctx.stepIndex);
-      const record = { goal: ctx.goal, planId: ctx.planId, stepIndex: ctx.stepIndex, step };
-      await deps.commitDecision(requestId, record, `hire agent: ${step.description}`);
-      const result = await deps.hireAgent(step.description, step.budget, ctx.userAddress, step.providerAddress);
-      await deps.finalizeDecision(requestId, { success: result.success, jobId: result.jobId, reason: result.reason });
-      if (!result.success) throw new Error('hire_agent step failed: ' + result.reason);
       return { done: true, result };
     }
     default:

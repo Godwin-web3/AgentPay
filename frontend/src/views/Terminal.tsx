@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, hireAgent, decodePolicyError, depositToVault, getJob } from '../api'
+import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, depositToVault } from '../api'
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -28,13 +28,12 @@ function ProofBadge({ requestId }: { requestId: string }) {
 function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: () => void, onCancel?: () => void }) {
   const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
-  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_hire' || result.status === 'proposing_deposit'
+  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_deposit'
   if (isProposal) {
     let title = 'TX PROPOSAL'
     let detail = ''
     if (result.status === 'proposing_pay') { title = 'PAYMENT PROPOSAL'; detail = `${result.amount} ${result.token || 'USDC'} -> ${result.to?.slice(0, 10)}...` }
     else if (result.status === 'proposing_schedule') { title = 'SCHEDULE PAYMENT'; detail = `${result.amount} USDC to ${result.to?.slice(0, 10)}... / ${result.interval}` }
-    else if (result.status === 'proposing_hire') { title = 'HIRE AGENT'; detail = `${result.description} — budget ${result.budget} USDC` }
     else if (result.status === 'proposing_deposit') { title = 'VAULT DEPOSIT'; detail = `${result.amount} USDC` }
     return (
       <div style={{ marginTop: 10, border: '1px solid var(--cyan)', background: 'rgba(79,219,200,0.04)', padding: '12px 14px', fontFamily: 'var(--font-mono)' }}>
@@ -63,16 +62,6 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
           {result.txHash && <div style={{ fontSize: 10, color: 'var(--muted)' }}>TX {result.txHash.slice(0, 18)}... -&gt;</div>}
           <div style={{ marginTop: 4, fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>FINALIZED IN &lt; 1s — ARC TESTNET</div>
         </a>
-        {result.type === 'hire' && !result.deliverableText && (
-          <div style={{ marginTop: 6, fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-mono)', padding: '8px 14px' }}>
-            Waiting for delivery...
-          </div>
-        )}
-        {result.deliverableText && (
-          <div style={{ marginTop: 6, fontSize: 12, color: 'var(--text)', fontFamily: 'var(--font-body)', padding: '10px 14px', border: '1px solid var(--border)', background: 'var(--bg-card)', whiteSpace: 'pre-wrap' }}>
-            {result.deliverableText}
-          </div>
-        )}
       </div>
     )
   }
@@ -114,54 +103,6 @@ function PolicyCard({ data }: { data: any }) {
           <span style={{ color: k === 'STATUS' ? (data.active ? 'var(--cyan)' : 'var(--danger)') : 'var(--text)' }}>{v}</span>
         </div>
       ))}
-    </div>
-  )
-}
-
-function MarketCard({ data }: { data: any }) {
-  if (!data?.market) return null
-  const m = data.market
-  return (
-    <div style={{ marginTop: 10, border: '1px solid var(--border)', padding: '12px 14px', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2 }}>ARC JOB MARKET</div>
-        <div style={{ fontSize: 9, color: 'var(--muted)' }}>LIVE</div>
-      </div>
-      {[['TOTAL_JOBS', m.totalJobs], ['AVG_BUDGET', m.averageBudget], ['TOTAL_VOLUME', m.totalVolumeUSDC + ' USDC'], ['OPEN', m.statusBreakdown?.Open || 0], ['COMPLETED', m.statusBreakdown?.Completed || 0]].map(([k, v]) => (
-        <div key={String(k)} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-          <span style={{ color: 'var(--muted)' }}>{k}</span>
-          <span style={{ color: 'var(--text)' }}>{String(v)}</span>
-        </div>
-      ))}
-      {m.topProviders?.length > 0 && (
-        <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-          <div style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: 1, marginBottom: 6 }}>TOP PROVIDERS</div>
-          {m.topProviders.map((p: any) => (
-            <div key={p.address} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ color: 'var(--muted)' }}>{p.address.slice(0, 12)}...</span>
-              <span style={{ color: 'var(--cyan)' }}>{p.jobCount} jobs</span>
-            </div>
-          ))}
-        </div>
-      )}
-      {data.recentJobs?.length > 0 && (
-        <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-          <div style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: 1, marginBottom: 6 }}>RECENT JOBS</div>
-          {data.recentJobs.slice(0, 5).map((j: any) => (
-            <div key={j.id} style={{ marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                <span style={{ color: 'var(--muted)', fontSize: 10 }}>#{j.id}</span>
-                <span style={{ color: j.status === 'Completed' ? 'var(--cyan)' : j.status === 'Open' ? 'var(--warning)' : 'var(--muted)', fontSize: 10 }}>{j.status}</span>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text)', marginBottom: 2 }}>{j.description}</div>
-              <div style={{ fontSize: 10, color: 'var(--muted)' }}>{j.budget} USDC</div>
-            </div>
-          ))}
-        </div>
-      )}
-      <div style={{ marginTop: 8, fontSize: 9, color: 'var(--muted)', borderTop: '1px solid var(--border)', paddingTop: 8 }}>
-        PAID VIA X402 — 0.001 USDC — ARC TESTNET
-      </div>
     </div>
   )
 }
@@ -232,23 +173,6 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         const intervalSec = parseInterval(prop.interval)
         const schedRes = await createOnChainSchedule(prop.to, prop.amount, intervalSec, prop.reason || '', userId, prop.conditions?.minBalance || 0)
         res = { status: 'executed', txHash: schedRes.txHash, explorer: schedRes.explorer, type: 'schedule', to: prop.to, amount: prop.amount }
-      } else if (prop.status === 'proposing_hire') {
-        const hireRes = await hireAgent(prop.description, prop.budget, userId)
-        res = { status: hireRes.success ? 'executed' : 'rejected', txHash: hireRes.fundTxHash || hireRes.createTxHash, explorer: 'https://testnet.arcscan.app/tx/' + (hireRes.fundTxHash || hireRes.createTxHash || ''), type: 'hire', to: prop.to, amount: prop.budget, reason: hireRes.reason || '', jobId: hireRes.jobId }
-        if (hireRes.success && hireRes.jobId) {
-          const poll = async (attempt: number) => {
-            if (attempt > 20) return
-            try {
-              const job = await getJob(hireRes.jobId, userId)
-              if (job.deliverableText) {
-                setTxResults(r => ({ ...r, [msgIdx]: { ...r[msgIdx], deliverableText: job.deliverableText } }))
-                return
-              }
-            } catch {}
-            setTimeout(() => poll(attempt + 1), 4000)
-          }
-          setTimeout(() => poll(0), 4000)
-        }
       }
       if (res) {
         setTxResults(r => ({ ...r, [msgIdx]: res }))
@@ -280,26 +204,6 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
       getVaultBalanceApi(userId)
         .then(res => setMessages(prev => [...prev, { role: 'assistant', content: `Vault: ${res.balance} USDC — Worker online — Policy active`, timestamp: Date.now() }]))
         .catch(() => setMessages(prev => [...prev, { role: 'assistant', content: 'Failed to fetch status.', timestamp: Date.now() }]))
-      return
-    }
-    if (text.toLowerCase() === '/market' || text.toLowerCase() === 'market') {
-      const userMsg: ChatMessage = { role: 'user', content: text, timestamp: Date.now() }
-      setMessages(prev => [...prev, userMsg])
-      setInput('')
-      setLoading(true)
-      try {
-        const apiBase = import.meta.env.VITE_API_URL || 'https://agentpay-c4o7.onrender.com'
-        setMessages(prev => [...prev, { role: 'assistant', content: 'Fetching Arc job market...\nEndpoint requires 0.001 USDC — agent paying via x402...', timestamp: Date.now() }])
-        const marketRes = await fetch(`${apiBase}/market-intel`, {
-          headers: { 'x-user-id': userId, 'x-api-key': import.meta.env.VITE_APP_API_KEY || '' }
-        })
-        const marketData = await marketRes.json()
-        setMessages(prev => [...prev, { role: 'assistant', content: 'Arc job market intelligence — paid via x402', timestamp: Date.now(), data: marketData, intent: { action: 'market' } as any }])
-      } catch (err: any) {
-        setMessages(prev => [...prev, { role: 'assistant', content: 'Market fetch failed: ' + err.message, timestamp: Date.now() }])
-      } finally {
-        setLoading(false)
-      }
       return
     }
     const userMsg: ChatMessage = { role: 'user', content: text, timestamp: Date.now() }
@@ -334,7 +238,6 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
               .then(() => { setTxResults(r => ({ ...r, [msgIndex]: { status: 'policy_updated' } })); if (onActionSuccess) onActionSuccess() })
               .catch(err => setTxResults(r => ({ ...r, [msgIndex]: { status: 'failed', reason: err.message } })))
           }
-          if (intent.action === 'hire_agent' && intent.description) setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_hire', description: intent.description, budget: intent.budget || 0, to: intent.to } }))
           if (intent.action === 'fetch_and_pay') {
             const chatRes: any = res
             if (chatRes.result) setTxResults(prev => ({ ...prev, [msgIndex]: chatRes.result.success ? { status: 'executed', type: 'fetch', to: chatRes.result.actualPayTo || intent.url, amount: chatRes.result.actualAmount || intent.maxAmount, txHash: 'x402' } : { status: 'rejected', reason: chatRes.result.reason || 'fetch failed' } }))
@@ -377,7 +280,6 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
               {msg.role === 'assistant' && msg.intent?.requestId && <ProofBadge requestId={msg.intent.requestId} />}
               {msg.role === 'assistant' && (msg as any).data && (msg as any).intent?.action === 'balance' && <BalanceCard data={(msg as any).data} />}
               {msg.role === 'assistant' && (msg as any).data && (msg as any).intent?.action === 'policy' && <PolicyCard data={(msg as any).data} />}
-              {msg.role === 'assistant' && (msg as any).data && (msg as any).intent?.action === 'market' && <MarketCard data={(msg as any).data} />}
               {msg.role === 'assistant' && (txResults[i] || (msg as any).result) && (
                 <div style={{ marginTop: 10 }}>
                   <TxBadge result={txResults[i] || (msg as any).result} onConfirm={() => handleConfirm(i)} onCancel={() => handleCancel(i)} />
@@ -394,14 +296,14 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         )}
       </div>
       <div className="quick-actions">
-        {[{ label: 'SEND', value: 'Send 1 USDC to ', auto: false }, { label: 'MARKET', value: '/market', auto: true }, { label: 'BALANCE', value: 'What is my vault balance?', auto: true }, { label: 'HIRE', value: 'Hire an agent to ', auto: false }].map(btn => (
+        {[{ label: 'SEND', value: 'Send 1 USDC to ', auto: false }, { label: 'BALANCE', value: 'What is my vault balance?', auto: true }, { label: 'SCHEDULE', value: 'Pay 1 USDC every day to ', auto: false }].map(btn => (
           <button key={btn.label} className="quick-btn" disabled={loading} onClick={() => { if (btn.auto) { handleSend(btn.value) } else { setInput(btn.value); inputRef.current?.focus() } }}>
             {btn.label}
           </button>
         ))}
       </div>
       <div className="input-area">
-        <textarea ref={inputRef} className="chat-input" placeholder="send, pay, hire, /market..." value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '120px' }} />
+        <textarea ref={inputRef} className="chat-input" placeholder="send, pay, schedule..." value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '120px' }} />
         <button className="send-btn icon-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>SEND</button>
       </div>
     </div>

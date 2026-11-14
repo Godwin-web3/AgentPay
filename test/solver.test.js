@@ -43,10 +43,6 @@ function makeDeps(overrides = {}) {
       calls.push({ fn: 'pay', to, amount, reason, userAddress });
       return { success: true, txHash: '0xdeadbeef' };
     },
-    hireAgent: async (description, budget, userAddress) => {
-      calls.push({ fn: 'hireAgent', description, budget, userAddress });
-      return { success: true, jobId: '42' };
-    },
     commitDecision: async (requestId, record, summary) => {
       calls.push({ fn: 'commitDecision', requestId, record, summary });
     },

@@ -5,7 +5,6 @@ import AgentHeader from './components/AgentHeader'
 import ErrorBoundary from './components/ErrorBoundary'
 import Terminal from './views/Terminal'
 import Policy from './views/Policy'
-import Jobs from './views/Jobs'
 import Agent from './views/Agent'
 import Goals from './views/Goals'
 import Pools from './views/Pools'
@@ -18,7 +17,7 @@ import { PaymentRequestView } from './views/PaymentRequestView'
 import type { ChatMessage } from './types'
 import { getTokenBalances, checkVault, getWallet, getVaultAddress, getVaultBalance } from './api'
 
-type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'jobs' | 'agent' | 'goals' | 'pools' | 'requests'
+type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'agent' | 'goals' | 'pools' | 'requests'
 
 const TerminalIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -56,12 +55,6 @@ const PoolIcon = () => (
     <line x1="14.5" y1="14" x2="17.5" y2="16.5"/>
   </svg>
 )
-const JobsIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="7" width="18" height="13" rx="2" ry="2"/>
-    <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/>
-  </svg>
-)
 const AgentIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="4" y="8" width="16" height="12" rx="2" ry="2"/>
@@ -81,7 +74,6 @@ const navItems = [
   { id: 'requests', icon: RequestIcon, label: 'Requests' },
   { id: 'goals', icon: GoalIcon, label: 'Goals' },
   { id: 'pools', icon: PoolIcon, label: 'Pools' },
-  { id: 'jobs', icon: JobsIcon, label: 'Jobs' },
   { id: 'agent', icon: AgentIcon, label: 'Agent' },
   { id: 'history',   icon: HistoryIcon,  label: 'History'   },
   { id: 'account',   icon: AccountIcon,  label: 'Account'   },
@@ -94,6 +86,7 @@ function App({ tag }: { tag: string | null }) {
     const stored = localStorage.getItem('agentpay_view')
     // Schedules was folded into Goals — a stale stored value would otherwise render a blank view.
     if (stored === 'schedules') return 'goals'
+    if (stored === 'jobs' || stored === 'marketplace') return 'terminal'
     return (stored as View) || 'landing'
   })
 
@@ -306,7 +299,6 @@ function App({ tag }: { tag: string | null }) {
             {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} userId={userId} />}
             {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={vaultAddress || agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
-            {view === 'jobs' && <Jobs userAddress={userAddress} userId={userId} />}
             {view === 'goals' && <Goals userAddress={userAddress} userId={userId} />}
             {view === 'pools' && <Pools userAddress={userAddress} userId={userId} />}
             {view === 'agent' && <Agent />}

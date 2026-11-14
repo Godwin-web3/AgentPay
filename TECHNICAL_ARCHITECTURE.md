@@ -10,15 +10,15 @@ AI interprets intent and proposes actions. Deterministic policy and execution sy
 
 ### 1. Intent Layer
 - Off-chain. Natural language is parsed in the Node.js backend (src/brain.js and related). Groq / Llama produces structured intents.
-- Structured output is limited to known actions (pay, schedule, hire_agent, etc.). See frontend/src/types.ts Intent interface.
+- Structured output is limited to known actions (pay, schedule, deposit, etc.). See frontend/src/types.ts Intent interface.
 - PaymentRequest (src/payments/PaymentRequest.js) is the structured form for request-payment flows. Creating or sharing a request does not move funds.
 - No financial authority lives here.
 
 ### 2. Intelligence and Planning Layer
-- src/solver.js decomposes goals into ordered plans using a fixed set of primitives (check_balance, wait_for_condition, pay, hire_agent).
+- src/solver.js decomposes goals into ordered plans using a fixed set of primitives (check_balance, wait_for_condition, pay).
 - validatePlan() rejects unknown primitives before execution.
 - Triggers (src/triggers.js) evaluate external conditions (price, GitHub, weather). These are advisory.
-- Plans that include pay or hire_agent still route through AgentVault or the escrow contract. Bad plans fail safely because of the on-chain limits.
+- Plans that include pay still route through AgentVault. Bad plans fail safely because of the on-chain limits.
 - Execution adapters (src/adapters/) can be called from the planner for propose() and estimate() only.
 
 ### 3. Policy and Authorization Layer
@@ -59,7 +59,7 @@ AI interprets intent and proposes actions. Deterministic policy and execution sy
 - Additional adapters for swaps, bridges, or multi-network routing.
 - Full frontend payment-request creation, shareable links, and receipt views.
 - DeFi protocol integrations with risk explanations.
-- Public API / SDK surface for external agents beyond the existing worker and marketplace daemon.
+- Public API / SDK surface for external agents beyond the existing worker.
 - Verifiable inference (explicitly stubbed in src/arcAi.js).
 
 ## Next Concrete Steps

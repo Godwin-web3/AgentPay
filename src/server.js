@@ -493,139 +493,6 @@ async function handleIntelligence(req, res) {
 
 
 
-// Check for jobs where AgentPay is the hired provider (Funded, not yet submitted)
-async function checkHiredJobs() {
-  const agentAddress = (process.env.AGENT_ADDRESS || '').toLowerCase();
-  if (!agentAddress) return { checked: 0, submitted: [] };
-
-  const { getActiveUsers, getJobsCreatedBy } = require('./spendStore');
-  const jobService = require('./jobService');
-  const wallets = await walletStore.getAllWallets();
-  const users = await getActiveUsers();
-
-  const allJobIds = new Set();
-  for (const uid of users) {
-    const jobIds = await getJobsCreatedBy(uid);
-    jobIds.forEach(id => allJobIds.add(id));
-  }
-
-  const submitted = [];
-  let checked = 0;
-
-  for (const jobId of allJobIds) {
-    try {
-      const job = await jobService.getJob(jobId);
-      if (!job.provider || job.provider.toLowerCase() !== agentAddress || job.status !== 'Funded') continue;
-      checked++;
-
-      console.log('[HiredCheck] Found job ' + jobId + ' hiring AgentPay, submitting deliverable...');
-      const providerWalletId = process.env.AGENT_WALLET_ID;
-
-      const evaluatorEntry = Object.values(wallets).find(
-        w => w.address && w.address.toLowerCase() === job.evaluator.toLowerCase()
-      );
-
-      if (!evaluatorEntry) {
-        console.error('[HiredCheck] Could not resolve evaluator walletId for job ' + jobId);
-        continue;
-      }
-
-      const result = await require('./agent').completeHiredJob(
-        evaluatorEntry.walletId, jobId, providerWalletId, 'work completed'
-      );
-      submitted.push({ jobId, txHash: result.completeTxHash });
-      console.log('[HiredCheck] Submitted deliverable for job ' + jobId);
-    } catch (err) {
-      console.error('[HiredCheck] Job ' + jobId + ' submission failed:', err.message);
-    }
-  }
-
-  return { checked, submitted };
-}
-
-// GET /jobs/check-hired — manual trigger to check + auto-fulfill jobs hiring AgentPay
-async function handleCheckHiredJobs(req, res) {
-  try {
-    const result = await checkHiredJobs();
-    return send(res, 200, result);
-  } catch (err) {
-    return send(res, 500, { error: err.message });
-  }
-}
-
-async function fetchMarketData() {
-  const jobService = require('./jobService');
-  const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Market data fetch timeout')), 25000));
-  const jobs = await Promise.race([jobService.getRecentJobs(), timeout]);
-  const STATUS = ['Open', 'Funded', 'Submitted', 'Completed', 'Rejected', 'Expired'];
-  const funded = jobs.filter(j => j.status !== 'Open' && Number(j.budget) > 0);
-  const totalBudget = funded.reduce((sum, j) => sum + Number(j.budget), 0);
-  const avgBudget = funded.length ? (totalBudget / funded.length).toFixed(2) : '0.00';
-  const statusCounts = {};
-  STATUS.forEach(s => statusCounts[s] = 0);
-  jobs.forEach(j => statusCounts[j.status]++);
-  const providerCounts = {};
-  jobs.forEach(j => { if (j.provider !== '0x0000000000000000000000000000000000000000') providerCounts[j.provider] = (providerCounts[j.provider] || 0) + 1; });
-  const topProviders = Object.entries(providerCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([address, jobCount]) => ({ address, jobCount }));
-  return { market: { totalJobs: jobs.length, statusBreakdown: statusCounts, averageBudget: avgBudget + ' USDC', totalVolumeUSDC: totalBudget.toFixed(2), topProviders, lastUpdated: new Date().toISOString() }, recentJobs: jobs.slice(0, 30) };
-}
-
-// GET /market-intel — internal proxy, frontend calls this, backend fetches and returns market data
-async function handleMarketIntel(req, res) {
-  try {
-    const data = await fetchMarketData();
-    return send(res, 200, data);
-  } catch (err) {
-    return send(res, 500, { error: err.message });
-  }
-}
-
-// GET /api/market/jobs — live Arc job market intelligence (x402 gated)
-async function handleMarketJobs(req, res) {
-  try {
-    const data = await fetchMarketData();
-    return send(res, 200, { ...data, payer: req.payment?.payer, amount: req.payment?.amount });
-  } catch (err) {
-    return send(res, 500, { error: err.message });
-  }
-}
-
-// POST /jobs (hire an agent via ERC-8183 escrow)
-async function handleHireAgent(req, res) {
-  const userId = getUserId(req);
-  const { description, budget, providerAddress } = req.body || {};
-
-  try {
-    const wallet = await getOrCreateWallet(userId);
-    const agentWalletId = process.env.AGENT_WALLET_ID;
-    const agentAddress = process.env.AGENT_ADDRESS;
-    const provider = providerAddress || agentAddress;
-    const providerWalletId = providerAddress ? null : agentWalletId;
-
-    const result = await require('./agent').hireAgent(
-      wallet.walletId, providerWalletId, wallet.walletId,
-      provider, wallet.address, description, budget, userId
-    );
-    return send(res, 200, result);
-  } catch (err) {
-    return send(res, 500, { error: err.message });
-  }
-}
-
-// GET /jobs/:id
-async function handleGetJob(req, res) {
-  try {
-    const job = await require('./jobService').getJob(req.params.id);
-    const { getHistory } = require('./spendStore');
-    const history = await getHistory(null, 500);
-    const deliverable = history.find(tx => tx.jobId === req.params.id && tx.type === 'job_deliverable');
-    if (deliverable) job.deliverableText = deliverable.deliverableText;
-    return send(res, 200, job);
-  } catch (err) {
-    return send(res, 500, { error: err.message });
-  }
-}
-
 // ── Pools (contracts/PoolVault.sol) ─────────────────────────────────────────
 // A pool is a shared-money group (roommates, small teams, trip funds) a user
 // opts into creating — personal AgentVault usage is completely unaffected.
@@ -967,33 +834,6 @@ async function handleGetPoolChat(req, res) {
   }
 }
 
-// POST /agent/deliver — receives a deliverable's real text from a PARTNER
-// AgentPay deployment that just submitted the on-chain hash for a job it's
-// the provider on (see scripts/marketplace-agent.js pushDeliverableToPartner).
-// Authenticated with a dedicated shared secret (MARKETPLACE_API_KEY), never
-// with this deployment's own APP_API_KEY.
-async function handleAgentDeliver(req, res) {
-  const key = req.headers['x-marketplace-key'] || '';
-  const expected = process.env.MARKETPLACE_API_KEY || '';
-  if (!expected || key !== expected) {
-    return send(res, 401, { error: 'Unauthorized: invalid or missing marketplace key' });
-  }
-  const { jobId, deliverableText, providerAddress } = req.body || {};
-  if (!jobId || !deliverableText || !providerAddress) {
-    return send(res, 400, { error: 'jobId, deliverableText and providerAddress are required' });
-  }
-  try {
-    const job = await require('./jobService').getJob(jobId);
-    if (job.provider.toLowerCase() !== String(providerAddress).toLowerCase()) {
-      return send(res, 400, { error: 'providerAddress does not match the job\'s on-chain provider' });
-    }
-    const doc = await require('./deliverableStore').putDeliverable(jobId, { deliverableText, providerAddress });
-    return send(res, 200, { received: true, jobId, receivedAt: doc.receivedAt });
-  } catch (err) {
-    return send(res, 500, { error: err.message });
-  }
-}
-
 // POST /intent — state a goal; the intent solver decomposes it into a plan
 // graph and starts executing what it can right away (see src/solver.js /
 // src/intentEngine.js). Blocking steps (wait_for_condition, check_balance)
@@ -1044,22 +884,6 @@ async function handleGetDecision(req, res) {
     const decisionLog = require('./decisionLog');
     const decision = await decisionLog.getDecision(sharedProvider, req.params.requestId);
     return send(res, 200, decision);
-  } catch (err) {
-    return send(res, 500, { error: err.message });
-  }
-}
-
-// POST /jobs/:id/complete
-async function handleCompleteJob(req, res) {
-  const userId = getUserId(req);
-  const { deliverableText } = req.body || {};
-  try {
-    const wallet = await getOrCreateWallet(userId);
-    const agentWalletId = process.env.AGENT_WALLET_ID;
-    const result = await require('./agent').completeHiredJob(
-      wallet.walletId, req.params.id, agentWalletId, deliverableText || 'work completed'
-    );
-    return send(res, 200, result);
   } catch (err) {
     return send(res, 500, { error: err.message });
   }
@@ -1213,15 +1037,6 @@ app.use((req, res, next) => {
     '/api/auth/login',
     '/api/me',
     '/api/tag/claim',
-    '/api/market/jobs',
-    '/market-intel',
-    '/api/jobs/mine',
-    '/api/agent-stats',
-    // Agent-to-agent marketplace push (scripts/marketplace-agent.js on a
-    // PARTNER deployment). Authenticated separately, below, with its own
-    // shared secret — APP_API_KEY is this deployment's Worker<->Render
-    // secret and must never be handed to an external operator.
-    '/agent/deliver',
   ];
   const normalizedPath = req.path.endsWith('/') ? req.path.slice(0, -1) : req.path;
   if (exempt.includes(normalizedPath) || normalizedPath.startsWith('/api/tag/')) return next();
@@ -1371,10 +1186,6 @@ app.get('/onchain-schedules', handleGetOnChainSchedules);
 app.post('/onchain-schedules', handleCreateOnChainSchedule);
 app.delete('/onchain-schedules/:index', handleCancelOnChainSchedule);
 app.post('/log-transaction', handleLogTransaction);
-app.post('/jobs', handleHireAgent);
-app.get('/jobs/:id', handleGetJob);
-app.post('/jobs/:id/complete', handleCompleteJob);
-app.post('/agent/deliver', handleAgentDeliver);
 app.post('/intent', handleCreateIntent);
 app.get('/intent/:id', handleGetIntent);
 app.get('/intents', handleListIntents);
@@ -1396,78 +1207,6 @@ app.post('/proposals/:proposalId/veto', handleVetoProposal);
 app.post('/pools/:poolId/chat', handlePoolChatMessage);
 app.get('/pools/:poolId/chat', handleGetPoolChat);
 app.post('/intelligence', gateway.require('$0.001'), handleIntelligence);
-app.get('/api/jobs/mine', async (req, res) => {
-  try {
-    const uid = req.headers['x-user-id'];
-    if (!uid) return res.status(401).json({ error: 'Not authenticated' });
-
-    const { getJobsCreatedBy } = require('./spendStore');
-    const createdIds = await getJobsCreatedBy(uid);
-
-    const jobService = require('./jobService');
-    const withTimeout = (promise, ms) => Promise.race([
-      promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
-    ]);
-
-    const jobResults = await Promise.allSettled(
-      createdIds.map(jobId => withTimeout(jobService.getJob(jobId), 8000).then(job => ({ jobId, job })))
-    );
-
-    const created = [];
-    jobResults.forEach((r, i) => {
-      if (r.status === 'fulfilled') {
-        created.push({ jobId: r.value.jobId, role: 'client', ...r.value.job });
-      } else {
-        console.error('[jobs/mine] failed to fetch job', createdIds[i], r.reason.message);
-      }
-    });
-
-    const agentAddress = (process.env.AGENT_ADDRESS || '').toLowerCase();
-    const { getActiveUsers } = require('./spendStore');
-    const activeUsers = await getActiveUsers();
-    const allJobIdsSet = new Set();
-    for (const activeUid of activeUsers) {
-      const ids = await getJobsCreatedBy(activeUid);
-      ids.forEach(id => allJobIdsSet.add(id));
-    }
-    const hiredResults = await Promise.allSettled(
-      [...allJobIdsSet].map(jobId => withTimeout(jobService.getJob(jobId), 8000).then(job => ({ jobId, job })))
-    );
-    const hiredJobs = [];
-    hiredResults.forEach(r => {
-      if (r.status === 'fulfilled' && r.value.job.provider && r.value.job.provider.toLowerCase() === agentAddress) {
-        hiredJobs.push({ jobId: r.value.jobId, ...r.value.job });
-      }
-    });
-
-    res.status(200).json({ created, hired: hiredJobs });
-  } catch (err) {
-    console.error('[jobs/mine] error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/agent-stats', (req, res) => {
-  try {
-    const fs = require('fs');
-    const path = require('path');
-    const agents = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'registered_agents.json')));
-    const activity = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'registered_provider_activity.json')));
-    return send(res, 200, {
-      registeredCount: agents.length,
-      activeAgentsWithJobs: activity.length,
-      overlap: activity
-    });
-  } catch (err) {
-    return send(res, 500, { error: err.message });
-  }
-});
-
-app.get('/api/market/jobs', gateway.require('$0.001'), handleMarketJobs);
-app.get('/market-intel', handleMarketIntel);
-app.get('/jobs/check-hired', handleCheckHiredJobs);
-
 async function handleScheduleStats(req, res) {
   try {
     const userId = getUserId(req);
@@ -1568,15 +1307,6 @@ module.exports = { startServer };
       }
     } catch (err) {
       console.error('Keeper error:', err.message);
-    }
-
-    try {
-      const hiredResult = await checkHiredJobs();
-      if (hiredResult.submitted.length > 0) {
-        console.log('[HiredCheck] Auto-submitted ' + hiredResult.submitted.length + ' deliverable(s)');
-      }
-    } catch (err) {
-      console.error('[HiredCheck] error:', err.message);
     }
   }
   setInterval(runKeeper, 60000);

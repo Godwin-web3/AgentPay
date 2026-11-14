@@ -29,7 +29,6 @@ function stepStatus(plan: IntentPlan, idx: number): 'pending' | 'waiting' | 'don
 function stepLabel(step: IntentStep): string {
   switch (step.type) {
     case 'pay': return `Pay ${step.amount} USDC to ${step.to}`
-    case 'hire_agent': return `Hire an agent: ${step.description} (${step.budget} USDC)`
     case 'check_balance': return `Wait until vault balance ≥ ${step.minBalance} USDC`
     case 'wait_for_condition': return `Wait for condition: ${JSON.stringify(step.condition)}`
     default: return step.type
@@ -118,7 +117,7 @@ function PlanCard({ plan, userId }: { plan: IntentPlan, userId: string }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {plan.steps.map((step, idx) => {
             const status = stepStatus(plan, idx)
-            const isMoneyStep = step.type === 'pay' || step.type === 'hire_agent'
+            const isMoneyStep = step.type === 'pay'
             return (
               <div key={idx} style={{ padding: '8px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 4 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>

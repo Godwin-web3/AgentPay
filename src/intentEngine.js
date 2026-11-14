@@ -1,5 +1,5 @@
 // src/intentEngine.js — wires src/solver.js's pure plan executor to the real
-// AgentPay primitives: agent.pay / agent.hireAgent (which already route
+// AgentPay primitives: agent.pay (which already routes
 // through AgentVault's on-chain policy — see src/agent.js), triggers.js for
 // wait_for_condition, escrow.js for vault balance reads, and decisionLog.js
 // for the on-chain decision-provenance commit/finalize.
@@ -34,13 +34,6 @@ function buildDeps(walletId) {
     },
     evaluateTrigger: (condition) => evaluateTrigger(condition),
     pay: async (to, amount, reason, userAddress) => agent.pay(walletId, to, amount, reason, userAddress),
-    hireAgent: async (description, budget, userAddress, providerAddress) => {
-      const agentWalletId = process.env.AGENT_WALLET_ID;
-      const agentAddress = process.env.AGENT_ADDRESS;
-      const provider = providerAddress || agentAddress;
-      const providerWalletId = providerAddress ? null : agentWalletId;
-      return agent.hireAgent(walletId, providerWalletId, walletId, provider, userAddress, description, budget, userAddress);
-    },
     commitDecision: async (requestId, record, summary) => {
       try {
         await decisionLog.commitDecision(wallet, requestId, record, summary);

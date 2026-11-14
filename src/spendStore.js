@@ -160,14 +160,6 @@ async function getActiveUsers() {
   return snapshot.docs.map(doc => doc.data().address);
 }
 
-async function getJobsCreatedBy(userAddress) {
-  const snap = await db.collection(COLLECTION)
-    .where('userAddress', '==', userAddress)
-    .where('type', '==', 'job_hire')
-    .get();
-  return snap.docs.map(doc => doc.data().jobId).filter(Boolean);
-}
-
 async function getScheduleStats(userAddress) {
   let query = db.collection(COLLECTION).where('isScheduled', '==', true);
   if (userAddress) query = query.where('userAddress', '==', userAddress);
@@ -189,7 +181,6 @@ module.exports = {
   appendSwap,
   appendFailure,
   appendInference,
-  getJobsCreatedBy,
   getTodaySpend,
   getLastHourTxCount,
   getConsecutiveFailures,

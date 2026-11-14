@@ -10,7 +10,6 @@ frontend/.env.local
 # Runtime stores (contain user wallet ids, spend logs, schedules)
 data/*.json
 artifacts/*-deployment.json
-config/agentDirectory.json
 
 # Build
 node_modules/
