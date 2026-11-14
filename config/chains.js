@@ -6,6 +6,7 @@ const CHAINS = {
   arc: {
     id: 'arc',
     name: 'Arc Testnet',
+    testnet: true,
     chainId: 5042002,
     rpc: 'https://rpc.testnet.arc.network',
     ws: 'wss://rpc.testnet.arc.network',
@@ -27,7 +28,28 @@ const CHAINS = {
   },
   base: {
     id: 'base',
+    name: 'Base Sepolia',
+    testnet: true,
+    chainId: 84532,
+    rpc: 'https://sepolia.base.org',
+    ws: null,
+    explorer: 'https://sepolia.basescan.org',
+    gasSymbol: 'ETH',
+    gasDecimals: 18,
+    stable: {
+      symbol: 'USDC',
+      address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+      decimals: 6,
+    },
+    weth: '0x4200000000000000000000000000000000000006',
+    swapRouter: '0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4',
+    quoter: '0xC5290058841028F1614F3A6F0F5816cAd0df5E27',
+    gateway: null,
+  },
+  'base-mainnet': {
+    id: 'base-mainnet',
     name: 'Base',
+    testnet: false,
     chainId: 8453,
     rpc: 'https://mainnet.base.org',
     ws: null,
@@ -47,6 +69,7 @@ const CHAINS = {
   ethereum: {
     id: 'ethereum',
     name: 'Ethereum',
+    testnet: false,
     chainId: 1,
     rpc: 'https://ethereum.publicnode.com',
     ws: null,
@@ -66,6 +89,7 @@ const CHAINS = {
   robinhood: {
     id: 'robinhood',
     name: 'Robinhood Chain',
+    testnet: false,
     chainId: 4663,
     rpc: 'https://rpc.mainnet.chain.robinhood.com',
     ws: null,
@@ -87,7 +111,9 @@ const CHAINS = {
 
 const ALIASES = {
   'arc testnet': 'arc',
-  'base mainnet': 'base',
+  'base mainnet': 'base-mainnet',
+  'base sepolia': 'base',
+  sepolia: 'base',
   eth: 'ethereum',
   mainnet: 'ethereum',
   'robinhood chain': 'robinhood',

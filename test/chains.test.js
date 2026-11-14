@@ -3,10 +3,13 @@ const { CHAINS, resolveChainId } = require('../config/chains');
 const { validatePlan } = require('../src/solver');
 
 assert.equal(resolveChainId('base'), 'base');
-assert.equal(resolveChainId('Robinhood Chain'), 'robinhood');
-assert.equal(resolveChainId('8453'), 'base');
+assert.equal(resolveChainId('Base Sepolia'), 'base');
+assert.equal(resolveChainId('84532'), 'base');
+assert.equal(resolveChainId('8453'), 'base-mainnet');
 assert.equal(CHAINS.arc.stable.decimals, 6);
-assert.equal(CHAINS.base.chainId, 8453);
+assert.equal(CHAINS.base.chainId, 84532);
+assert.equal(CHAINS.base.testnet, true);
+assert.equal(CHAINS['base-mainnet'].testnet, false);
 assert.equal(CHAINS.base.stable.symbol, 'USDC');
 assert.equal(CHAINS.robinhood.stable.symbol, 'USDG');
 assert.equal(CHAINS.robinhood.chainId, 4663);

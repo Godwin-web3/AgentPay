@@ -30,7 +30,7 @@ Deposit own funds into own vault (NOT a payment, no spend policy applies):
 {"action":"deposit","amount":0.01,"message":"..."}
 Recurring / scheduled payment (interval is a human string like "1 day", "6 hours", "30 minutes"):
 {"action":"schedule","to":"0x...","amount":0.01,"interval":"1 day","reason":"...","conditions":{"minBalance":0.5,"executeOnce":false},"message":"..."}
-Swap the vault stable for ETH. chain is "base", "ethereum", "robinhood", or "arc". Use "USDG" as fromAsset only on robinhood. Do not invent a recipient.
+Swap the vault stable for ETH. "base" means Base Sepolia testnet, never Base mainnet. chain is "base", "ethereum", "robinhood", or "arc". Use "USDG" as fromAsset only on robinhood. Do not invent a recipient.
 {"action":"swap","fromAsset":"USDC","toAsset":"ETH","amount":10,"chain":"base","message":"..."}
 Update spending policy. policyUpdate.field is one of: "dailyCap","perTxCap","maxTxPerHour","activeHours","addWhitelist","removeWhitelist". For caps, set policyUpdate.value (USDC). For activeHours set policyUpdate.start and policyUpdate.end (hour 0-24). For whitelist add/remove set policyUpdate.address.
 {"action":"update_policy","policyUpdate":{"field":"dailyCap","value":100},"message":"..."}

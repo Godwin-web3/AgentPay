@@ -1,6 +1,6 @@
-// Deploys AgentVault and SwapExecutor on Base once, using the key already
-// on the server. Skips if there is no gas, no key, or a deployment already
-// stored. Never touches the Arc vault.
+// Deploys AgentVault and SwapExecutor on Base Sepolia once, using the key
+// already on the server. Refuses Base mainnet. Skips if there is no gas,
+// no key, or a deployment already stored. Never touches the Arc vault.
 
 const fs = require('fs');
 const path = require('path');
@@ -59,6 +59,12 @@ async function bootstrapBase() {
   }
 
   const chain = getChain('base');
+  if (!chain.testnet || chain.chainId !== 84532) {
+    return registry.remember('base', {
+      status: 'skipped',
+      reason: 'Refusing to deploy. Base bootstrap is Base Sepolia (84532) only.',
+    });
+  }
   const provider = getProvider('base');
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
   let balance;
@@ -70,7 +76,7 @@ async function bootstrapBase() {
 
   const min = ethers.parseEther(MIN_ETH);
   if (balance < min) {
-    const reason = wallet.address + ' has ' + ethers.formatEther(balance) + ' ETH on Base. Need at least ' + MIN_ETH + ' to deploy. No funds were moved.';
+    const reason = wallet.address + ' has ' + ethers.formatEther(balance) + ' ETH on Base Sepolia. Need at least ' + MIN_ETH + ' testnet ETH to deploy. No funds were moved.';
     console.log('[base] ' + reason);
     return registry.remember('base', { status: 'no-gas', address: wallet.address, balance: ethers.formatEther(balance), reason });
   }

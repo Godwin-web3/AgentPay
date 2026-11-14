@@ -317,7 +317,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         )}
       </div>
       <div className="quick-actions">
-        {[{ label: 'SEND', value: 'Send 1 USDC to ', auto: false }, { label: 'SWAP', value: 'Swap 10 USDC for ETH on Base', auto: true }, { label: 'BALANCE', value: 'What is my vault balance?', auto: true }, { label: 'SCHEDULE', value: 'Pay 1 USDC every day to ', auto: false }].map(btn => (
+        {[{ label: 'SEND', value: 'Send 1 USDC to ', auto: false }, { label: 'SWAP', value: 'Swap 10 USDC for ETH on Base Sepolia', auto: true }, { label: 'BALANCE', value: 'What is my vault balance?', auto: true }, { label: 'SCHEDULE', value: 'Pay 1 USDC every day to ', auto: false }].map(btn => (
           <button key={btn.label} className="quick-btn" disabled={loading} onClick={() => { if (btn.auto) { handleSend(btn.value) } else { setInput(btn.value); inputRef.current?.focus() } }}>
             {btn.label}
           </button>
