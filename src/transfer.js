@@ -41,4 +41,20 @@ async function sendOnRobinhood({ asset, amount, to }) {
   return { txHash: receipt.hash, token: symbol, explorer: chain.explorer + '/tx/' + receipt.hash };
 }
 
-module.exports = { sendOnRobinhood };
+async function mintTestUsdg(amount) {
+  const chain = getChain('robinhood-testnet');
+  if (!chain.testnet || chain.chainId !== 46630) throw new Error('Refusing to mint. USDG stays on Robinhood testnet.');
+  if (!chain.usdg) throw new Error('No test USDG on this chain.');
+  if (!process.env.PRIVATE_KEY) throw new Error('The Robinhood testnet key is not on the server.');
+  const whole = Number(amount || 1000);
+  if (!Number.isFinite(whole) || whole <= 0 || whole > 100000) throw new Error('Mint between 1 and 100000 test USDG.');
+  const provider = getProvider(chain.id);
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  const token = new ethers.Contract(chain.usdg.address, ['function mint(address,uint256)'], wallet);
+  const raw = ethers.parseUnits(String(whole), chain.usdg.decimals);
+  const sent = await token.mint(wallet.address, raw);
+  const receipt = await sent.wait();
+  return { txHash: receipt.hash, amount: String(whole), explorer: chain.explorer + '/tx/' + receipt.hash };
+}
+
+module.exports = { sendOnRobinhood, mintTestUsdg };

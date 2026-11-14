@@ -1445,6 +1445,32 @@ async function handleTransfer(req, res) {
 }
 
 app.post('/transfer', handleTransfer);
+async function handleMintUsdg(req, res) {
+  const userId = getUserId(req);
+  const amount = Number((req.body || {}).amount || 1000);
+  try {
+    const result = await require('./transfer').mintTestUsdg(amount);
+    const { appendSpend } = require('./spendStore');
+    try {
+      await appendSpend({
+        userAddress: userId,
+        to: 'robinhood-testnet',
+        amount,
+        reason: 'Mint test USDG',
+        txHash: result.txHash,
+        token: 'USDG',
+        type: 'deposit',
+      });
+    } catch (err) {
+      console.error('[usdg] history:', err.message);
+    }
+    return send(res, 200, { success: true, ...result });
+  } catch (err) {
+    return send(res, 200, { success: false, reason: err.shortMessage || err.message });
+  }
+}
+
+app.post('/usdg/mint', handleMintUsdg);
 app.get('/chains', handleChains);
 app.get('/schedules', handleGetSchedules);
 app.post('/schedules', handleCreateSchedule);

@@ -14,7 +14,7 @@ assert.equal(CHAINS['robinhood-testnet'].testnet, true);
 assert.equal(CHAINS.robinhood.testnet, false);
 assert.equal(resolveChainId('robinhood'), 'robinhood-testnet');
 assert.equal(resolveChainId('robinhood mainnet'), 'robinhood');
-assert.equal(CHAINS['robinhood-testnet'].usdg.address, '0x7E955252E15c84f5768B83c41a71F9eba181802F');
+assert.equal(CHAINS['robinhood-testnet'].usdg.address, '0x42fa9A8085c0bc633Afa4e19a1f491db9a4dC0fE');
 assert.equal(CHAINS['robinhood-testnet'].usdg.decimals, 6);
 assert.equal(CHAINS.base.stable.symbol, 'USDC');
 assert.equal(CHAINS.robinhood.stable.symbol, 'USDG');

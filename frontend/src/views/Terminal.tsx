@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, depositToVault, executeSwap, executeBridge, executeTransfer } from '../api'
+import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, depositToVault, executeSwap, executeBridge, executeTransfer, mintTestUsdg } from '../api'
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -32,7 +32,7 @@ function ProofBadge({ requestId }: { requestId: string }) {
 function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: () => void, onCancel?: () => void }) {
   const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
-  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_deposit' || result.status === 'proposing_swap' || result.status === 'proposing_bridge' || result.status === 'proposing_transfer'
+  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_deposit' || result.status === 'proposing_swap' || result.status === 'proposing_bridge' || result.status === 'proposing_transfer' || result.status === 'proposing_mint'
   if (isProposal) {
     let title = 'Check this'
     let detail = ''
@@ -42,6 +42,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     else if (result.status === 'proposing_swap') { title = `Swap ${result.amount} ${result.fromAsset}`; detail = `You get about ${result.amountOut} ${result.toAsset} on ${result.chainName}` }
     else if (result.status === 'proposing_bridge') { title = `Bridge ${result.amount} USDC`; detail = `${result.fromName} to ${result.toName}. This leaves the wallet, not the vault.` }
     else if (result.status === 'proposing_transfer') { title = `Send ${result.amount} ${result.token}`; detail = `From the Robinhood wallet to ${result.to}. No Circle, no USDC.` }
+    else if (result.status === 'proposing_mint') { title = 'Mint 1,000 test USDG'; detail = 'This is not Paxos USDG. It has no dollar value.' }
     return (
       <div style={{ marginTop: 10, border: '1px solid var(--cyan)', background: 'rgba(79,219,200,0.04)', padding: '12px 14px', fontFamily: 'var(--font-mono)' }}>
         <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2, marginBottom: 6 }}>{title}</div>
@@ -69,6 +70,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
   if (result.status === 'executed' || result.status === 'success') {
     let label = 'Done'
     if (result.type === 'bridge') label = `Bridged ${result.amount} USDC to ${result.toName}`
+    else if (result.type === 'mint') label = 'Minted 1,000 test USDG'
     else if (result.type === 'deposit') label = `Deposited ${result.amount} USDC`
     else if (result.type === 'schedule') label = `Scheduled ${result.amount} USDC`
     else if (result.amount) label = `Sent ${result.amount} ${result.token || 'USDC'}`
@@ -218,6 +220,9 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
           toAsset: prop.toAsset,
           chainName: prop.chainName,
         }
+      } else if (prop.status === 'proposing_mint') {
+        const minted = await mintTestUsdg(1000, userId)
+        res = { status: minted.success ? 'executed' : 'failed', txHash: minted.txHash, type: 'mint', amount: 1000, token: 'USDG', reason: minted.reason }
       } else if (prop.status === 'proposing_transfer') {
         const sent = await executeTransfer({ asset: prop.token, amount: Number(prop.amount), to: prop.to }, userId)
         res = {
@@ -407,6 +412,18 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         )}
       </div>
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+        <button type="button" disabled={loading} onClick={() => {
+          const userMsg = { role: 'user' as const, content: 'Get 1,000 test USDG', timestamp: Date.now() }
+          const assistantMsg = { role: 'assistant' as const, content: 'Mint 1,000 test USDG into the Robinhood wallet.', timestamp: Date.now() }
+          setMessages((prev) => {
+            const next = [...prev, userMsg, assistantMsg]
+            const idx = next.length - 1
+            setTimeout(() => setTxResults((r) => ({ ...r, [idx]: { status: 'proposing_mint' } })), 0)
+            return next
+          })
+        }} style={{ background: 'none', border: 'none', padding: '0 0 10px', color: 'var(--text)', fontFamily: 'var(--font-head)', fontSize: 16, cursor: 'pointer' }}>
+          Get 1,000 test USDG
+        </button>
         <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
           {([
             ['usdg', 'USDG'],
