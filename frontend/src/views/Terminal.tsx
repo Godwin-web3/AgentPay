@@ -1,5 +1,7 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, depositToVault, executeSwap, executeBridge, executeTransfer, fundTestWallet } from '../api'
+import { useWallets } from '@privy-io/react-auth'
+import { sendChat, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, quoteSwap, quoteBridge, executePay } from '../api'
+import { sendFromWallet, sendUsdc, depositFromWallet, swapFromWallet, bridgeFromWallet } from '../spend'
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -41,8 +43,8 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     else if (result.status === 'proposing_deposit') { title = `Deposit ${result.amount} ${result.token || 'USDC'}`; detail = `Into your vault on ${result.chainName || 'Arc'}` }
     else if (result.status === 'proposing_swap') { title = `Swap ${result.amount} ${result.fromAsset}`; detail = `You get about ${result.amountOut} ${result.toAsset} on ${result.chainName}` }
     else if (result.status === 'proposing_bridge') { title = `Bridge ${result.amount} USDC`; detail = `${result.fromName} to ${result.toName}. This leaves the wallet, not the vault.` }
-    else if (result.status === 'proposing_transfer') { title = `Send ${result.amount} ${result.token}`; detail = `From the Robinhood wallet to ${result.to}.` }
-    else if (result.status === 'proposing_mint') { title = 'Deposit 100 test USDG'; detail = 'Taken from the USDG already in the Robinhood wallet. Nothing new is minted.' }
+    else if (result.status === 'proposing_transfer') { title = `Send ${result.amount} ${result.token}`; detail = `From your wallet to ${result.to}.` }
+    else if (result.status === 'proposing_mint') { title = 'Deposit 100 test USDG'; detail = 'From the USDG already in your wallet.' }
     return (
       <div style={{ marginTop: 10, border: '1px solid var(--cyan)', background: 'rgba(79,219,200,0.04)', padding: '12px 14px', fontFamily: 'var(--font-mono)' }}>
         <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2, marginBottom: 6 }}>{title}</div>
@@ -117,6 +119,7 @@ function PolicyCard({ data }: { data: any }) {
 }
 
 export default function Terminal({ messages, setMessages, userAddress, userId, onActionSuccess }: Props) {
+  const { wallets } = useWallets()
   const [amount, setAmount] = React.useState('')
   const [who, setWho] = React.useState('')
   const [want, setWant] = React.useState<'usdg' | 'eth' | 'tsla' | 'amd' | 'amzn' | 'nflx' | 'pltr' | 'base-eth'>('usdg')
@@ -191,59 +194,77 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
     try {
       let res
       if (prop.status === 'proposing_pay') {
-        const requestId = generateRequestId()
-        const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userId, prop.token || 'USDC')
-        res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'USDC' }
-      } else if (prop.status === 'proposing_deposit') {
-        const depRes = await depositToVault(String(prop.amount), userId, prop.chain || 'arc')
-        res = { status: depRes.success ? 'executed' : 'failed', txHash: depRes.txHash, explorer: depRes.explorer, type: 'deposit', amount: prop.amount, reason: depRes.error, chainName: prop.chainName }
+        if (prop.to && prop.to.startsWith('0x')) {
+          const paid = await sendUsdc(wallets, 'arc', Number(prop.amount), prop.to)
+          res = { status: 'executed', txHash: paid.txHash, explorer: paid.explorer, type: 'pay', to: prop.to, amount: prop.amount, token: 'USDC' }
+        } else {
+          const requestId = generateRequestId()
+          const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userId, prop.token || 'USDC')
+          res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'USDC' }
+        }
+      } else if (prop.status === 'proposing_deposit' || prop.status === 'proposing_mint') {
+        const api = await getVaultBalanceApi(userId)
+        const chainKey = prop.chain || 'robinhood-testnet'
+        const row = api.chains?.find((item) => item.id === chainKey)
+        const hood = chainKey !== 'base' && chainKey !== 'arc'
+        const paid = await depositFromWallet(
+          wallets,
+          hood ? 46630 : chainKey === 'base' ? 84532 : 5042002,
+          hood ? '0x42fa9A8085c0bc633Afa4e19a1f491db9a4dC0fE' : '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+          6,
+          row?.vaultAddress || '',
+          prop.status === 'proposing_mint' ? 100 : Number(prop.amount),
+        )
+        res = { status: 'executed', txHash: paid.txHash, explorer: paid.explorer, type: 'deposit', amount: prop.amount || 100, chainName: prop.chainName }
       } else if (prop.status === 'proposing_schedule') {
         const intervalSec = parseInterval(prop.interval)
         const schedRes = await createOnChainSchedule(prop.to, prop.amount, intervalSec, prop.reason || '', userId, prop.conditions?.minBalance || 0)
         res = { status: 'executed', txHash: schedRes.txHash, explorer: schedRes.explorer, type: 'schedule', to: prop.to, amount: prop.amount }
       } else if (prop.status === 'proposing_swap') {
-        const swapRes = await executeSwap({
+        const quoted = await quoteSwap({
           fromAsset: prop.fromAsset,
           toAsset: prop.toAsset,
           amount: prop.amount,
           chain: prop.chain,
         }, userId)
+        if (!quoted.success) throw new Error(quoted.reason || 'No swap quote.')
+        const swapped = await swapFromWallet(wallets, quoted.quote)
         res = {
-          status: swapRes.success ? 'executed' : 'failed',
-          txHash: swapRes.txHash,
-          explorer: swapRes.explorer,
+          status: 'executed',
+          txHash: swapped.txHash,
+          explorer: swapped.explorer,
           type: 'swap',
           amount: prop.amount,
-          reason: swapRes.reason,
-          amountOut: swapRes.quote?.amountOut || prop.amountOut,
+          amountOut: quoted.quote.amountOut,
           fromAsset: prop.fromAsset,
           toAsset: prop.toAsset,
           chainName: prop.chainName,
         }
-      } else if (prop.status === 'proposing_mint') {
-        const funded = await fundTestWallet(userId)
-        res = { status: funded.success ? 'executed' : 'failed', txHash: funded.txHash, type: 'mint', amount: 100, token: 'USDG', reason: funded.reason }
       } else if (prop.status === 'proposing_transfer') {
-        const sent = await executeTransfer({ asset: prop.token, amount: Number(prop.amount), to: prop.to }, userId)
+        const sent = await sendFromWallet(wallets, prop.token, Number(prop.amount), prop.to)
         res = {
-          status: sent.success ? 'executed' : 'failed',
+          status: 'executed',
           txHash: sent.txHash,
+          explorer: sent.explorer,
           type: 'payment',
           amount: prop.amount,
           token: prop.token,
-          reason: sent.reason,
         }
       } else if (prop.status === 'proposing_bridge') {
-        const bridgeRes = await executeBridge({ from: prop.from, to: prop.to, amount: Number(prop.amount) }, userId)
+        const quoted = await quoteBridge({ from: prop.from, to: prop.to, amount: Number(prop.amount) }, userId)
+        if (!quoted.success) throw new Error(quoted.reason || 'No bridge quote.')
+        const bridged = await bridgeFromWallet(wallets, {
+          ...quoted.quote,
+          token: quoted.quote.tokenAddress,
+        })
         res = {
-          status: bridgeRes.status === 'complete' ? 'executed' : bridgeRes.status === 'burned' ? 'burned' : 'failed',
-          txHash: bridgeRes.burnTx || bridgeRes.mintTx,
-          explorer: bridgeRes.explorer,
+          status: bridged.status,
+          txHash: bridged.txHash,
+          explorer: bridged.explorer,
           type: 'bridge',
           amount: prop.amount,
           fromName: prop.fromName,
           toName: prop.toName,
-          reason: bridgeRes.reason,
         }
       }
       if (res) {

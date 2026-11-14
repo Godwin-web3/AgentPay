@@ -416,6 +416,45 @@ async function handlePay(req, res) {
   }
 }
 
+async function handleSwapQuote(req, res) {
+  const { fromAsset, toAsset, amount, chain } = req.body || {};
+  if (!amount) return send(res, 400, { error: 'Missing amount' });
+  try {
+    const quote = await require('./swap').quoteSwap({ chain, fromAsset, toAsset: toAsset || 'ETH', amount });
+    const target = getChain(quote.chain || chain);
+    return send(res, 200, {
+      success: true,
+      quote: { ...quote, chainId: target.chainId, decimals: target.stable.decimals },
+    });
+  } catch (err) {
+    return send(res, 200, { success: false, reason: err.message });
+  }
+}
+
+async function handleBridgeQuote(req, res) {
+  try {
+    const quote = await require('./bridge').quoteBridge(req.body || {});
+    const from = getChain(quote.from);
+    const to = getChain(quote.to);
+    return send(res, 200, {
+      success: true,
+      quote: {
+        ...quote,
+        fromDomain: from.cctp.domain,
+        toDomain: to.cctp.domain,
+        tokenAddress: from.stable.address,
+        tokenDecimals: from.stable.decimals,
+        messenger: from.cctp.tokenMessenger,
+        transmitter: to.cctp.messageTransmitter,
+        fromChainId: from.chainId,
+        toChainId: to.chainId,
+      },
+    });
+  } catch (err) {
+    return send(res, 200, { success: false, reason: err.message });
+  }
+}
+
 // POST /swap — re-quotes, then vault-authorizes. Does not move funds if the
 // vault or SwapExecutor for that chain is not deployed.
 async function handleSwap(req, res) {
@@ -1398,6 +1437,8 @@ app.post('/chat', handleChat);
 app.get('/chat', handleGetChatHistory);
 app.delete('/chat', handleDeleteChat);
 app.post('/pay', handlePay);
+app.post('/swap/quote', handleSwapQuote);
+app.post('/bridge/quote', handleBridgeQuote);
 app.post('/swap', handleSwap);
 app.post('/bridge', handleBridge);
 app.post('/bridge/complete', handleBridgeComplete);
