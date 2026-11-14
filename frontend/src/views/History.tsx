@@ -34,7 +34,7 @@ function describeEntry(tx: any) {
     case 'payment':
       return { title: 'Sent', sub: `to ${shortAddr(tx.to)}`, amount, sign: '−' as const, badge: null }
     case 'deposit':
-      return { title: 'Deposited', sub: 'into vault', amount, sign: '+' as const, badge: null }
+      return { title: 'Deposited', sub: tx.reason || 'into vault', amount, sign: '+' as const, badge: null }
     case 'withdrawal':
       return { title: 'Withdrew', sub: 'from vault', amount, sign: '+' as const, badge: null }
     case 'job_hire':

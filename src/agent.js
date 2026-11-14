@@ -162,6 +162,28 @@ async function chat(message, walletId, userAddress) {
     intent.balance = balance;
     intent.address = address;
     intent.data = { balances: { USDC: balance }, vault: vaultBalance };
+    try {
+      const record = await require('./walletStore').getWallet(userAddress);
+      const baseAddress = record && record.chainWallets && record.chainWallets.base && record.chainWallets.base.address;
+      if (baseAddress) {
+        const pos = await require('./baseBalance').readBasePosition(baseAddress);
+        if (pos) {
+          const vaultAmt = Number(pos.vault).toFixed(2);
+          const walletAmt = Number(pos.wallet).toFixed(2);
+          intent.message = "Base Sepolia vault: " + vaultAmt + " USDC. Wallet: " + walletAmt + " USDC. Arc wallet: " + balance + " USDC.";
+          intent.data = {
+            balances: {
+              'Base Sepolia vault': vaultAmt,
+              'Base Sepolia wallet': walletAmt,
+              'Arc wallet': balance,
+            },
+            vault: vaultAmt,
+          };
+        }
+      }
+    } catch (err) {
+      console.error('[balance] base:', err.message);
+    }
   }
   if (intent.action === "pools_status") {
     try {

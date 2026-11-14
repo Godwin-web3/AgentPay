@@ -297,7 +297,22 @@ async function handleHistory(req, res) {
     // on-chain wallet address (payments, job completions, pool activity).
     // Query both so nothing written under either convention is missed.
     const wallet = await getOrCreateWallet(userId);
-    const items = await getUnifiedHistory([userId, wallet.address], 100);
+    const keys = [userId, wallet.address];
+    const baseAddress = wallet.chainWallets && wallet.chainWallets.base && wallet.chainWallets.base.address;
+    if (baseAddress) keys.push(baseAddress);
+    let items = await getUnifiedHistory(keys, 100);
+    if (baseAddress) {
+      try {
+        const chainItems = await require('./baseBalance').baseDepositHistory(baseAddress);
+        const seen = new Set(items.map((item) => item.txHash).filter(Boolean));
+        for (const item of chainItems) {
+          if (!seen.has(item.txHash)) items.push(item);
+        }
+        items.sort((a, b) => Number(b.timestamp || 0) - Number(a.timestamp || 0));
+      } catch (err) {
+        console.error('[history] base deposits:', err.message);
+      }
+    }
     return send(res, 200, { items, total: items.length });
   } catch (err) {
     return send(res, 500, { error: err.message });
@@ -538,6 +553,16 @@ async function handleVaultDeposit(req, res) {
       usdcAddress: chain.stable.address,
       vaultAddress,
       amountRaw: amountRaw.toString(),
+    });
+    const { appendSpend } = require('./spendStore');
+    await appendSpend({
+      userAddress: userId,
+      to: vaultAddress,
+      amount: Number(amount),
+      reason: chain.name + ' vault',
+      txHash,
+      token: chain.stable.symbol,
+      type: 'deposit',
     });
     let policySet = false;
     try {
@@ -1024,14 +1049,25 @@ async function handleVaultBalance(req, res) {
   try {
     const wallet = await getOrCreateWallet(userId);
     const agentAddress = wallet.address;
+    const baseAddress = wallet.chainWallets && wallet.chainWallets.base && wallet.chainWallets.base.address;
+    let base = null;
+    if (baseAddress) {
+      try { base = await require('./baseBalance').readBasePosition(baseAddress); } catch (err) {
+        console.error('[vault] base balance:', err.message);
+      }
+    }
     const vaultAddr = await escrow.findVault(agentAddress);
-    if (!vaultAddr) return send(res, 200, { balance: '0.0000', address: null, agentAddress });
-    const provider = sharedProvider;
-    const onChain = await escrow.getOnChainPolicy(provider, agentAddress);
+    let arcBalance = '0.0000';
+    if (vaultAddr) {
+      const onChain = await escrow.getOnChainPolicy(sharedProvider, agentAddress);
+      arcBalance = String(onChain.vaultBalance);
+    }
     return send(res, 200, {
-      balance: String(onChain.vaultBalance),
-      address: vaultAddr,
-      agentAddress
+      balance: base ? Number(base.vault).toFixed(4) : arcBalance,
+      chain: base ? 'base' : 'arc',
+      address: base ? base.vaultAddress : vaultAddr,
+      agentAddress: base ? base.address : agentAddress,
+      chains: base ? [base] : [],
     });
   } catch (err) {
     return send(res, 500, { error: err.message });

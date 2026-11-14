@@ -15,7 +15,7 @@ import Onboarding from './views/Onboarding'
 import Login from './components/Login'
 import { PaymentRequestView } from './views/PaymentRequestView'
 import type { ChatMessage } from './types'
-import { getTokenBalances, checkVault, getWallet, getVaultAddress, getVaultBalance } from './api'
+import { getTokenBalances, checkVault, getWallet, getVaultBalanceApi } from './api'
 
 type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'agent' | 'goals' | 'pools' | 'requests'
 
@@ -153,6 +153,7 @@ function App({ tag }: { tag: string | null }) {
   }, [userAddress, userId])
 
   const [vaultBalance, setVaultBalance] = useState('0')
+  const [vaultChain, setVaultChain] = useState('')
   const [activeProvider, setActiveProvider] = useState<any>(null)
   const [walletBalance, setWalletBalance] = useState('0')
   const [tokenBalances, setTokenBalances] = useState<Record<string,string>>({})
@@ -186,21 +187,17 @@ function App({ tag }: { tag: string | null }) {
     } catch (e) {
       console.error('Failed to refresh real wallet balance', e)
     }
-    let resolvedAgentWallet = agentWalletAddress
     try {
       const wallet = await getWallet(userId)
-      resolvedAgentWallet = wallet.address
       setAgentWalletAddress(wallet.address)
     } catch (e) {
       console.error('Failed to refresh agent wallet balance', e)
     }
     try {
-      const { address: resolvedVault } = await getVaultAddress(userId)
-      if (resolvedVault) setVaultAddress(resolvedVault)
-      if (resolvedVault && resolvedAgentWallet) {
-        const vBal = await getVaultBalance(resolvedVault, resolvedAgentWallet)
-        setVaultBalance(vBal)
-      }
+      const api = await getVaultBalanceApi(userId)
+      if (api.balance) setVaultBalance(Number(api.balance).toFixed(4))
+      const base = api.chains?.find((c) => c.id === 'base')
+      if (base) setVaultChain(base.name)
     } catch (e) {
       console.error('Failed to refresh vault balance', e)
     }
@@ -297,7 +294,7 @@ function App({ tag }: { tag: string | null }) {
             {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} userId={userId} onActionSuccess={refreshBalances} />}
             {view === 'requests' && <PaymentRequestView />}
             {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} userId={userId} />}
-            {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={vaultAddress || agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
+            {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} vaultChain={vaultChain} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={vaultAddress || agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
             {view === 'goals' && <Goals userAddress={userAddress} userId={userId} />}
             {view === 'pools' && <Pools userAddress={userAddress} userId={userId} />}

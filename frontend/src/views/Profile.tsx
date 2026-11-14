@@ -7,6 +7,7 @@ interface Props {
   userAddress: string
   tag?: string | null
   vaultBalance: string
+  vaultChain?: string
   walletBalance: string
   tokenBalances: Record<string, string>
   activeProvider: any
@@ -24,7 +25,7 @@ const ChevronRight = () => (
   </svg>
 )
 
-export default function Profile({ userAddress, userId, vaultBalance, walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, tag }: Props) {
+export default function Profile({ userAddress, userId, vaultBalance, vaultChain, walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, tag }: Props) {
   const [subView, setSubView] = useState<SubView>(null)
 
   function shortAddr(addr: string) {
@@ -93,7 +94,7 @@ export default function Profile({ userAddress, userId, vaultBalance, walletBalan
           VAULT BALANCE
         </div>
         <div style={{ fontFamily: 'var(--font-head)', fontSize: 36, fontWeight: 700, color: 'var(--text)', lineHeight: 1, marginBottom: 16 }}>
-          {vaultBalance} <span style={{ fontSize: 16, color: 'var(--muted)', fontWeight: 400 }}>USDC</span>
+          {vaultBalance} <span style={{ fontSize: 16, color: 'var(--muted)', fontWeight: 400 }}>{vaultChain ? `USDC · ${vaultChain}` : 'USDC'}</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
           <button
