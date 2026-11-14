@@ -26,8 +26,8 @@ If asked about pools, goals, policy, or history as concepts, answer using this k
 Actions:
 Direct payment instruction:
 {"action":"pay","to":"0x...","amount":0.01,"reason":"...","message":"..."}
-Deposit own funds into own vault (NOT a payment, no spend policy applies):
-{"action":"deposit","amount":0.01,"message":"..."}
+Deposit own funds into own vault (NOT a payment, no spend policy applies). chain defaults to "arc". Use "base" for Base Sepolia. Do not ask the user to connect a wallet.
+{"action":"deposit","amount":10,"chain":"base","message":"..."}
 Recurring / scheduled payment (interval is a human string like "1 day", "6 hours", "30 minutes"):
 {"action":"schedule","to":"0x...","amount":0.01,"interval":"1 day","reason":"...","conditions":{"minBalance":0.5,"executeOnce":false},"message":"..."}
 Swap the vault stable for ETH. "base" means Base Sepolia testnet, never Base mainnet. chain is "base", "ethereum", "robinhood", or "arc". Use "USDG" as fromAsset only on robinhood. Do not invent a recipient.

@@ -114,6 +114,17 @@ async function getOrCreateWallet(userId) {
   return record;
 }
 
+async function ensureChainWallet(userId, chain) {
+  const record = await getOrCreateWallet(userId);
+  if (!chain.circle || chain.circle === 'ARC-TESTNET') return record;
+  const saved = record.chainWallets && record.chainWallets[chain.id];
+  if (saved && saved.walletId) return { ...record, walletId: saved.walletId, address: saved.address };
+  const created = await walletService.createWalletOnChain(chain.circle);
+  const chainWallets = { ...(record.chainWallets || {}), [chain.id]: created };
+  await walletStore.setWallet(userId, { chainWallets });
+  return { ...record, walletId: created.walletId, address: created.address, chainWallets };
+}
+
 // GET /health
 function handleHealth(req, res) {
   const chain = getChain();
@@ -409,13 +420,15 @@ async function handleSwap(req, res) {
   if (!amount) return send(res, 400, { error: 'Missing amount' });
   try {
     const wallet = await getOrCreateWallet(userId);
+    const target = chain ? getChain(chain) : getChain();
+    const signer = await ensureChainWallet(userId, target);
     const { executeSwap } = require('./swap');
     const result = await executeSwap({
       chain,
       fromAsset,
       toAsset: toAsset || 'ETH',
       amount,
-      userAddress: wallet.address,
+      userAddress: signer.address,
     });
     return send(res, 200, result);
   } catch (err) {
@@ -484,14 +497,77 @@ function handleStatus(req, res, requestId) {
 // POST /vault/deposit
 async function handleVaultDeposit(req, res) {
   const userId = getUserId(req);
-  const { amount } = req.body || {};
+  const { amount, chain: chainName } = req.body || {};
   try {
-    const wallet = await getOrCreateWallet(userId);
-    const vaultAddress = await resolveOrCreateVault(userId);
-    const txHash = await walletService.approveAndDepositToVault(wallet.walletId, vaultAddress, amount);
-    const { appendSpend } = require('./spendStore');
-    await appendSpend({ userAddress: userId, to: vaultAddress, amount: Number(amount), reason: 'Vault deposit', txHash, token: 'USDC', type: 'deposit' });
-    return send(res, 200, { success: true, txHash, explorer: EXPLORER + txHash });
+    const chain = getChain(chainName || 'arc');
+    if (chain.id === 'arc') {
+      const wallet = await getOrCreateWallet(userId);
+      const vaultAddress = await resolveOrCreateVault(userId);
+      const txHash = await walletService.approveAndDepositToVault(wallet.walletId, vaultAddress, amount);
+      const { appendSpend } = require('./spendStore');
+      await appendSpend({ userAddress: userId, to: vaultAddress, amount: Number(amount), reason: 'Vault deposit', txHash, token: 'USDC', type: 'deposit' });
+      return send(res, 200, { success: true, txHash, explorer: EXPLORER + txHash });
+    }
+    if (!chain.testnet) {
+      return send(res, 200, { success: false, error: chain.name + ' is mainnet. Deposits stay on testnet. Nothing was moved.' });
+    }
+    if (!chain.circle) {
+      return send(res, 200, { success: false, error: chain.name + ' has no server wallet yet. Nothing was deposited.' });
+    }
+    const { vaultAddressFor } = require('./swap');
+    const { ethers } = require('ethers');
+    const vaultAddress = vaultAddressFor(chain);
+    if (!vaultAddress) {
+      return send(res, 200, { success: false, error: 'No vault on ' + chain.name + ' yet. Nothing was deposited.' });
+    }
+    const signer = await ensureChainWallet(userId, chain);
+    const provider = getProvider(chain.id);
+    const stable = new ethers.Contract(chain.stable.address, ['function balanceOf(address) view returns (uint256)'], provider);
+    const amountRaw = ethers.parseUnits(String(amount), chain.stable.decimals);
+    const balance = await stable.balanceOf(signer.address);
+    if (balance < amountRaw) {
+      return send(res, 200, {
+        success: false,
+        address: signer.address,
+        error: 'Your ' + chain.name + ' wallet ' + signer.address + ' does not hold enough ' + chain.stable.symbol + '. Send test ' + chain.stable.symbol + ' there, then confirm again. Nothing was deposited.',
+      });
+    }
+    const txHash = await walletService.depositOnChain({
+      walletId: signer.walletId,
+      blockchain: chain.circle,
+      usdcAddress: chain.stable.address,
+      vaultAddress,
+      amountRaw: amountRaw.toString(),
+    });
+    let policySet = false;
+    try {
+      const vault = new ethers.Contract(vaultAddress, ['function getPolicy(address) view returns (tuple(uint256 perTxCap, uint256 dailyCap, uint256 maxTxPerHour, bool active) policy, address[] whitelist)'], provider);
+      const result = await vault.getPolicy(signer.address);
+      const policy = result.policy || result[0];
+      const active = policy.active !== undefined ? policy.active : policy[3];
+      if (!active) {
+        const perTx = ethers.parseUnits('1000', chain.stable.decimals);
+        const daily = ethers.parseUnits('5000', chain.stable.decimals);
+        await walletService.setPolicyOnChain({
+          walletId: signer.walletId,
+          blockchain: chain.circle,
+          vaultAddress,
+          perTx: perTx.toString(),
+          daily: daily.toString(),
+          hourly: 20,
+        });
+        policySet = true;
+      }
+    } catch (err) {
+      console.error('[deposit] policy setup failed:', err.message);
+    }
+    return send(res, 200, {
+      success: true,
+      txHash,
+      explorer: chain.explorer + '/tx/' + txHash,
+      address: signer.address,
+      policySet,
+    });
   } catch (err) {
     return send(res, 500, { error: err.message });
   }

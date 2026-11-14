@@ -137,10 +137,10 @@ export async function getCircleBalance(userId: string): Promise<{ address: strin
   return request<{ address: string; balance: string; token: string }>('/balance', {}, userId)
 }
 
-export async function depositToVault(amount: string, userId: string): Promise<{ success: boolean; txHash: string; explorer: string }> {
-  return request<{ success: boolean; txHash: string; explorer: string }>('/vault/deposit', {
+export async function depositToVault(amount: string, userId: string, chain?: string): Promise<{ success: boolean; txHash: string; explorer: string; error?: string; address?: string }> {
+  return request<{ success: boolean; txHash: string; explorer: string; error?: string; address?: string }>('/vault/deposit', {
     method: 'POST',
-    body: JSON.stringify({ amount })
+    body: JSON.stringify({ amount, chain })
   }, userId)
 }
 

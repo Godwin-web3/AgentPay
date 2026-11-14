@@ -34,7 +34,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     let detail = ''
     if (result.status === 'proposing_pay') { title = 'PAYMENT PROPOSAL'; detail = `${result.amount} ${result.token || 'USDC'} -> ${result.to?.slice(0, 10)}...` }
     else if (result.status === 'proposing_schedule') { title = 'SCHEDULE PAYMENT'; detail = `${result.amount} USDC to ${result.to?.slice(0, 10)}... / ${result.interval}` }
-    else if (result.status === 'proposing_deposit') { title = 'VAULT DEPOSIT'; detail = `${result.amount} USDC` }
+    else if (result.status === 'proposing_deposit') { title = 'VAULT DEPOSIT'; detail = `${result.amount} ${result.token || 'USDC'} on ${result.chainName || 'Arc'}` }
     else if (result.status === 'proposing_swap') { title = 'SWAP'; detail = `${result.amount} ${result.fromAsset} → about ${result.amountOut} ${result.toAsset} on ${result.chainName}` }
     return (
       <div style={{ marginTop: 10, border: '1px solid var(--cyan)', background: 'rgba(79,219,200,0.04)', padding: '12px 14px', fontFamily: 'var(--font-mono)' }}>
@@ -61,7 +61,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
         <a href={result.explorer} target="_blank" rel="noreferrer" style={{ display: 'block', textDecoration: 'none', fontFamily: 'var(--font-mono)', fontSize: 11, padding: '10px 14px', border: '1px solid rgba(79,219,200,0.3)', background: 'rgba(79,219,200,0.04)', color: 'var(--cyan)' }}>
           <div style={{ letterSpacing: 1, marginBottom: 4 }}>+ {label}</div>
           {result.txHash && <div style={{ fontSize: 10, color: 'var(--muted)' }}>TX {result.txHash.slice(0, 18)}... -&gt;</div>}
-          <div style={{ marginTop: 4, fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>FINALIZED IN &lt; 1s — ARC TESTNET</div>
+          <div style={{ marginTop: 4, fontSize: 9, color: 'var(--muted)', letterSpacing: 1 }}>FINALIZED — {result.chainName || 'ARC TESTNET'}</div>
         </a>
       </div>
     )
@@ -168,8 +168,8 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         const payRes = await executePay(prop.to, prop.amount, prop.reason || 'Chat payment', requestId, userId, prop.token || 'USDC')
         res = { ...payRes, type: 'pay', to: prop.to, amount: prop.amount, token: prop.token || 'USDC' }
       } else if (prop.status === 'proposing_deposit') {
-        const depRes = await depositToVault(String(prop.amount), userId)
-        res = { status: depRes.success ? 'executed' : 'failed', txHash: depRes.txHash, explorer: depRes.explorer, type: 'deposit', amount: prop.amount }
+        const depRes = await depositToVault(String(prop.amount), userId, prop.chain || 'arc')
+        res = { status: depRes.success ? 'executed' : 'failed', txHash: depRes.txHash, explorer: depRes.explorer, type: 'deposit', amount: prop.amount, reason: depRes.error, chainName: prop.chainName }
       } else if (prop.status === 'proposing_schedule') {
         const intervalSec = parseInterval(prop.interval)
         const schedRes = await createOnChainSchedule(prop.to, prop.amount, intervalSec, prop.reason || '', userId, prop.conditions?.minBalance || 0)
@@ -236,7 +236,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         const msgIndex = next.length - 1
         setTimeout(async () => {
           if (intent.action === 'pay' && intent.to && intent.amount) setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_pay', to: intent.to, amount: intent.amount, token: 'USDC', reason: intent.reason } }))
-          if (intent.action === 'deposit' && intent.amount) setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_deposit', amount: intent.amount } }))
+          if (intent.action === 'deposit' && intent.amount) setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_deposit', amount: intent.amount, chain: intent.chain || 'arc', chainName: intent.chain === 'base' ? 'Base Sepolia' : 'Arc', token: intent.chain === 'base' ? 'USDC' : 'USDC' } }))
           if (intent.action === 'schedule' && intent.to && intent.amount && intent.interval) setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_schedule', to: intent.to, amount: intent.amount, interval: intent.interval, reason: intent.reason, conditions: intent.conditions } }))
           if (intent.action === 'swap' && intent.data?.quote) {
             const q = intent.data.quote

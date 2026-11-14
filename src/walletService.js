@@ -70,7 +70,46 @@ async function sendUSDC(walletId, toAddress, amountUSDC) {
   return txId; // fallback to Circle ID if polling times out
 }
 
-module.exports = { createUserWallet, getWalletBalance, getWalletAddress, sendUSDC };
+module.exports = { createUserWallet, getWalletBalance, getWalletAddress, sendUSDC, createWalletOnChain, depositOnChain, setPolicyOnChain };
+
+async function createWalletOnChain(blockchain) {
+  const setId = await ensureWalletSet();
+  const response = await client.createWallets({
+    blockchains: [blockchain],
+    count: 1,
+    walletSetId: setId,
+    accountType: 'SCA',
+  });
+  const wallet = response.data.wallets[0];
+  return { walletId: wallet.id, address: wallet.address };
+}
+
+async function depositOnChain({ walletId, blockchain, usdcAddress, vaultAddress, amountRaw }) {
+  await runContract(walletId, blockchain, usdcAddress, 'approve(address,uint256)', [vaultAddress, amountRaw]);
+  return runContract(walletId, blockchain, vaultAddress, 'deposit(uint256)', [amountRaw]);
+}
+
+async function setPolicyOnChain({ walletId, blockchain, vaultAddress, perTx, daily, hourly }) {
+  return runContract(
+    walletId,
+    blockchain,
+    vaultAddress,
+    'setPolicy(uint256,uint256,uint256,address[])',
+    [perTx, daily, String(hourly), []]
+  );
+}
+
+async function runContract(walletId, blockchain, contractAddress, signature, params) {
+  const res = await client.createContractExecutionTransaction({
+    walletId,
+    contractAddress,
+    blockchain,
+    abiFunctionSignature: signature,
+    abiParameters: params,
+    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
+  });
+  return waitForTxHash(res.data.id, signature);
+}
 
 async function approveAndDepositToVault(walletId, vaultAddress, amountUSDC) {
   const usdcAddress = process.env.USDC_CONTRACT;

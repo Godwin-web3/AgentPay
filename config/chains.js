@@ -25,6 +25,7 @@ const CHAINS = {
       wallet: '0x0077777d7EBA4688BDeF3E311b846F25870A19B9',
       minter: '0x0022222ABE238Cc2C7Bb1f21003F0a260052475B',
     },
+    circle: 'ARC-TESTNET',
   },
   base: {
     id: 'base',
@@ -45,6 +46,7 @@ const CHAINS = {
     swapRouter: '0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4',
     quoter: '0xC5290058841028F1614F3A6F0F5816cAd0df5E27',
     gateway: null,
+    circle: 'BASE-SEPOLIA',
   },
   'base-mainnet': {
     id: 'base-mainnet',
