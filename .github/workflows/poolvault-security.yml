@@ -31,6 +31,7 @@ jobs:
       - run: node scripts/compile.js
       - run: npx hardhat test test/PoolVault.test.js
       - name: Commit regenerated PoolVault artifact
+        if: github.event_name == 'push'
         run: |
           git fetch origin "$GITHUB_REF_NAME"
           if [ "$(git rev-parse "origin/$GITHUB_REF_NAME")" = "$GITHUB_SHA" ] && ! git diff --quiet -- artifacts/PoolVault.json; then
