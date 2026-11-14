@@ -8,6 +8,7 @@ interface Props {
   tag?: string | null
   vaultBalance: string
   positions?: { label: string; amount: string }[]
+  stocks?: { symbol: string; amount: string }[]
   walletBalance: string
   tokenBalances: Record<string, string>
   activeProvider: any
@@ -25,7 +26,7 @@ const ChevronRight = () => (
   </svg>
 )
 
-export default function Profile({ userAddress, userId, vaultBalance, positions = [], walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, tag }: Props) {
+export default function Profile({ userAddress, userId, vaultBalance, positions = [], stocks = [], walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, tag }: Props) {
   const [subView, setSubView] = useState<SubView>(null)
 
   if (!userAddress) {
@@ -86,6 +87,18 @@ export default function Profile({ userAddress, userId, vaultBalance, positions =
           </div>
         )}
       </div>
+
+      {stocks.length > 0 && (
+        <div style={{ marginTop: 28 }}>
+          <p className="eyebrow">Robinhood testnet</p>
+          {stocks.map((token) => (
+            <div key={token.symbol} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '12px 0', borderBottom: '1px solid var(--border)', fontSize: 14 }}>
+              <span style={{ color: 'var(--muted)' }}>{token.symbol}</span>
+              <span style={{ fontVariantNumeric: 'tabular-nums' }}>{token.amount}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: 16, margin: '16px 0 24px' }}>
         <button onClick={() => setSubView('vault')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text)', cursor: 'pointer', font: 'inherit' }}>Deposit</button>

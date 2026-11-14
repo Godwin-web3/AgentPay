@@ -181,6 +181,14 @@ async function chat(message, walletId, userAddress) {
           };
         }
       }
+      const hood = await require('./robinhoodBalance').readRobinhoodPosition();
+      if (hood) {
+        const lines = hood.tokens.map((token) => token.symbol + ' ' + token.amount).join(', ');
+        intent.message += ' Robinhood testnet: ' + hood.eth + ' ETH, vault ' + hood.vault + ' TSLA, wallet ' + lines + '.';
+        intent.data.balances['Robinhood ETH'] = hood.eth;
+        intent.data.balances['Robinhood vault'] = hood.vault + ' TSLA';
+        for (const token of hood.tokens) intent.data.balances['Robinhood ' + token.symbol] = token.amount;
+      }
     } catch (err) {
       console.error('[balance] base:', err.message);
     }

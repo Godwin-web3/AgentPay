@@ -87,7 +87,7 @@ function BalanceCard({ data }: { data: any }) {
       {Object.entries(data.balances).map(([token, amt]) => (
         <div key={token} style={{ display: 'flex', justifyContent: 'space-between', gap: 24, padding: '6px 0', borderTop: '1px solid var(--border)', fontFamily: 'var(--font-body)', fontSize: 14 }}>
           <span style={{ color: 'var(--muted)' }}>{token}</span>
-          <span style={{ fontVariantNumeric: 'tabular-nums' }}>{String(amt)} USDC</span>
+          <span style={{ fontVariantNumeric: 'tabular-nums' }}>{String(amt)}{token.startsWith('Robinhood') ? '' : ' USDC'}</span>
         </div>
       ))}
     </div>
@@ -337,7 +337,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         )}
       </div>
       <div className="quick-actions">
-        {[{ label: 'Send', value: 'Send 1 USDC to ', auto: false }, { label: 'Swap', value: 'Swap 10 USDC for ETH on Base Sepolia', auto: true }, { label: 'Bridge', value: 'Bridge 1 USDC from Base Sepolia to Arc', auto: true }, { label: 'Balance', value: 'What is my vault balance?', auto: true }].map(btn => (
+        {[{ label: 'Send', value: 'Send 1 USDC to ', auto: false }, { label: 'Swap', value: 'Swap 10 USDC for ETH on Base Sepolia', auto: true }, { label: 'Bridge', value: 'Bridge 1 USDC from Base Sepolia to Arc', auto: true }, { label: 'Robinhood', value: 'What do I hold on Robinhood?', auto: true }].map(btn => (
           <button key={btn.label} className="quick-btn" disabled={loading} onClick={() => { if (btn.auto) { handleSend(btn.value) } else { setInput(btn.value); inputRef.current?.focus() } }}>
             {btn.label}
           </button>

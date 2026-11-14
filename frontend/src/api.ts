@@ -212,8 +212,8 @@ export async function cancelOnChainSchedule(index: number, userId: string): Prom
   return request<{ success: boolean }>('/onchain-schedules/' + index, { method: 'DELETE' }, userId)
 }
 
-export async function getVaultBalanceApi(userId: string): Promise<{ balance: string; address: string | null; agentAddress: string; chain?: string; chains?: { id: string; name: string; vault: string; wallet: string; token: string }[] }> {
-  return request<{ balance: string; address: string | null; agentAddress: string; chain?: string; chains?: { id: string; name: string; vault: string; wallet: string; token: string }[] }>('/vault/balance', {}, userId)
+export async function getVaultBalanceApi(userId: string): Promise<{ balance: string; address: string | null; agentAddress: string; chain?: string; chains?: { id: string; name: string; vault: string; wallet?: string; token: string; tokens?: { symbol: string; amount: string }[] }[] }> {
+  return request<{ balance: string; address: string | null; agentAddress: string; chain?: string; chains?: { id: string; name: string; vault: string; wallet?: string; token: string; tokens?: { symbol: string; amount: string }[] }[] }>('/vault/balance', {}, userId)
 }
 
 export async function getPausedState(userId: string): Promise<{ paused: boolean }> {

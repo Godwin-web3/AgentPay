@@ -579,6 +579,21 @@ async function handleVaultDeposit(req, res) {
     if (!chain.testnet) {
       return send(res, 200, { success: false, error: chain.name + ' is mainnet. Deposits stay on testnet. Nothing was moved.' });
     }
+    if (chain.id === 'robinhood-testnet') {
+      const { depositStock } = require('./robinhoodBalance');
+      const { txHash, vaultAddress } = await depositStock(amount);
+      const { appendSpend } = require('./spendStore');
+      await appendSpend({
+        userAddress: userId,
+        to: vaultAddress,
+        amount: Number(amount),
+        reason: 'Robinhood testnet vault',
+        txHash,
+        token: 'TSLA',
+        type: 'deposit',
+      });
+      return send(res, 200, { success: true, txHash, explorer: chain.explorer + '/tx/' + txHash });
+    }
     if (!chain.circle) {
       return send(res, 200, { success: false, error: chain.name + ' has no server wallet yet. Nothing was deposited.' });
     }
@@ -1115,15 +1130,22 @@ async function handleVaultBalance(req, res) {
       const onChain = await escrow.getOnChainPolicy(sharedProvider, agentAddress);
       arcBalance = String(onChain.vaultBalance);
     }
+    const chains = [
+      ...(base ? [base] : []),
+      { id: 'arc', name: 'Arc Testnet', token: 'USDC', vault: arcBalance, wallet: '0', address: agentAddress, vaultAddress: vaultAddr },
+    ];
+    try {
+      const hood = await require('./robinhoodBalance').readRobinhoodPosition();
+      if (hood) chains.push(hood);
+    } catch (err) {
+      console.error('[vault] robinhood:', err.message);
+    }
     return send(res, 200, {
       balance: base ? Number(base.vault).toFixed(4) : arcBalance,
       chain: base ? 'base' : 'arc',
       address: base ? base.vaultAddress : vaultAddr,
       agentAddress: base ? base.address : agentAddress,
-      chains: [
-        ...(base ? [base] : []),
-        { id: 'arc', name: 'Arc Testnet', token: 'USDC', vault: arcBalance, wallet: '0', address: agentAddress, vaultAddress: vaultAddr },
-      ],
+      chains,
     });
   } catch (err) {
     return send(res, 500, { error: err.message });

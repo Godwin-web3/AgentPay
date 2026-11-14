@@ -115,6 +115,7 @@ function App({ tag }: { tag: string | null }) {
 
   const [vaultBalance, setVaultBalance] = useState('0')
   const [positions, setPositions] = useState<{ label: string; amount: string }[]>([])
+  const [stocks, setStocks] = useState<{ symbol: string; amount: string }[]>([])
   const [activeProvider, setActiveProvider] = useState<any>(null)
   const [walletBalance, setWalletBalance] = useState('0')
   const [tokenBalances, setTokenBalances] = useState<Record<string,string>>({})
@@ -171,6 +172,8 @@ function App({ tag }: { tag: string | null }) {
       if (Number(arcWallet) > 0 && !rows.some((row) => row.label === 'Arc wallet')) {
         rows.push({ label: 'Arc wallet', amount: Number(arcWallet).toFixed(2) })
       }
+      const hood = api.chains?.find((c) => c.id === 'robinhood-testnet')
+      setStocks(hood?.tokens || [])
       const total = rows.reduce((sum, row) => sum + Number(row.amount), 0)
       setPositions(rows)
       setVaultBalance((rows.length ? total : Number(api.balance || 0)).toFixed(2))
@@ -270,7 +273,7 @@ function App({ tag }: { tag: string | null }) {
             {view === 'terminal' && <Terminal messages={messages} setMessages={setMessages} userAddress={userAddress} userId={userId} onActionSuccess={refreshBalances} />}
             {view === 'requests' && <PaymentRequestView />}
             {view === 'history' && <History key={historyKey} refreshTrigger={historyKey} userAddress={userAddress} userId={userId} />}
-            {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} positions={positions} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
+            {view === 'account'  && <Profile userAddress={userAddress} userId={userId} vaultBalance={vaultBalance} positions={positions} stocks={stocks} walletBalance={walletBalance} tokenBalances={tokenBalances} activeProvider={activeProvider} onActionSuccess={refreshBalances} agentWalletAddress={agentWalletAddress} agentWalletBalance={vaultBalance} tag={tag} />}
             {view === 'policy'   && <Policy userAddress={userAddress} userId={userId} />}
             {view === 'goals' && <Goals userAddress={userAddress} userId={userId} />}
             {view === 'pools' && <Pools userAddress={userAddress} userId={userId} />}

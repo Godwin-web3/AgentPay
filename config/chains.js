@@ -136,6 +136,13 @@ const CHAINS = {
       address: '0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E',
       decimals: 18,
     },
+    stocks: [
+      { symbol: 'TSLA', address: '0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E', decimals: 18 },
+      { symbol: 'AMD', address: '0x71178BAc73cBeb415514eB542a8995b82669778d', decimals: 18 },
+      { symbol: 'AMZN', address: '0x5884aD2f920c162CFBbACc88C9C51AA75eC09E02', decimals: 18 },
+      { symbol: 'NFLX', address: '0x3b8262A63d25f0477c4DDE23F83cfe22Cb768C93', decimals: 18 },
+      { symbol: 'PLTR', address: '0x1FBE1a0e43594b3455993B5dE5Fd0A7A266298d0', decimals: 18 },
+    ],
     weth: null,
     swapRouter: null,
     quoter: null,
@@ -162,6 +169,11 @@ function listChains() {
 function resolveChainId(name) {
   if (!name) return null;
   const key = String(name).trim().toLowerCase();
+  // The bare word means the testnet. Mainnet is only reached by saying so.
+  if (key === 'robinhood' || key === 'hood' || key === 'robinhood chain' || key === 'robinhood testnet') {
+    return 'robinhood-testnet';
+  }
+  if (key === 'robinhood mainnet') return 'robinhood';
   if (CHAINS[key]) return key;
   if (ALIASES[key]) return ALIASES[key];
   const byNum = listChains().find((c) => String(c.chainId) === key);
