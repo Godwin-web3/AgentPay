@@ -141,7 +141,7 @@ async function veto(walletId, proposalId) {
   return await memberContractCall(walletId, 'veto(uint256)', [proposalId], 'veto');
 }
 
-// ── Agent-signed calls (onlyAgent on-chain) ─────────────────────────────────
+// ── Member-authorized proposal calls ───────────────────────────────────────
 
 async function memberProposalCall(walletId, abiFunctionSignature, abiParameters, label) {
   const txHash = await memberContractCall(walletId, abiFunctionSignature, abiParameters, label);
