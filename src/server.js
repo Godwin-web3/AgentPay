@@ -753,11 +753,6 @@ async function resolveInvite(raw) {
   return entry.address;
 }
 
-function getAgentWallet() {
-  const provider = getProvider();
-  return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-}
-
 // POST /pools/parse — { description } -> a draft {name, invites, constitution}
 // for the user to review before anything touches the chain. One sentence in,
 // not a multi-field settings form.
@@ -1021,7 +1016,7 @@ async function handlePoolChatMessage(req, res) {
       replyContent = replyContent || `Contributed ${intent.amount} USDC. Tx: ${txHash}`;
     } else if (intent.action === 'propose_spend') {
       const to = await resolveInvite(intent.to);
-      const result = await poolVault.proposeSpend(getAgentWallet(), poolId, wallet.address, to, intent.amount, intent.reason || '');
+      const result = await poolVault.proposeSpend(wallet.walletId, poolId, wallet.address, to, intent.amount, intent.reason || '');
       const onChainProposal = await poolVault.getProposal(sharedProvider, result.proposalId);
       await poolStore.recordProposal({ proposalId: result.proposalId, poolId, kind: 'Spend', windowEnds: onChainProposal.windowEnds, proposer: wallet.address });
       proposalId = result.proposalId;
@@ -1040,7 +1035,7 @@ async function handlePoolChatMessage(req, res) {
         objectionWindow: intent.objectionWindowHours != null ? Math.round(Number(intent.objectionWindowHours) * 3600) : pool.constitution.objectionWindow,
         maxSingleProposal: intent.maxSingleProposal ?? pool.constitution.maxSingleProposal,
       };
-      const result = await poolVault.proposeAmendConstitution(getAgentWallet(), poolId, wallet.address, newConstitution);
+      const result = await poolVault.proposeAmendConstitution(wallet.walletId, poolId, wallet.address, newConstitution);
       const onChainProposal = await poolVault.getProposal(sharedProvider, result.proposalId);
       await poolStore.recordProposal({ proposalId: result.proposalId, poolId, kind: 'AmendConstitution', windowEnds: onChainProposal.windowEnds, proposer: wallet.address });
       proposalId = result.proposalId;
@@ -1048,7 +1043,7 @@ async function handlePoolChatMessage(req, res) {
       replyContent = replyContent || `Proposed a rules change. Everyone has until the objection window closes to object.`;
     } else if (intent.action === 'propose_remove') {
       const targetMember = await resolveInvite(intent.targetMember);
-      const result = await poolVault.proposeRemoveMember(getAgentWallet(), poolId, wallet.address, targetMember);
+      const result = await poolVault.proposeRemoveMember(wallet.walletId, poolId, wallet.address, targetMember);
       const onChainProposal = await poolVault.getProposal(sharedProvider, result.proposalId);
       await poolStore.recordProposal({ proposalId: result.proposalId, poolId, kind: 'RemoveMember', windowEnds: onChainProposal.windowEnds, proposer: wallet.address });
       proposalId = result.proposalId;
