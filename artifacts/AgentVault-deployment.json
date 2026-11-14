@@ -1,6 +1,6 @@
 {
   "address": "0xDED74FD77717A31c6582C791c4A4Bd3205884d8C",
-  "implementation": "0xcb9eFfb9CC39D7D8e0a9Ab14E56eEE42173F3C10",
+  "implementation": "0x3A7D3A9d7369cef6b75C7912da27B3eE06689FCD",
   "upgradeKind": "proxy",
   "implementationContract": "AgentVault",
   "deployer": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",

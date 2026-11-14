@@ -4,7 +4,7 @@
   "upgradeKind": "proxy",
   "implementationContract": "VaultFactory",
   "beacon": "0x27d93D0Be6A2E506b8B91D4BdE972bD1dF205b4A",
-  "vaultImplementation": "0xcb9eFfb9CC39D7D8e0a9Ab14E56eEE42173F3C10",
+  "vaultImplementation": "0x3A7D3A9d7369cef6b75C7912da27B3eE06689FCD",
   "agent": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",
   "owner": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",
   "usdc": "0x3600000000000000000000000000000000000000",
