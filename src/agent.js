@@ -16,15 +16,6 @@ const engine = new PolicyEngine();
 const { getProvider, getChain } = require('./chain');
 
 // Mirrors src/server.js's getAgentWallet()/resolveInvite() — needed here too
-// since pool actions reachable from Terminal chat sign the same way pool
-// actions reachable from the Pools tab do (agent-signed proposeSpend, member
-// @tag resolution via walletStore).
-function getAgentWallet() {
-  const { ethers } = require('ethers');
-  const provider = getProvider();
-  return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-}
-
 async function resolveAddressOrTag(raw) {
   if (typeof raw === 'string' && raw.startsWith('0x')) return raw;
   const walletStore = require('./walletStore');
