@@ -123,14 +123,18 @@ function handleHealth(req, res) {
     base: base ? {
       status: base.status,
       vault: base.vault || null,
+      previousVault: base.previousVault || null,
+      upgradeKind: base.upgradeKind || null,
       executor: base.executor || null,
-      reason: base.reason || null,
+      reason: base.reason || base.replaceError || null,
     } : { status: 'pending' },
     robinhoodTestnet: robinhood ? {
       status: robinhood.status,
       vault: robinhood.vault || null,
+      previousVault: robinhood.previousVault || null,
+      upgradeKind: robinhood.upgradeKind || null,
       token: robinhood.tokenSymbol || null,
-      reason: robinhood.reason || null,
+      reason: robinhood.reason || robinhood.replaceError || null,
     } : { status: 'pending' },
     proxies: (() => {
       const proxies = require('./chainRegistry').recall('arc-proxies');
@@ -145,7 +149,8 @@ function handleHealth(req, res) {
         beacon: proxies.beacon || null,
         baseExecutor: proxies.baseExecutor || null,
         requestGuard: proxies.requestGuard === true,
-        reason: proxies.reason || proxies.requestGuardError || null,
+        legacyVaultsReplaced: proxies.legacyVaultsReplaced === true,
+        reason: proxies.reason || proxies.requestGuardError || proxies.legacyReplaceError || null,
       };
     })(),
     time: new Date().toISOString()

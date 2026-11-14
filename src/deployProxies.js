@@ -294,6 +294,81 @@ async function ensureRequestGuard(record) {
   return saved;
 }
 
+// The Base and Robinhood vaults were deployed before proxies existed.
+// Test balances stay on the old addresses. The app follows the new proxy.
+async function replaceLegacyVault(chainKey) {
+  const chain = getChain(chainKey);
+  const provider = getProvider(chainKey);
+  const stored = (await registry.load(chainKey)) || {};
+  if (stored.vault && await hasRequestGuard(provider, stored.vault)) {
+    process.env['VAULT_ADDRESS_' + chain.id.toUpperCase()] = stored.vault;
+    return stored;
+  }
+  if (!stored.vault) return stored;
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  const balance = await provider.getBalance(wallet.address);
+  if (balance < ethers.parseEther('0.0003')) {
+    const reason = wallet.address + ' has ' + ethers.formatEther(balance) + ' ' + chain.gasSymbol + ' on ' + chain.name + '. Not enough to replace the vault.';
+    await registry.save(chainKey, { replaceError: reason });
+    throw new Error(reason);
+  }
+  const { deployUpgradeable } = require('./bootstrapBase');
+  const deployed = await deployUpgradeable(wallet, 'AgentVault', [wallet.address, chain.stable.address]);
+  if (!(await hasRequestGuard(provider, deployed.address))) {
+    throw new Error(chain.name + ' replacement is missing the request guard');
+  }
+  const token = await new ethers.Contract(deployed.address, ['function usdc() view returns (address)', 'function agent() view returns (address)'], provider);
+  const usdc = await token.usdc();
+  if (usdc.toLowerCase() !== chain.stable.address.toLowerCase()) {
+    throw new Error(chain.name + ' replacement holds the wrong token');
+  }
+  const saved = await registry.save(chainKey, {
+    status: 'deployed',
+    vault: deployed.address,
+    vaultTx: deployed.txHash,
+    vaultImplementation: deployed.implementation,
+    upgradeKind: 'proxy',
+    previousVault: stored.vault,
+    agent: await token.agent(),
+    chainId: chain.chainId,
+    token: chain.stable.address,
+    tokenSymbol: chain.stable.symbol,
+    replacedAt: new Date().toISOString(),
+    replaceError: null,
+    reason: 'Old vault was not upgradeable. Test balances were left there and can be minted again.',
+  });
+  process.env['VAULT_ADDRESS_' + chain.id.toUpperCase()] = deployed.address;
+  console.log('[proxies] replaced ' + chainKey + ' ' + stored.vault + ' -> ' + deployed.address);
+  return saved;
+}
+
+async function replaceLegacyVaults(record) {
+  if (record && record.legacyVaultsReplaced) return record;
+  const errors = [];
+  let base = null;
+  let hood = null;
+  try {
+    base = await replaceLegacyVault('base');
+  } catch (err) {
+    errors.push(redact(err));
+  }
+  try {
+    hood = await replaceLegacyVault('robinhood-testnet');
+  } catch (err) {
+    errors.push(redact(err));
+  }
+  if (errors.length || !base || !base.vault || !hood || !hood.vault) {
+    return registry.save(DOC, { legacyReplaceError: errors.join(' | ') || 'replacement did not finish' });
+  }
+  return registry.save(DOC, {
+    legacyVaultsReplaced: true,
+    baseVault: base.vault,
+    robinhoodVault: hood.vault,
+    legacyReplaceError: null,
+    reason: 'Base and Robinhood vaults are proxies. Old test balances were left on the previous contracts and can be minted again.',
+  });
+}
+
 function watchProxies() {
   if (running) return;
   running = true;
@@ -302,13 +377,14 @@ function watchProxies() {
       if (record && record.status === 'deployed') {
         try {
           record = await ensureRequestGuard(record);
+          record = await replaceLegacyVaults(record);
         } catch (err) {
           const reason = redact(err);
           console.error('[proxies] request guard upgrade failed:', reason);
           record = await registry.save(DOC, { requestGuardError: reason });
         }
       }
-      if (record && record.status === 'deployed' && record.requestGuard && !record.requestGuardError) return;
+      if (record && record.status === 'deployed' && record.requestGuard && record.legacyVaultsReplaced && !record.requestGuardError && !record.legacyReplaceError) return;
       if (record && (record.status === 'disabled' || record.status === 'no-gas')) return;
       if (!timer) {
         timer = setTimeout(() => {
