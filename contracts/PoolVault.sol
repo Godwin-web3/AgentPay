@@ -178,7 +178,7 @@ contract PoolVault is ReentrancyGuard {
         uint256 sharedBalance, bool active
     ) {
         Pool storage p = pools[poolId];
-        return (p.founder, p.memberList, p.constitution, p.sharedBalance, p.active && !p.paused);
+        return (p.founder, p.memberList, p.constitution, p.sharedBalance, p.active);
     }
 
     function contribute(uint256 poolId, uint256 amount, bool toShared)
@@ -228,7 +228,8 @@ contract PoolVault is ReentrancyGuard {
         prop.amount = amount;
         prop.reason = reason;
 
-        // Instant execution is allowed only because the member signed this exact spend.
+        // Instant execution is allowed only because the member submitted this exact spend
+        // directly or the agent supplied the member's EIP-712 authorization.
         if (amount <= p.constitution.discretionaryThreshold) {
             _executeSpend(poolId, proposalId, to, amount);
         }
@@ -381,6 +382,10 @@ contract PoolVault is ReentrancyGuard {
     ) {
         Proposal storage p = proposals[proposalId];
         return (p.poolId, p.kind, p.to, p.amount, p.reason, p.windowEnds, p.vetoed, p.resolved, p.executed);
+    }
+
+    function isPoolPaused(uint256 poolId) external view returns (bool) {
+        return pools[poolId].paused;
     }
 
     function pausePool(uint256 poolId) external onlyOwner {
