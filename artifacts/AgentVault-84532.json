@@ -1,0 +1,14 @@
+{
+  "address": "0x360e04826fba5c9a3624457A270C609b859fA7C6",
+  "implementation": "0xCFe26eBf6253Af7CaB5B1FAC8258eAfc5bfC9701",
+  "upgradeKind": "proxy",
+  "implementationContract": "AgentVault",
+  "previousAddress": "0x8e9289b2B4478b292441887B02120Ea7e1D51A83",
+  "agent": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",
+  "owner": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",
+  "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "network": "Base Sepolia",
+  "chainId": 84532,
+  "chain": "base",
+  "timestamp": "2026-11-14T16:26:00.000Z"
+}

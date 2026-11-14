@@ -1,0 +1,14 @@
+{
+  "address": "0x362D1BC1A0e77c86cd295D295AE950730448671d",
+  "implementation": "0x2219eD978BA7D4b78Fa383d6718e7c9457bEfa40",
+  "upgradeKind": "proxy",
+  "implementationContract": "AgentVault",
+  "previousAddress": "0x360e04826fba5c9a3624457A270C609b859fA7C6",
+  "agent": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",
+  "owner": "0x80ea270e071b315AE70aC5DE00B05491FFA98580",
+  "usdc": "0x42fa9A8085c0bc633Afa4e19a1f491db9a4dC0fE",
+  "network": "Robinhood Chain Testnet",
+  "chainId": 46630,
+  "chain": "robinhood-testnet",
+  "timestamp": "2026-11-14T16:26:00.000Z"
+}

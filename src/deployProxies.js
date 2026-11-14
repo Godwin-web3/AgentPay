@@ -1,6 +1,7 @@
 // Deploys the upgradeable contracts once, using the key already on the server.
 // Addresses are remembered in Firestore so a restart does not deploy again.
-// Base and Robinhood vaults that already hold funds are not replaced.
+// Base and Robinhood vaults that are not proxies are replaced once.
+// Old test balances stay on the previous addresses.
 
 const { ethers } = require('ethers');
 const registry = require('./chainRegistry');
