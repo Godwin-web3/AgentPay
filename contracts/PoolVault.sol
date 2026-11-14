@@ -211,7 +211,9 @@ contract PoolVault is ReentrancyGuard {
         if (!p.active) revert PoolInactive();
         if (p.paused) revert PoolPausedError();
         if (memberStatus[poolId][proposer] != MemberStatus.Active) revert ProposerNotMember();
-        if (msg.sender != proposer) {
+        if (msg.sender == proposer) {
+            if (signature.length != 0) revert InvalidSignature();
+        } else {
             if (msg.sender != agent) revert NotAgent();
             _authorizeProposal(
                 poolId, proposer, ProposalKind.Spend, to, amount, keccak256(bytes(reason)),
@@ -244,7 +246,9 @@ contract PoolVault is ReentrancyGuard {
         if (p.paused) revert PoolPausedError();
         if (memberStatus[poolId][proposer] != MemberStatus.Active) revert ProposerNotMember();
         _validateConstitution(newConstitution);
-        if (msg.sender != proposer) {
+        if (msg.sender == proposer) {
+            if (signature.length != 0) revert InvalidSignature();
+        } else {
             if (msg.sender != agent) revert NotAgent();
             _authorizeProposal(
                 poolId, proposer, ProposalKind.AmendConstitution, address(0), 0, bytes32(0),
@@ -265,7 +269,9 @@ contract PoolVault is ReentrancyGuard {
         if (p.paused) revert PoolPausedError();
         if (memberStatus[poolId][proposer] != MemberStatus.Active) revert ProposerNotMember();
         if (memberStatus[poolId][targetMember] != MemberStatus.Active || targetMember == p.founder) revert NotMember();
-        if (msg.sender != proposer) {
+        if (msg.sender == proposer) {
+            if (signature.length != 0) revert InvalidSignature();
+        } else {
             if (msg.sender != agent) revert NotAgent();
             _authorizeProposal(
                 poolId, proposer, ProposalKind.RemoveMember, address(0), 0, bytes32(0),
