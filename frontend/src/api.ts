@@ -59,6 +59,16 @@ export async function clearChatHistory(userId: string): Promise<{ success: boole
   return request<{ success: boolean }>('/chat', { method: 'DELETE' }, userId)
 }
 
+export async function executeSwap(
+  body: { fromAsset?: string; toAsset?: string; amount: number; chain?: string },
+  userId: string
+): Promise<any> {
+  return request<any>('/swap', {
+    method: 'POST',
+    body: JSON.stringify(body)
+  }, userId)
+}
+
 export async function executePay(
   to: string,
   amount: number,

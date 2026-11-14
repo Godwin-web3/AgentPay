@@ -14,10 +14,18 @@ class SwapAdapter extends ExecutionAdapter {
   constructor({ quoteProvider } = {}) {
     super({
       name: 'swap',
-      supportedAssets: ['USDC', 'ETH', 'WETH'],
-      supportedNetworks: ['arc'], // extend per network
+      supportedAssets: ['USDC', 'USDG', 'ETH', 'WETH'],
+      supportedNetworks: ['arc', 'base', 'ethereum', 'robinhood'],
     });
     this.quoteProvider = quoteProvider || quoteSwap;
+  }
+
+  supports(intent) {
+    const asset = intent.asset || intent.fromAsset || 'USDC';
+    const network = intent.network || intent.chain;
+    const assetOk = this.supportedAssets.includes(asset) || this.supportedAssets.includes(intent.toAsset);
+    if (!network) return assetOk || this.supportedAssets.includes('USDC');
+    return assetOk && this.supportedNetworks.includes(network);
   }
 
   async propose(intent) {
@@ -47,14 +55,15 @@ class SwapAdapter extends ExecutionAdapter {
   }
 
   async execute(authorizedIntent) {
-    // No on-chain call here. Caller must have authorized via vault
-    // and then submitted the swap tx separately if needed.
-    return {
-      adapter: this.name,
-      requestId: authorizedIntent.requestId,
-      status: 'proposed-after-vault',
-      verified: false,
-    };
+    const { executeSwap } = require('../swap');
+    return executeSwap({
+      chain: authorizedIntent.chain || authorizedIntent.network,
+      fromAsset: authorizedIntent.asset || authorizedIntent.fromAsset,
+      toAsset: authorizedIntent.toAsset,
+      amount: authorizedIntent.amount,
+      userAddress: authorizedIntent.userAddress,
+      recipient: authorizedIntent.recipient,
+    });
   }
 }
 

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, depositToVault } from '../api'
+import { sendChat, executePay, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, depositToVault, executeSwap } from '../api'
 import type { ChatMessage } from '../types'
 
 interface Props {
@@ -28,13 +28,14 @@ function ProofBadge({ requestId }: { requestId: string }) {
 function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: () => void, onCancel?: () => void }) {
   const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
-  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_deposit'
+  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_deposit' || result.status === 'proposing_swap'
   if (isProposal) {
     let title = 'TX PROPOSAL'
     let detail = ''
     if (result.status === 'proposing_pay') { title = 'PAYMENT PROPOSAL'; detail = `${result.amount} ${result.token || 'USDC'} -> ${result.to?.slice(0, 10)}...` }
     else if (result.status === 'proposing_schedule') { title = 'SCHEDULE PAYMENT'; detail = `${result.amount} USDC to ${result.to?.slice(0, 10)}... / ${result.interval}` }
     else if (result.status === 'proposing_deposit') { title = 'VAULT DEPOSIT'; detail = `${result.amount} USDC` }
+    else if (result.status === 'proposing_swap') { title = 'SWAP'; detail = `${result.amount} ${result.fromAsset} → about ${result.amountOut} ${result.toAsset} on ${result.chainName}` }
     return (
       <div style={{ marginTop: 10, border: '1px solid var(--cyan)', background: 'rgba(79,219,200,0.04)', padding: '12px 14px', fontFamily: 'var(--font-mono)' }}>
         <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2, marginBottom: 6 }}>{title}</div>
@@ -173,6 +174,22 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         const intervalSec = parseInterval(prop.interval)
         const schedRes = await createOnChainSchedule(prop.to, prop.amount, intervalSec, prop.reason || '', userId, prop.conditions?.minBalance || 0)
         res = { status: 'executed', txHash: schedRes.txHash, explorer: schedRes.explorer, type: 'schedule', to: prop.to, amount: prop.amount }
+      } else if (prop.status === 'proposing_swap') {
+        const swapRes = await executeSwap({
+          fromAsset: prop.fromAsset,
+          toAsset: prop.toAsset,
+          amount: prop.amount,
+          chain: prop.chain,
+        }, userId)
+        res = {
+          status: swapRes.success ? 'executed' : 'failed',
+          txHash: swapRes.txHash,
+          explorer: swapRes.explorer,
+          type: 'swap',
+          amount: prop.amount,
+          reason: swapRes.reason,
+          amountOut: swapRes.quote?.amountOut || prop.amountOut,
+        }
       }
       if (res) {
         setTxResults(r => ({ ...r, [msgIdx]: res }))
@@ -221,6 +238,10 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
           if (intent.action === 'pay' && intent.to && intent.amount) setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_pay', to: intent.to, amount: intent.amount, token: 'USDC', reason: intent.reason } }))
           if (intent.action === 'deposit' && intent.amount) setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_deposit', amount: intent.amount } }))
           if (intent.action === 'schedule' && intent.to && intent.amount && intent.interval) setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_schedule', to: intent.to, amount: intent.amount, interval: intent.interval, reason: intent.reason, conditions: intent.conditions } }))
+          if (intent.action === 'swap' && intent.data?.quote) {
+            const q = intent.data.quote
+            setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_swap', fromAsset: q.from, toAsset: q.to, amount: q.amountIn, amountOut: q.amountOut, chain: q.chain, chainName: q.chainName } }))
+          }
           if (intent.action === 'update_policy' && intent.policyUpdate) {
             const up = intent.policyUpdate
             const applyPolicyUpdate = async () => {
@@ -296,14 +317,14 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         )}
       </div>
       <div className="quick-actions">
-        {[{ label: 'SEND', value: 'Send 1 USDC to ', auto: false }, { label: 'BALANCE', value: 'What is my vault balance?', auto: true }, { label: 'SCHEDULE', value: 'Pay 1 USDC every day to ', auto: false }].map(btn => (
+        {[{ label: 'SEND', value: 'Send 1 USDC to ', auto: false }, { label: 'SWAP', value: 'Swap 10 USDC for ETH on Base', auto: true }, { label: 'BALANCE', value: 'What is my vault balance?', auto: true }, { label: 'SCHEDULE', value: 'Pay 1 USDC every day to ', auto: false }].map(btn => (
           <button key={btn.label} className="quick-btn" disabled={loading} onClick={() => { if (btn.auto) { handleSend(btn.value) } else { setInput(btn.value); inputRef.current?.focus() } }}>
             {btn.label}
           </button>
         ))}
       </div>
       <div className="input-area">
-        <textarea ref={inputRef} className="chat-input" placeholder="send, pay, schedule..." value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '120px' }} />
+        <textarea ref={inputRef} className="chat-input" placeholder="send, pay, swap..." value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '120px' }} />
         <button className="send-btn icon-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>SEND</button>
       </div>
     </div>

@@ -28,6 +28,7 @@ const artifact = JSON.parse(fs.readFileSync(path.join(__dirname, '../artifacts/P
 
 let deployment = null;
 const deploymentPath = path.join(__dirname, '../artifacts/PoolVault-deployment.json');
+const { getProvider } = require('./chain');
 if (fs.existsSync(deploymentPath)) {
   deployment = JSON.parse(fs.readFileSync(deploymentPath, 'utf8'));
 }
@@ -95,7 +96,7 @@ async function createPool(walletId, invites, constitution) {
     [invites, packConstitution(constitution)],
     'create pool'
   );
-  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
+  const provider = getProvider();
   const receipt = await provider.getTransactionReceipt(txHash);
   const iface = new ethers.Interface(artifact.abi);
   for (const log of receipt.logs) {

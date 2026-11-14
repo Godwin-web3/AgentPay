@@ -1,25 +1,25 @@
 /**
- * USDC unit handling — single source of truth for decimals.
- *
- * Arc's native USDC (gateway/native gas, 0x3600…0000) and the ERC-20 USDC used
- * by AgentVault internal accounting are assumed to share `USDC_DECIMALS` below.
- * Previously the codebase mixed `ethers.parseEther` (1e18) and `* 1e6` (1e6),
- * which silently mis-accounted balances between deposit and execute. Everything
- * now funnels through these helpers.
+ * Stable-token unit handling. Decimals come from the active chain record
+ * (config/chains.js) unless USDC_DECIMALS is set.
+ * Arc gas is 18 decimals. The vault's ERC-20 stable is 6 on every chain here.
  */
 const { ethers } = require('ethers');
 
-// All current callers (AgentVault deposit/withdraw, escrow policy/payment
-// accounting, job escrow budgets) interact with USDC's ERC-20 interface,
-// which uses 6 decimals on Arc — NOT the native 18-decimal gas token.
-const USDC_DECIMALS = Number(process.env.USDC_DECIMALS) || 6;
-
-function toUnits(humanAmount) {
-  return ethers.parseUnits(String(humanAmount), USDC_DECIMALS);
+function currentDecimals() {
+  if (process.env.USDC_DECIMALS) return Number(process.env.USDC_DECIMALS);
+  return require('../config/network').usdcDecimals;
 }
 
-function fromUnits(weiAmount) {
-  return parseFloat(ethers.formatUnits(weiAmount, USDC_DECIMALS));
+function toUnits(humanAmount, decimals = currentDecimals()) {
+  return ethers.parseUnits(String(humanAmount), decimals);
 }
 
-module.exports = { USDC_DECIMALS, toUnits, fromUnits };
+function fromUnits(weiAmount, decimals = currentDecimals()) {
+  return parseFloat(ethers.formatUnits(weiAmount, decimals));
+}
+
+module.exports = { toUnits, fromUnits, currentDecimals };
+Object.defineProperty(module.exports, 'USDC_DECIMALS', {
+  enumerable: true,
+  get: currentDecimals,
+});

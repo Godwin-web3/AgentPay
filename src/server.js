@@ -10,6 +10,7 @@ const { gateway } = require('./gatewayMiddleware');
 const escrow = require('./escrow');
 const express = require('express');
 const app = express();
+const { getProvider, getChain, listChains } = require('./chain');
 
 // Express 5 (path-to-regexp v8) requires routes here to be matched with a
 // trailing slash that Express 4 treated as optional. Normalize incoming
@@ -30,7 +31,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 const walletService = require('./walletService');
 
-const EXPLORER = 'https://testnet.arcscan.app/tx/';
+const EXPLORER = getChain().explorer + '/tx/';
 
 const PORT = process.env.PORT || 3000;
 
@@ -115,12 +116,14 @@ async function getOrCreateWallet(userId) {
 
 // GET /health
 function handleHealth(req, res) {
+  const chain = getChain();
   return send(res, 200, {
     status: 'ok',
     agent: 'AgentPay',
     version: '3.0',
-    network: 'Arc Testnet',
-    chainId: 5042002,
+    network: chain.name,
+    chainId: chain.chainId,
+    chain: chain.id,
     time: new Date().toISOString()
   });
 }
@@ -384,6 +387,42 @@ async function handlePay(req, res) {
   }
 }
 
+// POST /swap — re-quotes, then vault-authorizes. Does not move funds if the
+// vault or SwapExecutor for that chain is not deployed.
+async function handleSwap(req, res) {
+  const userId = getUserId(req);
+  const { fromAsset, toAsset, amount, chain } = req.body || {};
+  if (!amount) return send(res, 400, { error: 'Missing amount' });
+  try {
+    const wallet = await getOrCreateWallet(userId);
+    const { executeSwap } = require('./swap');
+    const result = await executeSwap({
+      chain,
+      fromAsset,
+      toAsset: toAsset || 'ETH',
+      amount,
+      userAddress: wallet.address,
+    });
+    return send(res, 200, result);
+  } catch (err) {
+    return send(res, 200, { success: false, executed: false, reason: err.message });
+  }
+}
+
+function handleChains(req, res) {
+  return send(res, 200, {
+    active: getChain().id,
+    chains: listChains().map((c) => ({
+      id: c.id,
+      name: c.name,
+      chainId: c.chainId,
+      stable: c.stable.symbol,
+      swap: !!(c.quoter && c.swapRouter),
+      explorer: c.explorer,
+    })),
+  });
+}
+
 // GET /schedules
 async function handleGetSchedules(req, res) {
   const userId = getUserId(req);
@@ -510,7 +549,7 @@ async function resolveInvite(raw) {
 }
 
 function getAgentWallet() {
-  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
+  const provider = getProvider();
   return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 }
 
@@ -1172,6 +1211,8 @@ app.post('/chat', handleChat);
 app.get('/chat', handleGetChatHistory);
 app.delete('/chat', handleDeleteChat);
 app.post('/pay', handlePay);
+app.post('/swap', handleSwap);
+app.get('/chains', handleChains);
 app.get('/schedules', handleGetSchedules);
 app.post('/schedules', handleCreateSchedule);
 app.delete('/schedules/:id', (req, res) => handleDeleteSchedule(req, res, req.params.id));

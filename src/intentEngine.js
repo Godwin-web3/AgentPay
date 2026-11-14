@@ -16,9 +16,10 @@ const decisionLog = require('./decisionLog');
 const agent = require('./agent');
 const { evaluateTrigger } = require('./triggers');
 const escrow = require('./escrow');
+const { getProvider } = require('./chain');
 
 function getOperatorWallet() {
-  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
+  const provider = getProvider();
   return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 }
 
@@ -34,6 +35,16 @@ function buildDeps(walletId) {
     },
     evaluateTrigger: (condition) => evaluateTrigger(condition),
     pay: async (to, amount, reason, userAddress) => agent.pay(walletId, to, amount, reason, userAddress),
+    swap: async (step, userAddress) => {
+      const { executeSwap } = require('./swap');
+      return executeSwap({
+        chain: step.chain,
+        fromAsset: step.fromAsset,
+        toAsset: step.toAsset || step.to,
+        amount: step.amount,
+        userAddress,
+      });
+    },
     commitDecision: async (requestId, record, summary) => {
       try {
         await decisionLog.commitDecision(wallet, requestId, record, summary);

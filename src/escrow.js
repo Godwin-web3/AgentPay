@@ -2,6 +2,7 @@ const { ethers } = require('ethers');
 const fs = require('fs');
 const path = require('path');
 const { toUnits, fromUnits } = require('../utils/usdc');
+const { getProvider, getChain } = require('./chain');
 
 const artifact = JSON.parse(
   fs.readFileSync(path.join(__dirname, '../artifacts/AgentVault.json'), 'utf8')
@@ -45,7 +46,7 @@ const VAULT_ABI = [
 
 async function findVault(userAddress) {
   if (process.env.VAULT_ADDRESS) return process.env.VAULT_ADDRESS;
-  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC);
+  const provider = getProvider();
   const factory = new ethers.Contract(factoryDeployment.address, factoryArtifact.abi, provider);
   if (!userAddress) {
     return process.env.VAULT_ADDRESS || deployment.address || null;
@@ -75,7 +76,7 @@ async function getVaultContract(wallet, userAddress) {
 }
 
 const TOKENS = {
-  USDC: process.env.USDC_CONTRACT || "0x3600000000000000000000000000000000000000",
+  USDC: process.env.USDC_CONTRACT || require('./chain').getChain().stable.address,
 };
 
 function resolveTokenAddress(symbolOrAddr) {
@@ -136,7 +137,7 @@ async function signExecute(vaultAddress, signerWallet, { user, to, amount, reque
   const domain = {
     name: "AgentVault",
     version: "1",
-    chainId: 5042002,
+    chainId: getChain().chainId,
     verifyingContract: vaultAddress
   };
   const value = {

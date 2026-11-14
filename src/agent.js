@@ -13,6 +13,7 @@ const { fromUnits } = require('../utils/usdc');
 // short-circuits before spending gas, but an advisory pass is NOT a guarantee —
 // the vault may still revert on chain.
 const engine = new PolicyEngine();
+const { getProvider, getChain } = require('./chain');
 
 // Mirrors src/server.js's getAgentWallet()/resolveInvite() — needed here too
 // since pool actions reachable from Terminal chat sign the same way pool
@@ -20,7 +21,7 @@ const engine = new PolicyEngine();
 // @tag resolution via walletStore).
 function getAgentWallet() {
   const { ethers } = require('ethers');
-  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
+  const provider = getProvider();
   return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 }
 
@@ -60,7 +61,7 @@ async function pay(walletId, to, amountUSDC, reason, userAddress) {
     // policy and is removed from the payment path. walletService.sendUSDC is
     // retained only for x402 facilitation where no vault exists for the payee.
     const { ethers } = require('ethers');
-    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+    const provider = getProvider();
     const agentKey = process.env.PRIVATE_KEY;
     if (!agentKey) throw new Error('No agent key configured (PRIVATE_KEY)');
     const wallet = new ethers.Wallet(agentKey, provider);
@@ -96,7 +97,7 @@ async function pay(walletId, to, amountUSDC, reason, userAddress) {
     if (/ExceedsDailyCap|ExceedsHourlyVelocity|ExceedsPerTxCap|NotWhitelisted|Too many/i.test(reasonText)) {
       try {
         const { ethers } = require('ethers');
-        const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+        const provider = getProvider();
         const agentWallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
         await escrow.pauseUser(agentWallet, userAddress);
       } catch (_) { /* best-effort */ }
@@ -150,7 +151,7 @@ async function chat(message, walletId, userAddress) {
     try {
       const escrow = require('./escrow');
       const { ethers } = require('ethers');
-      const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+      const provider = getProvider();
       const vaultAddr = await escrow.findVault(address);
       if (vaultAddr) {
         const onChain = await escrow.getOnChainPolicy(provider, address);
@@ -175,6 +176,26 @@ async function chat(message, walletId, userAddress) {
       intent.data = { pools };
     } catch (e) {
       intent.message = "Could not load your pools: " + e.message;
+    }
+  }
+  if (intent.action === "swap") {
+    try {
+      const { quoteSwap } = require('./swap');
+      const quote = await quoteSwap({
+        chain: intent.chain,
+        fromAsset: intent.fromAsset || intent.from,
+        toAsset: intent.toAsset || 'ETH',
+        amount: intent.amount,
+      });
+      intent.data = { quote };
+      intent.chain = quote.chain;
+      intent.fromAsset = quote.from;
+      intent.toAsset = quote.to;
+      intent.amount = quote.amountIn;
+      intent.message = `Swap ${quote.amountIn} ${quote.from} for about ${quote.amountOut} ${quote.to} on ${quote.chainName}. Confirm to send it through the vault.`;
+    } catch (e) {
+      intent.data = { quoteError: e.message };
+      intent.message = e.message;
     }
   }
   if (intent.action === "goals_status") {
@@ -229,7 +250,7 @@ async function chat(message, walletId, userAddress) {
       intent.to = to; // pre-resolved — keeps handleChat's generic @tag pass a no-op
       const { proposalId, txHash } = await poolVault.proposeSpend(getAgentWallet(), pool.poolId, address, to, intent.amount, intent.reason || '');
       const { ethers } = require('ethers');
-      const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
+      const provider = getProvider();
       const onChainProposal = await poolVault.getProposal(provider, proposalId);
       await poolStore.recordProposal({ proposalId, poolId: pool.poolId, kind: 'Spend', windowEnds: onChainProposal.windowEnds, proposer: address });
       if (onChainProposal.resolved) {
@@ -269,7 +290,7 @@ async function chat(message, walletId, userAddress) {
     try {
       const escrow = require('./escrow');
       const { ethers } = require('ethers');
-      const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+      const provider = getProvider();
       const vaultAddr = await escrow.findVault(address);
       if (vaultAddr) {
         const onChain = await escrow.getOnChainPolicy(provider, address);
@@ -313,7 +334,7 @@ async function payKeryx(toolId, args) {
   const accept = challenge.accepts[0];
 
   const { ethers } = require('ethers');
-  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
+  const provider = getProvider();
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
   const nonce = ethers.hexlify(ethers.randomBytes(32));
@@ -323,7 +344,7 @@ async function payKeryx(toolId, args) {
   const domain = {
     name: 'USDC',
     version: '2',
-    chainId: 5042002,
+    chainId: getChain().chainId,
     verifyingContract: accept.asset
   };
   const types = {

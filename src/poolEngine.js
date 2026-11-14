@@ -6,9 +6,10 @@ const { ethers } = require('ethers');
 const poolVault = require('./poolVault');
 const poolStore = require('./poolStore');
 const { appendSpend } = require('./spendStore');
+const { getProvider } = require('./chain');
 
 function getOperatorWallet() {
-  const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: 'arc-testnet' });
+  const provider = getProvider();
   return new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 }
 

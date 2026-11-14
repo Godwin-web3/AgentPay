@@ -1,6 +1,7 @@
 const { ethers } = require('ethers');
 require('dotenv').config();
 const { fromUnits } = require('../utils/usdc');
+const { getProvider } = require('./chain');
 
 /**
  * Fetches metrics from the on-chain vault to verify if conditions are met.
@@ -9,7 +10,7 @@ const { fromUnits } = require('../utils/usdc');
 async function getOnChainMetrics(userAddress) {
   try {
     const { getVaultContract } = require('./escrow');
-    const provider = new ethers.JsonRpcProvider(process.env.ARC_RPC, { chainId: 5042002, name: "arc-testnet" });
+    const provider = getProvider();
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     const contract = await getVaultContract(wallet, userAddress);
 

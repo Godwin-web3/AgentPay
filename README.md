@@ -22,6 +22,31 @@ Run `npm test` to see the safety and provenance claims proven against a real loc
 
 ---
 
+## Chains and swaps
+
+Arc stays the default. The same vault contract deploys on any chain in `config/chains.js`.
+
+| Chain | Id | Stable | Swap |
+|---|---|---|---|
+| Arc Testnet | `arc` | USDC (6 decimals in the vault) | No Uniswap quoter |
+| Base | `base` | USDC | Uniswap SwapRouter02 |
+| Ethereum | `ethereum` | USDC | Uniswap SwapRouter02 |
+| Robinhood Chain | `robinhood` | USDG | Uniswap SwapRouter02 |
+
+```bash
+CHAIN=base node scripts/compile.js
+CHAIN=base node scripts/deploy.js
+CHAIN=base node scripts/deploySwapExecutor.js
+```
+
+`deploy.js` passes the chain's stable token into the `AgentVault` constructor and writes `artifacts/AgentVault-<chainId>.json`. It does not overwrite the Arc deployment record unless `CHAIN=arc`.
+
+In the terminal, "swap 10 USDC for ETH on Base" quotes Uniswap and waits for confirm. Confirm calls `POST /swap`, which re-quotes, then `AgentVault.execute` sends the stable to `SwapExecutor`, which calls the router. If either contract is missing on that chain, the quote still returns and no funds move.
+
+Robinhood Chain's stable is USDG, not USDC. A swap there is "swap 10 USDG for ETH on Robinhood".
+
+---
+
 ## ⚡ Arc-Native Innovations
 
 AgentPay targets Arc's agentic/emerging primitives:

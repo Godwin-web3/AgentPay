@@ -1,9 +1,4 @@
-const { ethers } = require('ethers');
+const { getProvider } = require('./chain');
 
-const provider = new ethers.JsonRpcProvider(
-  process.env.ARC_RPC,
-  { chainId: 5042002, name: 'arc-testnet' },
-  { staticNetwork: true }
-);
-
-module.exports = provider;
+// Shared read provider for the active chain. ARC_RPC still overrides Arc.
+module.exports = getProvider();
