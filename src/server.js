@@ -101,28 +101,11 @@ function getUserId(req) {
 async function getOrCreateWallet(userId) {
   const existing = await walletStore.getWallet(userId);
   if (existing) return existing;
-  const wallet = await walletService.createUserWallet(userId);
-  const record = {
-    walletId: wallet.walletId,
-    address: wallet.address,
-    email: null,
-    displayName: null,
-    tag: null,
-    createdAt: new Date().toISOString()
-  };
-  await walletStore.setWallet(userId, record);
-  return record;
+  throw new Error('No wallet yet. Sign in again.');
 }
 
-async function ensureChainWallet(userId, chain) {
-  const record = await getOrCreateWallet(userId);
-  if (!chain.circle || chain.circle === 'ARC-TESTNET') return record;
-  const saved = record.chainWallets && record.chainWallets[chain.id];
-  if (saved && saved.walletId) return { ...record, walletId: saved.walletId, address: saved.address };
-  const created = await walletService.createWalletOnChain(chain.circle);
-  const chainWallets = { ...(record.chainWallets || {}), [chain.id]: created };
-  await walletStore.setWallet(userId, { chainWallets });
-  return { ...record, walletId: created.walletId, address: created.address, chainWallets };
+async function ensureChainWallet(userId, _chain) {
+  return getOrCreateWallet(userId);
 }
 
 // GET /health
@@ -1135,7 +1118,7 @@ async function handleVaultBalance(req, res) {
       { id: 'arc', name: 'Arc Testnet', token: 'USDC', vault: arcBalance, wallet: '0', address: agentAddress, vaultAddress: vaultAddr },
     ];
     try {
-      const hood = await require('./robinhoodBalance').readRobinhoodPosition();
+      const hood = await require('./robinhoodBalance').readRobinhoodPosition(agentAddress);
       if (hood) chains.push(hood);
     } catch (err) {
       console.error('[vault] robinhood:', err.message);
@@ -1646,27 +1629,30 @@ require('./bridge').watchBridges();
   console.log('⏰ On-chain schedule keeper started (60s interval)');
 })();
 
-// Google Auth login - create Circle wallet for new users
+// Sign-in stores the user's own EVM address. Circle is not asked for a wallet.
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { uid, email, displayName } = req.body;
+    const { uid, email, displayName, address } = req.body;
     if (!uid) return res.status(400).json({ error: 'uid required' });
 
     let wallet = await walletStore.getWallet(uid);
 
     if (!wallet) {
-      const walletService = require('./walletService');
-      const created = await walletService.createUserWallet(uid);
+      const { ethers } = require('ethers');
+      if (!address || !ethers.isAddress(address)) {
+        return res.status(200).json({ wallet: null });
+      }
       wallet = {
-        walletId: created.walletId,
-        address: created.address,
+        walletId: null,
+        address: ethers.getAddress(address),
+        provider: 'privy',
         email,
         displayName,
         tag: null,
         createdAt: new Date().toISOString()
       };
       await walletStore.setWallet(uid, wallet);
-      console.log('New user wallet created:', uid, created.address);
+      console.log('New user wallet saved:', uid, wallet.address);
     }
 
     res.json({ wallet });

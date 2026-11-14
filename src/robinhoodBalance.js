@@ -9,17 +9,17 @@ function holder() {
   return '0x80ea270e071b315AE70aC5DE00B05491FFA98580';
 }
 
-async function readRobinhoodPosition() {
+async function readRobinhoodPosition(address) {
   const chain = getChain('robinhood-testnet');
-  const address = holder();
-  if (!address || !chain.stocks) return null;
+  const who = address || holder();
+  if (!who || !chain.stocks) return null;
   const provider = getProvider(chain.id);
   const tokens = [];
   const listed = [...(chain.stocks || [])];
   if (chain.usdg) listed.unshift(chain.usdg);
   for (const token of listed) {
     const contract = new ethers.Contract(token.address, ERC20, provider);
-    const balance = await contract.balanceOf(address);
+    const balance = await contract.balanceOf(who);
     tokens.push({
       symbol: token.symbol,
       amount: Number(ethers.formatUnits(balance, token.decimals)).toFixed(2),
@@ -29,14 +29,14 @@ async function readRobinhoodPosition() {
   const vaultAddress = require('./swap').vaultAddressFor(chain);
   if (vaultAddress) {
     const vault = new ethers.Contract(vaultAddress, ['function balances(address) view returns (uint256)'], provider);
-    const credited = await vault.balances(address);
+    const credited = await vault.balances(who);
     vaultAmount = Number(ethers.formatUnits(credited, chain.stable.decimals)).toFixed(2);
   }
-  const eth = Number(ethers.formatEther(await provider.getBalance(address))).toFixed(4);
+  const eth = Number(ethers.formatEther(await provider.getBalance(who))).toFixed(4);
   return {
     id: chain.id,
     name: chain.name,
-    address,
+    address: who,
     eth,
     vault: vaultAmount,
     token: chain.stable.symbol,
