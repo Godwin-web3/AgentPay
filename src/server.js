@@ -1463,6 +1463,7 @@ module.exports = { startServer };
 // Retries every 10 minutes until it deploys or is disabled.
 require('./bootstrapBase').watchBase();
 require('./bootstrapRobinhood').watchRobinhood();
+require('./bridge').watchBridges();
 
 // Boot: restart timers for all active scheduled jobs
 (async () => {

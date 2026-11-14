@@ -148,4 +148,37 @@ async function completeBridge(userId) {
   return { success: true, status: 'complete', burnTx: pending.burnTx, mintTx, amount: pending.amount, fromChain: pending.fromChain, toChain: pending.toChain };
 }
 
-module.exports = { quoteBridge, executeBridge, completeBridge };
+async function resumePendingBridges() {
+  const wallets = await walletStore.getAllWallets();
+  for (const [userId, record] of Object.entries(wallets)) {
+    if (!record.pendingBridge || !record.pendingBridge.burnTx) continue;
+    try {
+      const done = await completeBridge(userId);
+      console.log('[bridge] minted', done.mintTx);
+      try {
+        const { appendSpend } = require('./spendStore');
+        await appendSpend({
+          userAddress: userId,
+          to: done.toChain,
+          amount: Number(done.amount),
+          reason: `Minted on ${done.toChain}`,
+          txHash: done.mintTx,
+          token: 'USDC',
+          type: 'bridge',
+        });
+      } catch (err) {
+        console.error('[bridge] history', err.message);
+      }
+    } catch (err) {
+      if (!/not attested/i.test(err.message)) console.error('[bridge] resume', err.message);
+    }
+  }
+}
+
+function watchBridges() {
+  const tick = () => resumePendingBridges().catch((err) => console.error('[bridge]', err.message));
+  setTimeout(tick, 20000);
+  setInterval(tick, 60000);
+}
+
+module.exports = { quoteBridge, executeBridge, completeBridge, watchBridges };
