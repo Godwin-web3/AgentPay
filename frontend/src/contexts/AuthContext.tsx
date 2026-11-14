@@ -28,26 +28,41 @@ function embeddedAddress(user: ReturnType<typeof usePrivy>['user']) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { ready, authenticated, user: privyUser, login, logout: privyLogout } = usePrivy();
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [booting, setBooting] = useState(true);
   const [walletAddress, setWalletAddress] = useState('');
   const [uid, setUid] = useState('');
 
   useEffect(() => {
+    const timer = setTimeout(() => setBooting(false), 6000);
+    return () => clearTimeout(timer);
+  }, [ready, authenticated]);
+
+  useEffect(() => {
     if (!ready) return;
-    const address = embeddedAddress(privyUser);
-    if (!authenticated || !privyUser || !address) {
+    if (!authenticated || !privyUser) {
       setUser(null);
       setUid('');
       setWalletAddress('');
-      setLoading(!authenticated || !privyUser);
+      setBooting(false);
       return;
     }
 
-    let cancelled = false;
-    setLoading(true);
+    const address = embeddedAddress(privyUser);
+    if (!address) return;
+
+    setUser({ uid: privyUser.id });
+    setUid(privyUser.id);
+    setWalletAddress(address);
+    localStorage.setItem('agentpay_address', address);
+    localStorage.setItem('agentpay_uid', privyUser.id);
+    setBooting(false);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
     fetch('https://agentpay-c4o7.onrender.com/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
       body: JSON.stringify({
         uid: privyUser.id,
         email: privyUser.email?.address || privyUser.google?.email || null,
@@ -57,27 +72,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
       .then((res) => res.json())
       .then((data) => {
-        if (cancelled) return;
         const saved = data.wallet?.address || address;
-        setUser({ uid: privyUser.id });
-        setUid(privyUser.id);
+        if (!saved || saved === address) return;
         setWalletAddress(saved);
         localStorage.setItem('agentpay_address', saved);
-        localStorage.setItem('agentpay_uid', privyUser.id);
       })
-      .catch((err) => {
-        console.error('Backend login sync failed:', err);
-        if (cancelled) return;
-        setUser({ uid: privyUser.id });
-        setUid(privyUser.id);
-        setWalletAddress(address);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+      .catch(() => {})
+      .finally(() => clearTimeout(timer));
 
     return () => {
-      cancelled = true;
+      controller.abort();
+      clearTimeout(timer);
     };
   }, [ready, authenticated, privyUser]);
 
@@ -87,12 +92,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await privyLogout();
+    setUser(null);
+    setUid('');
+    setWalletAddress('');
     localStorage.removeItem('agentpay_address');
     localStorage.removeItem('agentpay_uid');
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading: !ready || loading, walletAddress, uid, signInWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading: booting, walletAddress, uid, signInWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

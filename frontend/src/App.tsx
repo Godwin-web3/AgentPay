@@ -270,23 +270,38 @@ function AppWithAuth() {
       setClaimed(false);
       return;
     }
+    const cached = localStorage.getItem('agentpay_tag_' + user.uid);
     setClaimed(localStorage.getItem('agentpay_test_claimed_v3_' + user.uid) === '1');
-    setTagLoading(true);
-    const fetchWithTimeout = (ms: number) => {
-      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
-      return import('./api').then(({ getMe }) => Promise.race([getMe(user.uid), timeout]));
-    };
-
-    fetchWithTimeout(8000)
-      .catch(() => fetchWithTimeout(15000))
-      .then((me: any) => {
-        setTag(me.tag || null);
+    if (cached) {
+      setTag(cached);
+      setTagChecked(true);
+      setTagLoading(false);
+    } else {
+      setTagLoading(true);
+    }
+    let cancelled = false;
+    const giveUp = setTimeout(() => {
+      if (!cancelled) setTagLoading(false);
+    }, 4000);
+    import('./api').then(({ getMe }) => getMe(user.uid))
+      .then((me) => {
+        if (cancelled) return;
+        const next = me.tag || '';
+        setTag(next || null);
         setTagChecked(true);
+        if (next) localStorage.setItem('agentpay_tag_' + user.uid, next);
       })
       .catch(() => {
-        setTagChecked(false);
+        if (!cancelled && !cached) setTagChecked(false);
       })
-      .finally(() => setTagLoading(false));
+      .finally(() => {
+        if (!cancelled) setTagLoading(false);
+        clearTimeout(giveUp);
+      });
+    return () => {
+      cancelled = true;
+      clearTimeout(giveUp);
+    };
   }, [user]);
 
   if (loading || tagLoading) return (
@@ -298,7 +313,7 @@ function AppWithAuth() {
   if (!user) return authView === 'landing'
     ? <Landing onLaunch={() => setAuthView('login')} />
     : <Login onBack={() => setAuthView('landing')} />;
-  if (tagChecked && !tag) return <ClaimTag onClaimed={(t) => { localStorage.setItem('agentpay_view', 'terminal'); setTag(t || 'skip'); }} />;
+  if (tagChecked && !tag) return <ClaimTag onClaimed={(t) => { localStorage.setItem('agentpay_view', 'terminal'); if (t) localStorage.setItem('agentpay_tag_' + user.uid, t); setTag(t || 'skip'); }} />;
   if (!claimed) return <ClaimFunds userId={user.uid} onDone={() => { localStorage.setItem('agentpay_test_claimed_v3_' + user.uid, '1'); setClaimed(true); }} />;
   return <App tag={tag} />;
 }
