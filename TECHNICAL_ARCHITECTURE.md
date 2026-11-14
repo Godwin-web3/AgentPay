@@ -27,7 +27,7 @@ AI interprets intent and proposes actions. Deterministic policy and execution sy
 - Whitelist (optional). Empty whitelist allows any recipient.
 - Velocity tracking (hourlyTxCount, dailySpent) reset on time boundaries.
 - Two-step agent rotation (proposeAgent / acceptAgent).
-- EIP-712 executeWithSig path so a user can authorize without the operator holding a spend key.
+- EIP-712 `executeWithSig` is signed by the registered agent, not the user. The user's policy still applies. A non-zero requestId settles once.
 - onlyAgent modifier on execute, multicall, and executeScheduled.
 - Per-user pause (onlyOwner).
 - ReentrancyGuard.
@@ -41,7 +41,7 @@ AI interprets intent and proposes actions. Deterministic policy and execution sy
 - Backend (src/server.js and related) calls the vault. It does not bypass it for payment paths.
 
 ### 5. Settlement and Verification Layer
-- DecisionLog.sol commits keccak256 of the off-chain decision record (goal + plan + action) under the same requestId used in AgentVault before execution.
+- DecisionLog.sol commits keccak256 of the off-chain decision record when the log is reachable. A failed commit does not block the payment, and that payment then has no decision record. Replay protection is AgentVault's one-time requestId, not the log.
 - Anyone can recompute the hash from a published record and confirm it matches the on-chain commit. Commit block number precedes the Executed event.
 - finalize() records an outcome hash. This is operator-written and non-authoritative, but it sits on the same log.
 - PaymentRequest states (created / shared / reviewed / authorized / settled / expired / cancelled / failed) track the request lifecycle. Settlement is recorded only after a vault execution produces a txHash.

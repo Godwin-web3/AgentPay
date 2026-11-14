@@ -7,8 +7,9 @@ pragma solidity ^0.8.20;
  *
  * Hardened for multi-user:
  *  - Two-step agent rotation (owner proposes, new agent accepts).
- *  - EIP-712 signed execution path (`executeWithSig`) so a user SCA can authorize
- *    a payment without the operator holding a spend key.
+ *  - EIP-712 executeWithSig is agent-delegated. The registered agent signs,
+ *    and the user's on-chain policy is what limits the spend. It is not a
+ *    user signature. A non-zero requestId can settle only once.
  *  - Per-user circuit breaker / emergency pause (onlyOwner) layered on top of policy.
  *  - `executeSchedule` is now agent-only (no permissionless force-execution).
  */
@@ -77,6 +78,9 @@ contract AgentVault is ReentrancyGuard, Upgradeable {
     mapping(address => uint256) public hourlyTxCount;
     mapping(address => uint256) public lastTxHourTimestamp;
 
+    /// @notice Append-only. Non-zero request ids settle once. bytes32(0) is not tracked.
+    mapping(bytes32 => bool) public executedRequests;
+
     event Deposited(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event Executed(address indexed user, address indexed to, uint256 amount, string reason, bytes32 requestId);
@@ -105,6 +109,7 @@ contract AgentVault is ReentrancyGuard, Upgradeable {
     error SignatureExpired();
     error ZeroAddress();
     error UseBeacon(address beacon);
+    error DuplicateRequest();
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert NotOwner();
@@ -273,6 +278,13 @@ contract AgentVault is ReentrancyGuard, Upgradeable {
         hourlyTxCount[user]++;
     }
 
+    /// @dev Mark the id used before any token move. A revert rolls this back.
+    function _consumeRequest(bytes32 requestId) internal {
+        if (requestId == bytes32(0)) return;
+        if (executedRequests[requestId]) revert DuplicateRequest();
+        executedRequests[requestId] = true;
+    }
+
     function _execute(
         address user,
         address to,
@@ -370,6 +382,7 @@ contract AgentVault is ReentrancyGuard, Upgradeable {
         bytes32 digest = _sigDigest(user, to, amount, requestId, nonces[user], deadline);
         if (!_verify(digest, agent, sig)) revert InvalidSignature();
         nonces[user] = nonces[user] + 1;
+        _consumeRequest(requestId);
         _execute(user, to, amount, "", requestId);
     }
 
@@ -382,6 +395,7 @@ contract AgentVault is ReentrancyGuard, Upgradeable {
         string calldata reason,
         bytes32 requestId
     ) external onlyAgent nonReentrant notPaused(user) {
+        _consumeRequest(requestId);
         _execute(user, to, amount, reason, requestId);
     }
 
@@ -393,6 +407,7 @@ contract AgentVault is ReentrancyGuard, Upgradeable {
         bytes32 requestId
     ) external onlyAgent nonReentrant notPaused(user) {
         require(targets.length == amounts.length, "Length mismatch");
+        _consumeRequest(requestId);
         for (uint256 i = 0; i < targets.length; i++) {
             _execute(user, targets[i], amounts[i], reason, requestId);
         }

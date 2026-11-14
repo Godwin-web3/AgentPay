@@ -44,6 +44,27 @@ describe('AgentVault — attack survival', function () {
     expect(await usdc.balanceOf(legit.address)).to.equal(ethers.parseUnits('20', 6));
   });
 
+  it('pays a request id once and rejects the retry after a persistence failure', async function () {
+    const id = ethers.id('intent:plan-retry:0');
+    await vault.connect(agent).execute(user.address, legit.address, ethers.parseUnits('20', 6), 'rent', id);
+    await expect(
+      vault.connect(agent).execute(user.address, legit.address, ethers.parseUnits('20', 6), 'rent', id)
+    ).to.be.revertedWithCustomError(vault, 'DuplicateRequest');
+    expect(await vault.executedRequests(id)).to.equal(true);
+    expect(await vault.getBalance(user.address)).to.equal(ethers.parseUnits('980', 6));
+    expect(await usdc.balanceOf(legit.address)).to.equal(ethers.parseUnits('20', 6));
+  });
+
+  it('does not consume a request id when the payment reverts', async function () {
+    const id = ethers.id('intent:plan-retry:1');
+    await expect(
+      vault.connect(agent).execute(user.address, attacker.address, ethers.parseUnits('10', 6), 'nope', id)
+    ).to.be.revertedWithCustomError(vault, 'NotWhitelisted');
+    expect(await vault.executedRequests(id)).to.equal(false);
+    await vault.connect(agent).execute(user.address, legit.address, ethers.parseUnits('10', 6), 'ok', id);
+    expect(await vault.executedRequests(id)).to.equal(true);
+  });
+
   it('REJECTS a payment to a non-whitelisted address even if the agent key requests it', async function () {
     // Simulates: prompt injection / a hijacked LLM decision tries to redirect
     // funds to an attacker address. The agent key itself issues the call —

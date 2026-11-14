@@ -144,7 +144,8 @@ function handleHealth(req, res) {
         factory: proxies.factory || null,
         beacon: proxies.beacon || null,
         baseExecutor: proxies.baseExecutor || null,
-        reason: proxies.reason || null,
+        requestGuard: proxies.requestGuard === true,
+        reason: proxies.reason || proxies.requestGuardError || null,
       };
     })(),
     time: new Date().toISOString()
@@ -414,7 +415,7 @@ async function handlePay(req, res) {
   // pay() ultimately calls vault/contract methods requiring a real address.
   // userId may be a real address (production) or a test label — use the
   // wallet's resolved on-chain address instead, same pattern as resolveOrCreateVault.
-  const result = await pay(wallet.walletId, to, parseFloat(amount), reason || 'API payment', wallet.address);
+  const result = await pay(wallet.walletId, to, parseFloat(amount), reason || 'API payment', wallet.address, requestId);
 
   if (result.success) {
     record.status = 'executed';
@@ -474,7 +475,7 @@ async function handleBridgeQuote(req, res) {
 // vault or SwapExecutor for that chain is not deployed.
 async function handleSwap(req, res) {
   const userId = getUserId(req);
-  const { fromAsset, toAsset, amount, chain } = req.body || {};
+  const { fromAsset, toAsset, amount, chain, requestId } = req.body || {};
   if (!amount) return send(res, 400, { error: 'Missing amount' });
   try {
     const wallet = await getOrCreateWallet(userId);
@@ -487,6 +488,7 @@ async function handleSwap(req, res) {
       toAsset: toAsset || 'ETH',
       amount,
       userAddress: signer.address,
+      requestId,
     });
     return send(res, 200, result);
   } catch (err) {

@@ -39,8 +39,8 @@ function makeDeps(overrides = {}) {
     calls,
     getVaultBalance: async () => 1000,
     evaluateTrigger: async () => ({ met: true, proof: 'mock' }),
-    pay: async (to, amount, reason, userAddress) => {
-      calls.push({ fn: 'pay', to, amount, reason, userAddress });
+    pay: async (to, amount, reason, userAddress, requestId) => {
+      calls.push({ fn: 'pay', to, amount, reason, userAddress, requestId });
       return { success: true, txHash: '0xdeadbeef' };
     },
     commitDecision: async (requestId, record, summary) => {
@@ -77,6 +77,7 @@ describe('solver — runStep', function () {
     );
     const order = deps.calls.map((c) => c.fn);
     expect(order).to.deep.equal(['commitDecision', 'pay', 'finalizeDecision']);
+    expect(deps.calls.find((c) => c.fn === 'pay').requestId).to.equal('p1-0');
   });
 
   it('pay step throws (and still finalizes) when the underlying payment fails', async function () {
@@ -188,5 +189,23 @@ describe('solver — advancePlan', function () {
     expect(result.cursor).to.equal(0);
     expect(deps.calls.filter((c) => c.fn === 'pay')).to.have.length(1);
     expect(result.error).to.match(/NotWhitelisted/);
+  });
+
+  it('retries a paid step with the same request id if the cursor was not saved', async function () {
+    const deps = makeDeps();
+    const plan = {
+      id: 'plan-retry',
+      goal: 'pay once',
+      userAddress: '0xuser',
+      cursor: 0,
+      status: 'active',
+      log: [],
+      steps: [{ type: 'pay', to: '0xabc', amount: 5, reason: 'r' }],
+    };
+    const first = await advancePlan(plan, deps);
+    expect(first.status).to.equal('completed');
+    await advancePlan(plan, deps);
+    const pays = deps.calls.filter((c) => c.fn === 'pay');
+    expect(pays.map((c) => c.requestId)).to.deep.equal(['plan-retry-0', 'plan-retry-0']);
   });
 });

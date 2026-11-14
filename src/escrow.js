@@ -111,10 +111,16 @@ async function executePayment(wallet, userAddress, token, to, amount, reason, re
   return await tx.wait();
 }
 
-// P0-1: signature-based execution so users (SCAs) can authorize a payment
-// without the operator holding a spend key. The signed payload is
-// (user,to,amount,requestId,nonce,deadline) — `reason` is NOT signed (it is
-// logged in the Executed event and recorded off-chain). Returns packed sig.
+// The operator key signs this. executeWithSig checks that signature against
+// the registered agent, then enforces the user's on-chain policy. It is not
+// a user signature. `reason` is not part of the signed payload.
+function toRequestId(requestId) {
+  const { ethers } = require('ethers');
+  if (!requestId || requestId === ethers.ZeroHash) return ethers.ZeroHash;
+  if (typeof requestId === 'string' && /^0x[0-9a-fA-F]{64}$/.test(requestId)) return requestId;
+  return ethers.id(String(requestId));
+}
+
 async function signExecute(vaultAddress, signerWallet, { user, to, amount, requestId, deadlineSec }) {
   const deadline = Math.floor((deadlineSec ? Date.now()/1000 + deadlineSec : (Date.now()/1000 + 300)));
   const userAddr = user || (await signerWallet.getAddress());
@@ -144,7 +150,7 @@ async function signExecute(vaultAddress, signerWallet, { user, to, amount, reque
     user: userAddr,
     to,
     amount: toUnits(amount),
-    requestId: requestId || ethers.ZeroHash,
+    requestId: toRequestId(requestId),
     nonce,
     deadline
   };
@@ -159,7 +165,7 @@ async function executePaymentWithSig(vaultAddress, wallet, payload) {
   const contract = new ethers.Contract(vaultAddress, VAULT_ABI, wallet);
   const { user, to, amount, requestId, deadline, sig } = payload;
   const tx = await contract.executeWithSig(
-    user, to, toUnits(amount), requestId || ethers.ZeroHash, deadline, sig,
+    user, to, toUnits(amount), toRequestId(requestId), deadline, sig,
     { gasLimit: 3000000 }
   );
   return await tx.wait();
@@ -234,6 +240,7 @@ module.exports = {
   executePayment,
   executePaymentWithSig,
   signExecute,
+  toRequestId,
   pauseUser,
   resumeUser,
   getOnChainPolicy,

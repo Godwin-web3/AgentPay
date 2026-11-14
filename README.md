@@ -72,7 +72,7 @@ AgentPay targets Arc's agentic/emerging primitives:
 AgentPay moves the "Decision" (AI) off-chain while keeping the "Permission" (Policy) rigorously on-chain in `AgentVault`.
 
 1. **Decision/AI (off-chain)**: Natural-language intent is parsed by **Llama 3.3 (Groq)** (`src/brain.js`). Verifiable decentralized inference via the Arc platform is **stubbed, not enabled** — see `src/arcAi.js`. The earlier README claim of "Arc Agent ID `12847…` validates agent logic through decentralized consensus" was aspirational and has been corrected; `scripts/verify-arc-ai.js` now runs against an honest shim and refuses to burn gas against unverified contract addresses until the Arc platform ABI is confirmed via `docs.arc.network`.
-2. **Permission/Policy (on-chain)**: Every payment path now goes through `AgentVault.execute`, which enforces per-tx cap, daily cap, hourly velocity, and whitelist on-chain. Users can also sign payments via EIP-712 (`executeWithSig`) so no operator spend key is required.
+2. **Permission/Policy (on-chain)**: Every payment path goes through `AgentVault`. The registered agent signs `execute` / `executeWithSig`. That is not a user signature. The user's on-chain policy (per-tx cap, daily cap, hourly velocity, whitelist) is what limits the spend. A non-zero `requestId` can settle only once, so a crashed retry cannot pay twice.
 3. **IRL Event Triggers** (off-chain, advisory): `src/triggers.js` evaluates price (Pyth Hermes), GitHub PR, weather (wttr.in), or custom JSON conditions and gates scheduled runs. Trigger "proofs" are logged, not submitted on-chain.
     - ⛅ **Weather**: "Pay if it rains in London."
     - 🏆 **Sports**: "Pay if LeBron scores 30+."
@@ -97,7 +97,7 @@ State a goal instead of a command — `POST /intent {"goal": "..."}`. The solver
 The solver can't invent another primitive — `validatePlan()` rejects anything else before it's allowed to run. A ticker (`src/intentEngine.js`, started from `index.js`) re-checks blocked plans every 30s so a goal like *"pay the vendor once my balance stays above 500"* actually waits and resumes on its own.
 
 ### Decision provenance
-`contracts/DecisionLog.sol` commits `keccak256(intent + plan + action)` on-chain *before* the corresponding `AgentVault` execution, keyed by the same `requestId`. Anyone can recompute that hash from a published decision record and confirm it matches what was committed — and that the commit's block number is earlier than the payment's. That's a real, checkable claim about *when a decision was made and that it wasn't rewritten after the fact* — deliberately narrower than "verifiable AI inference," which AgentPay does not do (see `src/arcAi.js`).
+`contracts/DecisionLog.sol` commits `keccak256(intent + plan + action)` on-chain keyed by the same `requestId`, when the log is reachable. Anyone can recompute that hash from a published decision record and confirm it matches what was committed — and that the commit's block number is earlier than the payment's. If the log is down, the payment still runs and that payment has no decision record. The log is provenance, not the replay guard. The vault's one-time `requestId` is what stops a retry from paying twice. This is deliberately narrower than "verifiable AI inference," which AgentPay does not do (see `src/arcAi.js`).
 
 ---
 

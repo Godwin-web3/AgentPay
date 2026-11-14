@@ -40,7 +40,7 @@ async function resolvePoolByName(memberAddress, poolName) {
   return match;
 }
 
-async function pay(walletId, to, amountUSDC, reason, userAddress) {
+async function pay(walletId, to, amountUSDC, reason, userAddress, requestId) {
   const advisory = engine.check(to, amountUSDC, userAddress);
   if (!advisory.allowed) {
     await appendFailure({ userAddress, to, amount: amountUSDC, reason, blockedReason: advisory.reason });
@@ -57,21 +57,22 @@ async function pay(walletId, to, amountUSDC, reason, userAddress) {
     if (!agentKey) throw new Error('No agent key configured (PRIVATE_KEY)');
     const wallet = new ethers.Wallet(agentKey, provider);
 
-    // EIP-712 sig-based execution — agent signs off-chain, vault verifies on-chain.
-    // User never exposes a spend key; operator cannot unilaterally move funds.
+    // The operator key signs. The vault enforces the user's policy and, when
+    // requestId is set, rejects a second execution of that same id.
     const vaultAddress = await escrow.findVault(userAddress);
+    const id = escrow.toRequestId(requestId);
     const sigPayload = await escrow.signExecute(vaultAddress, wallet, {
       user: userAddress,
       to,
       amount: amountUSDC,
-      requestId: null,
+      requestId: id,
       deadlineSec: 300
     });
     const receipt = await escrow.executePaymentWithSig(vaultAddress, wallet, {
       user: userAddress,
       to,
       amount: amountUSDC,
-      requestId: ethers.ZeroHash,
+      requestId: id,
       deadline: sigPayload.deadline,
       sig: sigPayload.sig
     });
@@ -80,6 +81,9 @@ async function pay(walletId, to, amountUSDC, reason, userAddress) {
     return { success: true, txHash };
   } catch (err) {
     const reasonText = err.reason || err.shortMessage || err.message || 'unknown error';
+    if (/DuplicateRequest/i.test(reasonText)) {
+      return { success: true, duplicate: true, reason: 'already executed' };
+    }
     await appendFailure({ userAddress, to, amount: amountUSDC, reason, blockedReason: reasonText });
 
     // P2-12: if the vault reverted with a cap/whitelist violation, mirror it

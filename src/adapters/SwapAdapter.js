@@ -63,6 +63,7 @@ class SwapAdapter extends ExecutionAdapter {
       amount: authorizedIntent.amount,
       userAddress: authorizedIntent.userAddress,
       recipient: authorizedIntent.recipient,
+      requestId: authorizedIntent.requestId,
     });
   }
 }

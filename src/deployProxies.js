@@ -228,12 +228,88 @@ async function runDeploy() {
 let running = false;
 let timer = null;
 
+async function hasRequestGuard(provider, address) {
+  const probe = new ethers.Contract(address, ['function executedRequests(bytes32) view returns (bool)'], provider);
+  try {
+    await probe.executedRequests(ethers.ZeroHash);
+    return true;
+  } catch (err) {
+    if (err.code === 'NETWORK_ERROR' || err.code === 'TIMEOUT' || err.code === 'SERVER_ERROR') throw err;
+    return false;
+  }
+}
+
+// The live Arc vault is a proxy. This swaps in the build that rejects a
+// repeated request id, without changing the vault address.
+async function ensureRequestGuard(record) {
+  if (!record || record.requestGuard || !record.vault || !record.beacon || !process.env.PRIVATE_KEY) return record;
+  const provider = getProvider('arc');
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+  const vaultReady = await hasRequestGuard(provider, record.vault);
+  const beacon = new ethers.Contract(record.beacon, [
+    'function implementation() view returns (address)',
+    'function owner() view returns (address)',
+    'function upgradeTo(address)',
+  ], wallet);
+  const beaconReady = await hasRequestGuard(provider, await beacon.implementation());
+  if (vaultReady && beaconReady) {
+    return registry.save(DOC, { requestGuard: true, requestGuardError: null });
+  }
+
+  console.log('[proxies] upgrading AgentVault so a request id cannot pay twice');
+  const implementation = await deployImplementation(wallet, 'AgentVault');
+  const next = await implementation.getAddress();
+  if (!vaultReady) {
+    const vault = new ethers.Contract(record.vault, [
+      'function owner() view returns (address)',
+      'function agent() view returns (address)',
+      'function upgradeTo(address)',
+    ], wallet);
+    const owner = await vault.owner();
+    if (owner.toLowerCase() !== wallet.address.toLowerCase()) {
+      throw new Error('Vault owner is ' + owner + '. This key cannot upgrade it.');
+    }
+    const agentBefore = await vault.agent();
+    const tx = await vault.upgradeTo(next);
+    await tx.wait();
+    const agentAfter = await vault.agent();
+    if (agentAfter.toLowerCase() !== agentBefore.toLowerCase()) {
+      throw new Error('Vault agent changed during the upgrade');
+    }
+  }
+  if (!beaconReady) {
+    const owner = await beacon.owner();
+    if (owner.toLowerCase() !== wallet.address.toLowerCase()) {
+      throw new Error('Beacon owner is ' + owner + '. This key cannot upgrade it.');
+    }
+    const tx = await beacon.upgradeTo(next);
+    await tx.wait();
+  }
+  if (!(await hasRequestGuard(provider, record.vault))) {
+    throw new Error('Vault upgrade did not expose executedRequests');
+  }
+  const saved = await registry.save(DOC, { requestGuard: true, vaultImplementation: next, requestGuardError: null });
+  apply(saved);
+  console.log('[proxies] request guard live');
+  return saved;
+}
+
 function watchProxies() {
   if (running) return;
   running = true;
   runDeploy()
-    .then((record) => {
-      if (record && (record.status === 'deployed' || record.status === 'disabled' || record.status === 'no-gas')) return;
+    .then(async (record) => {
+      if (record && record.status === 'deployed') {
+        try {
+          record = await ensureRequestGuard(record);
+        } catch (err) {
+          const reason = redact(err);
+          console.error('[proxies] request guard upgrade failed:', reason);
+          record = await registry.save(DOC, { requestGuardError: reason });
+        }
+      }
+      if (record && record.status === 'deployed' && record.requestGuard && !record.requestGuardError) return;
+      if (record && (record.status === 'disabled' || record.status === 'no-gas')) return;
       if (!timer) {
         timer = setTimeout(() => {
           timer = null;

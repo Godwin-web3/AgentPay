@@ -98,8 +98,8 @@ async function planFromGoal(goal, walletAddress, usdcBalance) {
 
 /**
  * Execute one step. `deps` must provide:
- *   pay(to, amount, reason, userAddress) -> {success, txHash, reason}
- *   swap(step, userAddress) -> {success, txHash, reason, quote}
+ *   pay(to, amount, reason, userAddress, requestId) -> {success, txHash, reason}
+ *   swap(step, userAddress, requestId) -> {success, txHash, reason, quote}
  *   evaluateTrigger(condition) -> {met, proof}
  *   getVaultBalance(userAddress) -> number
  *   commitDecision(requestId, record, summary) -> void (may be a no-op)
@@ -124,7 +124,7 @@ async function runStep(step, ctx, deps) {
       const requestId = deps.makeRequestId(ctx.planId, ctx.stepIndex);
       const record = { goal: ctx.goal, planId: ctx.planId, stepIndex: ctx.stepIndex, step };
       await deps.commitDecision(requestId, record, `pay ${step.amount} USDC to ${step.to}`);
-      const result = await deps.pay(step.to, step.amount, step.reason || ctx.goal, ctx.userAddress);
+      const result = await deps.pay(step.to, step.amount, step.reason || ctx.goal, ctx.userAddress, requestId);
       await deps.finalizeDecision(requestId, { success: result.success, txHash: result.txHash, reason: result.reason });
       if (!result.success) throw new Error('pay step failed: ' + result.reason);
       return { done: true, result };
@@ -133,7 +133,7 @@ async function runStep(step, ctx, deps) {
       const requestId = deps.makeRequestId(ctx.planId, ctx.stepIndex);
       const record = { goal: ctx.goal, planId: ctx.planId, stepIndex: ctx.stepIndex, step };
       await deps.commitDecision(requestId, record, `swap ${step.amount} ${step.fromAsset || 'stable'} to ${step.toAsset || step.to}`);
-      const result = await deps.swap(step, ctx.userAddress);
+      const result = await deps.swap(step, ctx.userAddress, requestId);
       await deps.finalizeDecision(requestId, { success: !!result.success, txHash: result.txHash, reason: result.reason });
       if (!result.success) throw new Error('swap step failed: ' + (result.reason || 'rejected'));
       return { done: true, result };

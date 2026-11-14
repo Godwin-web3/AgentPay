@@ -152,7 +152,7 @@ async function quoteSwap({ chain: chainName, fromAsset, toAsset, amount }) {
   };
 }
 
-async function executeSwap({ chain: chainName, fromAsset, toAsset, amount, userAddress, recipient }) {
+async function executeSwap({ chain: chainName, fromAsset, toAsset, amount, userAddress, recipient, requestId }) {
   const chain = getChain(chainName);
   if (!chain.testnet && process.env.ALLOW_MAINNET !== '1') {
     return {
@@ -189,34 +189,52 @@ async function executeSwap({ chain: chainName, fromAsset, toAsset, amount, userA
 
   const provider = getProvider(chain.id);
   const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-  const requestId = ethers.id(`swap:${chain.id}:${userAddress}:${quote.from}:${quote.amountIn}:${Date.now()}`);
+  const { toRequestId } = require('./escrow');
+  const supplied = toRequestId(requestId);
+  const id = supplied === ethers.ZeroHash
+    ? ethers.id(`swap:${chain.id}:${userAddress}:${quote.from}:${quote.to}:${quote.amountIn}`)
+    : supplied;
 
   try {
     const decisionLog = require('./decisionLog');
-    await decisionLog.commitDecision(signer, requestId, { quote, userAddress }, `swap ${quote.amountIn} ${quote.from} to ${quote.to} on ${chain.name}`);
+    await decisionLog.commitDecision(signer, id, { quote, userAddress }, `swap ${quote.amountIn} ${quote.from} to ${quote.to} on ${chain.name}`);
   } catch (err) {
     console.error('[swap] decision commit skipped:', err.message);
   }
 
   const amountIn = ethers.parseUnits(String(quote.amountIn), chain.stable.decimals);
   const vaultContract = new ethers.Contract(vault, VAULT_EXECUTE_ABI, signer);
-  let fundTx;
+  let fundTx = null;
   try {
     fundTx = await vaultContract.execute(
       userAddress,
       executor,
       amountIn,
       `swap ${quote.amountIn} ${quote.from} to ${quote.to}`,
-      requestId
+      id
     );
     await fundTx.wait();
   } catch (err) {
-    return {
-      success: false,
-      executed: false,
-      quote,
-      reason: `Vault refused the swap: ${err.shortMessage || err.message}. Funds were not moved.`,
-    };
+    const text = `${err.shortMessage || ''} ${err.message || ''}`;
+    if (!/DuplicateRequest/i.test(text)) {
+      return {
+        success: false,
+        executed: false,
+        quote,
+        reason: `Vault refused the swap: ${err.shortMessage || err.message}. Funds were not moved.`,
+      };
+    }
+    const stable = new ethers.Contract(chain.stable.address, ['function balanceOf(address) view returns (uint256)'], provider);
+    const sitting = await stable.balanceOf(executor);
+    if (sitting < amountIn) {
+      return {
+        success: false,
+        duplicate: true,
+        executed: false,
+        quote,
+        reason: 'This swap request already left the vault and was not sent again.',
+      };
+    }
   }
 
   const exec = new ethers.Contract(executor, EXECUTOR_ABI, signer);
@@ -234,7 +252,7 @@ async function executeSwap({ chain: chainName, fromAsset, toAsset, amount, userA
       executed: true,
       quote,
       txHash: receipt.hash,
-      fundTxHash: fundTx.hash,
+      fundTxHash: fundTx ? fundTx.hash : null,
       explorer: txUrl(chain, receipt.hash),
       amountOut: quote.amountOut,
     };
@@ -247,7 +265,7 @@ async function executeSwap({ chain: chainName, fromAsset, toAsset, amount, userA
         executed: false,
         refunded: true,
         quote,
-        fundTxHash: fundTx.hash,
+        fundTxHash: fundTx ? fundTx.hash : null,
         reason: `Swap failed and the stable was refunded to ${userAddress}. ${err.shortMessage || err.message}`,
       };
     } catch (refundErr) {
@@ -256,7 +274,7 @@ async function executeSwap({ chain: chainName, fromAsset, toAsset, amount, userA
         executed: false,
         refunded: false,
         quote,
-        fundTxHash: fundTx.hash,
+        fundTxHash: fundTx ? fundTx.hash : null,
         reason: `Swap failed and the refund also failed. Stable may be on the executor. ${refundErr.shortMessage || refundErr.message}`,
       };
     }

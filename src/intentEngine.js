@@ -34,8 +34,8 @@ function buildDeps(walletId) {
       return policy.vaultBalance;
     },
     evaluateTrigger: (condition) => evaluateTrigger(condition),
-    pay: async (to, amount, reason, userAddress) => agent.pay(walletId, to, amount, reason, userAddress),
-    swap: async (step, userAddress) => {
+    pay: async (to, amount, reason, userAddress, requestId) => agent.pay(walletId, to, amount, reason, userAddress, requestId),
+    swap: async (step, userAddress, requestId) => {
       const { executeSwap } = require('./swap');
       return executeSwap({
         chain: step.chain,
@@ -43,6 +43,7 @@ function buildDeps(walletId) {
         toAsset: step.toAsset || step.to,
         amount: step.amount,
         userAddress,
+        requestId,
       });
     },
     commitDecision: async (requestId, record, summary) => {
