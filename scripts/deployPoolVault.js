@@ -34,21 +34,45 @@ async function main() {
 
   const address = await contract.getAddress();
   const txHash = contract.deploymentTransaction().hash;
-
   console.log('✅ PoolVault deployed to: ' + address);
   console.log('🔗 Explorer: https://testnet.arcscan.arc.network/tx/' + txHash);
+
+  let ownershipTransferTxHash = null;
+  if (agentAddress.toLowerCase() !== wallet.address.toLowerCase()) {
+    console.log('🔐 Handing ownership to the agent...');
+    const handoff = await contract.transferOwnership(agentAddress);
+    const handoffReceipt = await handoff.wait();
+    if (!handoffReceipt || handoffReceipt.status !== 1) {
+      throw new Error('Ownership transfer failed. Emergency control is still the deployer.');
+    }
+    ownershipTransferTxHash = handoff.hash;
+  }
+
+  const ownerOnChain = await contract.owner();
+  const agentOnChain = await contract.agent();
+  if (ownerOnChain.toLowerCase() !== agentAddress.toLowerCase()) {
+    throw new Error('Owner on chain is ' + ownerOnChain + ', expected ' + agentAddress);
+  }
+  if (agentOnChain.toLowerCase() !== agentAddress.toLowerCase()) {
+    throw new Error('Agent on chain is ' + agentOnChain + ', expected ' + agentAddress);
+  }
+  console.log('✅ On-chain owner: ' + ownerOnChain);
+  console.log('✅ On-chain agent: ' + agentOnChain);
 
   fs.writeFileSync(
     path.join(__dirname, '../artifacts/PoolVault-deployment.json'),
     JSON.stringify({
       address,
       deployer: wallet.address,
-      agent: agentAddress,
+      agent: agentOnChain,
+      owner: ownerOnChain,
       usdc: usdcAddress,
       network: 'Arc Testnet',
       chainId: 5042002,
       timestamp: new Date().toISOString(),
       txHash,
+      ownershipTransferTxHash,
+      finalOwner: ownerOnChain,
     }, null, 2)
   );
 

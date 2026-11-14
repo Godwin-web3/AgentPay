@@ -272,4 +272,67 @@ describe('PoolVault — authorization and objection-window hardening', function 
     await pool.connect(mike).withdrawPersonal(poolId, ethers.parseUnits('40', 6));
     expect(await pool.personalBalance(poolId, mike.address)).to.equal(ethers.parseUnits('60', 6));
   });
+
+  it('lets a former member withdraw personal funds after leaving', async function () {
+    const poolId = await createPool();
+    await pool.connect(mike).acceptInvite(poolId);
+    await pool.connect(founder).contribute(poolId, ethers.parseUnits('50', 6), true);
+    await pool.connect(mike).contribute(poolId, ethers.parseUnits('100', 6), false);
+    await pool.connect(mike).leavePool(poolId);
+    expect(await pool.memberStatus(poolId, mike.address)).to.equal(0n);
+
+    const before = await usdc.balanceOf(mike.address);
+    await expect(pool.connect(mike).withdrawPersonal(poolId, ethers.parseUnits('100', 6)))
+      .to.emit(pool, 'PersonalWithdrawn');
+    expect(await pool.personalBalance(poolId, mike.address)).to.equal(0n);
+    expect(await usdc.balanceOf(mike.address)).to.equal(before + ethers.parseUnits('100', 6));
+    expect((await pool.getPool(poolId)).sharedBalance).to.equal(ethers.parseUnits('50', 6));
+  });
+
+  it('lets a removed member withdraw personal funds', async function () {
+    const poolId = await createPool();
+    await pool.connect(mike).acceptInvite(poolId);
+    await pool.connect(mike).contribute(poolId, ethers.parseUnits('80', 6), false);
+    const auth = await authorize(founder, poolId, 2, { targetMember: mike.address });
+    const tx = await pool.connect(agent).proposeRemoveMember(
+      poolId, founder.address, mike.address, auth.deadline, auth.signature
+    );
+    const receipt = await tx.wait();
+    const proposalId = receipt.logs.map(l => { try { return pool.interface.parseLog(l); } catch { return null; } })
+      .find(e => e && e.name === 'ProposalCreated').args.proposalId;
+    await ethers.provider.send('evm_increaseTime', [defaultConstitution.objectionWindow + 1]);
+    await ethers.provider.send('evm_mine');
+    await pool.connect(agent).resolveProposal(proposalId);
+    expect(await pool.memberStatus(poolId, mike.address)).to.equal(0n);
+
+    await pool.connect(mike).withdrawPersonal(poolId, ethers.parseUnits('80', 6));
+    expect(await pool.personalBalance(poolId, mike.address)).to.equal(0n);
+    expect(await usdc.balanceOf(mike.address)).to.equal(ethers.parseUnits('3000', 6));
+  });
+
+  it('does not trap personal funds while the pool is paused', async function () {
+    const poolId = await createPool();
+    await pool.connect(mike).acceptInvite(poolId);
+    await pool.connect(mike).contribute(poolId, ethers.parseUnits('25', 6), false);
+    await pool.pausePool(poolId);
+    await expect(pool.connect(mike).withdrawPersonal(poolId, ethers.parseUnits('25', 6))).not.to.be.reverted;
+    expect(await pool.personalBalance(poolId, mike.address)).to.equal(0n);
+  });
+
+  it('hands emergency control to the configured agent and checks it on chain', async function () {
+    expect(await pool.owner()).to.equal(owner.address);
+    expect(await pool.agent()).to.equal(agent.address);
+    const poolId = await createPool();
+    await expect(pool.connect(agent).pausePool(poolId)).to.be.revertedWithCustomError(pool, 'NotOwner');
+
+    await expect(pool.connect(owner).transferOwnership(agent.address))
+      .to.emit(pool, 'OwnerUpdated')
+      .withArgs(agent.address);
+    expect(await pool.owner()).to.equal(agent.address);
+    expect(await pool.agent()).to.equal(agent.address);
+
+    await pool.connect(agent).pausePool(poolId);
+    expect(await pool.isPoolPaused(poolId)).to.equal(true);
+    await expect(pool.connect(owner).resumePool(poolId)).to.be.revertedWithCustomError(pool, 'NotOwner');
+  });
 });

@@ -206,10 +206,12 @@ contract PoolVault is ReentrancyGuard {
         emit Contributed(poolId, msg.sender, received, toShared);
     }
 
+    // Personal funds belong to the depositor, not the pool. Leaving, being
+    // removed, or a pause must not trap them.
     function withdrawPersonal(uint256 poolId, uint256 amount)
-        external nonReentrant onlyActiveMember(poolId)
+        external nonReentrant
     {
-        if (personalBalance[poolId][msg.sender] < amount) revert InsufficientBalance();
+        if (amount == 0 || personalBalance[poolId][msg.sender] < amount) revert InsufficientBalance();
         personalBalance[poolId][msg.sender] -= amount;
         bool ok = IERC20(usdc).transfer(msg.sender, amount);
         if (!ok) revert TransferFailed();
