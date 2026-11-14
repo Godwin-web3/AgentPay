@@ -24,17 +24,17 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
     <div className="sheet">
       <header className="sheet-bar">
         <span className="mark">AgentPay</span>
-        <button type="button" onClick={onLaunch} className="text-link">Enter</button>
+        <button type="button" onClick={onLaunch} className="text-link">Sign in</button>
       </header>
 
       <main className="sheet-main">
-        <p className="kicker">Testnet wallet</p>
+        <p className="kicker">Testnet</p>
         <h1 className="display">
           One address.
           <span className="display-em">Three chains.</span>
         </h1>
         <p className="lede">
-          Sign in with Google. The same address holds Robinhood, Base, and Arc. Nothing moves until you confirm.
+          Sign in with Google. The same non-custodial address works on Robinhood, Base Sepolia, and Arc. You confirm every transaction.
         </p>
 
         <div className="chain-book" role="list">
@@ -54,8 +54,8 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
           ))}
         </div>
 
-        <button type="button" onClick={onLaunch} className="ink-btn">Open the wallet</button>
-        <p className="fine">The key stays in your session. AgentPay does not hold it.</p>
+        <button type="button" onClick={onLaunch} className="ink-btn">Continue with Google</button>
+        <p className="fine">No seed phrase. The key stays in your session.</p>
       </main>
     </div>
   )

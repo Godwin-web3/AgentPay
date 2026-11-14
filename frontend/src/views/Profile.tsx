@@ -62,21 +62,22 @@ export default function Profile({ userAddress, userId, vaultBalance, positions =
   const address = agentWalletAddress || userAddress
 
   return (
-    <div className="reveal" style={{ padding: '8px 16px 32px', maxWidth: 560, margin: '0 auto' }}>
+    <div className="reveal" style={{ padding: '16px 20px 32px', maxWidth: 480, margin: '0 auto' }}>
       <p className="kicker">{tag && tag !== 'skip' ? `@${tag}` : 'Account'}</p>
-      <h2 className="page-title" style={{ fontSize: 'clamp(40px, 10vw, 56px)', marginBottom: 8 }}>Holdings</h2>
-      <p className="lede" style={{ marginTop: 0 }}>One address. Robinhood, Base, and Arc.</p>
+      <h2 className="page-title" style={{ fontSize: 'clamp(32px, 8vw, 42px)', marginBottom: 6, letterSpacing: '-0.03em' }}>Holdings</h2>
+      <p className="lede" style={{ marginTop: 0, fontSize: 15 }}>One address across Robinhood, Base, and Arc.</p>
 
       <button
         type="button"
         className="addr"
         onClick={() => navigator.clipboard.writeText(address).catch(() => {})}
         aria-label="Copy address"
+        style={{ marginTop: 16, fontSize: 12, color: '#5a544b' }}
       >
         {address}
       </button>
 
-      <div style={{ marginTop: 22, borderTop: '1px solid #161513' }}>
+      <div style={{ marginTop: 20, borderTop: '1px solid #161513' }}>
         {(positions.length ? positions : [{ label: 'Nothing claimed yet', amount: '—' }]).map((row) => (
           <div key={row.label} className="hold-row">
             <span>{row.label}</span>
