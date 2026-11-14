@@ -42,7 +42,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
         <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2, marginBottom: 6 }}>{title}</div>
         <div style={{ fontSize: 12, color: 'var(--text)', marginBottom: 12 }}>{detail}</div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button disabled={confirming} onClick={async () => { setConfirming(true); if (onConfirm) await onConfirm(); setConfirming(false) }} style={{ flex: 2, background: 'var(--cyan)', color: '#000', border: 'none', padding: '8px 12px', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: 1 }}>
+          <button disabled={confirming} onClick={async () => { setConfirming(true); if (onConfirm) await onConfirm(); setConfirming(false) }} style={{ flex: 2, background: 'var(--text)', color: '#f3f0e8', border: 'none', padding: '12px 14px', fontSize: 14, cursor: 'pointer', fontFamily: 'var(--font-head)', fontWeight: 500, letterSpacing: '-0.02em' }}>
             {confirming ? 'Sending' : 'Confirm'}
           </button>
           <button disabled={confirming} onClick={onCancel} style={{ flex: 1, background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)', padding: '8px 12px', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-mono)' }}>
@@ -344,7 +344,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         ))}
       </div>
       <div className="input-area">
-        <textarea ref={inputRef} className="chat-input" placeholder="send, pay, swap..." value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '120px' }} />
+        <textarea ref={inputRef} className="chat-input" placeholder="Say what should happen" value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '120px' }} />
         <button className="send-btn icon-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>Send</button>
       </div>
     </div>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import url('https://api.fontshare.com/v2/css?f[]=clash-display@500,600&f[]=general-sans@400,500&display=swap');
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -7,24 +7,24 @@
 }
 
 :root {
-  --bg:         #10110f;
-  --bg-card:    #171815;
-  --bg-hover:   #1e1f1c;
-  --border:     #2c2e29;
-  --border-hot: #3a3d36;
-  --blue:       #e7e4db;
-  --coral:      #d7a394;
-  --cyan:       #e7e4db;
-  --seal:       #e7e4db;
-  --wire:       #8d8b82;
-  --text:       #e7e4db;
-  --muted:      #8d8b82;
-  --danger:     #d7a394;
-  --success:    #c8d4b8;
-  --warning:    #d7a394;
-  --font-mono:  'IBM Plex Mono', ui-monospace, monospace;
-  --font-head:  'IBM Plex Sans', sans-serif;
-  --font-body:  'IBM Plex Sans', sans-serif;
+  --bg:         #f3f0e8;
+  --bg-card:    #f7f4ee;
+  --bg-hover:   #ebe6dc;
+  --border:     #e2dcd0;
+  --border-hot: #cfc7b8;
+  --blue:       #161513;
+  --coral:      #8d3b2c;
+  --cyan:       #161513;
+  --seal:       #161513;
+  --wire:       #8a8478;
+  --text:       #161513;
+  --muted:      #8a8478;
+  --danger:     #8d3b2c;
+  --success:    #2c5e45;
+  --warning:    #8d3b2c;
+  --font-mono:  'General Sans', 'Helvetica Neue', sans-serif;
+  --font-head:  'Clash Display', 'General Sans', sans-serif;
+  --font-body:  'General Sans', 'Helvetica Neue', sans-serif;
 
   --header-height: 70px;
   --sidebar-width: 240px;
@@ -33,10 +33,10 @@
   /* Semantic tints derived from the same accent tokens above — used for
      alert/status backgrounds so a rebrand only ever changes --cyan/--danger
      once, not every hardcoded rgba() that copied their old values. */
-  --cyan-a1:    #e7e4db10;
-  --cyan-a2:    #e7e4db28;
-  --danger-a1:  #d7a39418;
-  --danger-a2:  #d7a39444;
+  --cyan-a1:    #1615130d;
+  --cyan-a2:    #16151322;
+  --danger-a1:  #8d3b2c14;
+  --danger-a2:  #8d3b2c33;
 
   /* Spacing rhythm — one scale, reused instead of ad hoc pixel values. */
   --space-1: 4px;
@@ -174,21 +174,19 @@ body::after {
 }
 
 .agent-avatar {
-  width: 36px;
-  height: 36px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--blue), var(--cyan));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
+  background: var(--text);
+  display: block;
+  font-size: 0;
   box-shadow: none;
 }
 
 .agent-name {
-  font-family: var(--font-body);
-  font-size: 15px;
-  letter-spacing: 0;
+  font-family: var(--font-head);
+  font-size: 20px;
+  letter-spacing: -0.03em;
   color: var(--text);
   font-weight: 500;
 }
@@ -232,10 +230,10 @@ body::after {
    12-24px for labels. Every view's page title should carry this. */
 .page-title {
   font-family: var(--font-head);
-  font-weight: 600;
-  font-size: clamp(24px, 3.4vw, 32px);
-  letter-spacing: -0.01em;
-  line-height: 1.1;
+  font-weight: 500;
+  font-size: clamp(56px, 14vw, 92px);
+  letter-spacing: -0.045em;
+  line-height: 0.88;
   color: var(--text);
   margin: 0;
 }
@@ -270,9 +268,11 @@ body::after {
    panel. Not applied to every .card; that would flatten the hierarchy
    this is meant to create. */
 .card-deep {
-  background: radial-gradient(120% 140% at 30% -10%, var(--bg-hover) 0%, var(--bg-card) 55%, #101317 100%);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 20px 0;
 }
 
 @keyframes reveal-rise {
@@ -299,7 +299,7 @@ body::after {
   flex-direction: column;
   overflow: hidden;
   padding: 24px;
-  background: radial-gradient(circle at top right, rgba(77, 159, 255, 0.03), transparent 40%);
+  background: transparent;
 }
 
 @media (max-width: 768px) {
@@ -340,6 +340,11 @@ body::after {
   color: var(--text);
   align-self: flex-end;
   text-align: right;
+  font-family: var(--font-head);
+  font-weight: 500;
+  font-size: clamp(26px, 6vw, 36px);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
 }
 
 .message.assistant .message-bubble {
@@ -347,6 +352,9 @@ body::after {
   border: none;
   color: var(--text);
   align-self: stretch;
+  font-size: 17px;
+  line-height: 1.45;
+  max-width: 36ch;
 }
 
 .message {
@@ -504,9 +512,9 @@ body::after {
 }
 
 .nav-item.active {
-  color: var(--blue);
-  background: rgba(77, 159, 255, 0.08);
-  border-left: 3px solid var(--blue);
+  color: var(--text);
+  background: transparent;
+  border-left: none;
 }
 
 /* When the on-screen keyboard is open, the fixed nav bar sits behind it —
@@ -548,10 +556,12 @@ body::after {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  color: var(--muted);
-  font-size: 11px;
-  font-family: var(--font-body);
+  gap: 0;
+  color: #b7b1a6;
+  font-size: 13px;
+  font-family: var(--font-head);
+  font-weight: 500;
+  letter-spacing: -0.02em;
   text-transform: none;
   flex: 1;
   height: 100%;
@@ -560,20 +570,21 @@ body::after {
 }
 
 .mobile-nav-item.active {
-  color: var(--blue);
+  color: var(--text);
 }
 
 .mobile-nav-icon {
-  font-size: 20px;
+  display: none;
 }
 
 /* Stats and Cards */
 .card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 24px;
-  margin-bottom: 16px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 18px 0;
+  margin-bottom: 0;
 }
 
 .section-title {
@@ -900,12 +911,14 @@ body::after {
 .quick-btn {
   flex-shrink: 0;
   padding: 6px 0;
-  margin-right: 14px;
+  margin-right: 18px;
   background: transparent;
   border: none;
-  color: var(--muted);
-  font-family: var(--font-body);
-  font-size: 13px;
+  color: #8a8478;
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
   cursor: pointer;
 }
 .quick-btn:hover:not(:disabled) { color: var(--text); }

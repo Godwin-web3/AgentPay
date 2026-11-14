@@ -67,7 +67,7 @@ export default function Profile({ userAddress, userId, vaultBalance, positions =
   return (
     <div className="reveal" style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
       <p className="eyebrow">{tag && tag !== 'skip' ? `@${tag}` : 'Account'}</p>
-      <div style={{ fontFamily: 'var(--font-body)', fontSize: 40, fontWeight: 500, letterSpacing: '-0.03em', lineHeight: 1, margin: '8px 0 4px' }}>
+      <div className="page-title" style={{ margin: '10px 0 6px' }}>
         {vaultBalance}
       </div>
       <div style={{ color: 'var(--muted)', marginBottom: 20 }}>Total USDC</div>
