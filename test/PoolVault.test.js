@@ -90,6 +90,30 @@ describe('PoolVault — authorization and objection-window hardening', function 
     expect(await pool.proposalNonces(poolId, founder.address)).to.equal(1n);
   });
 
+  it('accepts a proposal submitted directly by the member wallet without an agent signature', async function () {
+    const poolId = await createPool();
+    await pool.connect(founder).contribute(poolId, ethers.parseUnits('200', 6), true);
+    await expect(
+      pool.connect(founder).proposeSpend(
+        poolId, founder.address, vendor.address, ethers.parseUnits('25', 6),
+        'member-submitted payment', 0, '0x'
+      )
+    ).to.emit(pool, 'ProposalResolved');
+    expect(await usdc.balanceOf(vendor.address)).to.equal(ethers.parseUnits('25', 6));
+  });
+
+  it('does not let one member submit a proposal attributed to another member', async function () {
+    const poolId = await createPool();
+    await pool.connect(founder).contribute(poolId, ethers.parseUnits('200', 6), true);
+    await expect(
+      pool.connect(mike).proposeSpend(
+        poolId, founder.address, vendor.address, ethers.parseUnits('25', 6),
+        'forged proposer', 0, '0x'
+      )
+    ).to.be.revertedWithCustomError(pool, 'NotAgent');
+    expect(await usdc.balanceOf(vendor.address)).to.equal(0n);
+  });
+
   it('binds the signature to recipient, amount, reason, pool, chain and contract', async function () {
     const poolId = await createPool();
     await pool.connect(founder).contribute(poolId, ethers.parseUnits('200', 6), true);
