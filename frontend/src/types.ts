@@ -17,7 +17,7 @@ export interface ChatMessage {
 }
 
 export interface Intent {
-  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown' | 'fetch_and_pay' | 'deposit' | 'swap' | 'bridge' | 'bridge_complete' | 'pool_propose_spend'
+  action: 'pay' | 'schedule' | 'cancel_schedule' | 'list_schedules' | 'status' | 'history' | 'policy' | 'update_policy' | 'balance' | 'help' | 'unknown' | 'fetch_and_pay' | 'deposit' | 'swap' | 'bridge' | 'bridge_complete' | 'pool_propose_spend' | 'create_pool' | 'pool_contribute'
   requestId?: string
   to?: string
   amount?: number
@@ -36,6 +36,8 @@ export interface Intent {
     quote?: { from: string; to: string; amountIn?: number; amountOut?: number; amount?: string; chain?: string; chainName?: string; fromName?: string; toName?: string }
     quoteError?: string
     poolId?: string
+    poolCreate?: { name: string; invites: string[]; constitution: PoolConstitution; tx: { chainId: number; to: string; data: string; value?: string } }
+    poolContribute?: { poolId: string; name?: string; amount: number; toShared: boolean; approve: { chainId: number; to: string; data: string; value?: string }; tx: { chainId: number; to: string; data: string; value?: string } }
     signatureRequest?: {
       action: string
       typedData: { domain: { chainId: number }; types: Record<string, unknown>; message: { deadline: string | number } }

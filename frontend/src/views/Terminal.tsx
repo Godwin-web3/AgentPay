@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react'
 import { useWallets } from '@privy-io/react-auth'
-import { sendChat, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, quoteSwap, quoteBridge, executePay, proposeSpendInPool } from '../api'
-import { sendFromWallet, sendUsdc, depositFromWallet, swapFromWallet, bridgeFromWallet, signerFor } from '../spend'
+import { sendChat, generateRequestId, getPolicy, updatePolicy, getChatHistory, clearChatHistory, getVaultBalanceApi, createOnChainSchedule, decodePolicyError, quoteSwap, quoteBridge, executePay, proposeSpendInPool, createPool, contributeToPool } from '../api'
+import { sendFromWallet, sendUsdc, depositFromWallet, swapFromWallet, bridgeFromWallet, signerFor, sendContractCall } from '../spend'
 
 const MOVES: any[] = [
   { id: 'hood-usdg', label: 'USDG', where: 'Robinhood', mode: 'send', chainId: 46630, symbol: 'USDG', kind: 'erc20' as const, address: '0x42fa9A8085c0bc633Afa4e19a1f491db9a4dC0fE', decimals: 6 },
@@ -55,7 +55,7 @@ function ProofBadge({ requestId }: { requestId: string }) {
 function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: () => void, onCancel?: () => void }) {
   const [confirming, setConfirming] = React.useState(false)
   if (!result) return null
-  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_deposit' || result.status === 'proposing_swap' || result.status === 'proposing_bridge' || result.status === 'proposing_transfer' || result.status === 'proposing_mint' || result.status === 'proposing_pool_spend'
+  const isProposal = result.status === 'proposing_pay' || result.status === 'proposing_schedule' || result.status === 'proposing_deposit' || result.status === 'proposing_swap' || result.status === 'proposing_bridge' || result.status === 'proposing_transfer' || result.status === 'proposing_mint' || result.status === 'proposing_pool_spend' || result.status === 'proposing_pool_create' || result.status === 'proposing_pool_contribute'
   if (isProposal) {
     let title = 'Check this'
     let detail = ''
@@ -67,13 +67,15 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     else if (result.status === 'proposing_transfer') { title = `Send ${result.amount} ${result.token}`; detail = `From your wallet to ${result.to}.` }
     else if (result.status === 'proposing_mint') { title = 'Deposit 100 test USDG'; detail = 'From the USDG already in your wallet.' }
     else if (result.status === 'proposing_pool_spend') { title = `Propose ${result.amount} USDC`; detail = `From the pool to ${result.to}. Signing starts the objection window. Nothing is sent until that window closes.` }
+    else if (result.status === 'proposing_pool_create') { title = `Create ${result.name}`; detail = 'This is signed by your wallet. Nothing is created until you confirm.' }
+    else if (result.status === 'proposing_pool_contribute') { title = `Contribute ${result.amount} USDC`; detail = `To ${result.name}. Your wallet approves it, then sends it.` }
     return (
       <div style={{ marginTop: 12, borderTop: '1px solid var(--text)', paddingTop: 12 }}>
         <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, letterSpacing: '-0.03em', marginBottom: 4 }}>{title}</div>
         <div style={{ fontSize: 15, color: 'var(--muted)', marginBottom: 14 }}>{detail}</div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button disabled={confirming} onClick={async () => { setConfirming(true); if (onConfirm) await onConfirm(); setConfirming(false) }} style={{ flex: 2, background: 'var(--text)', color: '#f4f1ea', border: 'none', minHeight: 48, padding: '12px 14px', fontSize: 16, cursor: 'pointer', fontFamily: 'var(--font-head)' }}>
-            {confirming ? 'Sending' : result.status === 'proposing_pool_spend' ? 'Sign' : 'Confirm'}
+            {confirming ? 'Sending' : String(result.status).startsWith('proposing_pool') ? 'Sign' : 'Confirm'}
           </button>
           <button disabled={confirming} onClick={onCancel} style={{ flex: 1, background: 'transparent', color: 'var(--text)', border: '1px solid var(--border-hot)', minHeight: 48, padding: '8px 12px', fontSize: 15, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
             Cancel
@@ -95,6 +97,8 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     let label = 'Done'
     if (result.type === 'bridge') label = `Bridged ${result.amount} USDC to ${result.toName}`
     else if (result.type === 'pool') label = `Proposed ${result.amount} USDC. It waits for objections.`
+    else if (result.type === 'pool_create') label = `Created ${result.name}`
+    else if (result.type === 'pool_contribute') label = `Contributed ${result.amount} USDC`
     else if (result.type === 'mint') label = 'Deposited 100 test USDG'
     else if (result.type === 'deposit') label = `Deposited ${result.amount} USDC`
     else if (result.type === 'schedule') label = `Scheduled ${result.amount} USDC`
@@ -315,6 +319,17 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
           request.typedData.message.deadline,
         )
         res = { status: 'executed', type: 'pool', amount: request.submit.amount, token: 'USDC', txHash: proposed.txHash }
+      } else if (prop.status === 'proposing_pool_create') {
+        const sent = await sendContractCall(wallets, prop.tx)
+        const created = await createPool(prop.name, prop.invites, prop.constitution, userId, sent.txHash)
+        if (!('poolId' in created)) throw new Error('The pool was not recorded.')
+        res = { status: 'executed', type: 'pool_create', name: created.name, txHash: created.txHash }
+      } else if (prop.status === 'proposing_pool_contribute') {
+        if (prop.approve) await sendContractCall(wallets, prop.approve)
+        const sent = await sendContractCall(wallets, prop.tx)
+        const recorded = await contributeToPool(prop.poolId, prop.amount, prop.toShared !== false, userId, sent.txHash)
+        if (!('success' in recorded)) throw new Error('The contribution was not recorded.')
+        res = { status: 'executed', type: 'pool_contribute', amount: prop.amount, token: 'USDC', txHash: sent.txHash }
       }
       if (res) {
         setTxResults(r => ({ ...r, [msgIdx]: res }))
@@ -380,6 +395,14 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
             const request = intent.data.signatureRequest
             const poolId = intent.data.poolId
             setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_pool_spend', amount: request.submit.amount, to: request.submit.to, signatureRequest: { ...request, poolId } } }))
+          }
+          if (intent.action === 'create_pool' && intent.data?.poolCreate) {
+            const draft = intent.data.poolCreate
+            setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_pool_create', name: draft.name, invites: draft.invites, constitution: draft.constitution, tx: draft.tx } }))
+          }
+          if (intent.action === 'pool_contribute' && intent.data?.poolContribute) {
+            const draft = intent.data.poolContribute
+            setTxResults(r => ({ ...r, [msgIndex]: { status: 'proposing_pool_contribute', name: draft.name, poolId: draft.poolId, amount: draft.amount, toShared: draft.toShared, approve: draft.approve, tx: draft.tx } }))
           }
           if (intent.action === 'update_policy' && intent.policyUpdate) {
             const up = intent.policyUpdate

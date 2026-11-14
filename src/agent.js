@@ -270,13 +270,15 @@ async function chat(message, walletId, userId) {
     try {
       const poolBrain = require('./poolBrain');
       const poolVault = require('./poolVault');
-      const poolStore = require('./poolStore');
       const draft = await poolBrain.parsePoolCreation(intent.description || message);
       const resolvedInvites = await Promise.all(draft.invites.map(resolveAddressOrTag));
-      const { poolId, txHash } = await poolVault.createPool(walletId, resolvedInvites, draft.constitution);
-      await poolStore.createPoolMeta({ poolId, name: draft.name, founderAddress: address, memberAddresses: [address, ...resolvedInvites] });
-      intent.message = `Created pool "${draft.name}" with ${resolvedInvites.length} invite${resolvedInvites.length === 1 ? '' : 's'}. Find it in the Pools tab.`;
-      intent.data = { poolId, txHash, name: draft.name };
+      const constitution = {
+        discretionaryThreshold: draft.constitution.discretionaryThreshold,
+        objectionWindow: Math.round(Number(draft.constitution.objectionWindowHours || 4) * 3600),
+        maxSingleProposal: draft.constitution.maxSingleProposal,
+      };
+      intent.message = `Sign to create "${draft.name}". Nothing is created until you confirm.`;
+      intent.data = { poolCreate: { name: draft.name, invites: draft.invites, constitution, tx: poolVault.createPoolCall(resolvedInvites, constitution) } };
     } catch (e) {
       intent.message = "Could not create that pool: " + e.message;
     }
@@ -286,10 +288,9 @@ async function chat(message, walletId, userId) {
       const poolVault = require('./poolVault');
       const pool = await resolvePoolByName(address, intent.poolName);
       const toShared = intent.toShared !== false;
-      const txHash = await poolVault.contribute(walletId, pool.poolId, intent.amount, toShared);
-      await appendSpend({ userAddress: address, to: `pool:${pool.poolId}`, amount: Number(intent.amount), reason: toShared ? 'Pool contribution (shared)' : 'Pool contribution (personal)', txHash, token: 'USDC', type: 'pool_contribute' });
-      intent.message = `Contributed ${intent.amount} USDC to "${pool.name}" (${toShared ? 'shared' : 'personal'} balance).`;
-      intent.data = { poolId: pool.poolId, txHash };
+      const calls = poolVault.contributeCalls(pool.poolId, intent.amount, toShared);
+      intent.message = `Sign to contribute ${intent.amount} USDC to "${pool.name}". Nothing moves until you confirm.`;
+      intent.data = { poolContribute: { poolId: pool.poolId, name: pool.name, amount: intent.amount, toShared, approve: calls.approve, tx: calls.tx } };
     } catch (e) {
       intent.message = "Could not contribute to that pool: " + e.message;
     }

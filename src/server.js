@@ -741,8 +741,9 @@ async function handleIntelligence(req, res) {
 // A pool is a shared-money group (roommates, small teams, trip funds) a user
 // opts into creating — personal AgentVault usage is completely unaffected.
 // Member-facing calls (create/accept/leave/contribute/withdraw/veto) are
-// signed by the member's own Circle wallet (src/poolVault.js). Shared spends,
-// rule changes, and removals are not. Those need a member EIP-712 signature,
+// sent by the Privy wallet. This server returns the unsigned transaction,
+// then records the result only after that wallet's receipt checks out.
+// Shared spends, rule changes, and removals need a member EIP-712 signature,
 // which this server relays and cannot create.
 
 async function resolveInvite(raw) {
@@ -768,19 +769,26 @@ async function handleParsePoolCreation(req, res) {
   }
 }
 
-// POST /pools — { name, invites: (address|@tag)[], constitution }
+// POST /pools — { name, invites, constitution } prepares the transaction.
+// The same body plus txHash records it after the Privy wallet has sent it.
 async function handleCreatePool(req, res) {
   const userId = getUserId(req);
-  const { name, invites = [], constitution } = req.body || {};
+  const { name, invites = [], constitution, txHash } = req.body || {};
   if (!name || !constitution) return send(res, 400, { error: 'name and constitution are required' });
   try {
     const wallet = await getOrCreateWallet(userId);
-    const resolvedInvites = await Promise.all(invites.map(resolveInvite));
     const poolVault = require('./poolVault');
-    const { poolId, txHash } = await poolVault.createPool(wallet.walletId, resolvedInvites, constitution);
+    const resolvedInvites = await Promise.all(invites.map(resolveInvite));
+    if (!txHash) {
+      return send(res, 200, { needsSignature: true, tx: poolVault.createPoolCall(resolvedInvites, constitution) });
+    }
+    const created = await poolVault.readPoolCreated(sharedProvider, txHash, wallet.address);
     const poolStore = require('./poolStore');
-    await poolStore.createPoolMeta({ poolId, name, founderAddress: wallet.address, memberAddresses: [wallet.address, ...resolvedInvites] });
-    return send(res, 200, { poolId, txHash, name });
+    const existing = await poolStore.getPoolMeta(created.poolId);
+    if (!existing) {
+      await poolStore.createPoolMeta({ poolId: created.poolId, name, founderAddress: wallet.address, memberAddresses: [wallet.address, ...resolvedInvites] });
+    }
+    return send(res, 200, { poolId: created.poolId, txHash, name: existing?.name || name });
   } catch (err) {
     return send(res, 500, { error: err.message });
   }
@@ -826,10 +834,12 @@ async function handleGetPool(req, res) {
 // POST /pools/:poolId/accept
 async function handleAcceptPoolInvite(req, res) {
   const userId = getUserId(req);
+  const { txHash } = req.body || {};
   try {
     const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
-    const txHash = await poolVault.acceptInvite(wallet.walletId, req.params.poolId);
+    if (!txHash) return send(res, 200, { needsSignature: true, tx: poolVault.acceptInviteCall(req.params.poolId) });
+    await poolVault.readMemberJoined(sharedProvider, txHash, wallet.address, req.params.poolId);
     const poolStore = require('./poolStore');
     await poolStore.addMemberToPoolMeta(req.params.poolId, wallet.address);
     return send(res, 200, { success: true, txHash });
@@ -841,42 +851,49 @@ async function handleAcceptPoolInvite(req, res) {
 // POST /pools/:poolId/leave
 async function handleLeavePool(req, res) {
   const userId = getUserId(req);
+  const { txHash } = req.body || {};
   try {
     const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
-    const txHash = await poolVault.leavePool(wallet.walletId, req.params.poolId);
+    if (!txHash) return send(res, 200, { needsSignature: true, tx: poolVault.leavePoolCall(req.params.poolId) });
+    await poolVault.readMemberLeft(sharedProvider, txHash, wallet.address, req.params.poolId);
     return send(res, 200, { success: true, txHash });
   } catch (err) {
     return send(res, 500, { error: err.message });
   }
 }
 
-// POST /pools/:poolId/contribute — { amount, toShared }
+// POST /pools/:poolId/contribute — { amount, toShared, txHash? }
 async function handleContributeToPool(req, res) {
   const userId = getUserId(req);
-  const { amount, toShared } = req.body || {};
+  const { amount, toShared, txHash } = req.body || {};
   if (!(Number(amount) > 0)) return send(res, 400, { error: 'amount must be positive' });
   try {
     const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
-    const txHash = await poolVault.contribute(wallet.walletId, req.params.poolId, amount, !!toShared);
+    if (!txHash) {
+      const calls = poolVault.contributeCalls(req.params.poolId, amount, toShared !== false);
+      return send(res, 200, { needsSignature: true, approve: calls.approve, tx: calls.tx });
+    }
+    await poolVault.readContributed(sharedProvider, txHash, wallet.address, req.params.poolId, amount);
     const { appendSpend } = require('./spendStore');
-    await appendSpend({ userAddress: wallet.address, to: `pool:${req.params.poolId}`, amount: Number(amount), reason: toShared ? 'Pool contribution (shared)' : 'Pool contribution (personal)', txHash, token: 'USDC', type: 'pool_contribute' });
+    await appendSpend({ userAddress: wallet.address, to: `pool:${req.params.poolId}`, amount: Number(amount), reason: toShared !== false ? 'Pool contribution (shared)' : 'Pool contribution (personal)', txHash, token: 'USDC', type: 'pool_contribute' });
     return send(res, 200, { success: true, txHash });
   } catch (err) {
     return send(res, 500, { error: err.message });
   }
 }
 
-// POST /pools/:poolId/withdraw-personal — { amount }
+// POST /pools/:poolId/withdraw-personal — { amount, txHash? }
 async function handleWithdrawPersonal(req, res) {
   const userId = getUserId(req);
-  const { amount } = req.body || {};
+  const { amount, txHash } = req.body || {};
   if (!(Number(amount) > 0)) return send(res, 400, { error: 'amount must be positive' });
   try {
     const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
-    const txHash = await poolVault.withdrawPersonal(wallet.walletId, req.params.poolId, amount);
+    if (!txHash) return send(res, 200, { needsSignature: true, tx: poolVault.withdrawPersonalCall(req.params.poolId, amount) });
+    await poolVault.readWithdrawn(sharedProvider, txHash, wallet.address, req.params.poolId, amount);
     const { appendSpend } = require('./spendStore');
     await appendSpend({ userAddress: wallet.address, to: wallet.address, amount: Number(amount), reason: 'Personal allowance withdrawal', txHash, token: 'USDC', type: 'pool_withdraw_personal' });
     return send(res, 200, { success: true, txHash });
@@ -981,7 +998,9 @@ async function handleVetoProposal(req, res) {
   try {
     const wallet = await getOrCreateWallet(userId);
     const poolVault = require('./poolVault');
-    const txHash = await poolVault.veto(wallet.walletId, req.params.proposalId);
+    const { txHash } = req.body || {};
+    if (!txHash) return send(res, 200, { needsSignature: true, tx: poolVault.vetoCall(req.params.proposalId) });
+    await poolVault.readVeto(sharedProvider, txHash, wallet.address, req.params.proposalId);
     try {
       const poolStore = require('./poolStore');
       const proposal = await poolVault.getProposal(sharedProvider, req.params.proposalId);
@@ -1024,10 +1043,9 @@ async function handlePoolChatMessage(req, res) {
     let signatureRequest = null;
 
     if (intent.action === 'contribute') {
-      const txHash = await poolVault.contribute(wallet.walletId, poolId, intent.amount, intent.toShared !== false);
-      const { appendSpend } = require('./spendStore');
-      await appendSpend({ userAddress: wallet.address, to: `pool:${poolId}`, amount: Number(intent.amount), reason: intent.toShared !== false ? 'Pool contribution (shared)' : 'Pool contribution (personal)', txHash, token: 'USDC', type: 'pool_contribute' });
-      replyContent = replyContent || `Contributed ${intent.amount} USDC. Tx: ${txHash}`;
+      const calls = poolVault.contributeCalls(poolId, intent.amount, intent.toShared !== false);
+      signatureRequest = { action: 'contribute', approve: calls.approve, tx: calls.tx, submit: { amount: intent.amount, toShared: intent.toShared !== false } };
+      replyContent = replyContent || `Sign to contribute ${intent.amount} USDC. Nothing moves until you confirm.`;
     } else if (intent.action === 'propose_spend') {
       const to = await resolveInvite(intent.to);
       const typedData = await poolVault.spendTypedData(sharedProvider, {

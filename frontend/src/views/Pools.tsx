@@ -3,11 +3,11 @@ import { useWallets } from '@privy-io/react-auth'
 import {
   listMyPools, parsePoolCreation, createPool, getPool, acceptPoolInvite,
   listPoolProposals, vetoProposal, sendPoolChatMessage, getPoolChat,
-  proposeSpendInPool, proposeAmendInPool, proposeRemoveInPool,
+  proposeSpendInPool, proposeAmendInPool, proposeRemoveInPool, contributeToPool,
 } from '../api'
 import type { Pool, PoolProposal, PoolChatMessage, PoolCreationDraft } from '../types'
 import LivingPool from '../components/LivingPool'
-import { signerFor } from '../spend'
+import { sendContractCall, signerFor } from '../spend'
 
 function formatTime(ts: string) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -111,7 +111,11 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
         objectionWindow: Math.round(draft.constitution.objectionWindowHours * 3600),
         maxSingleProposal: draft.constitution.maxSingleProposal,
       }
-      const result = await createPool(draft.name, draft.invites, constitution, userId)
+      const prepared = await createPool(draft.name, draft.invites, constitution, userId)
+      if (!('needsSignature' in prepared)) throw new Error('Could not prepare the pool.')
+      const sent = await sendContractCall(wallets, prepared.tx)
+      const result = await createPool(draft.name, draft.invites, constitution, userId, sent.txHash)
+      if (!('poolId' in result)) throw new Error('The pool was not recorded.')
       setShowCreate(false)
       setDescription('')
       setDraft(null)
@@ -127,7 +131,10 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
   async function handleAccept(poolId: string) {
     setActionError('')
     try {
-      await acceptPoolInvite(poolId, userId)
+      const prepared = await acceptPoolInvite(poolId, userId)
+      if (!('needsSignature' in prepared)) throw new Error('Could not prepare the invite.')
+      const sent = await sendContractCall(wallets, prepared.tx)
+      await acceptPoolInvite(poolId, userId, sent.txHash)
       await fetchPools()
       await fetchSelected(poolId)
     } catch (e: any) {
@@ -139,7 +146,10 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
     setVetoingId(proposalId)
     setActionError('')
     try {
-      await vetoProposal(proposalId, userId)
+      const prepared = await vetoProposal(proposalId, userId)
+      if (!('needsSignature' in prepared)) throw new Error('Could not prepare the objection.')
+      const sent = await sendContractCall(wallets, prepared.tx)
+      await vetoProposal(proposalId, userId, sent.txHash)
       if (selectedId) await fetchSelected(selectedId)
     } catch (e: any) {
       setActionError(e.message || 'Objection failed')
@@ -157,7 +167,13 @@ export default function Pools({ userAddress, userId }: { userAddress: string, us
     try {
       const sent = await sendPoolChatMessage(selectedId, text, userId)
       const request = sent.signatureRequest
-      if (request?.typedData) {
+      if (request?.tx) {
+        if (request.approve) await sendContractCall(wallets, request.approve)
+        const sentTx = await sendContractCall(wallets, request.tx)
+        if (request.action === 'contribute') {
+          await contributeToPool(selectedId, request.submit.amount, request.submit.toShared !== false, userId, sentTx.txHash)
+        }
+      } else if (request?.typedData) {
         const signer = await signerFor(wallets, Number(request.typedData.domain.chainId))
         const signature = await signer.signTypedData(request.typedData.domain, request.typedData.types, request.typedData.message)
         const deadline = request.typedData.message.deadline

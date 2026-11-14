@@ -354,8 +354,11 @@ export async function makeDecisionRequestId(planId: string, stepIndex: number): 
 
 // Pools — contracts/PoolVault.sol. Personal vault usage is unaffected;
 // this is a separate, opt-in tier for shared-money groups.
-export async function createPool(name: string, invites: string[], constitution: PoolConstitution, userId: string): Promise<{ poolId: string; txHash: string; name: string }> {
-  return request<{ poolId: string; txHash: string; name: string }>('/pools', { method: 'POST', body: JSON.stringify({ name, invites, constitution }) }, userId)
+export type UnsignedCall = { chainId: number; to: string; data: string; value?: string }
+export type PreparedPoolTx = { needsSignature: true; tx: UnsignedCall; approve?: UnsignedCall }
+
+export async function createPool(name: string, invites: string[], constitution: PoolConstitution, userId: string, txHash?: string): Promise<PreparedPoolTx | { poolId: string; txHash: string; name: string }> {
+  return request('/pools', { method: 'POST', body: JSON.stringify({ name, invites, constitution, txHash }) }, userId)
 }
 
 export async function listMyPools(userId: string): Promise<Pool[]> {
@@ -366,20 +369,20 @@ export async function getPool(poolId: string, userId: string): Promise<Pool> {
   return request<Pool>('/pools/' + poolId, {}, userId)
 }
 
-export async function acceptPoolInvite(poolId: string, userId: string): Promise<{ success: boolean; txHash: string }> {
-  return request<{ success: boolean; txHash: string }>('/pools/' + poolId + '/accept', { method: 'POST' }, userId)
+export async function acceptPoolInvite(poolId: string, userId: string, txHash?: string): Promise<PreparedPoolTx | { success: boolean; txHash: string }> {
+  return request('/pools/' + poolId + '/accept', { method: 'POST', body: JSON.stringify({ txHash }) }, userId)
 }
 
-export async function leavePool(poolId: string, userId: string): Promise<{ success: boolean; txHash: string }> {
-  return request<{ success: boolean; txHash: string }>('/pools/' + poolId + '/leave', { method: 'POST' }, userId)
+export async function leavePool(poolId: string, userId: string, txHash?: string): Promise<PreparedPoolTx | { success: boolean; txHash: string }> {
+  return request('/pools/' + poolId + '/leave', { method: 'POST', body: JSON.stringify({ txHash }) }, userId)
 }
 
-export async function contributeToPool(poolId: string, amount: number, toShared: boolean, userId: string): Promise<{ success: boolean; txHash: string }> {
-  return request<{ success: boolean; txHash: string }>('/pools/' + poolId + '/contribute', { method: 'POST', body: JSON.stringify({ amount, toShared }) }, userId)
+export async function contributeToPool(poolId: string, amount: number, toShared: boolean, userId: string, txHash?: string): Promise<PreparedPoolTx | { success: boolean; txHash: string }> {
+  return request('/pools/' + poolId + '/contribute', { method: 'POST', body: JSON.stringify({ amount, toShared, txHash }) }, userId)
 }
 
-export async function withdrawPersonalFromPool(poolId: string, amount: number, userId: string): Promise<{ success: boolean; txHash: string }> {
-  return request<{ success: boolean; txHash: string }>('/pools/' + poolId + '/withdraw-personal', { method: 'POST', body: JSON.stringify({ amount }) }, userId)
+export async function withdrawPersonalFromPool(poolId: string, amount: number, userId: string, txHash?: string): Promise<PreparedPoolTx | { success: boolean; txHash: string }> {
+  return request('/pools/' + poolId + '/withdraw-personal', { method: 'POST', body: JSON.stringify({ amount, txHash }) }, userId)
 }
 
 export async function proposeSpendInPool(poolId: string, to: string, amount: number, reason: string, userId: string, signature: string, deadline: string | number): Promise<PoolProposal> {
@@ -398,15 +401,15 @@ export async function listPoolProposals(poolId: string, userId: string): Promise
   return request<Array<{ proposalId: string; kind: string; closed: boolean; onChain: PoolProposal | null }>>('/pools/' + poolId + '/proposals', {}, userId)
 }
 
-export async function vetoProposal(proposalId: string, userId: string): Promise<{ success: boolean; txHash: string }> {
-  return request<{ success: boolean; txHash: string }>('/proposals/' + proposalId + '/veto', { method: 'POST' }, userId)
+export async function vetoProposal(proposalId: string, userId: string, txHash?: string): Promise<PreparedPoolTx | { success: boolean; txHash: string }> {
+  return request('/proposals/' + proposalId + '/veto', { method: 'POST', body: JSON.stringify({ txHash }) }, userId)
 }
 
 export async function parsePoolCreation(description: string, userId: string): Promise<PoolCreationDraft> {
   return request<PoolCreationDraft>('/pools/parse', { method: 'POST', body: JSON.stringify({ description }) }, userId)
 }
 
-export async function sendPoolChatMessage(poolId: string, message: string, userId: string): Promise<{ message: PoolChatMessage; signatureRequest?: { action: string; typedData: any; submit: any } }> {
+export async function sendPoolChatMessage(poolId: string, message: string, userId: string): Promise<{ message: PoolChatMessage; signatureRequest?: { action: string; typedData?: any; approve?: UnsignedCall; tx?: UnsignedCall; submit: any } }> {
   return request('/pools/' + poolId + '/chat', { method: 'POST', body: JSON.stringify({ message }) }, userId)
 }
 

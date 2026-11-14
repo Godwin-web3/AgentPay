@@ -1,33 +1,22 @@
 // src/poolVault.js — wrapper around contracts/PoolVault.sol.
-// Mirrors two existing patterns rather than inventing a third:
-//  - Member-facing calls (createPool, acceptInvite, leavePool, contribute,
-//    withdrawPersonal, veto) must originate from the member's OWN address.
-//    Users hold Circle-managed SCA wallets, not a raw private key this
-//    backend can sign with — so these go through Circle's
-//    createContractExecutionTransaction keyed by walletId, exactly like
-//    src/walletService.js's approveAndDepositToVault/withdrawFromVault.
-//  - Proposal calls are never sent from the member's developer-controlled wallet.
-//    The member signs EIP-712 typed data. The operator key only relays that
-//    signature. A missing signature is refused.
+// Member calls (create, accept, leave, contribute, withdraw, veto) must be
+// sent by the member. This server only builds the unsigned transaction.
+// The Privy wallet signs it. Proposal calls are different: the member signs
+// EIP-712 typed data and the operator key relays that signature. A missing
+// signature is refused.
 // PoolVault is a singleton (see contracts/PoolVault.sol) — one address,
 // no per-pool factory lookup like escrow.findVault needs.
 
 const { ethers } = require('ethers');
 const fs = require('fs');
 const path = require('path');
-const { initiateDeveloperControlledWalletsClient } = require('@circle-fin/developer-controlled-wallets');
 const { toUnits, fromUnits } = require('../utils/usdc');
-
-const client = initiateDeveloperControlledWalletsClient({
-  apiKey: process.env.CIRCLE_API_KEY,
-  entitySecret: process.env.CIRCLE_ENTITY_SECRET,
-});
 
 const artifact = JSON.parse(fs.readFileSync(path.join(__dirname, '../artifacts/PoolVault.json'), 'utf8'));
 
 let deployment = null;
 const deploymentPath = path.join(__dirname, '../artifacts/PoolVault-deployment.json');
-const { getProvider } = require('./chain');
+const { getProvider, getChain } = require('./chain');
 if (fs.existsSync(deploymentPath)) {
   deployment = JSON.parse(fs.readFileSync(deploymentPath, 'utf8'));
 }
@@ -63,81 +52,140 @@ function unpackConstitution(c) {
   };
 }
 
-// ── Member-signed calls (Circle contract-execution, keyed by walletId) ──────
+// ── Unsigned member calls. The Privy wallet sends these. ───────────────────
 
-async function waitForTxHash(txId, label) {
-  for (let i = 0; i < 15; i++) {
-    await new Promise((r) => setTimeout(r, 2000));
-    const check = await client.getTransaction({ id: txId });
-    const tx = check.data?.transaction;
-    if (tx?.txHash && tx?.state === 'COMPLETE') return tx.txHash;
-    if (tx?.state === 'FAILED') throw new Error(label + ' failed on chain');
-  }
-  throw new Error(label + ' timed out');
+function poolChainId() {
+  return getChain('arc').chainId;
 }
 
-async function memberContractCall(walletId, abiFunctionSignature, abiParameters, label) {
-  const res = await client.createContractExecutionTransaction({
-    walletId,
-    contractAddress: getAddress(),
-    blockchain: 'ARC-TESTNET',
-    abiFunctionSignature,
-    abiParameters,
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
-  });
-  return await waitForTxHash(res.data.id, label);
+function unsignedCall(to, data) {
+  return { chainId: poolChainId(), to, data, value: '0' };
 }
 
-async function createPool(walletId, invites, constitution) {
-  const txHash = await memberContractCall(
-    walletId,
-    'createPool(address[],(uint256,uint256,uint256))',
-    [invites, packConstitution(constitution)],
-    'create pool'
-  );
-  const provider = getProvider();
-  const receipt = await provider.getTransactionReceipt(txHash);
+function encodePool(fragment, args) {
+  const iface = new ethers.Interface(artifact.abi);
+  return unsignedCall(getAddress(), iface.encodeFunctionData(fragment, args));
+}
+
+function usdcAddress() {
+  return process.env.USDC_CONTRACT || getChain('arc').stable.address;
+}
+
+function createPoolCall(invites, constitution) {
+  return encodePool('createPool', [invites, packConstitution(constitution)]);
+}
+
+function acceptInviteCall(poolId) {
+  return encodePool('acceptInvite', [poolId]);
+}
+
+function leavePoolCall(poolId) {
+  return encodePool('leavePool', [poolId]);
+}
+
+function contributeCalls(poolId, amountUSDC, toShared) {
+  const amountWei = toUnits(amountUSDC).toString();
+  const erc20 = new ethers.Interface(['function approve(address spender, uint256 amount)']);
+  return {
+    approve: unsignedCall(usdcAddress(), erc20.encodeFunctionData('approve', [getAddress(), amountWei])),
+    tx: encodePool('contribute', [poolId, amountWei, !!toShared]),
+    amountWei,
+  };
+}
+
+function withdrawPersonalCall(poolId, amountUSDC) {
+  return encodePool('withdrawPersonal', [poolId, toUnits(amountUSDC)]);
+}
+
+function vetoCall(proposalId) {
+  return encodePool('veto', [proposalId]);
+}
+
+function findEvent(receipt, name) {
   const iface = new ethers.Interface(artifact.abi);
   for (const log of receipt.logs) {
     try {
       const decoded = iface.parseLog(log);
-      if (decoded.name === 'PoolCreated') return { poolId: decoded.args.poolId.toString(), txHash };
+      if (decoded && decoded.name === name) return decoded;
     } catch { continue; }
   }
-  throw new Error('Could not parse PoolCreated event');
+  return null;
 }
 
-async function acceptInvite(walletId, poolId) {
-  return await memberContractCall(walletId, 'acceptInvite(uint256)', [poolId], 'accept invite');
+async function memberReceipt(provider, txHash, expectedFrom, expectedTo) {
+  if (!/^0x[0-9a-fA-F]{64}$/.test(String(txHash || ''))) {
+    throw new Error('A transaction from your wallet is required.');
+  }
+  const receipt = await provider.getTransactionReceipt(txHash);
+  if (!receipt) throw new Error('That transaction is not on Arc yet.');
+  if (receipt.status !== 1) throw new Error('That transaction failed. Nothing was recorded.');
+  if (ethers.getAddress(receipt.from) !== ethers.getAddress(expectedFrom)) {
+    throw new Error('That transaction was not sent by your wallet.');
+  }
+  let to = receipt.to;
+  if (!to && expectedTo) {
+    const tx = await provider.getTransaction(txHash);
+    to = tx && tx.to;
+  }
+  if (expectedTo && ethers.getAddress(to) !== ethers.getAddress(expectedTo)) {
+    throw new Error('That transaction did not call the pool.');
+  }
+  return receipt;
 }
 
-async function leavePool(walletId, poolId) {
-  return await memberContractCall(walletId, 'leavePool(uint256)', [poolId], 'leave pool');
+async function readPoolCreated(provider, txHash, expectedFrom) {
+  const receipt = await memberReceipt(provider, txHash, expectedFrom, getAddress());
+  const decoded = findEvent(receipt, 'PoolCreated');
+  if (!decoded || ethers.getAddress(decoded.args.founder) !== ethers.getAddress(expectedFrom)) {
+    throw new Error('That transaction did not create a pool.');
+  }
+  return { poolId: decoded.args.poolId.toString(), txHash };
 }
 
-async function contribute(walletId, poolId, amountUSDC, toShared) {
-  const amountWei = toUnits(amountUSDC).toString();
-  const usdcAddress = process.env.USDC_CONTRACT;
-
-  // Step 1: approve PoolVault to pull the USDC (approve() lives on the USDC
-  // contract, not PoolVault — a separate call target from memberContractCall).
-  const approveRes = await client.createContractExecutionTransaction({
-    walletId, contractAddress: usdcAddress, blockchain: 'ARC-TESTNET',
-    abiFunctionSignature: 'approve(address,uint256)', abiParameters: [getAddress(), amountWei],
-    fee: { type: 'level', config: { feeLevel: 'MEDIUM' } },
-  });
-  await waitForTxHash(approveRes.data.id, 'approve USDC');
-
-  // Step 2: contribute() pulls it via transferFrom.
-  return await memberContractCall(walletId, 'contribute(uint256,uint256,bool)', [poolId, amountWei, toShared], 'contribute');
+async function readMemberJoined(provider, txHash, expectedFrom, poolId) {
+  const receipt = await memberReceipt(provider, txHash, expectedFrom, getAddress());
+  const decoded = findEvent(receipt, 'MemberJoined');
+  if (!decoded || decoded.args.poolId.toString() !== String(poolId) || ethers.getAddress(decoded.args.member) !== ethers.getAddress(expectedFrom)) {
+    throw new Error('That transaction did not accept this invite.');
+  }
+  return { txHash };
 }
 
-async function withdrawPersonal(walletId, poolId, amountUSDC) {
-  return await memberContractCall(walletId, 'withdrawPersonal(uint256,uint256)', [poolId, toUnits(amountUSDC).toString()], 'withdraw personal');
+async function readMemberLeft(provider, txHash, expectedFrom, poolId) {
+  const receipt = await memberReceipt(provider, txHash, expectedFrom, getAddress());
+  const decoded = findEvent(receipt, 'MemberLeft');
+  if (!decoded || decoded.args.poolId.toString() !== String(poolId) || ethers.getAddress(decoded.args.member) !== ethers.getAddress(expectedFrom)) {
+    throw new Error('That transaction did not leave this pool.');
+  }
+  return { txHash };
 }
 
-async function veto(walletId, proposalId) {
-  return await memberContractCall(walletId, 'veto(uint256)', [proposalId], 'veto');
+async function readContributed(provider, txHash, expectedFrom, poolId, amountUSDC) {
+  const receipt = await memberReceipt(provider, txHash, expectedFrom, getAddress());
+  const decoded = findEvent(receipt, 'Contributed');
+  const expected = toUnits(amountUSDC);
+  if (!decoded || decoded.args.poolId.toString() !== String(poolId) || ethers.getAddress(decoded.args.member) !== ethers.getAddress(expectedFrom) || decoded.args.amount !== expected) {
+    throw new Error('That transaction is not this contribution.');
+  }
+  return { txHash, toShared: decoded.args.toShared };
+}
+
+async function readWithdrawn(provider, txHash, expectedFrom, poolId, amountUSDC) {
+  const receipt = await memberReceipt(provider, txHash, expectedFrom, getAddress());
+  const decoded = findEvent(receipt, 'PersonalWithdrawn');
+  if (!decoded || decoded.args.poolId.toString() !== String(poolId) || ethers.getAddress(decoded.args.member) !== ethers.getAddress(expectedFrom) || decoded.args.amount !== toUnits(amountUSDC)) {
+    throw new Error('That transaction is not this withdrawal.');
+  }
+  return { txHash };
+}
+
+async function readVeto(provider, txHash, expectedFrom, proposalId) {
+  const receipt = await memberReceipt(provider, txHash, expectedFrom, getAddress());
+  const decoded = findEvent(receipt, 'ProposalVetoed');
+  if (!decoded || decoded.args.proposalId.toString() !== String(proposalId) || ethers.getAddress(decoded.args.by) !== ethers.getAddress(expectedFrom)) {
+    throw new Error('That transaction is not this objection.');
+  }
+  return { txHash };
 }
 
 const PROPOSAL_TYPES = {
@@ -308,12 +356,18 @@ async function getProposal(provider, proposalId) {
 
 module.exports = {
   getAddress,
-  createPool,
-  acceptInvite,
-  leavePool,
-  contribute,
-  withdrawPersonal,
-  veto,
+  createPoolCall,
+  acceptInviteCall,
+  leavePoolCall,
+  contributeCalls,
+  withdrawPersonalCall,
+  vetoCall,
+  readPoolCreated,
+  readMemberJoined,
+  readMemberLeft,
+  readContributed,
+  readWithdrawn,
+  readVeto,
   proposeSpend,
   proposeAmendConstitution,
   proposeRemoveMember,

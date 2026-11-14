@@ -20,6 +20,17 @@ export async function signerFor(wallets: ConnectedWallet[], chainId: number) {
   return provider.getSigner()
 }
 
+export async function sendContractCall(
+  wallets: ConnectedWallet[],
+  tx: { chainId: number; to: string; data: string; value?: string },
+) {
+  const signer = await signerFor(wallets, Number(tx.chainId))
+  const sent = await signer.sendTransaction({ to: tx.to, data: tx.data, value: tx.value ? BigInt(tx.value) : 0n })
+  const receipt = await sent.wait()
+  if (!receipt || receipt.status === 0) throw new Error('The transaction failed. Nothing else was moved.')
+  return { txHash: receipt.hash, explorer: explorer(Number(tx.chainId), receipt.hash || '') }
+}
+
 function explorer(chainId: number, hash: string) {
   return (EXPLORER[chainId] || '') + hash
 }
