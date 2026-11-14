@@ -259,7 +259,7 @@ function App({ tag }: { tag: string | null }) {
 function AppWithAuth() {
   const { user, loading } = useAuth();
   const [tag, setTag] = useState<string | null>(null);
-  const [claimed, setClaimed] = useState(() => localStorage.getItem('agentpay_test_claimed') === '1');
+  const [claimed, setClaimed] = useState(false);
   const [authView, setAuthView] = useState<'landing' | 'login'>('landing');
   const [tagLoading, setTagLoading] = useState(false);
   const [tagChecked, setTagChecked] = useState(false);
@@ -267,8 +267,10 @@ function AppWithAuth() {
   useEffect(() => {
     if (!user) {
       setTagLoading(false);
+      setClaimed(false);
       return;
     }
+    setClaimed(localStorage.getItem('agentpay_test_claimed_' + user.uid) === '1');
     setTagLoading(true);
     const fetchWithTimeout = (ms: number) => {
       const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
@@ -296,7 +298,7 @@ function AppWithAuth() {
     ? <Landing onLaunch={() => setAuthView('login')} />
     : <Login onBack={() => setAuthView('landing')} />;
   if (tagChecked && !tag) return <ClaimTag onClaimed={(t) => { localStorage.setItem('agentpay_view', 'terminal'); setTag(t || 'skip'); }} />;
-  if (!claimed) return <ClaimFunds userId={user.uid} onDone={() => { localStorage.setItem('agentpay_test_claimed', '1'); setClaimed(true); }} />;
+  if (!claimed) return <ClaimFunds userId={user.uid} onDone={() => { localStorage.setItem('agentpay_test_claimed_' + user.uid, '1'); setClaimed(true); }} />;
   return <App tag={tag} />;
 }
 
