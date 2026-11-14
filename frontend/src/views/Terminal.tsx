@@ -114,11 +114,9 @@ function PolicyCard({ data }: { data: any }) {
 }
 
 export default function Terminal({ messages, setMessages, userAddress, userId, onActionSuccess }: Props) {
-  const [sheet, setSheet] = React.useState<null | 'send' | 'swap' | 'bridge' | 'deposit'>(null)
   const [amount, setAmount] = React.useState('')
   const [who, setWho] = React.useState('')
-  const [direction, setDirection] = React.useState<'to-arc' | 'to-base'>('to-arc')
-  const [depositWhere, setDepositWhere] = React.useState<'base' | 'arc' | 'robinhood'>('base')
+  const [want, setWant] = React.useState<'arc' | 'base' | 'eth' | 'send' | 'stock'>('arc')
   const [where, setWhere] = React.useState('')
   const [input, setInput] = React.useState('')
   const [loading, setLoading] = React.useState(false)
@@ -322,32 +320,37 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
-  function submitSheet() {
+  function submitMove() {
     const n = Number(amount)
     if (!Number.isFinite(n) || n <= 0) return
     let text = ''
-    if (sheet === 'send') {
+    if (want === 'send') {
       if (!who.trim()) return
       text = `Send ${n} USDC to ${who.trim()}`
-    } else if (sheet === 'swap') {
+    } else if (want === 'eth') {
       text = `Swap ${n} USDC for ETH on Base Sepolia`
-    } else if (sheet === 'bridge') {
-      text = direction === 'to-arc'
-        ? `Bridge ${n} USDC from Base Sepolia to Arc`
-        : `Bridge ${n} USDC from Arc to Base Sepolia`
-    } else if (sheet === 'deposit') {
-      text = depositWhere === 'robinhood'
-        ? `Deposit ${n} TSLA on Robinhood`
-        : depositWhere === 'base'
-          ? `Deposit ${n} USDC on Base Sepolia`
-          : `Deposit ${n} USDC on Arc`
+    } else if (want === 'arc') {
+      text = `Bridge ${n} USDC from Base Sepolia to Arc`
+    } else if (want === 'base') {
+      text = `Bridge ${n} USDC from Arc to Base Sepolia`
+    } else if (want === 'stock') {
+      text = `Deposit ${n} TSLA on Robinhood`
     }
     if (!text) return
-    setSheet(null)
     setAmount('')
     setWho('')
     handleSend(text)
   }
+
+  const routeLine = want === 'arc'
+    ? 'USDC leaves Base and arrives on Arc.'
+    : want === 'base'
+      ? 'USDC leaves Arc and arrives on Base.'
+      : want === 'eth'
+        ? 'Base USDC becomes ETH.'
+        : want === 'send'
+          ? 'USDC is paid from Arc.'
+          : 'TSLA moves into the Robinhood vault. This is not USDC.'
 
   if (!userAddress) return (
     <div className="terminal">
@@ -365,7 +368,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
       <div className="messages" ref={scrollRef}>
         {messages.length === 0 && (
           <div className="message assistant">
-            <div className="message-bubble">Pick Send, Swap, Bridge, or Deposit. Nothing moves until you confirm.</div>
+            <div className="message-bubble">Say the outcome, or use the form. Nothing moves until you confirm.</div>
           </div>
         )}
         {messages.map((msg, i) => (
@@ -390,36 +393,27 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
           </div>
         )}
       </div>
-      <div className="quick-actions">
-        {(['send', 'swap', 'bridge', 'deposit'] as const).map((id) => (
-          <button key={id} className="quick-btn" disabled={loading} onClick={() => setSheet(sheet === id ? null : id)} style={{ color: sheet === id ? 'var(--text)' : undefined }}>
-            {id[0].toUpperCase() + id.slice(1)}
-          </button>
-        ))}
-      </div>
-      {sheet && (
-        <div style={{ padding: '8px 0 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" style={fieldStyle} />
-          {sheet === 'send' && <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Name or address" style={fieldStyle} />}
-          {sheet === 'bridge' && (
-            <button type="button" onClick={() => setDirection(direction === 'to-arc' ? 'to-base' : 'to-arc')} style={{ ...fieldStyle, textAlign: 'left' }}>
-              {direction === 'to-arc' ? 'Base Sepolia to Arc' : 'Arc to Base Sepolia'}
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+        <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
+          {([
+            ['arc', 'USDC on Arc'],
+            ['base', 'USDC on Base'],
+            ['eth', 'ETH'],
+            ['send', 'Pay someone'],
+            ['stock', 'Robinhood vault'],
+          ] as const).map(([id, label]) => (
+            <button key={id} type="button" disabled={loading} onClick={() => setWant(id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', whiteSpace: 'nowrap', color: want === id ? 'var(--text)' : 'var(--muted)', fontFamily: 'var(--font-head)', fontSize: 16, fontWeight: 500 }}>
+              {label}
             </button>
-          )}
-          {sheet === 'deposit' && (
-            <div style={{ display: 'flex', gap: 14 }}>
-              {(['base', 'arc', 'robinhood'] as const).map((id) => (
-                <button key={id} type="button" onClick={() => setDepositWhere(id)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: depositWhere === id ? 'var(--text)' : 'var(--muted)', font: 'inherit' }}>
-                  {id === 'base' ? 'Base' : id === 'arc' ? 'Arc' : 'Robinhood'}
-                </button>
-              ))}
-            </div>
-          )}
-          <button type="button" onClick={submitSheet} disabled={loading} style={{ background: 'var(--text)', color: '#f3f0e8', border: 'none', padding: '12px 14px', fontFamily: 'var(--font-head)', fontSize: 16 }}>
-            Review
-          </button>
+          ))}
         </div>
-      )}
+        <div style={{ color: 'var(--muted)', fontSize: 13, margin: '4px 0 8px' }}>{routeLine}</div>
+        <input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Amount" style={fieldStyle} />
+        {want === 'send' && <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Name or address" style={fieldStyle} />}
+        <button type="button" onClick={submitMove} disabled={loading} style={{ marginTop: 10, width: '100%', background: 'var(--text)', color: '#f3f0e8', border: 'none', padding: '12px 14px', fontFamily: 'var(--font-head)', fontSize: 16 }}>
+          Review
+        </button>
+      </div>
       <div className="input-area">
         <textarea ref={inputRef} className="chat-input" placeholder="Or type it" value={input} onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px' }} onKeyDown={handleKeyDown} rows={1} disabled={loading} style={{ maxHeight: '120px' }} />
         <button className="send-btn icon-btn" onClick={() => handleSend()} disabled={loading || !input.trim()}>Go</button>
