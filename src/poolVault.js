@@ -6,10 +6,10 @@
 //    backend can sign with — so these go through Circle's
 //    createContractExecutionTransaction keyed by walletId, exactly like
 //    src/walletService.js's approveAndDepositToVault/withdrawFromVault.
-//  - Agent-gated calls (proposeSpend, proposeAmendConstitution,
-//    proposeRemoveMember, resolveProposal) are onlyAgent on-chain, so they
-//    sign with the operator's raw ethers.Wallet(PRIVATE_KEY), same as
-//    src/escrow.js's executePayment.
+//  - Proposal calls are submitted by the member's own Circle wallet. The
+//    contract checks msg.sender == proposer; the optional EIP-712 relay path
+//    is reserved for agent relays with a member signature. The operator key
+//    can never manufacture member consent.
 // PoolVault is a singleton (see contracts/PoolVault.sol) — one address,
 // no per-pool factory lookup like escrow.findVault needs.
 
@@ -143,29 +143,37 @@ async function veto(walletId, proposalId) {
 
 // ── Agent-signed calls (onlyAgent on-chain) ─────────────────────────────────
 
-async function proposeSpend(agentWallet, poolId, proposer, to, amountUSDC, reason) {
-  const contract = getAgentContract(agentWallet);
-  const proposalId = await contract.proposeSpend.staticCall(poolId, proposer, to, toUnits(amountUSDC), reason);
-  const tx = await contract.proposeSpend(poolId, proposer, to, toUnits(amountUSDC), reason, { gasLimit: 300000 });
-  const receipt = await tx.wait();
-  return { proposalId: proposalId.toString(), txHash: receipt.hash };
+async function memberProposalCall(walletId, abiFunctionSignature, abiParameters, label) {
+  const txHash = await memberContractCall(walletId, abiFunctionSignature, abiParameters, label);
+  const receipt = await getProvider().getTransactionReceipt(txHash);
+  const iface = new ethers.Interface(artifact.abi);
+  for (const log of receipt.logs) {
+    try {
+      const decoded = iface.parseLog(log);
+      if (decoded.name === 'ProposalCreated') return { proposalId: decoded.args.proposalId.toString(), txHash };
+    } catch { continue; }
+  }
+  throw new Error('Could not parse ProposalCreated event');
 }
 
-async function proposeAmendConstitution(agentWallet, poolId, proposer, newConstitution) {
-  const contract = getAgentContract(agentWallet);
-  const packed = { discretionaryThreshold: toUnits(newConstitution.discretionaryThreshold), objectionWindow: newConstitution.objectionWindow, maxSingleProposal: toUnits(newConstitution.maxSingleProposal) };
-  const proposalId = await contract.proposeAmendConstitution.staticCall(poolId, proposer, packed);
-  const tx = await contract.proposeAmendConstitution(poolId, proposer, packed, { gasLimit: 300000 });
-  const receipt = await tx.wait();
-  return { proposalId: proposalId.toString(), txHash: receipt.hash };
+async function proposeSpend(walletId, poolId, proposer, to, amountUSDC, reason) {
+  return memberProposalCall(walletId,
+    'proposeSpend(uint256,address,address,uint256,string,uint256,bytes)',
+    [poolId, proposer, to, toUnits(amountUSDC).toString(), reason || '', '0', '0x'],
+    'propose pool spend');
 }
 
-async function proposeRemoveMember(agentWallet, poolId, proposer, targetMember) {
-  const contract = getAgentContract(agentWallet);
-  const proposalId = await contract.proposeRemoveMember.staticCall(poolId, proposer, targetMember);
-  const tx = await contract.proposeRemoveMember(poolId, proposer, targetMember, { gasLimit: 300000 });
-  const receipt = await tx.wait();
-  return { proposalId: proposalId.toString(), txHash: receipt.hash };
+async function proposeAmendConstitution(walletId, poolId, proposer, newConstitution) {
+  const packed = [toUnits(newConstitution.discretionaryThreshold).toString(), String(newConstitution.objectionWindow), toUnits(newConstitution.maxSingleProposal).toString()];
+  return memberProposalCall(walletId,
+    'proposeAmendConstitution(uint256,address,(uint256,uint256,uint256),uint256,bytes)',
+    [poolId, proposer, packed, '0', '0x'], 'propose constitution change');
+}
+
+async function proposeRemoveMember(walletId, poolId, proposer, targetMember) {
+  return memberProposalCall(walletId,
+    'proposeRemoveMember(uint256,address,address,uint256,bytes)',
+    [poolId, proposer, targetMember, '0', '0x'], 'propose member removal');
 }
 
 async function resolveProposal(agentWallet, proposalId) {
