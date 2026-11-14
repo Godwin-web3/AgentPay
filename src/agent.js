@@ -223,13 +223,13 @@ async function chat(message, walletId, userAddress) {
   if (intent.action === "bridge") {
     try {
       const { quoteBridge } = require('./bridge');
-      const quote = quoteBridge({
+      const quote = await quoteBridge({
         from: intent.fromChain || intent.from || 'base',
         to: intent.toChain || intent.to || 'arc',
         amount: intent.amount,
       });
       intent.data = { quote };
-      intent.message = `Bridge ${quote.amount} USDC from ${quote.fromName} to ${quote.toName}. Circle burns it on the source wallet and mints the same amount on the destination. This is not a vault deposit. Confirm to start.`;
+      intent.message = `Bridge ${quote.amount} USDC from ${quote.fromName} to ${quote.toName}. Fast transfer, so Circle attests after confirmation instead of waiting for finality. Fee is about ${quote.fee} USDC. Confirm to start.`;
     } catch (e) {
       intent.data = { quoteError: e.message };
       intent.message = e.message;

@@ -9,8 +9,8 @@ const walletStore = require('./walletStore');
 
 const MESSENGER = 'depositForBurn(uint256,uint32,bytes32,address,bytes32,uint256,uint32)';
 const RECEIVE = 'receiveMessage(bytes,bytes)';
-const FINALITY = '2000';
-const IRIS = 'https://iris-api-sandbox.circle.com/v2/messages';
+const FAST = '1000';
+const IRIS = 'https://iris-api-sandbox.circle.com';
 
 function route(fromName, toName) {
   let from;
@@ -31,19 +31,40 @@ function route(fromName, toName) {
   return { from, to };
 }
 
-function quoteBridge({ from, to, amount }) {
+async function fastFee(from, to, amountRaw) {
+  const res = await fetch(`${IRIS}/v2/burn/USDC/fees/${from.cctp.domain}/${to.cctp.domain}`);
+  if (!res.ok) throw new Error('Could not price the fast bridge.');
+  const fees = await res.json();
+  const row = (Array.isArray(fees) ? fees : []).find((item) => item.finalityThreshold === 1000);
+  if (!row) throw new Error('Fast transfer is not available on this route.');
+  const bps = Number(row.minimumFee);
+  if (!Number.isFinite(bps) || bps < 0) throw new Error('Fast transfer fee was unreadable.');
+  const raw = BigInt(amountRaw);
+  const real = (raw * BigInt(Math.ceil(bps * 10))) / 100000n;
+  const maxFee = real * 2n < 1n ? 1n : real * 2n;
+  if (maxFee >= raw) throw new Error('The fast fee is larger than the amount.');
+  return { bps, real, maxFee };
+}
+
+async function quoteBridge({ from, to, amount }) {
   const pair = route(from || 'base', to || 'arc');
   const amountIn = Number(amount);
   if (!Number.isFinite(amountIn) || amountIn <= 0) throw new Error('Amount must be greater than zero.');
+  const raw = units(pair.from, amountIn);
+  const priced = await fastFee(pair.from, pair.to, raw);
+  const fee = ethers.formatUnits(priced.real, pair.from.stable.decimals);
+  const amountOut = ethers.formatUnits(BigInt(raw) - priced.real, pair.from.stable.decimals);
   return {
     from: pair.from.id,
     to: pair.to.id,
     fromName: pair.from.name,
     toName: pair.to.name,
     amount: String(amountIn),
-    amountOut: String(amountIn),
+    amountOut,
     token: 'USDC',
-    fee: '0',
+    fee,
+    maxFee: priced.maxFee.toString(),
+    speed: 'fast',
   };
 }
 
@@ -56,7 +77,7 @@ function padAddress(address) {
 }
 
 async function attestation(domain, txHash) {
-  const url = `${IRIS}/${domain}?transactionHash=${txHash}`;
+  const url = `${IRIS}/v2/messages/${domain}?transactionHash=${txHash}`;
   const res = await fetch(url);
   if (!res.ok) return null;
   const body = await res.json();
@@ -102,7 +123,7 @@ async function mint(userId, pending, msg) {
 }
 
 async function executeBridge({ userId, from, to, amount }) {
-  const quoted = quoteBridge({ from, to, amount });
+  const quoted = await quoteBridge({ from, to, amount });
   const source = getChain(quoted.from);
   const dest = getChain(quoted.to);
   const sourceWallet = await signerFor(userId, source);
@@ -120,7 +141,7 @@ async function executeBridge({ userId, from, to, amount }) {
     source.circle,
     source.cctp.tokenMessenger,
     MESSENGER,
-    [raw, String(dest.cctp.domain), padAddress(destWallet.address), source.stable.address, ethers.ZeroHash, '0', FINALITY]
+    [raw, String(dest.cctp.domain), padAddress(destWallet.address), source.stable.address, ethers.ZeroHash, quoted.maxFee, FAST]
   );
   const pending = {
     burnTx,
