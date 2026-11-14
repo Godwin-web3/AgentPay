@@ -99,9 +99,7 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
             </div>
           )}
         </div>
-        <button className="hamburger-btn" onClick={() => setDrawerOpen(true)}>
-          <span /><span /><span />
-        </button>
+        <button className="hamburger-btn" onClick={() => setDrawerOpen(true)}>Menu</button>
       </div>
 
       {drawerOpen && (
@@ -110,11 +108,11 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
 
       <div className={`drawer ${drawerOpen ? 'drawer-open' : ''}`}>
         <div className="drawer-header">
-          <span className="drawer-title">MENU</span>
+          <span className="drawer-title">Menu</span>
           <button className="drawer-close" onClick={() => setDrawerOpen(false)}>✕</button>
         </div>
 
-        <div className="drawer-section-label">NAVIGATE</div>
+        <div className="drawer-section-label">Go to</div>
         <div className="drawer-nav">
           <div className={`drawer-nav-item ${currentView === 'terminal' ? 'active' : ''}`} onClick={() => navigate('terminal')}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -137,31 +135,31 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
         </div>
 
         <div className="drawer-divider" />
-        <div className="drawer-section-label">WALLET</div>
+        <div className="drawer-section-label">Wallet</div>
         <div className="drawer-wallet">
           <WalletConnect onAddressChange={onAddressChange} onBalanceChange={onBalanceChange} onProviderChange={onProviderChange} refreshTrigger={refreshTrigger} />
         </div>
 
         <div className="drawer-divider" />
-        <div className="drawer-section-label">MEMORY</div>
+        <div className="drawer-section-label">Chat</div>
         <div style={{ padding: "0 16px 12px" }}>
           <button
             className="quick-btn"
             style={{ width: "100%", color: 'var(--danger)', borderColor: 'var(--danger)' }}
             onClick={() => { onClearMemory?.(); setDrawerOpen(false) }}
           >
-            CLEAR MEMORY
+            Clear chat
           </button>
         </div>
         <div className="drawer-divider" />
-        <div className="drawer-section-label">ACCOUNT</div>
+        <div className="drawer-section-label">Account</div>
         <div style={{ padding: "0 16px 12px" }}>
           <button
             className="quick-btn"
             style={{ width: "100%", color: 'var(--danger)', borderColor: 'var(--danger)' }}
             onClick={() => { logout(); setDrawerOpen(false); }}
           >
-            SIGN OUT
+            Sign out
           </button>
         </div>
 
@@ -169,7 +167,7 @@ export default function AgentHeader({ onAddressChange, onBalanceChange, onProvid
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div className={`status-pill ${health?.status === 'ok' ? 'online' : 'offline'}`}>
               <div className="status-dot" />
-              {health?.status === 'ok' ? 'ONLINE' : 'OFFLINE'}
+              {health?.status === 'ok' ? 'Live' : 'Down'}
             </div>
             {userAddress && (
               <button

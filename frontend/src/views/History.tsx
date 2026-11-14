@@ -93,28 +93,20 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
 
   if (loading) return (
     <div className="history-view">
-      <div className="empty-state">
-        <div className="icon" style={{ animation: 'pulse 1.5s infinite' }}>⚡</div>
-        Syncing activity...
-      </div>
+      <div className="empty-state">Loading activity.</div>
     </div>
   )
 
   if (error) return (
     <div className="history-view">
-      <div className="empty-state">
-        <div className="icon">⚠️</div>
-        {error}
-      </div>
+      <div className="empty-state">Activity could not be loaded.</div>
     </div>
   )
 
   if (txs.length === 0) return (
     <div className="history-view">
-      <div className="empty-state">
-        <div className="icon">📭</div>
-        No financial activity.
-      </div>
+      <p className="eyebrow">Activity</p>
+      <h2 className="page-title">Nothing yet</h2>
     </div>
   )
 
@@ -125,7 +117,6 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
       <div className="reveal" style={{ marginBottom: 28 }}>
         <p className="eyebrow">Activity</p>
         <h2 className="page-title" style={{ marginBottom: 8 }}>History</h2>
-        <div className="mono-data" style={{ fontSize: 11, color: 'var(--muted)' }}>{userAddress}</div>
       </div>
 
       <div className="card-deep reveal" style={{ padding: '4px 20px' }}>

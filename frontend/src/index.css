@@ -195,11 +195,13 @@ body::after {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  text-transform: uppercase;
+  padding: 0;
+  border-radius: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  text-transform: none;
+  background: none !important;
+  border: none !important;
 }
 
 .status-pill.online { background: var(--cyan-a1); border: 1px solid var(--cyan-a2); color: var(--cyan); }
@@ -231,11 +233,20 @@ body::after {
 .page-title {
   font-family: var(--font-head);
   font-weight: 500;
-  font-size: clamp(56px, 14vw, 92px);
-  letter-spacing: -0.045em;
-  line-height: 0.88;
+  font-size: 28px;
+  letter-spacing: -0.04em;
+  line-height: 1;
   color: var(--text);
   margin: 0;
+}
+
+.money {
+  font-family: var(--font-head);
+  font-weight: 500;
+  font-size: clamp(64px, 18vw, 88px);
+  letter-spacing: -0.055em;
+  line-height: 0.86;
+  color: var(--text);
 }
 
 .eyebrow {
@@ -665,19 +676,14 @@ body::after {
 }
 
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
+  padding: 48px 8px;
   color: var(--muted);
-  font-family: var(--font-mono);
-  gap: 12px;
+  font-size: 16px;
+  line-height: 1.4;
 }
 
 .empty-state .icon {
-  font-size: 32px;
-  margin-bottom: 10px;
+  display: none;
 }
 
 /* Log Items */
@@ -770,21 +776,17 @@ body::after {
 
 /* Hamburger */
 .hamburger-btn {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 8px 0 8px 12px;
+  font-family: var(--font-head);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  color: var(--text);
 }
-.hamburger-btn span {
-  display: block;
-  width: 22px;
-  height: 2px;
-  background: var(--text);
-}
+.hamburger-btn span { display: none; }
 
 /* Drawer */
 .drawer-overlay {
@@ -798,8 +800,8 @@ body::after {
   top: 0;
   right: 0;
   height: 100%;
-  width: 280px;
-  background: #141414;
+  width: min(320px, 88vw);
+  background: var(--bg);
   border-left: 1px solid var(--border);
   z-index: 100;
   transform: translateX(100%);
@@ -818,10 +820,11 @@ body::after {
   border-bottom: 1px solid var(--border);
 }
 .drawer-title {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 3px;
-  color: var(--muted);
+  font-family: var(--font-head);
+  font-size: 22px;
+  letter-spacing: -0.04em;
+  color: var(--text);
+  font-weight: 500;
 }
 .drawer-close {
   background: none;
@@ -833,12 +836,12 @@ body::after {
 }
 .drawer-close:hover { color: var(--text); }
 .drawer-section-label {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 3px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  letter-spacing: 0;
   color: var(--muted);
-  padding: 16px 20px 8px;
-  opacity: 0.5;
+  padding: 18px 20px 6px;
+  opacity: 1;
 }
 .drawer-nav {
   display: flex;
@@ -859,12 +862,12 @@ body::after {
 }
 .drawer-nav-item:hover {
   color: var(--text);
-  background: #1a1a1a;
+  background: transparent;
 }
 .drawer-nav-item.active {
-  color: var(--cyan);
-  border-color: var(--border);
-  background: rgba(79,219,200,0.05);
+  color: var(--text);
+  border-color: transparent;
+  background: transparent;
 }
 .drawer-divider {
   height: 1px;
@@ -885,12 +888,11 @@ body::after {
 
 /* Quick action buttons */
 .quick-actions {
-  display: flex;
-  gap: 6px;
-  padding: 8px 16px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding: 0;
   border-top: 1px solid var(--border);
-  overflow-x: auto;
-  scrollbar-width: none;
   background: var(--bg);
   flex-shrink: 0;
 }
@@ -909,16 +911,16 @@ body::after {
   transition: color 0.15s, border-color 0.15s;
 }
 .quick-btn {
-  flex-shrink: 0;
-  padding: 6px 0;
-  margin-right: 18px;
+  padding: 14px 0;
+  margin: 0;
   background: transparent;
   border: none;
+  border-bottom: 1px solid var(--border);
   color: #8a8478;
   font-family: var(--font-head);
   font-size: 15px;
   font-weight: 500;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   cursor: pointer;
 }
 .quick-btn:hover:not(:disabled) { color: var(--text); }

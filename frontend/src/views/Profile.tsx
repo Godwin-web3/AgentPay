@@ -20,12 +20,6 @@ interface Props {
 
 type SubView = null | 'vault' | 'policy' | 'history'
 
-const ChevronRight = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="9 18 15 12 9 6"/>
-  </svg>
-)
-
 export default function Profile({ userAddress, userId, vaultBalance, positions = [], stocks = [], walletBalance, tokenBalances, activeProvider, onActionSuccess, agentWalletAddress, tag }: Props) {
   const [subView, setSubView] = useState<SubView>(null)
 
@@ -68,7 +62,7 @@ export default function Profile({ userAddress, userId, vaultBalance, positions =
   return (
     <div className="reveal" style={{ padding: 16, maxWidth: 480, margin: '0 auto' }}>
       <p className="eyebrow">{tag && tag !== 'skip' ? `@${tag}` : 'Account'}</p>
-      <div className="page-title" style={{ margin: '10px 0 6px' }}>
+      <div className="money" style={{ margin: '10px 0 8px' }}>
         {vaultBalance}
       </div>
       <div style={{ color: 'var(--muted)', marginBottom: 20 }}>Total USDC</div>
@@ -105,18 +99,15 @@ export default function Profile({ userAddress, userId, vaultBalance, positions =
         <button onClick={() => setSubView('vault')} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--muted)', cursor: 'pointer', font: 'inherit' }}>Withdraw</button>
       </div>
 
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--muted)', wordBreak: 'break-all' }}>{agentWalletAddress || userAddress}</div>
+      <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--muted)', marginTop: 22 }}>
+        {(agentWalletAddress || userAddress).slice(0, 6)}…{(agentWalletAddress || userAddress).slice(-4)}
+      </div>
 
-      {/* Policy — the one menu item that's genuinely unique to Account */}
       <button
         onClick={() => setSubView('policy')}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+        style={{ display: 'block', marginTop: 18, padding: 0, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', color: 'var(--text)', font: 'inherit', fontSize: 16 }}
       >
-        <div>
-          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 13, marginBottom: 2 }}>Policy</div>
-          <div style={{ fontFamily: 'var(--font-mono)', color: 'var(--muted)', fontSize: 11 }}>Spending rules and caps</div>
-        </div>
-        <span style={{ color: 'var(--muted)' }}><ChevronRight /></span>
+        Spending limits
       </button>
     </div>
   )

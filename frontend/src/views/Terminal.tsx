@@ -18,10 +18,6 @@ function plainReason(reason?: string) {
   return reason
 }
 
-function formatTime(ts: number) {
-  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
-
 function ProofBadge({ requestId }: { requestId: string }) {
   return (
     <div style={{ marginTop: 10, padding: '6px 10px', background: 'rgba(79,219,200,0.04)', border: '1px solid rgba(79,219,200,0.15)', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -374,9 +370,6 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
         )}
         {messages.map((msg, i) => (
           <div key={i} className={`message ${msg.role}`}>
-            <div style={{ fontSize: 12, marginBottom: 4, color: 'var(--muted)', fontFamily: 'var(--font-body)', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
-              {msg.role === 'user' ? 'You' : 'AgentPay'} · {formatTime(msg.timestamp)}
-            </div>
             <div className="message-bubble">
               {msg.content}
               {msg.role === 'assistant' && msg.intent?.requestId && <ProofBadge requestId={msg.intent.requestId} />}
