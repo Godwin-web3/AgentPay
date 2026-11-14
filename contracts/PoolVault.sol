@@ -206,19 +206,22 @@ contract PoolVault is ReentrancyGuard {
     function proposeSpend(
         uint256 poolId, address proposer, address to, uint256 amount, string calldata reason,
         uint256 deadline, bytes calldata signature
-    ) external onlyAgent returns (uint256 proposalId) {
+    ) external returns (uint256 proposalId) {
         Pool storage p = pools[poolId];
         if (!p.active) revert PoolInactive();
         if (p.paused) revert PoolPausedError();
         if (memberStatus[poolId][proposer] != MemberStatus.Active) revert ProposerNotMember();
+        if (msg.sender != proposer) {
+            if (msg.sender != agent) revert NotAgent();
+            _authorizeProposal(
+                poolId, proposer, ProposalKind.Spend, to, amount, keccak256(bytes(reason)),
+                0, 0, 0, address(0), deadline, signature
+            );
+        }
         if (to == address(0)) revert ZeroAddress();
         if (amount == 0 || amount > p.constitution.maxSingleProposal) revert ExceedsBackstopCap();
         if (amount > p.sharedBalance) revert InsufficientBalance();
 
-        _authorizeProposal(
-            poolId, proposer, ProposalKind.Spend, to, amount, keccak256(bytes(reason)),
-            0, 0, 0, address(0), deadline, signature
-        );
         proposalId = _createProposal(poolId, proposer, ProposalKind.Spend, p.constitution.objectionWindow);
         Proposal storage prop = proposals[proposalId];
         prop.to = to;
@@ -234,17 +237,20 @@ contract PoolVault is ReentrancyGuard {
     function proposeAmendConstitution(
         uint256 poolId, address proposer, Constitution calldata newConstitution,
         uint256 deadline, bytes calldata signature
-    ) external onlyAgent returns (uint256 proposalId) {
+    ) external returns (uint256 proposalId) {
         Pool storage p = pools[poolId];
         if (!p.active) revert PoolInactive();
         if (p.paused) revert PoolPausedError();
         if (memberStatus[poolId][proposer] != MemberStatus.Active) revert ProposerNotMember();
         _validateConstitution(newConstitution);
-        _authorizeProposal(
-            poolId, proposer, ProposalKind.AmendConstitution, address(0), 0, bytes32(0),
-            newConstitution.discretionaryThreshold, newConstitution.objectionWindow,
-            newConstitution.maxSingleProposal, address(0), deadline, signature
-        );
+        if (msg.sender != proposer) {
+            if (msg.sender != agent) revert NotAgent();
+            _authorizeProposal(
+                poolId, proposer, ProposalKind.AmendConstitution, address(0), 0, bytes32(0),
+                newConstitution.discretionaryThreshold, newConstitution.objectionWindow,
+                newConstitution.maxSingleProposal, address(0), deadline, signature
+            );
+        }
         proposalId = _createProposal(poolId, proposer, ProposalKind.AmendConstitution, p.constitution.objectionWindow);
         proposals[proposalId].newConstitution = newConstitution;
     }
@@ -252,16 +258,19 @@ contract PoolVault is ReentrancyGuard {
     function proposeRemoveMember(
         uint256 poolId, address proposer, address targetMember,
         uint256 deadline, bytes calldata signature
-    ) external onlyAgent returns (uint256 proposalId) {
+    ) external returns (uint256 proposalId) {
         Pool storage p = pools[poolId];
         if (!p.active) revert PoolInactive();
         if (p.paused) revert PoolPausedError();
         if (memberStatus[poolId][proposer] != MemberStatus.Active) revert ProposerNotMember();
         if (memberStatus[poolId][targetMember] != MemberStatus.Active || targetMember == p.founder) revert NotMember();
-        _authorizeProposal(
-            poolId, proposer, ProposalKind.RemoveMember, address(0), 0, bytes32(0),
-            0, 0, 0, targetMember, deadline, signature
-        );
+        if (msg.sender != proposer) {
+            if (msg.sender != agent) revert NotAgent();
+            _authorizeProposal(
+                poolId, proposer, ProposalKind.RemoveMember, address(0), 0, bytes32(0),
+                0, 0, 0, targetMember, deadline, signature
+            );
+        }
         proposalId = _createProposal(poolId, proposer, ProposalKind.RemoveMember, p.constitution.objectionWindow);
         proposals[proposalId].targetMember = targetMember;
     }
