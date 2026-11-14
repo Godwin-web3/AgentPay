@@ -77,13 +77,15 @@ async function fundTestWallet() {
     mintTx = receipt.hash;
     balance = await token.balanceOf(wallet.address);
   }
+  const held = ethers.formatUnits(balance, chain.usdg.decimals);
   const vaultAddress = require('./swap').vaultAddressFor(chain);
   if (!vaultAddress) {
     return {
       minted: Boolean(mintTx),
       mintTx,
       deposited: false,
-      reason: 'Test USDG is in the wallet. The vault is still deploying. Tap again in a minute.',
+      held,
+      reason: 'The wallet already holds ' + held + ' test USDG. The vault is still deploying, so nothing was deposited. Tap again in a minute.',
     };
   }
   const approved = await token.approve(vaultAddress, depositRaw);
@@ -91,7 +93,7 @@ async function fundTestWallet() {
   const vault = new ethers.Contract(vaultAddress, ['function deposit(uint256)'], wallet);
   const deposited = await vault.deposit(depositRaw);
   const receipt = await deposited.wait();
-  return { minted: Boolean(mintTx), mintTx, deposited: true, txHash: receipt.hash, amount: '100', explorer: chain.explorer + '/tx/' + receipt.hash };
+  return { minted: Boolean(mintTx), mintTx, deposited: true, held, txHash: receipt.hash, amount: '100', explorer: chain.explorer + '/tx/' + receipt.hash };
 }
 
 module.exports = { sendOnRobinhood, mintTestUsdg, fundTestWallet };

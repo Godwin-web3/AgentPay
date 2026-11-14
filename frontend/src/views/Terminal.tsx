@@ -42,7 +42,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     else if (result.status === 'proposing_swap') { title = `Swap ${result.amount} ${result.fromAsset}`; detail = `You get about ${result.amountOut} ${result.toAsset} on ${result.chainName}` }
     else if (result.status === 'proposing_bridge') { title = `Bridge ${result.amount} USDC`; detail = `${result.fromName} to ${result.toName}. This leaves the wallet, not the vault.` }
     else if (result.status === 'proposing_transfer') { title = `Send ${result.amount} ${result.token}`; detail = `From the Robinhood wallet to ${result.to}. No Circle, no USDC.` }
-    else if (result.status === 'proposing_mint') { title = 'Fund the test wallet'; detail = 'Mints test USDG and deposits 100 into the Robinhood vault. No faucet.' }
+    else if (result.status === 'proposing_mint') { title = 'Deposit 100 test USDG'; detail = 'Taken from the USDG already in the Robinhood wallet. Nothing new is minted.' }
     return (
       <div style={{ marginTop: 10, border: '1px solid var(--cyan)', background: 'rgba(79,219,200,0.04)', padding: '12px 14px', fontFamily: 'var(--font-mono)' }}>
         <div style={{ fontSize: 9, color: 'var(--cyan)', letterSpacing: 2, marginBottom: 6 }}>{title}</div>
@@ -70,7 +70,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
   if (result.status === 'executed' || result.status === 'success') {
     let label = 'Done'
     if (result.type === 'bridge') label = `Bridged ${result.amount} USDC to ${result.toName}`
-    else if (result.type === 'mint') label = 'Funded the test wallet'
+    else if (result.type === 'mint') label = 'Deposited 100 test USDG'
     else if (result.type === 'deposit') label = `Deposited ${result.amount} USDC`
     else if (result.type === 'schedule') label = `Scheduled ${result.amount} USDC`
     else if (result.amount) label = `Sent ${result.amount} ${result.token || 'USDC'}`
@@ -413,8 +413,8 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
       </div>
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
         <button type="button" disabled={loading} onClick={() => {
-          const userMsg = { role: 'user' as const, content: 'Fund the test wallet', timestamp: Date.now() }
-          const assistantMsg = { role: 'assistant' as const, content: 'Mint test USDG and deposit 100 into the vault.', timestamp: Date.now() }
+          const userMsg = { role: 'user' as const, content: 'Deposit 100 of my test USDG', timestamp: Date.now() }
+          const assistantMsg = { role: 'assistant' as const, content: 'Deposit 100 from the USDG already in the wallet.', timestamp: Date.now() }
           setMessages((prev) => {
             const next = [...prev, userMsg, assistantMsg]
             const idx = next.length - 1
@@ -422,7 +422,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
             return next
           })
         }} style={{ background: 'none', border: 'none', padding: '0 0 10px', color: 'var(--text)', fontFamily: 'var(--font-head)', fontSize: 16, cursor: 'pointer' }}>
-          Fund test wallet
+          Deposit 100 USDG
         </button>
         <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 8 }}>
           {([
