@@ -65,19 +65,19 @@ export default function Profile({ userAddress, userId, vaultBalance, positions =
       <div className="money" style={{ margin: '10px 0 8px' }}>
         {vaultBalance}
       </div>
-      <div style={{ color: 'var(--muted)', marginBottom: 20 }}>Total USDC</div>
+      <div style={{ color: 'var(--muted)', marginBottom: 20 }}>Balance</div>
 
       <div style={{ borderTop: '1px solid var(--border)' }}>
         {(positions.length ? positions : [{ label: 'Vault', amount: vaultBalance }]).map((row) => (
           <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '12px 0', borderBottom: '1px solid var(--border)', fontSize: 14 }}>
             <span style={{ color: 'var(--muted)' }}>{row.label}</span>
-            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{row.amount} USDC</span>
+            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{row.amount}</span>
           </div>
         ))}
         {walletBalance && !positions.some((row) => row.label === 'Arc wallet') && (
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '12px 0', borderBottom: '1px solid var(--border)', fontSize: 14 }}>
             <span style={{ color: 'var(--muted)' }}>Arc wallet</span>
-            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{walletBalance} USDC</span>
+            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{walletBalance}</span>
           </div>
         )}
       </div>

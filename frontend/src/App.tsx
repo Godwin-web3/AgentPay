@@ -10,11 +10,10 @@ import Pools from './views/Pools'
 import History from './views/History'
 import Landing from './views/Landing'
 import Profile from './views/Profile'
-import Onboarding from './views/Onboarding'
 import Login from './components/Login'
 import { PaymentRequestView } from './views/PaymentRequestView'
 import type { ChatMessage } from './types'
-import { getTokenBalances, checkVault, getWallet, getVaultBalanceApi } from './api'
+import { getTokenBalances, getWallet, getVaultBalanceApi } from './api'
 
 type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'goals' | 'pools' | 'requests'
 
@@ -85,8 +84,6 @@ function App({ tag }: { tag: string | null }) {
       localStorage.setItem('agentpay_uid', authUid);
     }
   }, [authUid]);
-  const [isOnboarded, setIsOnboarded] = useState(false)
-  const [onboardCheckDone, setOnboardCheckDone] = useState(false)
   const [agentWalletAddress, setAgentWalletAddress] = useState('')
 
   useEffect(() => {
@@ -95,23 +92,7 @@ function App({ tag }: { tag: string | null }) {
 
   useEffect(() => {
     localStorage.setItem('agentpay_address', userAddress)
-    if (!userAddress) {
-      setIsOnboarded(false)
-      setOnboardCheckDone(true)
-      return
-    }
-    if (!userId) return
-    setOnboardCheckDone(false)
-    checkVault(userId)
-      .then(result => {
-        setIsOnboarded(!!result.exists)
-      })
-      .catch(e => {
-        console.error('Vault check failed', e)
-        setIsOnboarded(false)
-      })
-      .finally(() => setOnboardCheckDone(true))
-  }, [userAddress, userId])
+  }, [userAddress])
 
   const [vaultBalance, setVaultBalance] = useState('0')
   const [positions, setPositions] = useState<{ label: string; amount: string }[]>([])
@@ -126,7 +107,7 @@ function App({ tag }: { tag: string | null }) {
     if (saved) return JSON.parse(saved)
     return [{
       role: 'assistant',
-      content: 'AgentPay online. I can send payments, manage schedules, and enforce your policy. What do you need?',
+      content: 'Say what you want moved. Nothing happens until you confirm.',
       timestamp: Date.now()
     }]
   })
@@ -205,30 +186,6 @@ function App({ tag }: { tag: string | null }) {
 
   if (view === 'landing') {
     return <Landing onLaunch={() => setView('terminal')} />
-  }
-
-  if (userAddress && !onboardCheckDone) {
-    return (
-      <div className="app">
-        <main className="main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-          <div style={{ color: 'var(--muted)', fontFamily: 'var(--font-mono)', fontSize: 13 }}>Checking vault status...</div>
-        </main>
-      </div>
-    )
-  }
-
-  if (userAddress && onboardCheckDone && !isOnboarded) {
-    return (
-      <div className="app">
-        <main className="main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-           <Onboarding
-             userAddress={userAddress}
-             onProviderChange={setActiveProvider}
-             onComplete={() => { setIsOnboarded(true); refreshBalances() }}
-           />
-        </main>
-      </div>
-    )
   }
 
   return (

@@ -35,7 +35,7 @@ export default function Login({ onBack }: { onBack?: () => void }) {
       <div style={{ textAlign: 'center' }}>
         <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: 3, color: 'var(--text)' }}>AGENTPAY</span>
         <p style={{ color: '#666', marginTop: '10px', fontSize: '13px' }}>
-          Autonomous USDC payments powered by AI
+          One account for the assets you hold.
         </p>
       </div>
 
@@ -51,7 +51,7 @@ export default function Login({ onBack }: { onBack?: () => void }) {
       }}>
         <p style={{ color: '#fff', fontSize: '15px', fontWeight: 600, margin: 0 }}>Sign in</p>
         <p style={{ color: '#666', fontSize: '12px', margin: 0, lineHeight: 1.6 }}>
-          Returning user. Your Circle wallet loads automatically.
+          Sign in to the account you already use.
         </p>
         <button
           onClick={signInWithGoogle}
@@ -74,7 +74,7 @@ export default function Login({ onBack }: { onBack?: () => void }) {
 
         <p style={{ color: '#fff', fontSize: '15px', fontWeight: 600, margin: 0 }}>New here</p>
         <p style={{ color: '#666', fontSize: '12px', margin: 0, lineHeight: 1.6 }}>
-          A wallet is created for you on sign up. No seed phrases, no gas.
+          Sign in. The account is created from your Google login.
         </p>
         <button
           onClick={signInWithGoogle}

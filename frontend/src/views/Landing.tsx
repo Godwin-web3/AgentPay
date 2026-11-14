@@ -29,7 +29,7 @@ export default function Landing({ onLaunch }: { onLaunch: () => void }) {
             Say it.<br />It moves.
           </h1>
           <p style={{ margin: '22px 0 0', maxWidth: '28ch', fontSize: 17, lineHeight: 1.4, color: '#3c3832' }}>
-            One place for USDC. Pay, swap, deposit, and bridge. You confirm. The vault enforces the limit.
+            One account for what you hold. You say what should happen. Nothing moves until you confirm.
           </p>
           <button onClick={onLaunch} style={{
             marginTop: 28,

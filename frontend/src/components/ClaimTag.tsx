@@ -37,7 +37,7 @@ export default function ClaimTag({ onClaimed }: { onClaimed: (tag: string) => vo
         <div style={{ fontSize: '48px', marginBottom: '8px' }}>⚡</div>
         <h1 style={{ color: '#4fdbc8', fontSize: '24px', fontWeight: 700, margin: 0 }}>Claim your tag</h1>
         <p style={{ color: '#666', marginTop: '8px', fontSize: '13px' }}>
-          People can send you USDC using @yourtag
+          This is how people find you.
         </p>
       </div>
 

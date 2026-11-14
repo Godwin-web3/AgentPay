@@ -41,7 +41,7 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     else if (result.status === 'proposing_deposit') { title = `Deposit ${result.amount} ${result.token || 'USDC'}`; detail = `Into your vault on ${result.chainName || 'Arc'}` }
     else if (result.status === 'proposing_swap') { title = `Swap ${result.amount} ${result.fromAsset}`; detail = `You get about ${result.amountOut} ${result.toAsset} on ${result.chainName}` }
     else if (result.status === 'proposing_bridge') { title = `Bridge ${result.amount} USDC`; detail = `${result.fromName} to ${result.toName}. This leaves the wallet, not the vault.` }
-    else if (result.status === 'proposing_transfer') { title = `Send ${result.amount} ${result.token}`; detail = `From the Robinhood wallet to ${result.to}. No Circle, no USDC.` }
+    else if (result.status === 'proposing_transfer') { title = `Send ${result.amount} ${result.token}`; detail = `From the Robinhood wallet to ${result.to}.` }
     else if (result.status === 'proposing_mint') { title = 'Deposit 100 test USDG'; detail = 'Taken from the USDG already in the Robinhood wallet. Nothing new is minted.' }
     return (
       <div style={{ marginTop: 10, border: '1px solid var(--cyan)', background: 'rgba(79,219,200,0.04)', padding: '12px 14px', fontFamily: 'var(--font-mono)' }}>
@@ -368,7 +368,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
 
   const routeLine = want === 'base-eth'
     ? 'Uniswap on Base. It spends USDC to buy ETH.'
-    : `Sends ${want.toUpperCase()} from the Robinhood wallet. The chain moves it. Circle is not involved.`
+    : `Sends ${want.toUpperCase()} from the Robinhood wallet.`
 
   if (!userAddress) return (
     <div className="terminal">

@@ -215,7 +215,7 @@ export default function WalletConnect({ onAddressChange, onProviderChange, onBal
       {showModal && createPortal(
         <div className="modal-overlay">
           <div className="modal-content">
-            <h3 style={{ marginTop: 0, color: 'var(--blue)', fontFamily: 'var(--font-head)' }}>Deposit USDC</h3>
+            <h3 style={{ marginTop: 0, color: 'var(--blue)', fontFamily: 'var(--font-head)' }}>Deposit</h3>
             <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5, marginTop: 10 }}>
               Send funds to your personal on-chain vault.
             </p>

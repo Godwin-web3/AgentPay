@@ -75,7 +75,7 @@ export default function Vault({ userAddress: _userAddress, vaultBalance, walletB
           VAULT BALANCE
         </div>
         <div style={{ fontFamily: 'var(--font-head)', fontSize: 40, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
-          {vaultBalance} <span style={{ fontSize: 18, color: 'var(--muted)', fontWeight: 400 }}>USDC</span>
+          {vaultBalance}
         </div>
       </div>
 
