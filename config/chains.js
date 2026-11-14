@@ -107,6 +107,28 @@ const CHAINS = {
     quoter: '0x33e885ed0ec9bf04ecfb19341582aadcb4c8a9e7',
     gateway: null,
   },
+  'robinhood-testnet': {
+    id: 'robinhood-testnet',
+    name: 'Robinhood Chain Testnet',
+    testnet: true,
+    chainId: 46630,
+    rpc: 'https://rpc.testnet.chain.robinhood.com',
+    ws: null,
+    explorer: 'https://explorer.testnet.chain.robinhood.com',
+    gasSymbol: 'ETH',
+    gasDecimals: 18,
+    // The testnet faucet mints stock tokens, not USDG. TSLA is the vault asset
+    // until a testnet stable exists. 18 decimals, matching the token.
+    stable: {
+      symbol: 'TSLA',
+      address: '0xC9f9c86933092BbbfFF3CCb4b105A4A94bf3Bd4E',
+      decimals: 18,
+    },
+    weth: null,
+    swapRouter: null,
+    quoter: null,
+    gateway: null,
+  },
 };
 
 const ALIASES = {
@@ -117,6 +139,7 @@ const ALIASES = {
   eth: 'ethereum',
   mainnet: 'ethereum',
   'robinhood chain': 'robinhood',
+  'robinhood testnet': 'robinhood-testnet',
   hood: 'robinhood',
 };
 

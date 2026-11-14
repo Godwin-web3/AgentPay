@@ -164,4 +164,4 @@ function watchBase() {
     });
 }
 
-module.exports = { bootstrapBase, watchBase, MIN_ETH };
+module.exports = { bootstrapBase, watchBase, MIN_ETH, readArtifact, deployContract };

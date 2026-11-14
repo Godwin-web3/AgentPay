@@ -9,7 +9,10 @@ assert.equal(resolveChainId('8453'), 'base-mainnet');
 assert.equal(CHAINS.arc.stable.decimals, 6);
 assert.equal(CHAINS.base.chainId, 84532);
 assert.equal(CHAINS.base.testnet, true);
-assert.equal(CHAINS['base-mainnet'].testnet, false);
+assert.equal(CHAINS['robinhood-testnet'].chainId, 46630);
+assert.equal(CHAINS['robinhood-testnet'].testnet, true);
+assert.equal(CHAINS.robinhood.testnet, false);
+assert.equal(resolveChainId('46630'), 'robinhood-testnet');
 assert.equal(CHAINS.base.stable.symbol, 'USDC');
 assert.equal(CHAINS.robinhood.stable.symbol, 'USDG');
 assert.equal(CHAINS.robinhood.chainId, 4663);
@@ -26,6 +29,9 @@ assert.throws(
 );
 
 const { decideClaim } = require('../src/chainRegistry');
+
+const vaultOnly = { status: 'deployed', vault: '0x1', executor: null, executorSkipped: true };
+assert.equal(decideClaim(vaultOnly, Date.now()).won, false);
 
 const deployed = { status: 'deployed', vault: '0x1', executor: '0x2' };
 assert.equal(decideClaim(deployed, Date.now()).won, false);

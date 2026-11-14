@@ -118,6 +118,7 @@ async function getOrCreateWallet(userId) {
 function handleHealth(req, res) {
   const chain = getChain();
   const base = require('./chainRegistry').recall('base');
+  const robinhood = require('./chainRegistry').recall('robinhood-testnet');
   return send(res, 200, {
     status: 'ok',
     agent: 'AgentPay',
@@ -130,6 +131,12 @@ function handleHealth(req, res) {
       vault: base.vault || null,
       executor: base.executor || null,
       reason: base.reason || null,
+    } : { status: 'pending' },
+    robinhoodTestnet: robinhood ? {
+      status: robinhood.status,
+      vault: robinhood.vault || null,
+      token: robinhood.tokenSymbol || null,
+      reason: robinhood.reason || null,
     } : { status: 'pending' },
     time: new Date().toISOString()
   });
@@ -1285,6 +1292,7 @@ module.exports = { startServer };
 // Boot: deploy the Base vault once if the server key has gas.
 // Retries every 10 minutes until it deploys or is disabled.
 require('./bootstrapBase').watchBase();
+require('./bootstrapRobinhood').watchRobinhood();
 
 // Boot: restart timers for all active scheduled jobs
 (async () => {

@@ -49,7 +49,7 @@ async function save(chainKey, record) {
 
 // Another instance may boot at the same time. Only one may deploy.
 function decideClaim(existing, now) {
-  if (existing && existing.status === 'deployed' && existing.vault && existing.executor) {
+  if (existing && existing.status === 'deployed' && existing.vault && (existing.executor || existing.executorSkipped)) {
     return { won: false, record: existing };
   }
   if (existing && existing.status === 'deploying' && now - Number(existing.startedAt || 0) < 20 * 60 * 1000) {
