@@ -19,27 +19,10 @@ import { getTokenBalances, getWallet, getVaultBalanceApi } from './api'
 
 type View = 'landing' | 'terminal' | 'account' | 'profile' | 'policy' | 'history' | 'goals' | 'pools' | 'requests'
 
-const TerminalIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="4 17 10 11 4 5"/>
-    <line x1="12" y1="19" x2="20" y2="19"/>
-  </svg>
-)
-const AccountIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="8" r="4"/>
-    <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-  </svg>
-)
-const HistoryIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-  </svg>
-)
 const navItems = [
-  { id: 'terminal', icon: TerminalIcon, label: 'Terminal' },
-  { id: 'account', icon: AccountIcon, label: 'Account' },
-  { id: 'history', icon: HistoryIcon, label: 'History' },
+  { id: 'terminal', label: 'Terminal' },
+  { id: 'account', label: 'Account' },
+  { id: 'history', label: 'History' },
 ] as const
 
 function App({ tag }: { tag: string | null }) {
@@ -194,22 +177,27 @@ function App({ tag }: { tag: string | null }) {
     <div className="app">
       {/* Desktop Sidebar */}
       <aside className="sidebar">
-        <div className="sidebar-logo">
-          <Wordmark size={20} />
+        <div className="sidebar-top">
+          <div className="sidebar-logo">
+            <Wordmark size={18} />
+          </div>
+          <nav className="side-nav">
+            {navItems.map(item => (
+              <button
+                type="button"
+                key={item.id}
+                className={`nav-item ${view === item.id ? 'active' : ''}`}
+                onClick={() => { if (item.id === 'history') setHistoryKey(k => k + 1); setView(item.id as View) }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </nav>
         </div>
-
-        <nav style={{ flex: 1 }}>
-          {navItems.map(item => (
-            <div
-              key={item.id}
-              className={`nav-item ${view === item.id ? 'active' : ''}`}
-              onClick={() => { if (item.id === 'history') setHistoryKey(k => k + 1); setView(item.id as View) }}
-            >
-              <span className="nav-icon"><item.icon /></span>
-              <span>{item.label}</span>
-            </div>
-          ))}
-        </nav>
+        <div className="sidebar-foot">
+          <span>Testnet</span>
+          <span>You confirm every send</span>
+        </div>
       </aside>
 
       {/* Main Content Area */}
@@ -243,14 +231,14 @@ function App({ tag }: { tag: string | null }) {
       {/* Mobile Bottom Navigation */}
       <nav className="mobile-nav">
         {navItems.map(item => (
-          <div
+          <button
+            type="button"
             key={item.id}
             className={`mobile-nav-item ${view === item.id ? 'active' : ''}`}
             onClick={() => { if (item.id === 'history') setHistoryKey(k => k + 1); setView(item.id as View) }}
           >
-            <span className="mobile-nav-icon"><item.icon /></span>
-            <span>{item.label}</span>
-          </div>
+            {item.label}
+          </button>
         ))}
       </nav>
     </div>

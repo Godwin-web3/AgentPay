@@ -64,37 +64,38 @@ export default function AgentHeader({ currentView, onNavigate, onClearMemory, re
     setDrawerOpen(false)
   }
 
+  const labels: Record<string, string> = {
+    terminal: 'Terminal',
+    account: 'Account',
+    history: 'History',
+    policy: 'Limits',
+    goals: 'Goals',
+    pools: 'Pools',
+    requests: 'Requests',
+  }
+
   return (
     <>
-      <div className="agent-header" style={{ height: 52, padding: '0 16px', alignItems: 'center' }}>
-        <div className="agent-info" style={{ gap: 8 }}>
-          <Wordmark size={16} />
-          {tag && tag !== 'skip' && (
-            <div style={{
-              fontFamily: 'var(--font-body)',
-              fontSize: 12,
-              color: 'var(--muted)',
-            }}>
-              @{tag}
-            </div>
-          )}
-          {userAddress && isPaused && (
-            <div style={{
-              padding: '2px 6px',
-              borderRadius: 2,
-              fontFamily: 'var(--font-mono)',
-              fontSize: 9,
-              fontWeight: 700,
-              letterSpacing: 1,
-              background: 'var(--danger-a1)',
-              border: '1px solid var(--danger-a2)',
-              color: 'var(--danger)',
-            }}>
-              PAUSED
-            </div>
-          )}
+      <div className="agent-header">
+        <div className="agent-info">
+          <span className="header-mark"><Wordmark size={16} /></span>
+          <span className="view-label">{labels[currentView] || 'AgentPay'}</span>
+          {tag && tag !== 'skip' && <span className="header-tag">@{tag}</span>}
+          {userAddress && isPaused && <span className="pause-flag">Paused</span>}
         </div>
-        <button className="hamburger-btn" onClick={() => setDrawerOpen(true)}>Menu</button>
+        <div className="header-actions">
+          {userAddress && (
+            <button
+              type="button"
+              className="text-link header-pause"
+              onClick={handleTogglePause}
+              disabled={pauseLoading}
+            >
+              {pauseLoading ? 'Working' : isPaused ? 'Resume' : 'Pause'}
+            </button>
+          )}
+          <button type="button" className="hamburger-btn" onClick={() => setDrawerOpen(true)}>Menu</button>
+        </div>
       </div>
 
       {drawerOpen && (
@@ -104,7 +105,7 @@ export default function AgentHeader({ currentView, onNavigate, onClearMemory, re
       <div className={`drawer ${drawerOpen ? 'drawer-open' : ''}`}>
         <div className="drawer-header">
           <span className="drawer-title">Menu</span>
-          <button className="drawer-close" onClick={() => setDrawerOpen(false)}>✕</button>
+          <button type="button" className="text-link" onClick={() => setDrawerOpen(false)}>Close</button>
         </div>
 
         <div className="drawer-section-label">Go to</div>
@@ -141,57 +142,27 @@ export default function AgentHeader({ currentView, onNavigate, onClearMemory, re
           </button>
         </div>
 
-        <div className="drawer-divider" />
-        <div className="drawer-section-label">Chat</div>
-        <div style={{ padding: "0 16px 12px" }}>
-          <button
-            className="quick-btn"
-            style={{ width: "100%", color: 'var(--danger)', borderColor: 'var(--danger)' }}
-            onClick={() => { onClearMemory?.(); setDrawerOpen(false) }}
-          >
+        <div className="drawer-section-label">Session</div>
+        <div className="drawer-actions">
+          <button type="button" className="text-link" onClick={() => { onClearMemory?.(); setDrawerOpen(false) }}>
             Clear chat
           </button>
-        </div>
-        <div className="drawer-divider" />
-        <div className="drawer-section-label">Account</div>
-        <div style={{ padding: "0 16px 12px" }}>
-          <button
-            className="quick-btn"
-            style={{ width: "100%", color: 'var(--danger)', borderColor: 'var(--danger)' }}
-            onClick={() => { logout(); setDrawerOpen(false); }}
-          >
+          <button type="button" className="text-link" onClick={() => { logout(); setDrawerOpen(false); }}>
             Sign out
           </button>
+          {userAddress && (
+            <button type="button" className="text-link" onClick={handleTogglePause} disabled={pauseLoading}>
+              {pauseLoading ? 'Working' : isPaused ? 'Resume agent' : 'Pause agent'}
+            </button>
+          )}
         </div>
 
         <div className="drawer-bottom">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div className={`status-pill ${health?.status === 'ok' ? 'online' : 'offline'}`}>
-              <div className="status-dot" />
-              {health?.status === 'ok' ? 'Live' : 'Down'}
-            </div>
-            {userAddress && (
-              <button
-                onClick={handleTogglePause}
-                disabled={pauseLoading}
-                style={{
-                  padding: '8px 0',
-                  border: 'none',
-                  background: 'none',
-                  fontFamily: 'var(--font-head)',
-                  fontSize: 16,
-                  cursor: pauseLoading ? 'not-allowed' : 'pointer',
-                  color: isPaused ? 'var(--danger)' : 'var(--text)',
-                  opacity: pauseLoading ? 0.5 : 1,
-                }}
-              >
-                {pauseLoading ? '…' : isPaused ? 'Resume' : 'Pause'}
-              </button>
-            )}
+          <div className={`status-pill ${health?.status === 'ok' ? 'online' : 'offline'}`}>
+            <div className="status-dot" />
+            {health?.status === 'ok' ? 'Live' : 'Down'}
           </div>
-          <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
-            Three testnets
-          </div>
+          <div className="sidebar-foot" style={{ padding: 0 }}>Three testnets</div>
         </div>
       </div>
     </>

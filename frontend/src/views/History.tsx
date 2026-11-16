@@ -105,106 +105,57 @@ export default function History({ userAddress, userId, refreshTrigger = 0 }: { u
 
   if (txs.length === 0) return (
     <div className="history-view">
-      <p className="eyebrow">Activity</p>
-      <h2 className="page-title" style={{ fontSize: 'clamp(40px, 10vw, 56px)' }}>Nothing yet</h2>
+      <p className="kicker">Activity</p>
+      <h2 className="page-title">Nothing yet</h2>
+      <p className="lede desk-lede">Sends, deposits, and swaps will settle here.</p>
     </div>
   )
 
   const groups = groupByDate(txs)
 
   return (
-    <div className="history-view" style={{ paddingBottom: 80 }}>
-      <div className="reveal" style={{ marginBottom: 28 }}>
-        <p className="eyebrow">Activity</p>
-        <h2 className="page-title" style={{ fontSize: 'clamp(40px, 10vw, 56px)', marginBottom: 8 }}>History</h2>
+    <div className="history-view">
+      <div className="desk-head reveal">
+        <p className="kicker">Activity</p>
+        <h2 className="page-title">History</h2>
       </div>
 
-      <div className="card-deep reveal" style={{ padding: '4px 20px' }}>
-        {groups.map((group, gi) => (
-          <div key={group.label}>
-            <div style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: 'var(--muted)',
-              padding: '16px 0 8px',
-              borderTop: gi === 0 ? 'none' : '1px solid var(--border)',
-              marginTop: gi === 0 ? 0 : 4,
-            }}>
-              {group.label}
-            </div>
-
+      {groups.map((group) => (
+        <section key={group.label} className="ledger-block">
+          <div className="day-label">{group.label}</div>
+          <div className="ledger">
             {group.entries.map((tx, i) => {
               const explorerUrl = tx.txHash ? 'https://testnet.arcscan.app/tx/' + tx.txHash : null
               const entry = describeEntry(tx)
-              const amountColor = entry.sign === null && !tx.failed && tx.status !== 'blocked'
-                ? 'var(--text)'
-                : (tx.failed || tx.status === 'blocked') ? 'var(--danger)' : 'var(--seal)'
-
+              const failed = tx.failed || tx.status === 'blocked'
               return (
-                <div
-                  key={tx.id || i}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    gap: 16,
-                    padding: '13px 0',
-                    borderBottom: i === group.entries.length - 1 ? 'none' : '1px solid var(--border)',
-                  }}
-                >
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{
-                        fontFamily: 'var(--font-head)',
-                        fontWeight: 500,
-                        fontSize: 14,
-                        color: (tx.failed || tx.status === 'blocked') ? 'var(--danger)' : 'var(--text)',
-                      }}>
-                        {entry.title}
-                      </div>
-                      {entry.badge && (
-                        <span className="mono-data" style={{
-                          fontSize: 11,
-                          letterSpacing: '0.08em',
-                          color: 'var(--muted)',
-                          textTransform: 'uppercase',
-                        }}>
-                          {entry.badge}
-                        </span>
-                      )}
+                <div key={tx.id || i} className="hold-row ledger-row">
+                  <div className="ledger-main">
+                    <div className={failed ? 'ledger-title is-danger' : 'ledger-title'}>
+                      {entry.title}
+                      {entry.badge ? <span className="ledger-badge">{entry.badge}</span> : null}
                     </div>
-                    {entry.sub && (
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--muted)', marginTop: 3, wordBreak: 'break-word' }}>
-                        {entry.sub}
-                      </div>
+                    {entry.sub && <div className="ledger-sub">{entry.sub}</div>}
+                    {explorerUrl && (
+                      <a href={explorerUrl} target="_blank" rel="noreferrer" className="ledger-link">
+                        {tx.txHash.slice(0, 10)}
+                      </a>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
-                      {explorerUrl && (
-                        <a href={explorerUrl} target="_blank" rel="noreferrer" className="mono-data" style={{ color: 'var(--wire)', textDecoration: 'none', fontSize: 10 }}>
-                          {tx.txHash.slice(0, 8)}... ↗
-                        </a>
-                      )}
-                    </div>
                   </div>
-
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div className="ledger-amt">
                     {entry.amount && (
-                      <div className="mono-data" style={{ fontSize: 14, fontWeight: 700, color: amountColor }}>
+                      <div className={failed ? 'is-danger' : undefined}>
                         {entry.sign || ''}{entry.amount}
                       </div>
                     )}
-                    <div className="mono-data" style={{ fontSize: 10, color: 'var(--muted)', marginTop: 5 }}>
-                      {formatClock(tx.timestamp)}
-                    </div>
+                    <div className="ledger-time">{formatClock(tx.timestamp)}</div>
                   </div>
                 </div>
               )
             })}
           </div>
-        ))}
-      </div>
+        </section>
+      ))}
     </div>
   )
 }

@@ -70,16 +70,14 @@ function TxBadge({ result, onConfirm, onCancel }: { result?: any, onConfirm?: ()
     else if (result.status === 'proposing_pool_create') { title = `Create ${result.name}`; detail = 'This is signed by your wallet. Nothing is created until you confirm.' }
     else if (result.status === 'proposing_pool_contribute') { title = `Contribute ${result.amount} USDC`; detail = `To ${result.name}. Your wallet approves it, then sends it.` }
     return (
-      <div style={{ marginTop: 12, borderTop: '1px solid var(--text)', paddingTop: 12 }}>
-        <div style={{ fontFamily: 'var(--font-head)', fontSize: 20, letterSpacing: '-0.03em', marginBottom: 4 }}>{title}</div>
-        <div style={{ fontSize: 15, color: 'var(--muted)', marginBottom: 14 }}>{detail}</div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button disabled={confirming} onClick={async () => { setConfirming(true); if (onConfirm) await onConfirm(); setConfirming(false) }} style={{ flex: 2, background: 'var(--text)', color: '#f4f1ea', border: 'none', minHeight: 48, padding: '12px 14px', fontSize: 16, cursor: 'pointer', fontFamily: 'var(--font-head)' }}>
+      <div className="confirm-slip">
+        <div className="confirm-title">{title}</div>
+        <div className="confirm-detail">{detail}</div>
+        <div className="confirm-actions">
+          <button type="button" className="ink-btn" disabled={confirming} onClick={async () => { setConfirming(true); if (onConfirm) await onConfirm(); setConfirming(false) }}>
             {confirming ? 'Sending' : String(result.status).startsWith('proposing_pool') ? 'Sign' : 'Confirm'}
           </button>
-          <button disabled={confirming} onClick={onCancel} style={{ flex: 1, background: 'transparent', color: 'var(--text)', border: '1px solid var(--border-hot)', minHeight: 48, padding: '8px 12px', fontSize: 15, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
-            Cancel
-          </button>
+          <button type="button" className="ghost-btn" disabled={confirming} onClick={onCancel}>Cancel</button>
         </div>
       </div>
     )
@@ -513,7 +511,7 @@ export default function Terminal({ messages, setMessages, userAddress, userId, o
   )
 
   return (
-    <div className="terminal" style={{ padding: '8px 0 0' }}>
+    <div className="terminal">
       {where && <div className="term-where">{where}</div>}
       <div className="messages" ref={scrollRef}>
         {messages.length === 0 && (

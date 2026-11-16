@@ -77,8 +77,8 @@ export default function Policy({ userAddress, userId }: { userAddress: string, u
   if (loading) return (
     <div className="policy-view">
       <div className="empty-state">
-        <div className="icon">⚡</div>
-        Loading policy...
+        <div className="icon" />
+        Loading limits.
       </div>
     </div>
   )
@@ -86,8 +86,8 @@ export default function Policy({ userAddress, userId }: { userAddress: string, u
   if (error || !policy) return (
     <div className="policy-view">
       <div className="empty-state">
-        <div className="icon">⚠️</div>
-        {error || 'No policy found'}
+        <div className="icon" />
+        {error || 'No limits found'}
         <button className="send-btn" onClick={fetchPolicy} style={{ marginTop: 20 }}>Retry</button>
       </div>
     </div>
@@ -99,22 +99,16 @@ export default function Policy({ userAddress, userId }: { userAddress: string, u
     <div className="policy-view">
       <div className="reveal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
         <div>
-          <p className="eyebrow">Enforced on-chain, not by the AI</p>
-          <h2 className="page-title">Policy Settings</h2>
+          <p className="kicker">Enforced on-chain</p>
+          <h2 className="page-title">Spending limits</h2>
         </div>
         {!isEditing ? (
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button className="send-btn" onClick={() => setIsEditing(true)}>
-              Edit Policy
-            </button>
-          </div>
+          <button type="button" className="text-link" onClick={() => setIsEditing(true)}>Edit</button>
         ) : (
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button className="send-btn" onClick={() => setIsEditing(false)} style={{ background: 'var(--muted)' }}>
-              Cancel
-            </button>
-            <button className="send-btn" onClick={handleSave} disabled={saving} style={{ background: 'var(--cyan)', color: 'black' }}>
-              {saving ? 'Confirming...' : 'Save to Blockchain'}
+          <div className="policy-actions">
+            <button type="button" className="text-link" onClick={() => setIsEditing(false)}>Cancel</button>
+            <button type="button" className="ink-btn" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving' : 'Save'}
             </button>
           </div>
         )}
@@ -124,7 +118,7 @@ export default function Policy({ userAddress, userId }: { userAddress: string, u
       {error && <div className="alert danger" style={{ marginBottom: 20 }}>{error}</div>}
 
       <div className="card">
-        <div className="section-title">Spending Limits</div>
+        <div className="section-title">Limits</div>
         <div className="stat-grid">
           <div className="stat">
             <div className="stat-label">Daily Cap</div>
@@ -172,10 +166,10 @@ export default function Policy({ userAddress, userId }: { userAddress: string, u
       </div>
 
       <div className="card">
-        <div className="section-title">Usage Stats</div>
+        <div className="section-title">Spent today</div>
         <div style={{ marginBottom: 15 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 12 }}>
-            <span style={{ color: 'var(--muted)' }}>Daily Allowance Spent</span>
+            <span style={{ color: 'var(--muted)' }}>Daily allowance</span>
             <span>{policy.dailySpendSoFar} / {policy.dailyCap}</span>
           </div>
           <div className="progress-bar">
@@ -188,14 +182,14 @@ export default function Policy({ userAddress, userId }: { userAddress: string, u
       </div>
 
       <div className="card">
-        <div className="section-title">Whitelisted Recipients</div>
+        <div className="section-title">Allowed recipients</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {whitelist.length === 0 && <div style={{ fontSize: 12, color: 'var(--muted)' }}>No whitelisted addresses.</div>}
+          {whitelist.length === 0 && <div className="ledger-sub">Anyone can be paid, up to the limits.</div>}
           {whitelist.map(addr => (
             <div key={addr} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 4 }}>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{addr}</span>
               {isEditing && (
-                <button onClick={() => removeAddress(addr)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}>✕</button>
+                <button type="button" onClick={() => removeAddress(addr)} className="text-link">Remove</button>
               )}
             </div>
           ))}
@@ -216,7 +210,7 @@ export default function Policy({ userAddress, userId }: { userAddress: string, u
       </div>
 
       <div className="card">
-        <div className="section-title">Circuit Breaker (Read Only)</div>
+        <div className="section-title">Circuit breaker</div>
         <div className="stat-grid">
           <div className="stat">
             <div className="stat-label">Max TX / Hour</div>
@@ -233,7 +227,7 @@ export default function Policy({ userAddress, userId }: { userAddress: string, u
           <div className="stat">
             <div className="stat-label">Status</div>
             <div className={`stat-value ${isCircuitBroken ? 'coral' : 'cyan'}`}>
-              {isCircuitBroken ? 'PAUSED' : 'ACTIVE'}
+              {isCircuitBroken ? 'Paused' : 'Active'}
             </div>
           </div>
         </div>
